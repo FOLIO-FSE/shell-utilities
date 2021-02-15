@@ -1,0 +1,10 @@
+# searches a json file for a regex
+#
+# usage: ./jqsearch "regex" "filename"
+
+# case sensitive search
+cat $2 |jq --arg REGEX "$1" '. as $data | [path(..| select(scalars and (tostring | test($REGEX)))) ] | map({ (.|join(".")): (. as $path | .=$data | getpath($path)) }) | reduce .[] as $item ({}; . * $item)'
+
+case insensitive search
+#cat $2 |jq --arg REGEX "$1" '. as $data | [path(..| select(scalars and (tostring | test($REGEX; "i")))) ] | map({ (.|join(".")): (. as $path | .=$data | getpath($path)) }) | reduce .[] as $item ({}; . * $item)'
+

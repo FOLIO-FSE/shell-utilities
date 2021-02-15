@@ -1,0 +1,35 @@
+# Creates statcodes based on contents of tab delimited file
+#
+# Code is expected in column 1 of a file named "locations"
+# Display name is set in column 2
+# Set statcode type ID before using
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+statisticalCodeTypeId="99c57995-70e3-4cc8-a7f9-f1f105a5e35a"
+source="local"
+
+while read statcode
+do
+
+code=$(cut -f1 <<<$statcode)
+name=$(cut -f2 <<<$statcode)
+
+IFS='' read -r -d '' statcode << EndOfStatcodes
+
+{
+"code": "${code}",
+"name": "${name}",
+"statisticalCodeTypeId":"${statisticalCodeTypeId}",
+"source": "${source}"
+}
+EndOfStatcodes
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${statcode}" "${okapi_url}/statistical-codes")
+
+echo -e "${apicall}" 
+done < statcodes
+
+

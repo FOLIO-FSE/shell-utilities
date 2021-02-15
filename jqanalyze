@@ -1,0 +1,6 @@
+# analyze structure of json document, like xmlstarlet el -u
+#
+# usage: ./jqanalyze "filename"
+
+
+cat $1 | jq 'select(objects)|=[.] | map( paths(scalars) ) | map( map(select(numbers)="[]") | join(".")) | unique'

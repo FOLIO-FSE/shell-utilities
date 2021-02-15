@@ -1,0 +1,28 @@
+# Creates loantypes based on contents of single column file named loantypes containing loan types
+#
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+while read loantype
+do
+
+loantype=$(echo ${loantype} |xargs)
+uuid=$(uuidgen)
+
+IFS='' read -r -d '' loantype << EndOfLoanType
+
+{
+"id": "${uuid}",
+"name": "${loantype}"
+}
+EndOfLoanType
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${loantype}" "${okapi_url}/loan-types")
+
+echo -e "${apicall}" |jq '.'
+
+done < loantypes 
+
+

@@ -1,0 +1,45 @@
+# Creates location based on contents of tab delimited file
+#
+# Code is expected in column 1 of a file named "locations"
+# Display name is set in column 2
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+servicePointId="3a40852d-49fd-4df2-a1f9-6e2641a6e91f"
+institutionId="40ee00ca-a518-4b49-be01-0638d0a4ac57"
+campusId="296a90b3-c78b-421b-a16d-9089cdac323c"
+libraryId="008cf7ed-46fd-488f-a8ce-cb528b602b65"
+
+while read location
+do
+
+code=$(cut -f1 <<<$location)
+discovery=$(cut -f2 <<<$location)
+
+IFS='' read -r -d '' location << EndOfLocation
+
+{
+"code": "${code}",
+"discoveryDisplayName": "${discovery}",
+"name": "${discovery}",
+"isActive": true,
+"institutionId": "${institutionId}",
+"campusId": "${campusId}",
+"libraryId": "${libraryId}",
+"primaryServicePoint": "${servicePointId}",
+"servicePointIds": [
+"${servicePointId}"
+],
+"servicePoints": []
+}
+EndOfLocation
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${location}" "${okapi_url}/locations")
+
+echo -e "${apicall}" |jq '.'
+done < locations
+
+
+#echo $locations |jq '.'

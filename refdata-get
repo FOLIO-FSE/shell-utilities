@@ -1,0 +1,92 @@
+#usage ./refdata-get
+#
+# creates directory and adds json files for each type
+#
+tenant="$(cat tenant)"
+okapi_url="$(cat okapi.url)"
+okapi_token="$(cat okapi.token)"
+
+reftypes=("addresstypes" \
+"alternative-title-types" \
+"call-number-types" \
+"cancellation-reason-storage/cancellation-reasons" \
+"circulation/rules" \
+"circulation-rules-storage" \
+"classification-types" \
+"configurations/entries" \
+"contributor-name-types" \
+"contributor-types" \
+"converter-storage/forms/configs" \
+"custom-fields" \
+"electronic-access-relationships" \
+"data-export/job-profiles" \
+"data-export/mapping-profiles" \
+"data-export/transformation-fields" \
+"data-import/fileExtensions" \
+"data-import-profiles/jobProfiles" \
+"data-import/uploadDefinitions" \
+"erm/custprops" \
+"erm/refdata" \
+"field-protection-settings/marc" \
+"groups" \
+"holdings-note-types" \
+"holdings-sources" \
+"holdings-types" \
+"identifier-types" \
+"ill-policies" \
+"instance-formats" \
+"instance-statuses" \
+"instance-note-types" \
+"instance-types" \
+"item-note-types" \
+"licenses/custprops" \
+"licenses/refdata" \
+"loan-policy-storage/loan-policies" \
+"loan-types" \
+"locations" \
+"location-units/campuses" \
+"location-units/institutions" \
+"location-units/libraries" \
+"lost-item-fees-policies" \
+"mapping-rules" \
+"material-types" \
+"calendar/periods" \
+"orders-storage/categories" \
+"orders-storage/interfaces" \
+"orders-storage/reporting-codes" \
+"organizations-storage/organizations" \
+"overdue-fines-policies" \
+"patron-notice-policies" \
+"patron-notice-policy-storage/patron-notice-policies" \
+"refunds" \
+"request-policy-storage/request-policies" \
+"service-points" \
+"staff-slips-storage/staff-slips" \
+"statistical-code-types" \
+"statistical-codes" \
+"tags" \
+"templates" \
+"tenant/rules" \
+"groups" \
+"users" \
+"vendor-storage/categories" \
+"waives")
+
+mkdir refdata 2>/dev/null || true
+
+for reftype in ${reftypes[@]}; do
+
+	filename="refdata/${reftype//\//_}.json"
+
+	apicall=$(curl -s -w '\n' -X GET \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  "${okapi_url}/${reftype}?query=cql.allRecords=1&limit=100000")
+
+	echo "${reftype}: $(echo ${apicall} | jq '.totalRecords') total records"
+
+	echo "${apicall}" > "${filename}" 
+done
+
+

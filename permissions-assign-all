@@ -1,0 +1,32 @@
+# gets list of available permissions and assigns all of them to a uuid
+#
+# Usage ./permissions-assign-all "uuid"
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+uuid="${1}"
+
+apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/perms/permissions?expanded=true&length=100000")
+
+echo "Finding available permissions"
+echo "$apicall" | jq -r '.permissions[] | select(.permissionName |startswith("SYS") |not) | select(.permissionName |contains(".")) | .permissionName' |sort -u > permissions_available
+
+
+echo "Finding user permissions"
+apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/perms/users/${uuid}?indexField=userId")
+
+echo "$apicall" | jq -r '.permissions[]' |sort -u > permissions_user
+
+comm -2 -3 permissions_available permissions_user > permissions_update
+
+cat permissions_update | while read new_perm
+do
+
+echo "Adding ${new_perm}"
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{\"permissionName\": \"${new_perm}\"}" "${okapi_url}/perms/users/${uuid}/permissions?indexField=userId")
+done
+
+echo "List of all permissions available is in permissions_available. Permissions user ${uuid} previously had are in permissions_user. Permissions added are in permissions_update"

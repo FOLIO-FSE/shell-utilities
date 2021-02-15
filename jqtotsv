@@ -1,0 +1,6 @@
+# extracts fields from MARCJSON and outputs in TSV
+#
+# usage: ./jqtotsv marcfile 
+
+
+cat $1 |jq -r '[  (.parsedRecord.content.fields[] | select (."001" != null) | ."001"), ([ .parsedRecord.content.fields[]."650".subfields[]? | select(.a !=null) | .a ] |join(";"))] | @tsv'

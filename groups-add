@@ -1,0 +1,36 @@
+# Creates groups based on contents of tab delimited file
+#
+# Code is expected in column 1 of a file named "groups"
+# Description is set in column 2
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+while read group
+do
+
+code=$(cut -f1 <<<$group)
+desc=$(cut -f2 <<<$group)
+
+code=$(echo ${code} |xargs)
+desc=$(echo ${desc} |xargs)
+
+uuid=$(uuidgen)
+
+IFS='' read -r -d '' group << EndOfGroup
+
+{
+"group": "${code}",
+"desc": "${desc}",
+"id": "${uuid}"
+}
+EndOfGroup
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${group}" "${okapi_url}/groups")
+
+echo -e "${apicall}" |jq '.'
+
+done < groups 
+
+

@@ -1,0 +1,50 @@
+# Expects data in delimited file named licenses
+#
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+while read license
+
+name=$(cut -f1 <<<$license)
+alternateNames=$(cut -f2 <<<$license)
+
+do
+
+IFS='' read -r -d '' location << EndOfLicense
+
+{
+  "links": [],
+  "customProperties": {},
+  "contacts": [],
+  "tags": [],
+  "docs": [],
+  "name": "${name}",
+  "status": {
+    "id": "",
+    "value": "active",
+    "label": "Active"
+  },
+  "supplementaryDocs": [],
+  "_links": {
+    "linkedResources": {
+      "href": "/licenses/licenseLinks?filter=owner.id%"
+    }
+  },
+  "openEnded": false,
+  "amendments": [],
+  "orgs": [],
+  "type": {
+    "value": "local",
+    "label": "Local"
+  },
+  "alternateNames": [${alternateNames}]
+}
+
+EndOfLicense
+
+apicall=$(curl --http1.1 -v -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${license}" "${okapi_url}/licenses/licenses")
+
+echo "${apicall}"
+
+done < licenses

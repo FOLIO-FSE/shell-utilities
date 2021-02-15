@@ -1,0 +1,19 @@
+# creates an okapi authentication token to be used
+# by other scripts
+
+okapi_url=$(cat okapi.url)
+tenant=$(cat tenant)
+
+auth=$(curl -s -w '\n' -X POST -D - \
+  -H "Content-type: application/json" \
+  -H "X-Okapi-Tenant: ${tenant}" \
+  -d @okapi-login.json \
+  "${okapi_url}/authn/login")
+
+okapi_token=$(echo "${auth}" | grep 'x-okapi-token: ' |sed 's/^.* //')
+
+
+echo "$auth" 
+echo $okapi_token |tee okapi.token
+
+

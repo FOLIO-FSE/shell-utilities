@@ -1,0 +1,61 @@
+{
+  "baseUri": "https://library2.mtsu.edu",
+  "streams": [
+    {
+      "streamName": "items",
+      "apiPath": "/items",
+      "defaultFields":
+        "id,updatedDate,createdDate,deletedDate,deleted,bibIds,location,status,barcode,callNumber,itemType,fixedFields,varFields"
+    },
+    {
+      "streamName": "patrons",
+      "apiPath": "/patrons",
+      "defaultFields":
+        "addresses,blockInfo,createdDate,default,deleted,fixedFields,homeLibraryCode,langPref,patronCodes,patronType,pMessage,suppressed,updatedDate,message,createdDate,deletedDate,updatedDate",
+      "privacyConcernedFields":
+        "addresses,barcodes,birthDate,blockInfo,createdDate,default,deleted,emails,fixedFields,homeLibraryCode,langPref,names,patronCodes,patronType,phones,pMessage,suppressed,uniqueIds,updatedDate,varFields,message,createdDate,deletedDate,updatedDate"
+    },
+    {
+      "streamName": "authorities",
+      "apiPath": "/authorities",
+      "defaultFields": "id,deleted,deletedDate,updatedDate,createdDate,suppressed,varFields"
+    },
+    {
+      "streamName": "agencies",
+      "apiPath": "/agencies",
+      "defaultFields": "",
+      "noPaging": true
+    },
+    {
+      "streamName": "bibs",
+      "apiPath": "/bibs",
+      "defaultFields": "varFields,fixedFields,id,updatedDate,createdDate,deletedDate,deleted,suppressed,available,lang,title,author,materialType,bibLevel,publishYear,catalogDate,country,orders,normTitle,normAuthor"
+    },
+    {
+      "streamName": "branches",
+      "apiPath": "/branches",
+      "defaultFields": "id,name,address,emailSource,emailReplyTo,latitude,longitude"
+    },
+    {
+      "streamName": "pickupLocations",
+      "apiPath": "/branches/pickupLocations",
+      "defaultFields": ""
+    },
+    {
+      "streamName": "invoices",
+      "apiPath": "/invoices",
+      "extraParameters":{"login":"tolstoy"},
+      "defaultFields": "id"
+    },
+    {
+      "streamName": "fines",
+      "apiPath": "/fines",
+      "defaultFields": "id,patron,item,assessedDate,description,invoiceNumber,chargeType,itemCharge,processingFee,billingFee,paidAmount,location,initials,creationMethod,datePaid,originalPatron,printBill,terminalNumber,transferDate"
+    },
+    {
+      "streamName": "orders",
+      "apiPath": "/orders",
+      "defaultFields": "varFields,fixedFields,updatedDate,deletedDate,suppressed,accountingUnit,estimatedPrice,vendorRecordCode,orderDate,chargedFunds,vendorTitles"
+    }    
+  ]
+}

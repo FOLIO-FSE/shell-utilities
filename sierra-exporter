@@ -1,0 +1,51 @@
+# sierra.url contains api endpoint e.g. https://library2.mtsu.edu/sierra-api/v5
+# sierra.auth
+
+function auth () {
+	auth=$(curl -s -w '\n' -X POST \
+	  -H "Content-type: application/json" \
+	  -H "Authorization: Basic ${sierra_auth}" \
+	  "${baseUri}/token")
+	
+	access_token=$(echo ${auth} | jq -r '.access_token')
+}
+
+function get_data() {
+	api=$(curl -s -w '\n' -X GET \
+	  -H "Content-type: application/json" \
+	  -H "Authorization: Bearer ${access_token}" \
+	  "${apiUri}?offset=${offset}&fields=${defaultFields}&limit=${increment}")
+}
+
+baseUri=$(cat sierra.url)
+sierra_auth=$(cat sierra.auth | base64)
+offset=0
+increment=1
+counter=1
+lastrec=$increment
+
+rectype=$1
+mkdir $rectype 2>/dev/null || true
+
+apiPath=$(cat sierra.json |jq -r  ".streams[] | select(.streamName==\"${rectype}\") | .apiPath")
+apiUri=${baseUri}${apiPath}
+
+defaultFields=$(cat sierra.json |jq -r ".streams[] | select(.streamName==\"${rectype}\") | .defaultFields")
+
+while [ $lastrec -le $increment ]
+do
+	auth
+	get_data
+	echo "$api" | jq '.' > "${rectype}/${rectype}.${counter}.json"
+	offset=$(($offset + $increment))
+	echo "$offset records processed"
+	counter=$(($counter + 1))
+	
+	lastrec=$(echo "$api" |jq 'select(.total != null) | .total')
+
+	if [[ $lastrec = '' ]]; then echo "End of data found -- exiting." ; exit;fi 
+done
+
+
+
+

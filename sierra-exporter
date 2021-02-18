@@ -14,7 +14,7 @@ function get_data() {
 	api=$(curl -s -w '\n' -X GET \
 	  -H "Content-type: application/json" \
 	  -H "Authorization: Bearer ${access_token}" \
-	  "${apiUri}?offset=${offset}&fields=${defaultFields}&limit=${increment}")
+	  "${apiUri}?offset=${offset}&fields=${defaultFields}&limit=${increment}${deletedrecs}")
 }
 
 baseUri=$(cat sierra.url)
@@ -26,6 +26,22 @@ lastrec=$increment
 
 rectype=$1
 mkdir $rectype 2>/dev/null || true
+
+### eliminates deleted records for some types
+deletedrecs=''
+
+case $rectype in
+	patrons)
+		deletedrecs="&deleted=false"
+		;;
+	items)
+		deletedrecs="&deleted=false"
+		;;
+	bibs)
+		deletedrecs="&deleted=false"
+		;;
+
+esac
 
 apiPath=$(cat sierra.json |jq -r  ".streams[] | select(.streamName==\"${rectype}\") | .apiPath")
 apiUri=${baseUri}${apiPath}

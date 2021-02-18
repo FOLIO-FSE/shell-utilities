@@ -4,7 +4,7 @@
 # usage: ./sierra-exporter [rectype] e.g. ./sierra-exporter bibs
 
 function auth () {
-	auth=$(curl -s -w '\n' -X POST \
+	auth=$(curl -s -k -w '\n' -X POST \
 	  -H "Content-type: application/json" \
 	  -H "Authorization: Basic ${sierra_auth}" \
 	  "${baseUri}/token")
@@ -13,7 +13,7 @@ function auth () {
 }
 
 function get_data() {
-	api=$(curl -s -w '\n' -X GET \
+	api=$(curl -s -k -w '\n' -X GET \
 	  -H "Content-type: application/json" \
 	  -H "Authorization: Bearer ${access_token}" \
 	  "${apiUri}?offset=${offset}&fields=${defaultFields}&limit=${increment}${deletedrecs}")
@@ -48,7 +48,7 @@ auth
 SECONDS=0
 timer=$SECONDS
 
-while [ $lastrec -le $increment ]
+while [[ $lastrec -le $increment ]]
 do
 	get_data
 	printf -v filecounter "%04d" $counter

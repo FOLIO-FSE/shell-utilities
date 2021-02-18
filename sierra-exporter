@@ -31,16 +31,9 @@ mkdir $rectype 2>/dev/null || true
 deletedrecs=''
 
 case $rectype in
-	patrons)
+	patrons|items|bibs)
 		deletedrecs="&deleted=false"
 		;;
-	items)
-		deletedrecs="&deleted=false"
-		;;
-	bibs)
-		deletedrecs="&deleted=false"
-		;;
-
 esac
 
 apiPath=$(cat sierra.json |jq -r  ".streams[] | select(.streamName==\"${rectype}\") | .apiPath")

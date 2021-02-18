@@ -1,5 +1,5 @@
 # sierra.url contains api endpoint e.g. https://library2.mtsu.edu/sierra-api/v5
-# sierra.auth contains the apikey and secret separated by a colon apikey:secret
+# sierra.auth
 
 function auth () {
 	auth=$(curl -s -w '\n' -X POST \
@@ -41,9 +41,12 @@ apiUri=${baseUri}${apiPath}
 
 defaultFields=$(cat sierra.json |jq -r ".streams[] | select(.streamName==\"${rectype}\") | .defaultFields")
 
+auth
+
+start=$SECONDS
+
 while [ $lastrec -le $increment ]
 do
-	auth
 	get_data
 	echo "$api" | jq '.' > "${rectype}/${rectype}.${counter}.json"
 	offset=$(($offset + $increment))
@@ -53,6 +56,14 @@ do
 	lastrec=$(echo "$api" |jq 'select(.total != null) | .total')
 
 	if [[ $lastrec = '' ]]; then echo "End of data found -- exiting." ; exit;fi 
+
+	duration=$(( SECONDS - start ))
+
+	if [[ $duration -gt 2700 ]]; then 
+		# generate new token
+		auth
+		start=$SECONDS
+	fi
 done
 
 

@@ -20,8 +20,8 @@ function get_data() {
 baseUri=$(cat sierra.url)
 sierra_auth=$(cat sierra.auth | base64)
 offset=0
-increment=1
-counter=2000
+increment=2000
+counter=1
 lastrec=$increment
 
 rectype=$1

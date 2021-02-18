@@ -1,5 +1,7 @@
 # sierra.url contains api endpoint e.g. https://library2.mtsu.edu/sierra-api/v5
-# sierra.auth
+# sierra.auth contains apikey followed by colon 
+#
+# usage: ./sierra-exporter [rectype] e.g. ./sierra-exporter bibs
 
 function auth () {
 	auth=$(curl -s -w '\n' -X POST \
@@ -43,29 +45,31 @@ defaultFields=$(cat sierra.json |jq -r ".streams[] | select(.streamName==\"${rec
 
 auth
 
-start=$SECONDS
+SECONDS=0
+timer=$SECONDS
 
 while [ $lastrec -le $increment ]
 do
 	get_data
-	echo "$api" | jq '.' > "${rectype}/${rectype}.${counter}.json"
+	printf -v filecounter "%04d" $counter
+	echo "$api" | jq '.' > "${rectype}/${rectype}.${filecounter}.json"
 	offset=$(($offset + $increment))
-	echo "$offset records processed"
+	if [[ $counter -gt 0 ]]; then echo "$(( $increment*$counter )) records processed in $SECONDS seconds";fi
 	counter=$(($counter + 1))
 	
 	lastrec=$(echo "$api" |jq 'select(.total != null) | .total')
 
-	if [[ $lastrec = '' ]]; then echo "End of data found -- exiting." ; exit;fi 
+	if [[ $lastrec = '' ]]; then increment=0;fi 
+	if [[ $lastrec -lt $increment ]]; then increment=0;fi 
 
-	duration=$(( SECONDS - start ))
-
-	if [[ $duration -gt 2700 ]]; then 
+	if [[ $timer -gt 2700 ]]; then 
 		# generate new token
 		auth
-		start=$SECONDS
+		timer=0
 	fi
 done
 
+echo "Completed processing in $SECONDS seconds"
 
 
 

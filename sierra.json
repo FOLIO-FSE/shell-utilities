@@ -1,5 +1,4 @@
 {
-  "baseUri": "https://library2.mtsu.edu",
   "streams": [
     {
       "streamName": "items",

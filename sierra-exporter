@@ -21,7 +21,7 @@ baseUri=$(cat sierra.url)
 sierra_auth=$(cat sierra.auth | base64)
 offset=0
 increment=1
-counter=1
+counter=2000
 lastrec=$increment
 
 rectype=$1

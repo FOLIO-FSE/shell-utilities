@@ -58,6 +58,14 @@ do
 	counter=$(($counter + 1))
 	
 	lastrec=$(echo "$api" |jq 'select(.total != null) | .total')
+	unrecognized=$(echo "$api" |jq -r 'select(.name != null) | .name')
+
+	if [[ $unrecognized == 'Parameter not recognized' ]]; then
+		echo "Unrecognized parameter requested in sierra.json file"
+		echo "Consult API documentation in Sierra client for fields available for record type you requested"
+		echo "Exiting program."
+		exit
+		fi
 
 	if [[ $lastrec = '' ]]; then increment=0;fi 
 	if [[ $lastrec -lt $increment ]]; then increment=0;fi 

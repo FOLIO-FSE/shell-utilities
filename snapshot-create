@@ -1,0 +1,29 @@
+# Creates a snapshot
+#
+# usage ./snapshot-create
+# 
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+IFS='' read -r -d '' data << EndOfJSON
+{
+    "jobExecutionId" : "67dfac11-1caf-4470-9ad1-d533f6360bdd",
+    "status" : "PARSING_IN_PROGRESS",
+    "metadata" : {
+      "createdDate" : "2020-11-19T11:48:49.547+00:00",
+      "updatedDate" : "2020-11-19T11:48:49.547+00:00"
+    }
+  }
+EndOfJSON
+
+
+
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/source-storage/snapshots")
+
+echo -e "${apicall}" |jq '.'
+
+
+

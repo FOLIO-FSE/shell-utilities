@@ -22,7 +22,7 @@
     {
       "streamName": "agencies",
       "apiPath": "/agencies",
-      "defaultFields": "",
+      "defaultFields": "code,display",
       "noPaging": true
     },
     {

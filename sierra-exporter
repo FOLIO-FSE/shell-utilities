@@ -53,6 +53,14 @@ do
 	get_data
 	printf -v filecounter "%04d" $counter
 	echo "$api" | jq '.' > "${rectype}/${rectype}.${filecounter}.json"
+
+	total=$(echo "$api" |jq 'select(.total != null) | .total')
+
+	if [[ $(( $total )) -lt $increment && $offset -eq 0 ]]; then
+		echo "$(( $total )) records processed in $SECONDS seconds"
+		exit
+		fi
+
 	offset=$(($offset + $increment))
 	if [[ $counter -gt 0 ]]; then echo "$(( $increment*$counter )) records processed in $SECONDS seconds";fi
 	counter=$(($counter + 1))

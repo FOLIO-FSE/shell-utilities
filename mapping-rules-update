@@ -1,0 +1,23 @@
+#
+# updates existing mapping rule file with
+# mapping-rules.json
+#
+# usage: ./mapping-rules
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+
+apicall=$(curl --http1.1 -s -w '\n' -X PUT \
+-H "Content-type: application/json" \
+-H "Accept: application/json" \
+-H "X-Okapi-Tenant: ${tenant}" \
+-H "x-okapi-token: ${okapi_token}" \
+-d @mapping-rules.json \
+"${okapi_url}/mapping-rules")
+
+
+mapping_rules=$(echo $apicall)
+
+echo $mapping_rules

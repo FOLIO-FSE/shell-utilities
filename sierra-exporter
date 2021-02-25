@@ -28,6 +28,8 @@ lastrec=$increment
 
 rectype=$1
 mkdir $rectype 2>/dev/null || true
+rm ${rectype}/* 2>/dev/null
+
 
 ### eliminates deleted records for some types
 deletedrecs=''
@@ -52,21 +54,29 @@ while [[ $lastrec -le $increment ]]
 do
 	get_data
 	printf -v filecounter "%04d" $counter
-	echo "$api" | jq '.' > "${rectype}/${rectype}.${filecounter}.json"
+
+	case $rectype in
+		items)
+		####### concatenate individual files and convert to onel 
+		echo "$api" | jq -c '.entries[]' >> "${rectype}/all_items.json"
+		;;
+		*)
+		###### default behavior is to create separate files
+		echo "$api" | jq '.' > "${rectype}/${rectype}.${filecounter}.json"
+		;;
+	esac
 
 	total=$(echo "$api" |jq 'select(.total != null) | .total')
 
 	if [[ $(( $total )) -lt $increment && $offset -eq 0 ]]; then
+		echo "$(( $total )) records processed in $SECONDS seconds"
 		unrecognized=$(echo "$api" |jq -r 'select(.name != null) | .name')
-	
 		if [[ $unrecognized == 'Parameter not recognized' ]]; then
 			echo "Unrecognized parameter requested in sierra.json file"
 			echo "Consult API documentation in Sierra client for fields available for record type you requested"
 			echo "Exiting program."
 			exit
 			fi
-
-		echo "$(( $total )) records processed in $SECONDS seconds"
 		exit
 		fi
 
@@ -75,6 +85,7 @@ do
 	counter=$(($counter + 1))
 	
 	lastrec=$(echo "$api" |jq 'select(.total != null) | .total')
+
 
 	if [[ $lastrec = '' ]]; then increment=0;fi 
 	if [[ $lastrec -lt $increment ]]; then increment=0;fi 
@@ -85,6 +96,7 @@ do
 		timer=0
 	fi
 done
+
 
 echo "Completed processing in $SECONDS seconds"
 

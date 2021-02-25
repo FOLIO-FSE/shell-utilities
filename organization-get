@@ -2,14 +2,24 @@
 #
 # useage: ./organization-get "org_code"
 
-org_code=$1
+org=$1
 
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations/organizations?query=code=${org_code}")
+if [[ $org =~ [a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12} ]]; then
+	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations/organizations/${org}")
+else
+	apicall=$(curl -G -s -w '\n' -X GET \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  --data-urlencode "query=code=${org}" \
+	  "${okapi_url}/organizations/organizations")
+fi
 
-organization_id=$(echo $apicall |jq -r '.organizations[].id')
 
-echo $organization_id
+organization=$(echo $apicall |jq '.')
+
+echo $organization

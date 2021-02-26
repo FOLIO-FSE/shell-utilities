@@ -1,0 +1,55 @@
+#
+# Scans MARC file, pulls out all available fields
+# and creates a test record
+#
+
+file=$1
+outfile=$(echo "$1" | sed 's/\.....\?$//')
+
+echo "Converting MARC file to a text representation"
+mono /home/ssm-user/.local/bin/marcedit/cmarcedit.exe -s "$1" -d "${outfile}.txt" -break
+
+####### breaks marc record
+outfile=$(echo "$1" | sed 's/\.....\?$//')
+
+echo "Identifying all existing fields in file"
+
+####### extract fields and sort
+fields=$(cat "${outfile}.txt" |cut -c1-4 |sort -u |xargs)
+
+IFS=' ' read -r -a fieldarray <<< ${fields}
+
+finalarray=()
+
+rm testfile.txt 2> /dev/null || true
+
+arr_counter=1
+
+for field in "${fieldarray[@]}"
+do
+	if [[ $field =~ ^=LDR ]];then 
+		finalarray[0]=$field
+	else
+		finalarray[(( $arr_counter ))]=$field
+	fi
+	(( x++ ))
+	(( arr_counter++ ))
+done
+
+
+echo "Searching text representation for all MARC fields"
+
+for entry in "${finalarray[@]}"
+do
+	grep -m 1 "^${entry}" "${outfile}.txt" |tee -a testfile.txt
+done
+
+echo ""
+echo ""
+echo "Building MARC testfile"
+mono /home/ssm-user/.local/bin/marcedit/cmarcedit.exe -s testfile.txt -d testfile.mrc -make
+
+echo ""
+echo ""
+echo ""
+echo "Testfiles testfile.txt and testfile.mrc have been created"

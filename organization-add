@@ -214,6 +214,7 @@ IFS='' read -r -d '' org << EndOfOrg
  "id" : "${uuid}",
  "name" : "${name}",
  "code" : "${org_code}",
+ "description" : "${note} ${contact}",
  "exportToAccounting" : false,
  "status" : "Active",
  "aliases" : [ ],
@@ -260,6 +261,10 @@ correct_email() {
 			email=${addr2}
 			addr2=""
 		fi
+		if [[ "${phone}" =~ "@" ]]; then
+			email=${phone}
+			phone=""
+		fi
 	fi
 	if [[ ! -z "$email" ]]; then
 		echo "${email}"
@@ -270,8 +275,19 @@ add_email() {
 	org=$(echo ${org} | jq ".emails += [{ \"value\" : \"${email}\", \"isPrimary\" : false, \"categories\" : [] }]")
 }
 
+add_phone() {
+	org=$(echo ${org} | jq ".phoneNumber += [{ \"value\" : \"${phone}\", \"isPrimary\" : false, \"categories\" : [] }]")
+}
+
 add_address() {
-	org=$(echo ${org} | jq ".addresses += [{ \"addressLine1\" : \"${addr1}\", \"addressLine2\" : \"${addr2}\", \"city\" : \"${city}\", \"stateRegion\" : \"${state}\", \"zipCode\" : \"${zip}\", \"country\" : \"${country}\", \"isPrimary\" : false, \"categories\" : [] }]")
+	### add address only if one with same addr1 not only in record
+	#tmp=$(echo ${org} | jq '.addresses[] | select(.addressLine1 == "${addr1}")')
+	tmp=$(echo ${org} | jq ".addresses[] | select(.addressLine1 == \"${addr1}\")")
+
+	if [[ -z ${tmp} ]]; then
+		org=$(echo ${org} | jq ".addresses += [{ \"addressLine1\" : \"${addr1}\", \"addressLine2\" : \"${addr2}\", \"city\" : \"${city}\", \"stateRegion\" : \"${state}\", \"zipCode\" : \"${zip}\", \"country\" : \"${country}\", \"isPrimary\" : false, \"categories\" : [] }]")
+		fi
+#	echo ${org}
 
 }
 
@@ -286,14 +302,7 @@ conditional_cat_add() {
 
 add_categories() {
 
-	### assume a regular address, overwrite if email
-	arrlen=$(echo "${org}" |jq '.addresses |length-1')
-	if [[ $arrlen =~ ^[\-0-9]+$ ]] && (( arrlen > 0)); then
-		path=".addresses[${arrlen}].categories"
-	else
-		path=".addresses[0].categories"
-		fi
-
+	# check for email address, otherise write as regular address
 	if [[ $emailflag == 'Y' ]];then 
 		arrlen=$(echo "${org}" |jq '.emails |length-1')
 		if [[ $arrlen =~ ^[\-0-9]+$ ]] && (( arrlen > 0)); then
@@ -301,7 +310,13 @@ add_categories() {
 		else
 			path=".emails[0].categories"
 			fi
-
+		else
+		arrlen=$(echo "${org}" |jq '.addresses |length-1')
+		if [[ $arrlen =~ ^[\-0-9]+$ ]] && (( arrlen > 0)); then
+			path=".addresses[${arrlen}].categories"
+		else
+			path=".addresses[0].categories"
+			fi
 		fi
 
 	if [[ $orderflag == 'Y' ]];then 
@@ -331,7 +346,7 @@ add_categories() {
 	if [[ $claimflag == 'Y' ]];then 
 		conditional_cat_add "${claims}"
 		fi
-	echo "${org}"
+#	echo "${org}"
 }
 
 # create temp file to speed processing
@@ -355,6 +370,7 @@ do
 	returnflag="${record[19]}"
 	claimflag="${record[20]}"
 	emailflag="${record[21]}"
+	contact="${record[24]}"
 	addr1="${record[25]}"
 	addr2="${record[26]}"
 	city="${record[30]}"
@@ -363,6 +379,8 @@ do
 	country="${record[33]}"
 	phone="${record[34]}"
 	note="${record[36]}"
+
+
 	
 	### convert text literal to ISO code
 	country=$(get_country_code "${country}")
@@ -380,12 +398,19 @@ do
 		add_email
 	fi
 
-	add_address
-	org=$(add_categories)
+	if [[ ${#phone} > 0 ]]; then
+		add_phone	
+	fi
+
+	if [[ ${#addr1} > 0 ]]; then
+		add_address
+	fi
+
+	add_categories
+		echo $org
 
 
 	vendors["${org_code}"]=${org}
-	echo ${org}
 done <<< "$(cat tmp)" # process substitution necessary for variables in array to retain values
 
 for i in "${!vendors[@]}"

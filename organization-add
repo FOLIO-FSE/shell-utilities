@@ -1,0 +1,403 @@
+# Creates location based on contents of tab delimited file
+#
+# Code is expected in column 1 of a file named "groups"
+# Description is set in column 2
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+filename="skid_orgs.txt"
+dos2unix $filename
+
+######## TAGS ############
+payments='c2eb8638-f5c1-4321-a2a8-78c262f4f711'
+orders='ab760714-4185-4859-b0dd-3e72f01c5c52'
+custserv='f52ceea4-8e35-404b-9ebd-5c7db6613195'
+returns='28f1af24-e88f-45c9-8b65-8091afe4e799'
+shipments='cbfaec07-5df1-4197-bfa5-1bc91f9073cf'
+claims='53aaa259-892e-458f-9283-eb4d95523f9d'
+
+extract_fields() {
+	fieldpos=$1
+	field="$(cut -f${fieldpos} <<<${line})"
+	### strip quotes and remove leading/trailing whitespace
+	field=$(sed 's/["'\'']//g' <<<${field} | xargs -0)
+	echo $field
+}
+
+get_country_code()  {
+	country="$1"
+	# use simple regexes, default to default value if none found
+	default='USA' 	
+	
+	country=$(sed "
+	s/^alger.*/DZA/i # Algeria 
+	s/^argent.*/ARG/i # Argentina
+	s/^ar.*/ARG/i # Argentina
+	s/^armeni.*/ARM/i # Armenia
+	s/^austral.*/AUS/i # Australia
+	s/^au.*/AUS/i # Australia
+	s/^at.*/AUT/i # Austria
+	s/^baham.*/BHS/i # Bahamas
+	s/^bangla.*/BGD/i # Bangladesh
+	s/^barbados.*/BRB/i # Barbados
+	s/^be.*/BEL/i # Belgium
+	s/^belg.*/BEL/i # Belgium
+	s/^belarus.*/BLR/i # Belarus
+	s/^bermu.*/BMU/i # Bermuda
+	s/^boliv.*/BOL/i # Bolivia
+	s/^botsw.*/BWA/i # Botswana
+	s/^br.*/BRA/i # Brazil
+	s/^bra[sz]il.*/BRA/i # Brazil
+	s/^brunei.*/BRN/i # Brunei
+	s/^bulgar.*/BGR/i # Bulgaria
+	s/^BC.*/CAN/i # Canada
+	s/^can\?.*/CAN/i # Canada
+	s/^cana.*/CAN/i # Canada
+	s/^canada.*/CAN/i # Canada
+	s/^ontario.*/CAN/i # Canada
+	s/^oshawa.*/CAN/i # Canada
+	s/^quebec.*/CAN/i # Canada
+	s/^ch.*/CHL/i # Chile
+	s/^chile.*/CHL/i # Chile
+	s/^china.*/CHN/i # China 
+	s/^cn.*/CHN/i # China
+	s/^netherl.*/NLD/i # China 
+	s/^co.*/COL/i # Colombia
+	s/^colomb.*/COL/i # Colombia
+	s/^cr.*/CRI/i # Costa Rica
+	s/^costa ri.*/CRI/i # Costa Rica
+	s/^hr.*/HRV/i # Croatia
+	s/^croatia.*/HRV/i # Croatia
+	s/^cuba.*/CUB/i # Cuba
+	s/^cyprus.*/CYP/i # Cyprus
+	s/^cz.*/CZE/i # Czech Republic
+	s/^czech.*/CZE/i # Czech Republic
+	s/^dk.*/DNK/i # Denmark
+	s/^denm.*/DNK/i # Denmark
+	s/^ecuador.*/ECU/i # Ecuador
+	s/^england.*/GBR/i # England
+	s/^de.*/DEU/i # Germany
+	s/^deutsch.*/DEU/i # Germany
+	s/^german.*/DEU/i # Germany
+	s/^egypt.*/EGY/i # Egypt
+	s/^estonia.*/LKA/i # Estonia
+	s/^fi.*/FIN/i # Finland
+	s/^finland.*/FIN/i # Finland
+	s/^fr.*/FRA/i # France
+	s/^france.*/FRA/i # France
+	s/^gambia.*/GMB/i # France
+	s/^georgia.*/GEO/i # Georgia
+	s/^ghana.*/GHA/i # Ghana
+	s/^greece.*/GRC/i # Greece
+	s/^greenla.*/GRN/i # Greenland
+	s/^guam.*/GUM/i # Guam
+	s/^guyana.*/GUY/i # Guyana
+	s/^haiti.*/HTI/i # Haiti
+	s/^hondur.*/HND/i # Honduras
+	s/^hong k.*/HKG/i # Hong Kong
+	s/^hu.*/HUN/i # Hungary
+	s/^hungar.*/HUN/i # Hungary
+	s/^iceland.*/ISL/i # Iceland
+	s/^indones.*/IDN/i # Indonesia
+	s/^india.*/IND/i # India
+	s/^iran.*/IRN/i # Iran
+	s/^ireland.*/IRL/i # Ireland
+	s/^is.*/ISR/i # Israel
+	s/^isreal.*/ISR/i # Israel
+	s/^jerusalem.*/ISR/i # Israel
+	s/^israel.*/ISR/i # Israel
+	s/^it.*/ITA/i # Italy
+	s/^ital.*/ITA/i # Italy
+	s/^jm.*/JAM/i # Jamaica
+	s/^jamai.*/JAM/i # Jamaica
+	s/^jo.*/JOR/i # Jordan
+	s/^jordan.*/ITA/i # Jordan
+	s/^ke.*/KEN/i # Kenya
+	s/^kenya.*/KEN/i # Kenya
+	s/^jp.*/JPN/i # Japan
+	s/^japan.*/ITA/i # Japan
+	s/^korea.*/KOR/i # Korea
+	s/^kuwait.*/KWT/i # Kuwait
+	s/^llv.*/LVA/i # Latvia
+	s/^latvia.*/LVA/i # Latvia
+	s/^lb.*/LBN/i # Lebanon
+	s/^lebanon.*/LBN/i # Lebanon
+	s/^lithuan.*/LTU/i # Lithuania
+	s/^luxemb.*/LUX/i # Luxembourg
+	s/^macedonia.*/MKD/i # Macedonia
+	s/^malas.*/MYS/i # Malta
+	s/^malay.*/MYS/i # Malta
+	s/^malta.*/MLT/i # Malta
+	s/^moroc.*/MAR/i # Morocco
+	s/^mx.*/MEX/i # Mexico
+	s/^mexico.*/MEX/i # Mexico
+	s/^nm.*/NAM/i # Nambia
+	s/^nambia.*/NAM/i # Nambia
+	s/^nl.*/NLD/i # Netherlands
+	s/^nederl.*/NLD/i # Netherlands
+	s/^netherl.*/NLD/i # Netherlands
+	s/^nepal.*/NPL/i # Nepal
+	s/^caledonia.*/NCL/i # New Calendonia
+	s/^nz.*/NZL/i # New Zealand
+	s/^zeala.*/NZL/i # New Zealand
+	s/^zeala.*/NZL/i # New Zealand
+	s/^aotearoa.*/NZL/i # New Zealand
+	s/^nigeria.*/NGA/i # Nigeria
+	s/^no.*/NOR/i # Norway
+	s/^pakist.*/PAK/i # Pakistan
+	s/^papua.*/PNG/i # Papua New Guinea
+	s/^paragu.*/PRY/i # Paraguay
+	s/^peru.*/PER/i # Peru
+	s/^philip.*/PHL/i # Philipinnes
+	s/^pl.*/POL/i # Poland
+	s/^pol.*/POL/i # Poland
+	s/^poland.*/POL/i # Poland
+	s/^pt.*/PRT/i # Portugal
+	s/^portug.*/PRT/i # Portugal
+	s/^puerto ri.*/PRI/i # Puero Rico
+	s/^ro.*/ROU/i # Romania
+	s/^romani.*/ROU/i # Romania
+	s/^russia.*/RUS/i # Russian Federation
+	s/^marino.*/SMR/i # San Marino
+	s/^saudi.*/SAU/i # Saudi Arabia
+	s/^leone.*/SLE/i # Sierra Leone
+	s/^sg.*/SGP/i # Singapore
+	s/^singapore.*/SGP/i # Singapore
+	s/^sk.*/SVK/i # Slovokia
+	s/^slovak.*/SVK/i # Slovokia
+	s/^si.*/SVN/i # Slovenia
+	s/^slovenia.*/SVN/i # Slovenia
+	s/^somalia.*/SOM/i # Somalia
+	s/^south afr.*/ZAF/i # South Africa
+	s/^es.*/ESP/i # Spain
+	s/^espan.*/ESP/i # Spain
+	s/^spain.*/ESP/i # Spain
+	s/^ceylon.*/LKA/i # Sri Lanka
+	s/^lanka.*/LKA/i # Sri Lanka
+	s/^syria.*/SYR/i # Syria
+	s/^se.*/SWE/i # Sweden
+	s/^swed.*/SWE/i # Sweden
+	s/^suisse.*/CHE/i # Switzerland
+	s/^switz.*/CHE/i # Switzerland
+	s/^ch.*/CHE/i # Switzerland
+	s/^taiwan.*/TWN/i # Taiwan
+	s/^tanzan.*/TZA/i # Tanzania
+	s/^thaila.*/THA/i # Thailand
+	s/^tunisia.*/TUN/i # Tunisia
+	s/^turkey.*/TUR/i # Turkey
+	s/^trinidad.*/TTO/i # Trinibad and Tobago
+	s/^gb.*/GBR/i # UK
+	s/^uni[^ ]* \?k.*/GBR/i # UK
+	s/^u[\. ]*k[\. ]*.*/GBR/i # UK
+	s/^britain.*/GBR/i # UK
+	s/^scotland.*/GBR/i # UK
+	s/^ukrai.*/UKR/i # UKR
+	s/^urugua.*/URY/i # Uruguay
+	s/^u[\. ]*s[\. ]*a[\. ]*.*/USA/i # USA
+	s/^usd\?.*/USA/i # USA
+	s/^united sta.*/USA/i # USA
+	s/^[0-9][0-9][0-9][0-9].*/USA/i # USA
+	s/^$/${default}/i" <<< "${country}")
+
+	
+	echo "${country}"
+}
+
+create_org_record() {
+
+uuid=$(uuidgen)
+	
+IFS='' read -r -d '' org << EndOfOrg
+{
+ "id" : "${uuid}",
+ "name" : "${name}",
+ "code" : "${org_code}",
+ "exportToAccounting" : false,
+ "status" : "Active",
+ "aliases" : [ ],
+ "addresses" : [ {
+ } ],
+ "phoneNumbers" : [ ],
+ "emails" : [ ],
+ "urls" : [ ],
+ "contacts" : [ ],
+ "agreements" : [ ],
+ "erpCode" : "${account}",
+ "vendorCurrencies" : [ ],
+ "edi" : {
+   "vendorEdiType" : "31B/US-SAN",
+   "libEdiType" : "31B/US-SAN",
+   "ediFtp" : {
+     "ftpFormat" : "SFTP",
+     "ftpMode" : "ASCII",
+     "ftpConnMode" : "Active"
+   }
+ },
+ "interfaces" : [ ],
+ "accounts" : [ ],
+ "isVendor" : true,
+ "changelogs" : [ ],
+ "acqUnitIds" : [ ]
+} 
+EndOfOrg
+
+echo "${org}"
+}
+
+
+correct_email() {
+	email=''
+	emailstr=''
+
+	if [[ "${emailflag}" == "Y" ]]; then
+		if [[ "${addr1}" =~ "@" ]]; then
+			email=${addr1}
+			addr1=""
+		fi
+		if [[ "${addr2}" =~ "@" ]]; then
+			email=${addr2}
+			addr2=""
+		fi
+	fi
+	if [[ ! -z "$email" ]]; then
+		echo "${email}"
+	fi
+}
+
+add_email() {
+	org=$(echo ${org} | jq ".emails += [{ \"value\" : \"${email}\", \"isPrimary\" : false, \"categories\" : [] }]")
+}
+
+add_address() {
+	org=$(echo ${org} | jq ".addresses += [{ \"addressLine1\" : \"${addr1}\", \"addressLine2\" : \"${addr2}\", \"city\" : \"${city}\", \"stateRegion\" : \"${state}\", \"zipCode\" : \"${zip}\", \"country\" : \"${country}\", \"isPrimary\" : false, \"categories\" : [] }]")
+
+}
+
+conditional_cat_add() {
+	# adds element only if not already present
+	value=$1
+	# global variable was used for path because of argument passing issues
+	tmp=$(echo "${org}" | jq "select(${path} | index(\"$value\") | not) | ${path}  += [\"${value}\"]")
+	# append value only if successful
+	if [[ ${#tmp} > 0 ]];then org=${tmp};fi
+}
+
+add_categories() {
+
+	### assume a regular address, overwrite if email
+	arrlen=$(echo "${org}" |jq '.addresses |length-1')
+	if [[ $arrlen =~ ^[\-0-9]+$ ]] && (( arrlen > 0)); then
+		path=".addresses[${arrlen}].categories"
+	else
+		path=".addresses[0].categories"
+		fi
+
+	if [[ $emailflag == 'Y' ]];then 
+		arrlen=$(echo "${org}" |jq '.emails |length-1')
+		if [[ $arrlen =~ ^[\-0-9]+$ ]] && (( arrlen > 0)); then
+			path=".emails[${arrlen}].categories"
+		else
+			path=".emails[0].categories"
+			fi
+
+		fi
+
+	if [[ $orderflag == 'Y' ]];then 
+		conditional_cat_add "${orders}"
+		fi
+	if [[ $paymentflag == 'Y' ]];then 
+		conditional_cat_add "${payments}"
+		fi
+	if [[ $returnflag == 'Y' ]];then 
+		conditional_cat_add "${returns}"
+		fi
+	if [[ $claimflag == 'Y' ]];then 
+		conditional_cat_add "${claims}"
+		fi
+	
+	### add categories to the generic record as well as specific address field
+	path='.categories'
+	if [[ $orderflag == 'Y' ]];then 
+		conditional_cat_add "${orders}" 
+		fi
+	if [[ $paymentflag == 'Y' ]];then 
+		conditional_cat_add "${payments}"
+		fi
+	if [[ $returnflag == 'Y' ]];then 
+		conditional_cat_add "${returns}"
+		fi
+	if [[ $claimflag == 'Y' ]];then 
+		conditional_cat_add "${claims}"
+		fi
+	echo "${org}"
+}
+
+# create temp file to speed processing
+# remove quotes and pipes to avoid collisions
+cat $filename | tr -d "'" |tr -d '\"' |tr $'\t' '|' |sed '/^|/d' > tmp
+
+IFS='|' 
+# create associative array to keep track of vendors that have been processed
+declare -A vendors
+
+while read line
+do
+	# break line into array
+	record=($line)
+	
+	org_code="${record[0]}"
+	account="${record[2]}"
+	name="${record[13]}"
+	orderflag="${record[17]}"
+	paymentflag="${record[18]}"
+	returnflag="${record[19]}"
+	claimflag="${record[20]}"
+	emailflag="${record[21]}"
+	addr1="${record[25]}"
+	addr2="${record[26]}"
+	city="${record[30]}"
+	state="${record[31]}"
+	zip="${record[32]}"
+	country="${record[33]}"
+	phone="${record[34]}"
+	note="${record[36]}"
+	
+	### convert text literal to ISO code
+	country=$(get_country_code "${country}")
+
+	#### create a reccord if it doesn't already exist	
+	if [ ${vendors["${org_code}"]+abc} ];then
+		org=${vendors["${org_code}"]}
+	else
+		org=$(create_org_record)
+	fi
+
+	email=$(correct_email)
+
+	if [[ ${#email} > 0 ]]; then
+		add_email
+	fi
+
+	add_address
+	org=$(add_categories)
+
+
+	vendors["${org_code}"]=${org}
+	echo ${org}
+done <<< "$(cat tmp)" # process substitution necessary for variables in array to retain values
+
+for i in "${!vendors[@]}"
+do
+#	echo "key: $i"
+#	echo "value: ${vendors[$i]}"
+	echo "${vendors[$i]}" >> vendors
+done
+
+#apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${org}" "${okapi_url}/organizations/organizations")
+
+#echo -e "${apicall}" |jq '.'
+echo "${apicall}"
+
+

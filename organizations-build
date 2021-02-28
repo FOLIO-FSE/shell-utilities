@@ -281,14 +281,11 @@ add_phone() {
 
 add_address() {
 	### add address only if one with same addr1 not only in record
-	#tmp=$(echo ${org} | jq '.addresses[] | select(.addressLine1 == "${addr1}")')
 	tmp=$(echo ${org} | jq ".addresses[] | select(.addressLine1 == \"${addr1}\")")
 
 	if [[ -z ${tmp} ]]; then
 		org=$(echo ${org} | jq ".addresses += [{ \"addressLine1\" : \"${addr1}\", \"addressLine2\" : \"${addr2}\", \"city\" : \"${city}\", \"stateRegion\" : \"${state}\", \"zipCode\" : \"${zip}\", \"country\" : \"${country}\", \"isPrimary\" : false, \"categories\" : [] }]")
 		fi
-#	echo ${org}
-
 }
 
 conditional_cat_add() {
@@ -344,10 +341,6 @@ add_categories() {
 			fi
 		update_categories
 		fi
-	
-	### add categories to the generic record as well as specific address field
-	path='.categories'
-	update_categories
 }
 
 # create temp file to speed processing
@@ -358,7 +351,7 @@ IFS='|'
 # create associative array to keep track of vendors that have been processed
 declare -A vendors
 
-while read line
+while read -r line
 do
 	# break line into array
 	record=($line)
@@ -414,13 +407,17 @@ do
 	vendors["${org_code}"]=${org}
 done <<< "$(cat tmp)" # process substitution necessary for variables in array to retain values
 
+rm vendors 2>/dev/null
+echo 'Writing all organizations to file '
+
 for i in "${!vendors[@]}"
 do
 #	echo "key: $i"
 #	echo "value: ${vendors[$i]}"
-	echo "${vendors[$i]}" >> vendors
+	echo "${vendors[$i]}" |jq -c >> vendors
 done
 
+echo 'done writing file named "vendors"'
 #apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${org}" "${okapi_url}/organizations/organizations")
 
 #echo -e "${apicall}" |jq '.'

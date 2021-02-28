@@ -345,7 +345,7 @@ add_categories() {
 
 # create temp file to speed processing
 # remove quotes and pipes to avoid collisions
-cat $filename | tr -d "'" |tr -d '\"' |tr $'\t' '|' |sed '/^|/d' > tmp
+cat $filename | tr -d "'" |tr -d '\"' |tr -d '' |tr $'\t' '|' |sed '/^|/d' > tmp
 
 IFS='|' 
 # create associative array to keep track of vendors that have been processed
@@ -382,8 +382,10 @@ do
 	#### create a reccord if it doesn't already exist	
 	if [ ${vendors["${org_code}"]+abc} ];then
 		org=${vendors["${org_code}"]}
+		echo "Updating record for ${name}"
 	else
 		org=$(create_org_record)
+		echo "Creating initial record for ${name}"
 	fi
 
 	email=$(correct_email)
@@ -401,7 +403,6 @@ do
 	fi
 
 	add_categories
-		echo $org
 
 
 	vendors["${org_code}"]=${org}

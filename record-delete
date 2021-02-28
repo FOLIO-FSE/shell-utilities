@@ -1,4 +1,4 @@
-# Supply list of uuids in file named infile
+# Supply without a uuid to delete all of many record types
 # 
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
@@ -6,7 +6,7 @@ okapi_token=$(cat okapi.token)
 
 recordtype="users"
 
-cat infile | while read uuid
+cat junk2 | while read uuid
 
 do
 
@@ -19,6 +19,7 @@ uuid=$(sed 's/[^0-9a-z\-]//g' <<< $uuid)
 #recordtype="item-storage/items"
 #recordtype="location-units/libraries"
 #recordtype="locations"
+recordtype="organizations/organizations"
 #recordtype="service-points"
 #recordtype="users"
 
@@ -27,6 +28,5 @@ echo "${okapi_url}/${recordtype}/${uuid}"
 apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}")
 
 echo ${apicall}
-
 done
 

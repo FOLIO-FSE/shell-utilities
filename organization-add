@@ -276,7 +276,7 @@ add_email() {
 }
 
 add_phone() {
-	org=$(echo ${org} | jq ".phoneNumber += [{ \"value\" : \"${phone}\", \"isPrimary\" : false, \"categories\" : [] }]")
+	org=$(echo ${org} | jq ".phoneNumbers += [{ \"phoneNumber\" : \"${phone}\", \"isPrimary\" : false, \"categories\" : [] }]")
 }
 
 add_address() {
@@ -300,6 +300,21 @@ conditional_cat_add() {
 	if [[ ${#tmp} > 0 ]];then org=${tmp};fi
 }
 
+update_categories() {
+	if [[ $orderflag == 'Y' ]];then 
+		conditional_cat_add "${orders}"
+		fi
+	if [[ $paymentflag == 'Y' ]];then 
+		conditional_cat_add "${payments}"
+		fi
+	if [[ $returnflag == 'Y' ]];then 
+		conditional_cat_add "${returns}"
+		fi
+	if [[ $claimflag == 'Y' ]];then 
+		conditional_cat_add "${claims}"
+		fi
+}
+
 add_categories() {
 
 	# check for email address, otherise write as regular address
@@ -317,36 +332,22 @@ add_categories() {
 		else
 			path=".addresses[0].categories"
 			fi
+		update_categories
 		fi
-
-	if [[ $orderflag == 'Y' ]];then 
-		conditional_cat_add "${orders}"
-		fi
-	if [[ $paymentflag == 'Y' ]];then 
-		conditional_cat_add "${payments}"
-		fi
-	if [[ $returnflag == 'Y' ]];then 
-		conditional_cat_add "${returns}"
-		fi
-	if [[ $claimflag == 'Y' ]];then 
-		conditional_cat_add "${claims}"
+	# check for email address, otherise write as regular address
+	if [[ ${#phone} > 0 ]];then 
+		arrlen=$(echo "${org}" |jq '.phoneNumbers |length-1')
+		if [[ $arrlen =~ ^[\-0-9]+$ ]] && (( arrlen > 0)); then
+			path=".phoneNumbers[${arrlen}].categories"
+		else
+			path=".phoneNumbers[0].categories"
+			fi
+		update_categories
 		fi
 	
 	### add categories to the generic record as well as specific address field
 	path='.categories'
-	if [[ $orderflag == 'Y' ]];then 
-		conditional_cat_add "${orders}" 
-		fi
-	if [[ $paymentflag == 'Y' ]];then 
-		conditional_cat_add "${payments}"
-		fi
-	if [[ $returnflag == 'Y' ]];then 
-		conditional_cat_add "${returns}"
-		fi
-	if [[ $claimflag == 'Y' ]];then 
-		conditional_cat_add "${claims}"
-		fi
-#	echo "${org}"
+	update_categories
 }
 
 # create temp file to speed processing

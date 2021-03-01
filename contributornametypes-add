@@ -1,0 +1,42 @@
+# Creates nametypes based on contents of single column file named loantypes containing loan types
+#
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+
+IFS='' read -r -d '' nametype1 << EndOfNameType1
+        {
+            "id": "2b94c631-fca9-4892-a730-03ee529ffe2a",
+            "name": "Personal name",
+            "ordering": "1"
+        }
+EndOfNameType1
+
+IFS='' read -r -d '' nametype2 << EndOfNameType2
+        {
+            "id": "e8b311a6-3b21-43f2-a269-dd9310cb2d0a",
+            "name": "Meeting name",
+            "ordering": "3"
+        }
+EndOfNameType2
+
+IFS='' read -r -d '' nametype3 << EndOfNameType3
+        {
+            "id": "f5bda109-a719-4f72-b797-b9c22f45e4e1",
+            "name": "Corporate name",
+            "ordering": "2"
+        }
+EndOfNameType3
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${nametype1}" "${okapi_url}/contributor-name-types")
+echo -e "${apicall}" 
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${nametype2}" "${okapi_url}/contributor-name-types")
+echo -e "${apicall}" 
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${nametype3}" "${okapi_url}/contributor-name-types")
+echo -e "${apicall}"
+
+
+
+

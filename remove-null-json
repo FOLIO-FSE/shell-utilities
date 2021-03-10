@@ -1,0 +1,2 @@
+# remove null values. Modify select expression to retain empty arrays and objects
+jq 'walk( if type == "object" then with_entries(select(.value != null and .value != "" and .value != {} and .value != [])) else . end)' $1

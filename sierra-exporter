@@ -19,6 +19,64 @@ function get_data() {
 	  "${apiUri}?offset=${offset}&fields=${defaultFields}&limit=${increment}${deletedrecs}")
 }
 
+function patrons2tsv() {
+
+cat patrons/patrons.0*.json |jq -r '.entries[] | [
+	.id // "",
+	.barcodes[0] // "",
+	.emails[0] // "nomail@nomail.com", 
+	.addresses[0].lines[0] // "",
+	.addresses[0].lines[1] // "",
+	.names[0] // "",
+	.phones[0].number // "", 
+	.fixedFields."47".value // "", # patron group
+	.fixedFields."43".value // ""  # expiration date
+] |join("|")' > patrons.tmp
+
+echo -e "sierra_id\tbarcode\temail\tfname\tlname\taddr1\taddr2\tcity\tstate\tzip\tphone\tgroup\texpiration" > patrons.tsv
+
+while IFS=$'\n' read -r line; do
+	IFS='|' read id barcode email addr1 addr2 name phone group expiration <<< $line 
+	
+	city=""
+	zip=""
+	state=""
+
+	## break address line into components. Assume that city/state/zip is in addr2
+	## Hope for the city followed by a comma followed by state and zip
+	## If comma not found or if it doesn't look like something that ends in a zip
+	## then leave everything as it is
+
+	IFS=',' read city statezip <<< ${addr2}
+
+	IFS=' ' read -r -a stziparr <<< ${statezip}
+	
+	if [[ ${#stziparr[@]} > 1 ]]; then
+		if [[ ${stziparr[-1]} =~ ^[0-9\-]*$ ]]; then
+			zip=${stziparr[-1]} 
+			state=${stziparr[-2]}
+		fi
+	fi
+
+
+	## detect name
+	fname=" "
+	lname=" "
+
+	if [[ name != "" ]]; then
+		fname=$(echo $name | cut -f2 -d,)
+		lname=$(echo $name | cut -f1 -d,)
+	fi
+
+	echo -e "${id}\t${barcode}\t${email}\t${fname}\t${lname}\t${addr1}\t${addr2}\t${city}\t${state}\t${zip}\t${phone}\t${group}\t${expiration}" | tee -a patrons.tsv
+done < patrons.tmp
+
+rm patrons.tmp
+
+
+echo -e "\n\nAll patrons have been exported. JSON files are in the patrons directory, and a delimited file patrons.tsv is in your current working directory\n"
+}
+
 baseUri=$(cat sierra.url)
 sierra_auth=$(cat sierra.auth | base64)
 offset=0
@@ -28,8 +86,6 @@ lastrec=$increment
 
 rectype=$1
 mkdir $rectype 2>/dev/null || true
-rm ${rectype}/* 2>/dev/null
-
 
 ### eliminates deleted records for some types
 deletedrecs=''
@@ -54,38 +110,12 @@ while [[ $lastrec -le $increment ]]
 do
 	get_data
 	printf -v filecounter "%04d" $counter
-
-	case $rectype in
-		items)
-		####### concatenate individual files and convert to onel 
-		echo "$api" | jq -c '.entries[]' >> "${rectype}/all_items.json"
-		;;
-		*)
-		###### default behavior is to create separate files
-		echo "$api" | jq '.' > "${rectype}/${rectype}.${filecounter}.json"
-		;;
-	esac
-
-	total=$(echo "$api" |jq 'select(.total != null) | .total')
-
-	if [[ $(( $total )) -lt $increment && $offset -eq 0 ]]; then
-		echo "$(( $total )) records processed in $SECONDS seconds"
-		unrecognized=$(echo "$api" |jq -r 'select(.name != null) | .name')
-		if [[ $unrecognized == 'Parameter not recognized' ]]; then
-			echo "Unrecognized parameter requested in sierra.json file"
-			echo "Consult API documentation in Sierra client for fields available for record type you requested"
-			echo "Exiting program."
-			exit
-			fi
-		exit
-		fi
-
+	echo "$api" | jq '.' > "${rectype}/${rectype}.${filecounter}.json"
 	offset=$(($offset + $increment))
 	if [[ $counter -gt 0 ]]; then echo "$(( $increment*$counter )) records processed in $SECONDS seconds";fi
 	counter=$(($counter + 1))
 	
 	lastrec=$(echo "$api" |jq 'select(.total != null) | .total')
-
 
 	if [[ $lastrec = '' ]]; then increment=0;fi 
 	if [[ $lastrec -lt $increment ]]; then increment=0;fi 
@@ -97,8 +127,13 @@ do
 	fi
 done
 
-
 echo "Completed processing in $SECONDS seconds"
 
 
+case $rectype in
+	patrons)
+		echo "Building TSV patron file"	
+		patrons2tsv
+		;;
+esac
 

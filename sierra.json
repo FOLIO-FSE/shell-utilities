@@ -10,7 +10,7 @@
       "streamName": "patrons",
       "apiPath": "/patrons",
       "defaultFields":
-        "addresses,blockInfo,createdDate,default,deleted,fixedFields,homeLibraryCode,langPref,patronCodes,patronType,pMessage,suppressed,updatedDate,message,createdDate,deletedDate,updatedDate",
+        "barcodes,names,emails,phones,addresses,blockInfo,createdDate,default,deleted,fixedFields,homeLibraryCode,langPref,patronCodes,patronType,pMessage,suppressed,updatedDate,message,createdDate,deletedDate,updatedDate",
       "privacyConcernedFields":
         "addresses,barcodes,birthDate,blockInfo,createdDate,default,deleted,emails,fixedFields,homeLibraryCode,langPref,names,patronCodes,patronType,phones,pMessage,suppressed,uniqueIds,updatedDate,varFields,message,createdDate,deletedDate,updatedDate"
     },
@@ -22,7 +22,7 @@
     {
       "streamName": "agencies",
       "apiPath": "/agencies",
-      "defaultFields": "code,display",
+      "defaultFields": "",
       "noPaging": true
     },
     {

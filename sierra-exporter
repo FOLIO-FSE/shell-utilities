@@ -24,23 +24,29 @@ function patrons2tsv() {
 cat patrons/patrons.0*.json |jq -r '.entries[] | [
 	.id // "",
 	.barcodes[0] // "",
+	.createdDate // "",
 	.emails[0] // "nomail@nomail.com", 
 	.addresses[0].lines[0] // "",
 	.addresses[0].lines[1] // "",
 	.names[0] // "",
 	.phones[0].number // "", 
 	.fixedFields."47".value // "", # patron group
-	.fixedFields."43".value // ""  # expiration date
+	.fixedFields."43".value // "",  # expiration date
+	.fixedFields."56".value // "", # block
+	.fixedFields."96".value // "" # money owed
 ] |join("|")' > patrons.tmp
 
-echo -e "sierra_id\tbarcode\temail\tfname\tlname\taddr1\taddr2\tcity\tstate\tzip\tphone\tgroup\texpiration" > patrons.tsv
+echo -e "sierra_id\texternalid\tbarcode\temail\tfname\tlname\taddr1\taddr2\tcity\tstate\tzip\tphone\tgroup\tcreated\texpiration\tblock\towed" > patrons.tsv
 
 while IFS=$'\n' read -r line; do
-	IFS='|' read id barcode email addr1 addr2 name phone group expiration <<< $line 
+	IFS='|' read id barcode email addr1 addr2 name phone group created expiration block owed <<< $line 
 	
 	city=""
 	zip=""
 	state=""
+	externalid=""
+	fname=""
+	lname=""
 
 	## break address line into components. Assume that city/state/zip is in addr2
 	## Hope for the city followed by a comma followed by state and zip
@@ -58,6 +64,8 @@ while IFS=$'\n' read -r line; do
 		fi
 	fi
 
+	## generate network name
+	if [[ $email =~ 'utm.edu' ]]; then externalid=$(sed 's/@.*//' <<< ${email});fi
 
 	## detect name
 	fname=" "
@@ -68,7 +76,7 @@ while IFS=$'\n' read -r line; do
 		lname=$(echo $name | cut -f1 -d,)
 	fi
 
-	echo -e "${id}\t${barcode}\t${email}\t${fname}\t${lname}\t${addr1}\t${addr2}\t${city}\t${state}\t${zip}\t${phone}\t${group}\t${expiration}" | tee -a patrons.tsv
+	echo -e "${id}\t${externalid}\t${barcode}\t${email}\t${fname}\t${lname}\t${addr1}\t${addr2}\t${city}\t${state}\t${zip}\t${phone}\t${group}\t${created}\t${expiration}\t${block}\t${owed}" | tee -a patrons.tsv
 done < patrons.tmp
 
 rm patrons.tmp

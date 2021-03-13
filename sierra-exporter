@@ -42,9 +42,9 @@ echo -e "sierra_id\tbarcode\texternalid\tuni_id\tcreated\texpiration\temail\tfna
 
 counter=1
 SECONDS=0
-timer=$SECONDS
 
 while IFS=$'\n' read -r line; do
+	timer=$SECONDS
 	IFS='|' read sierra_id barcode externalid uni_id created expiration email name addr1 addr2 phone group block owed <<< $line 
 	
 	city=""
@@ -123,10 +123,10 @@ defaultFields=$(cat sierra.json |jq -r ".streams[] | select(.streamName==\"${rec
 auth
 
 SECONDS=0
-timer=$SECONDS
 
 while [[ $lastrec -le $increment ]]
 do
+	timer=$SECONDS
 	get_data
 	printf -v filecounter "%04d" $counter
 	echo "$api" | jq '.' > "${rectype}/${rectype}.${filecounter}.json"

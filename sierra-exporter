@@ -24,8 +24,8 @@ function patrons2tsv() {
 cat patrons/patrons.0*.json |jq -r '.entries[] | [
         .id // "",
         .barcodes[0] // "",
-	(.varFields[] |select(.fieldTag=="l") | .content // ""), # network id
-	(.varFields[] |select(.fieldTag=="u") | .content // ""), # univ id
+	(.varFields[] |select(.fieldTag=="z") | .content // ""), # network
+	(.varFields[] |select(.fieldTag=="b") | .content // ""), # univ id
         .createdDate // "",
         .fixedFields."43".value // "",  # expiration date
         .emails[0] // "nomail@nomail.com",
@@ -65,12 +65,9 @@ while IFS=$'\n' read -r line; do
 		fi
 	fi
 
-	## generate network name
-	if [[ $email =~ 'utm.edu' ]]; then 
-		externalid=$(sed 's/@.*//' <<< ${email})
-	else
-		externalid=${sierra_id}
-	fi
+	## generate consistent ids 
+	if [[ $externalid == '' ]]; then externalid="$e{sierra_id}";fi
+	if [[ $uni_id == '' ]]; then uni_id="u${sierra_id}";fi
 
 	## detect name
 	fname=" "
@@ -98,6 +95,50 @@ counter=1
 lastrec=$increment
 
 rectype=$1
+
+mkdir $rectype 2>/dev/null || true
+
+### eliminates deleted records for some types
+deletedrecs=''
+
+case $rectype in
+	patrons|items|bibs)
+		deletedrecs="&deleted=false"
+		;;
+esac
+
+apiPath=$(cat sierra.json |jq -r  ".streams[] | select(.streamName==\"${rectype}\") | .apiPath")
+apiUri=${baseUri}${apiPath}
+
+defaultFields=$(cat sierra.json |jq -r ".streams[] | select(.streamName==\"${rectype}\") | .defaultFields")
+
+auth
+
+SECONDS=0
+timer=$SECONDS
+
+while [[ $lastrec -le $increment ]]
+do
+	get_data
+	printf -v filecounter "%04d" $counter
+	echo "$api" | jq '.' > "${rectype}/${rectype}.${filecounter}.json"
+	offset=$(($offset + $increment))
+	if [[ $counter -gt 0 ]]; then echo "$(( $increment*$counter )) records processed in $SECONDS seconds";fi
+	counter=$(($counter + 1))
+	
+	lastrec=$(echo "$api" |jq 'select(.total != null) | .total')
+
+	if [[ $lastrec = '' ]]; then increment=0;fi 
+	if [[ $lastrec -lt $increment ]]; then increment=0;fi 
+
+	if [[ $timer -gt 2700 ]]; then 
+		# generate new token
+		auth
+		timer=0
+	fi
+done
+
+echo "Completed processing in $SECONDS seconds"
 
 case $rectype in
 	patrons)

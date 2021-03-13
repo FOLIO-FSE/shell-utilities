@@ -22,29 +22,30 @@ function get_data() {
 function patrons2tsv() {
 
 cat patrons/patrons.0*.json |jq -r '.entries[] | [
-	.id // "",
-	.barcodes[0] // "",
-	.createdDate // "",
-	.emails[0] // "nomail@nomail.com", 
-	.addresses[0].lines[0] // "",
-	.addresses[0].lines[1] // "",
-	.names[0] // "",
-	.phones[0].number // "", 
-	.fixedFields."47".value // "", # patron group
-	.fixedFields."43".value // "",  # expiration date
-	.fixedFields."56".value // "", # block
-	.fixedFields."96".value // "" # money owed
+        .id // "",
+        .barcodes[0] // "",
+	(.varFields[] |select(.fieldTag=="l") | .content // ""), # network id
+	(.varFields[] |select(.fieldTag=="u") | .content // ""), # univ id
+        .createdDate // "",
+        .fixedFields."43".value // "",  # expiration date
+        .emails[0] // "nomail@nomail.com",
+        .addresses[0].lines[0] // "",
+        .addresses[0].lines[1] // "",
+        .names[0] // "",
+        .phones[0].number // "",
+        .fixedFields."47".value // "", # patron group
+        .fixedFields."56".value // "", # block
+        .fixedFields."96".value // "" # money owed
 ] |join("|")' > patrons.tmp
 
-echo -e "sierra_id\texternalid\tbarcode\temail\tfname\tlname\taddr1\taddr2\tcity\tstate\tzip\tphone\tgroup\tcreated\texpiration\tblock\towed" > patrons.tsv
+echo -e "sierra_id\tbarcode\texternalid\tuni_id\tcreated\texpiration\temail\tfname\tlname\taddr1\taddr2\tcity\tstate\tzip\tphone\tgroup\tblock\towed" > patrons.tsv
 
 while IFS=$'\n' read -r line; do
-	IFS='|' read id barcode email addr1 addr2 name phone group created expiration block owed <<< $line 
+	IFS='|' read sierra_id barcode externalid uni_id created expiration email name addr1 addr2 phone group block owed <<< $line 
 	
 	city=""
 	zip=""
 	state=""
-	externalid=""
 	fname=""
 	lname=""
 
@@ -65,7 +66,11 @@ while IFS=$'\n' read -r line; do
 	fi
 
 	## generate network name
-	if [[ $email =~ 'utm.edu' ]]; then externalid=$(sed 's/@.*//' <<< ${email});fi
+	if [[ $email =~ 'mtsu.edu' ]]; then 
+		externalid=$(sed 's/@.*//' <<< ${email})
+	else
+		externalid=${sierra_id}
+	fi
 
 	## detect name
 	fname=" "
@@ -76,7 +81,8 @@ while IFS=$'\n' read -r line; do
 		lname=$(echo $name | cut -f1 -d,)
 	fi
 
-	echo -e "${id}\t${externalid}\t${barcode}\t${email}\t${fname}\t${lname}\t${addr1}\t${addr2}\t${city}\t${state}\t${zip}\t${phone}\t${group}\t${created}\t${expiration}\t${block}\t${owed}" | tee -a patrons.tsv
+echo -e "sierra_id\tbarcode\texternalid\tuni_id\tcreated\texpiration\temail\tfname\tlname\taddr1\taddr2\tcity\tstate\tzip\tphone\tgroup\tblock\towed" > patrons.tsv
+	echo -e "${sierra_id}\t${barcode}\t${externalid}\t${uni_id}\t${created}\t${expiration}\t${email}\t${fname}\t${lname}\t${addr1}\t${addr2}\t${city}\t${state}\t${zip}\t${phone}\t${group}\t${block}\t${owed}" | tee -a patrons.tsv
 done < patrons.tmp
 
 rm patrons.tmp
@@ -93,50 +99,6 @@ counter=1
 lastrec=$increment
 
 rectype=$1
-mkdir $rectype 2>/dev/null || true
-
-### eliminates deleted records for some types
-deletedrecs=''
-
-case $rectype in
-	patrons|items|bibs)
-		deletedrecs="&deleted=false"
-		;;
-esac
-
-apiPath=$(cat sierra.json |jq -r  ".streams[] | select(.streamName==\"${rectype}\") | .apiPath")
-apiUri=${baseUri}${apiPath}
-
-defaultFields=$(cat sierra.json |jq -r ".streams[] | select(.streamName==\"${rectype}\") | .defaultFields")
-
-auth
-
-SECONDS=0
-timer=$SECONDS
-
-while [[ $lastrec -le $increment ]]
-do
-	get_data
-	printf -v filecounter "%04d" $counter
-	echo "$api" | jq '.' > "${rectype}/${rectype}.${filecounter}.json"
-	offset=$(($offset + $increment))
-	if [[ $counter -gt 0 ]]; then echo "$(( $increment*$counter )) records processed in $SECONDS seconds";fi
-	counter=$(($counter + 1))
-	
-	lastrec=$(echo "$api" |jq 'select(.total != null) | .total')
-
-	if [[ $lastrec = '' ]]; then increment=0;fi 
-	if [[ $lastrec -lt $increment ]]; then increment=0;fi 
-
-	if [[ $timer -gt 2700 ]]; then 
-		# generate new token
-		auth
-		timer=0
-	fi
-done
-
-echo "Completed processing in $SECONDS seconds"
-
 
 case $rectype in
 	patrons)

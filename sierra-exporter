@@ -66,7 +66,7 @@ while IFS=$'\n' read -r line; do
 	fi
 
 	## generate network name
-	if [[ $email =~ 'mtsu.edu' ]]; then 
+	if [[ $email =~ 'utm.edu' ]]; then 
 		externalid=$(sed 's/@.*//' <<< ${email})
 	else
 		externalid=${sierra_id}
@@ -81,7 +81,6 @@ while IFS=$'\n' read -r line; do
 		lname=$(echo $name | cut -f1 -d,)
 	fi
 
-echo -e "sierra_id\tbarcode\texternalid\tuni_id\tcreated\texpiration\temail\tfname\tlname\taddr1\taddr2\tcity\tstate\tzip\tphone\tgroup\tblock\towed" > patrons.tsv
 	echo -e "${sierra_id}\t${barcode}\t${externalid}\t${uni_id}\t${created}\t${expiration}\t${email}\t${fname}\t${lname}\t${addr1}\t${addr2}\t${city}\t${state}\t${zip}\t${phone}\t${group}\t${block}\t${owed}" | tee -a patrons.tsv
 done < patrons.tmp
 

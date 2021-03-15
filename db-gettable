@@ -3,7 +3,7 @@ declare -A db
 
 tenant['Brandman University']='fs00001058'
 tenant['ByWater Solutions']='fs00001003'
-tenant['California Institute of Technology']='fs00001057'
+tenant['Caltech']='fs00001057'
 tenant['Chapman University']='fs00001056'
 tenant['Dossier Soluciones']='fs00001036'
 tenant['Drew University (Test Sandbox)']='fs00001020'
@@ -27,7 +27,7 @@ tenant['University of Alabama']='fs00001005'
 
 db['Brandman University']='us-west-2'
 db['ByWater Solutions']='us-west-2'
-db['California Institute of Technology']='us-west-2'
+db['Caltech']='us-west-2'
 db['Chapman University']='us-west-2'
 db['Dossier Soluciones']='us-west-2'
 db['Drew University (Test Sandbox)']='us-west-2'
@@ -72,7 +72,7 @@ read inst
 
 #table='_mod_organizations_storage.addresses'
 #table='_mod_organizations_storage.categories'
-#table='_mod_organizations_storage.contacts'
+table='_mod_organizations_storage.contacts'
 #table='_mod_organizations_storage.emails'
 #table='_mod_organizations_storage.interface_credentials'
 #table='_mod_organizations_storage.interfaces'
@@ -111,6 +111,14 @@ us-west-2)
 	exit
 	;;
 esac
+
+filename=$(echo ${table} |sed 's/^_//')
+
+echo -e "preparing to copy table ${filename} to file ${filename}.tsv. This may take some time\n\n"
 	
-command="COPY ${tenant[$inst]}${table} to STDOUT CSV HEADER DELIMITER E'\t';;"
+command="\COPY ${tenant[$inst]}${table} to ${filename}.tsv CSV HEADER DELIMITER E'\t';"
+
 PGPASSWORD=${passwd} psql -X -U folio -h ${db} folio -AF $'\t' --no-align -c "${command}" 
+
+echo "Table copy complete. Results can be found in ${filename}.tsv"
+

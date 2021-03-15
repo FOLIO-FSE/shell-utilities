@@ -8,8 +8,9 @@ apicall=$(curl -s -w '\n' -X GET -D \
   -H "Accept: application/json" \
   -H "X-Okapi-Tenant: ${tenant}" \
   -H "x-okapi-token: ${okapi_token}" \
-  ${okapi_url}/bl-users/by-id/${user_id})
+  ${okapi_url}/bl-users/by-username/${user_id})
+  #${okapi_url}/bl-users/by-id/${user_id})
 
-echo $apicall |jq '.'
+echo $apicall | jq '.'
 
 

@@ -101,6 +101,12 @@ table+=('mod_users.customfields')
 table+=('mod_users.departments')
 table+=('mod_users.groups')
 
+table+=('mod_source_record_storage.error_records_lb')
+table+=('mod_source_record_storage.marc_recods_lb')
+table+=('mod_source_record_storage.raw_records_lb')
+table+=('mod_source_record_storage.records_lb)
+table+=('mod_source_record_storage.snapshots_lb')
+
 
 tablelist=$(for i in "${!table[@]}";do echo -e "${table[$i]}";done)
 echo -e "${tablelist}" |sort |column

@@ -52,7 +52,7 @@ db['University of Alabama']='us-east-1'
 
 echo -e "Here is a list of known tenants:\n"
 tenantlist=$(for i in "${!tenant[@]}";do echo -e "$i" | sed 's/|.*$//';done)
-echo -e "${tenantlist}" |sort
+echo -e "${tenantlist}" |sort|column 
 
 echo -e "\nCopy and paste institution name\n"
 
@@ -103,7 +103,7 @@ table+=('mod_users.groups')
 
 
 tablelist=$(for i in "${!table[@]}";do echo -e "${table[$i]}";done)
-echo -e "${tablelist}" |sort
+echo -e "${tablelist}" |sort |column
 
 echo -e "\nCopy and paste desired table\n"
 
@@ -122,7 +122,6 @@ us-west-2)
 	;;
 esac
 
-echo $db
 
 echo -e "preparing to copy table ${table} to file ${table}.tsv. This may take some time\n\n"
 	

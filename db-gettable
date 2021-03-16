@@ -125,7 +125,7 @@ esac
 
 echo -e "preparing to copy table ${table} to file ${table}.tsv. This may take some time\n\n"
 	
-command="\COPY ${tenant["$inst"]}_${table} to ${table}.tsv CSV HEADER DELIMITER E'\t';"
+command="\COPY ${tenant["$inst"]}_${table} to ${table}.tsv CSV HEADER DELIMITER E'\t' QUOTE E'\b';"
 
 PGPASSWORD=${passwd} psql -X -U folio -h ${db} folio -AF $'\t' --no-align -c "${command}" 
 

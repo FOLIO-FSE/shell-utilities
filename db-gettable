@@ -1,5 +1,6 @@
 declare -A tenant
 declare -A db
+table=()
 
 tenant['Brandman University']='fs00001058'
 tenant['ByWater Solutions']='fs00001003'
@@ -56,48 +57,57 @@ echo -e "${tenantlist}" |sort
 echo -e "\nCopy and paste institution name\n"
 
 read inst
-#table='_mod_circulation_storage.audit_loan'
-#table='_mod_circulation_storage.cancellation_reason'
-#table='_mod_circulation_storage.check_in'
-#table='_mod_circulation_storage.circulation_rules'
-#table='_mod_circulation_storage.fixed_date_due_schedule'
-#table='_mod_circulation_storage.loan'
-#table='_mod_circulation_storage.loan_policy'
-#table='_mod_circulation_storage.patron_action_policy'
-#table='_mod_circulation_storage.request'
-#table='_mod_circulation_storage.request_policy'
-#table='_mod_circulation_storage.scheduled_notice'
-#table='_mod_circulation_storage.staff_slips'
-#table='_mod_circulation_storage.user_request_preference'
 
-#table='_mod_organizations_storage.addresses'
-#table='_mod_organizations_storage.categories'
-table='_mod_organizations_storage.contacts'
-#table='_mod_organizations_storage.emails'
-#table='_mod_organizations_storage.interface_credentials'
-#table='_mod_organizations_storage.interfaces'
-#table='_mod_organizations_storage.organizations'
-#table='_mod_organizations_storage.phone_numbers'
-#table='_mod_organizations_storage.urls'
+table+=('mod_circulation_storage.audit_loan')
+table+=('mod_circulation_storage.cancellation_reason')
+table+=('mod_circulation_storage.check_in')
+table+=('mod_circulation_storage.circulation_rules')
+table+=('mod_circulation_storage.fixed_date_due_schedule')
+table+=('mod_circulation_storage.loan')
+table+=('mod_circulation_storage.loan_policy')
+table+=('mod_circulation_storage.patron_action_policy')
+table+=('mod_circulation_storage.request')
+table+=('mod_circulation_storage.request_policy')
+table+=('mod_circulation_storage.scheduled_notice')
+table+=('mod_circulation_storage.staff_slips')
+table+=('mod_circulation_storage.user_request_preference')
 
-#table='mod_orders_storage.acquisitions_unit'
-#table='mod_orders_storage.acquisitions_unit_membership'
-#table='mod_orders_storage.alert'
-#table='mod_orders_storage.order_invoice_relationships'
-#table='mod_orders_storage.order_templates'
-#table='mod_orders_storage.pieces'
-#table='mod_orders_storage.po_line'
-#table='mod_orders_storage.prefixes'
-#table='mod_orders_storage.purchase_order'
-#table='mod_orders_storage.reasons_for_closure'
-#table='mod_orders_storage.reporting_code'
-#table='mod_orders_storage.suffixes'
-#table='mod_orders_storage.titles'
+table+=('mod_organizations_storage.addresses')
+table+=('mod_organizations_storage.categories')
+table+=('mod_organizations_storage.contacts')
+table+=('mod_organizations_storage.emails')
+table+=('mod_organizations_storage.interface_credentials')
+table+=('mod_organizations_storage.interfaces')
+table+=('mod_organizations_storage.organizations')
+table+=('mod_organizations_storage.phone_numbers')
+table+=('mod_organizations_storage.urls')
 
-#table='_mod_users.addresstype'
-#table='_mod_users.customfields'
-#table='_mod_users.departments'
-#table='_mod_users.groups'
+table+=('mod_orders_storage.acquisitions_unit')
+table+=('mod_orders_storage.acquisitions_unit_membership')
+table+=('mod_orders_storage.alert')
+table+=('mod_orders_storage.order_invoice_relationships')
+table+=('mod_orders_storage.order_templates')
+table+=('mod_orders_storage.pieces')
+table+=('mod_orders_storage.po_line')
+table+=('mod_orders_storage.prefixes')
+table+=('mod_orders_storage.purchase_order')
+table+=('mod_orders_storage.reasons_for_closure')
+table+=('mod_orders_storage.reporting_code')
+table+=('mod_orders_storage.suffixes')
+table+=('mod_orders_storage.titles')
+
+table+=('mod_users.addresstype')
+table+=('mod_users.customfields')
+table+=('mod_users.departments')
+table+=('mod_users.groups')
+
+
+tablelist=$(for i in "${!table[@]}";do echo -e "${table[$i]}";done)
+echo -e "${tablelist}" |sort
+
+echo -e "\nCopy and paste desired table\n"
+
+read table
 
 case ${db[$inst]} in
 us-west-2)
@@ -112,13 +122,13 @@ us-west-2)
 	;;
 esac
 
-filename=$(echo ${table} |sed 's/^_//')
+echo $db
 
-echo -e "preparing to copy table ${filename} to file ${filename}.tsv. This may take some time\n\n"
+echo -e "preparing to copy table ${table} to file ${table}.tsv. This may take some time\n\n"
 	
-command="\COPY ${tenant[$inst]}${table} to ${filename}.tsv CSV HEADER DELIMITER E'\t';"
+command="\COPY ${tenant["$inst"]}_${table} to ${table}.tsv CSV HEADER DELIMITER E'\t';"
 
 PGPASSWORD=${passwd} psql -X -U folio -h ${db} folio -AF $'\t' --no-align -c "${command}" 
 
-echo "Table copy complete. Results can be found in ${filename}.tsv"
+echo "Table copy complete. Results can be found in ${table}.tsv"
 

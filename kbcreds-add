@@ -1,0 +1,29 @@
+# Creates groups based on contents of tab delimited file
+#
+# Code is expected in column 1 of a file named "groups"
+# Description is set in column 2
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+IFS='' read -r -d '' cred << EndOfCred
+
+{"data": {
+	"type":"kbCredentials",
+	"attributes": {
+		"url":"https://api.ebsco.io",
+		"customerId":"s8984125",
+		"name":"Knowledge base",
+		"apiKey":"*****"
+		}
+	}
+}
+EndOfCred
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/vnd.api+json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${cred}" "${okapi_url}/eholdings/kb-credentials")
+
+echo -e "${apicall}" 
+
+
+

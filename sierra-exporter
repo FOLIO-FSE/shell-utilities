@@ -21,7 +21,7 @@ function get_data() {
 
 function patrons2tsv() {
 
-cat patrons/patrons.0*.json |jq -r '.entries[] | [
+cat patrons/patrons.0*.json |jq -cr '.entries[] | [
         .id // "",
         .barcodes[0] // "",
 	(.varFields[] |select(.fieldTag=="z") | .content // ""), # network
@@ -70,8 +70,8 @@ while IFS=$'\n' read -r line; do
 	fi
 
 	## generate consistent ids 
-	if [[ $externalid == '' ]]; then externalid="$e{sierra_id}";fi
-	if [[ $uni_id == '' ]]; then uni_id="u${sierra_id}";fi
+	if [[ $externalid == '' ]]; then externalid="${sierra_id}";fi
+	if [[ $uni_id == '' ]]; then uni_id="${sierra_id}";fi
 
 	## detect name
 	fname=" "

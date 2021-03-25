@@ -72,8 +72,8 @@ while IFS=$'\n' read -r line; do
 	fi
 
 	## generate consistent ids 
-	if [[ ${#externalid} == "" ]]; then externalid="${sierra_id}";fi
-	if [[ ${#uni_id} == ""  ]]; then uni_id="${sierra_id}";fi
+	if [[ ${externalid} == "" ]]; then externalid="${sierra_id}";fi
+	if [[ ${uni_id} == ""  ]]; then uni_id="${sierra_id}";fi
 
 	## detect name
 	fname=" "

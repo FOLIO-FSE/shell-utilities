@@ -24,19 +24,19 @@ function patrons2tsv() {
 cat patrons/patrons.0*.json |jq -cr '.entries[] | [
         .id // "",
         .barcodes[0] // "",
-	(.varFields[] |select(.fieldTag=="z") | .content // ""), # network
-	(.varFields[] |select(.fieldTag=="b") | .content // ""), # univ id
+	(.varFields[] |select(.fieldTag=="z") | .content) // "", # network
+	(.varFields[] |select(.fieldTag=="b") | .content) // "", # univ id
         .createdDate // "",
         .fixedFields."43".value // "",  # expiration date
         .emails[0] // "nomail@nomail.com",
+        .names[0] // "",
         .addresses[0].lines[0] // "",
         .addresses[0].lines[1] // "",
-        .names[0] // "",
         .phones[0].number // "",
         .fixedFields."47".value // "", # patron group
         .fixedFields."56".value // "", # block
-        .fixedFields."96".value // "" # money owed
-] |join("|")' > patrons.tmp
+        .fixedFields."96".value // "0" # money owed
+] |join("|")' | tr -d "'" |tr -d '"' > patrons.tmp
 
 echo -e "sierra_id\tbarcode\texternalid\tuni_id\tcreated\texpiration\temail\tfname\tlname\taddr1\taddr2\tcity\tstate\tzip\tphone\tgroup\tblock\towed" > patrons.tsv
 
@@ -44,6 +44,7 @@ counter=1
 SECONDS=0
 
 while IFS=$'\n' read -r line; do
+	## make sure line has right number of fields
 	timer=$SECONDS
 	IFS='|' read sierra_id barcode externalid uni_id created expiration email name addr1 addr2 phone group block owed <<< $line 
 	
@@ -66,12 +67,13 @@ while IFS=$'\n' read -r line; do
 		if [[ ${stziparr[-1]} =~ ^[0-9\-]*$ ]]; then
 			zip=${stziparr[-1]} 
 			state=${stziparr[-2]}
+			addr2=''
 		fi
 	fi
 
 	## generate consistent ids 
-	if [[ $externalid == '' ]]; then externalid="${sierra_id}";fi
-	if [[ $uni_id == '' ]]; then uni_id="${sierra_id}";fi
+	if [[ ${#externalid} == "" ]]; then externalid="${sierra_id}";fi
+	if [[ ${#uni_id} == ""  ]]; then uni_id="${sierra_id}";fi
 
 	## detect name
 	fname=" "
@@ -86,7 +88,7 @@ while IFS=$'\n' read -r line; do
 
 	if [[ $(($counter % 100)) == 0 ]];then echo "${counter} records processed in ${timer} seconds";fi
 
-	echo -e "${sierra_id}\t${barcode}\t${externalid}\t${uni_id}\t${created}\t${expiration}\t${email}\t${fname}\t${lname}\t${addr1}\t${addr2}\t${city}\t${state}\t${zip}\t${phone}\t${group}\t${block}\t${owed}" >> patrons.tsv
+	echo -e "${sierra_id}\t${barcode}\t${externalid}\t${uni_id}\t${created}\t${expiration}\t${email}\t${fname}\t${lname}\t${addr1}\t${addr2}\t${city}\t${state}\t${zip}\t${phone}\t${group}\t${block}\t${owed}"  >> patrons.tsv
 done < patrons.tmp
 
 rm patrons.tmp

@@ -1,0 +1,37 @@
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+note_domain="users"
+note_title="Patron note"
+noteTypeUuid="f6bc2edc-a9d0-4b73-bf47-45320b8b99b5"
+content="Note content"
+note_uuid=$(uuidgen)
+
+linked_to="d68028e2-5e1b-4f36-bcc1-a161e304bde6"
+
+
+IFS='' read -r -d '' data << EndOfJSON
+{
+  "domain": "${domain}",
+  "title": "${note_title}",
+  "typeId": "${noteTypeUuid}",
+  "content": "${content}",
+  "links": [
+    {
+      "type": "${note_domain}",
+      "id": "${linked_to}"
+    }
+  ],
+  "id": "${note_uuid}"
+}
+EndOfJSON
+
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/notes")
+
+echo -e "${apicall}" 
+
+
+

@@ -1,0 +1,82 @@
+declare -A tenant
+declare -A db
+table=()
+
+tenant['Brandman University']='fs00001058'
+tenant['ByWater Solutions']='fs00001003'
+tenant['Caltech']='fs00001057'
+tenant['Chapman University']='fs00001056'
+tenant['Dossier Soluciones']='fs00001036'
+tenant['Drew University (Test Sandbox)']='fs00001020'
+tenant['Flagler College']='fs00001062'
+tenant['GestInfo']='fs00001022'
+tenant['Grand Valley State University']='fs00001041'
+tenant['Ignite Online']='fs00001039'
+tenant['Infoestrategica']='fs00001002'
+tenant['Kamanage Consulting']='fs00001023'
+tenant['Lafayette College']='fs00001054'
+tenant['LOUIS']='fs00001064'
+tenant['Middle Tennessee State University']='fs00001055'
+tenant['Roseman University of Health and Sciences']='fs00001061'
+tenant['Skidmore College']='fs00001051'
+tenant['St.Michaels College']='fs00001050'
+tenant['Theke Solution']='fs00001040'
+tenant['Universidad de Concepción (Test Sandbox)']='fs00001060'
+tenant['University of Tennessee Martin']='fs00001053'
+tenant['Via Appia']='fs00001014'
+tenant['University of Alabama']='fs00001005'
+
+db['Brandman University']='us-west-2'
+db['ByWater Solutions']='us-west-2'
+db['Caltech']='us-west-2'
+db['Chapman University']='us-west-2'
+db['Dossier Soluciones']='us-west-2'
+db['Drew University (Test Sandbox)']='us-west-2'
+db['Flagler College']='us-west-2'
+db['GestInfo']='us-west-2'
+db['Grand Valley State University']='us-west-2'
+db['Ignite Online']='us-west-2'
+db['Infoestrategica']='us-west-2'
+db['Kamanage Consulting']='us-west-2'
+db['Lafayette College']='us-west-2'
+db['LOUIS']='us-west-2'
+db['Middle Tennessee State University']='us-west-2'
+db['Roseman University of Health and Sciences']='us-west-2'
+db['Skidmore College']='us-west-2'
+db['St.Michaels College']='us-west-2'
+db['Theke Solution']='us-west-2'
+db['Universidad de Concepción (Test Sandbox)']='us-west-2'
+db['University of Tennessee Martin']='us-west-2'
+db['Via Appia']='us-west-2'
+db['University of Alabama']='us-east-1'
+
+echo -e "Here is a list of known tenants:\n"
+tenantlist=$(for i in "${!tenant[@]}";do echo -e "$i" | sed 's/|.*$//';done)
+echo -e "${tenantlist}" |sort|column 
+
+echo -e "\nCopy and paste institution name\n"
+
+read inst
+
+case ${db[$inst]} in
+us-west-2)
+	db='huss-db.c45mg65qklwr.us-west-2.rds.amazonaws.com'	
+        ;;
+"us-east-1")
+	db='hua-clone-gua-db-01.c51bi8byxdg6.us-east-1.rds.amazonaws.com'
+	;;
+*)
+	echo 'Database not found'
+	exit
+	;;
+esac
+
+
+	
+command="SELECT  pid,  now() - pg_stat_activity.query_start AS duration,  query,  state FROM pg_stat_activity WHERE (now() - pg_stat_activity.query_start) > interval '5 minutes' ORDER BY duration DESC;"
+
+PGPASSWORD=${passwd} psql -X -U folio -h ${db} folio -AF $'\t' --no-align -c "${command}" > ${tenant["$inst"]}.tsv
+echo
+echo "All queries running longer than 5 minutes have been downloaded to "${tenant["${inst}"]}.tsv
+
+

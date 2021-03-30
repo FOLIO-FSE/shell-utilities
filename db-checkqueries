@@ -75,6 +75,14 @@ esac
 	
 command="SELECT  pid,  now() - pg_stat_activity.query_start AS duration,  query,  state FROM pg_stat_activity WHERE (now() - pg_stat_activity.query_start) > interval '5 minutes' ORDER BY duration DESC;"
 
+##################################################################
+# Can cancel queries with SELECT pg_cancel_backend(__pid__);
+#
+# Can terminate queries with SELECT pg_terminate_backend(__pid__);
+#
+# Terminate with great care!
+##################################################################
+
 PGPASSWORD=${passwd} psql -X -U folio -h ${db} folio -AF $'\t' --no-align -c "${command}" > ${tenant["$inst"]}.tsv
 echo
 echo "All queries running longer than 5 minutes have been downloaded to "${tenant["${inst}"]}.tsv

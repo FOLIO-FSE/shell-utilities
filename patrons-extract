@@ -1,4 +1,4 @@
-cat caltech_patrons.tsv | tr -d "'" | tr -d '"' | tr $'\t' '|' > patrons.tmp 
+cat caltech_patrons.tsv | tr -d "'" | tr -d '"' | tr $'\t' '|' |tr -d $'\r' > patrons.tmp 
 
 outfile="patrons.tsv"
 
@@ -78,7 +78,7 @@ function fixaddress() {
 }
 
 
-echo -e "barcode\tfname\tmname\tlname\tpname\temail\ttype\taddr1\taddr2\tcity\tstate\tzip\tphone\texternalid" > ${outfile}
+echo -e "barcode\tfname\tmname\tlname\tpname\temail\ttype\taddrtype\taddr1\taddr2\tcity\tstate\tzip\tphone\texternalid" > ${outfile}
 
 SECONDS=0
 counter=0
@@ -86,6 +86,8 @@ counter=0
 while IFS=$'\n' read -r line; do
 	timer=$SECONDS
 	IFS='|' read uid name email type status loans address mailbox phone externalid <<< $line 
+
+	addrtype='Campus address'
 
         #### many unneeded fields after external ID -- strip them all
         externalid=$(echo "$externalid" | sed "s/|.*$//" |xargs)
@@ -98,7 +100,7 @@ while IFS=$'\n' read -r line; do
 	counter=$((${counter} + 1))
 	if [[ $((${counter}%100)) == 0 ]];then echo "${counter} records processed in ${timer} seconds"; fi
 
-	echo -e "${barcode}\t${fname}\t${mname}\t${lname}\t${pname}\t${email}\t${type}\t${addr1}\t${addr2}\t${city}\t${state}\t${zip}\t${phone}\t${externalid}" >> ${outfile}
+	echo -e "${barcode}\t${fname}\t${mname}\t${lname}\t${pname}\t${email}\t${type}\t${addrtype}\t${addr1}\t${addr2}\t${city}\t${state}\t${zip}\t${phone}\t${externalid}" >> ${outfile}
 
 done < patrons.tmp
 

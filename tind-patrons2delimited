@@ -22,7 +22,7 @@ function fixname() {
 	IFS=',' read -r -a cnamearr <<< "${name}"
 
         if [[ ${#cnamearr[@]} > 1 ]]; then
-                fname=$(sed 's/^ *\(.*\) .*/\1/' <<< ${cnamearr[1]})
+                fname=$(sed 's/^ *\(.*\) *.*/\1/' <<< ${cnamearr[1]})
                 mname=$(sed "s/${fname} *//" <<< ${cnamearr[1]})
                 lname=${cnamearr[0]}
         else

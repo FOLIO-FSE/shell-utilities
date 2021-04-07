@@ -1,0 +1,110 @@
+cat caltech_patrons.tsv | tr -d "'" | tr -d '"' | tr $'\t' '|' |tr -d $'\r' > patrons.tmp 
+
+outfile="patrons.tsv"
+
+function fixname() {
+	fname=""
+	lname=""
+	mname=""
+	pname=""
+
+	#### Pull preferred names out of parens
+	if [[ ${name} =~ "("  ]]; then
+		pname=$(echo "${name}" |sed -n 's/[^(]*(\(.*\)).*/\1/p')
+		name=$(echo "${name}" |sed 's/(.*)//')	
+		fi
+
+	#### Remove commas preceding titles
+	name=$(echo "$name" | sed -E 's/, (I*|[SJ]r)\.$/ \1/' |xargs)
+	
+
+	#### Look for inverted names
+	IFS=',' read -r -a cnamearr <<< "${name}"
+
+        if [[ ${#cnamearr[@]} > 1 ]]; then
+                fname=$(sed 's/^ *\(.*\) .*/\1/' <<< ${cnamearr[1]})
+                mname=$(sed "s/${fname} *//" <<< ${cnamearr[1]})
+                lname=${cnamearr[0]}
+        else
+                #### names in direct order
+                if [[ ${name} =~ " "  ]]; then
+                        fname=$(sed -n 's/^\([^ ]*\).*/\1/p' <<< ${name})
+                        mname=$(sed -n 's/.* \(.*\) .*/\1/p' <<< ${name})
+                        lname=$(sed -n 's/.* //p' <<< ${name})
+                fi
+        fi
+
+}
+
+function fixaddress() {
+
+	address="${address} ${mailbox}"
+	address=$(sed 's/\$USA.*//' <<< ${address} |xargs)
+
+	
+	addr1=${address}
+	addr2=""
+	city=""
+	zip=""
+	state=""
+
+	#### break dollar delimited address into fields
+	#### and look for city/state/zip in last one
+
+	IFS="$" read -r -a addrarr <<< ${address}
+
+	if [[ ${#addrarr[@]} > 1 ]]; then
+		lastelement=${addrarr[-1]}
+		addr1=${addrarr[0]}
+
+		if [[ ${#addrarr[@]} -eq 3 ]]; then addr2=${addrarr[1]};fi
+
+		## Hope for the city followed by a comma followed by state and zip
+		## If comma not found or if it doesn't look like something that ends in a zip
+		## then leave everything as it is
+
+		IFS=',' read city statezip <<< ${lastelement}
+
+		IFS=' ' read -r -a stziparr <<< "${statezip}"
+
+		if [[ ${#stziparr[@]} > 1 ]]; then
+			if [[ ${stziparr[-1]} =~ ^[0-9\-]*$ ]]; then
+				zip=${stziparr[-1]} 
+				state=${stziparr[-2]}
+			fi
+		fi
+	fi
+
+}
+
+
+echo -e "barcode\tfname\tmname\tlname\tpname\temail\ttype\taddrtype\taddr1\taddr2\tcity\tstate\tzip\tphone\texternalid" > ${outfile}
+
+SECONDS=0
+counter=0
+
+while IFS=$'\n' read -r line; do
+	timer=$SECONDS
+	IFS='|' read uid name email type status loans address mailbox phone externalid <<< $line 
+
+	addrtype='Campus address'
+
+        #### many unneeded fields after external ID -- strip them all
+        externalid=$(echo "$externalid" | sed "s/|.*$//" |xargs)
+
+	if [[ ${uid} =~ [0-9] ]];then barcode=${uid};fi
+	if ! [[ ${email} =~ @.*\.(edu|gov) ]];then email='';fi
+	if ! [[ ${externalid} =~ [a-z] ]];then externalid=$(uuid);fi
+
+	fixname
+	fixaddress
+	counter=$((${counter} + 1))
+	if [[ $((${counter}%100)) == 0 ]];then echo "${counter} records processed in ${timer} seconds"; fi
+
+	echo -e "${barcode}\t${fname}\t${mname}\t${lname}\t${pname}\t${email}\t${type}\t${addrtype}\t${addr1}\t${addr2}\t${city}\t${state}\t${zip}\t${phone}\t${externalid}" >> ${outfile}
+
+done < patrons.tmp
+
+rm patrons.tmp
+
+

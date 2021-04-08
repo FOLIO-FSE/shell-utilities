@@ -22,7 +22,7 @@ function fixname() {
 	IFS=',' read -r -a cnamearr <<< "${name}"
 
         if [[ ${#cnamearr[@]} > 1 ]]; then
-                fname=$(sed 's/^ *\(.*\) *.*/\1/' <<< ${cnamearr[1]})
+                fname=$(sed 's/^ *\([^ ]*\) *.*/\1/' <<< ${cnamearr[1]})
                 mname=$(sed "s/${fname} *//" <<< ${cnamearr[1]})
                 lname=${cnamearr[0]}
         else
@@ -33,6 +33,9 @@ function fixname() {
                         lname=$(sed -n 's/.* //p' <<< ${name})
                 fi
         fi
+
+	#### deal with one word last name
+	if [[ -z ${lname} ]]; then lname="${name}";fi
 
 }
 
@@ -80,6 +83,8 @@ function fixaddress() {
 
 echo -e "barcode\tfname\tmname\tlname\tpname\temail\ttype\taddrtype\taddr1\taddr2\tcity\tstate\tzip\tphone\texternalid" > ${outfile}
 
+declare -A users
+
 SECONDS=0
 counter=0
 
@@ -101,7 +106,11 @@ while IFS=$'\n' read -r line; do
 	counter=$((${counter} + 1))
 	if [[ $((${counter}%100)) == 0 ]];then echo "${counter} records processed in ${timer} seconds"; fi
 
-	echo -e "${barcode}\t${fname}\t${mname}\t${lname}\t${pname}\t${email}\t${type}\t${addrtype}\t${addr1}\t${addr2}\t${city}\t${state}\t${zip}\t${phone}\t${externalid}" >> ${outfile}
+	if ! [[ -z ${lname} ]]; then
+		if ! [ ${users["${username}+abc"]} ]; then
+			echo -e "${barcode}\t${fname}\t${mname}\t${lname}\t${pname}\t${email}\t${type}\t${addrtype}\t${addr1}\t${addr2}\t${city}\t${state}\t${zip}\t${phone}\t${externalid}" >> ${outfile}
+		fi
+	fi
 
 done < patrons.tmp
 

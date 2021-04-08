@@ -19,13 +19,21 @@ function get_data() {
 	  "${apiUri}?offset=${offset}&fields=${defaultFields}&limit=${increment}${deletedrecs}")
 }
 
+function orders2tsv() {
+cat orders/orders.0*.json |jq -cr '.entries[] |
+	.code // "",
+	.fundName // ""'
+}
+
+
 function patrons2tsv() {
+
 
 cat patrons/patrons.0*.json |jq -cr '.entries[] | [
         .id // "",
         .barcodes[0] // "",
-	(.varFields[] |select(.fieldTag=="z") | .content) // "", # network
-	(.varFields[] |select(.fieldTag=="b") | .content) // "", # univ id
+	(.varFields[] |select(.fieldTag=="l") | .content) // "", # network
+	(.varFields[] |select(.fieldTag=="u") | .content) // "", # univ id
         .createdDate // "",
         .fixedFields."43".value // "",  # expiration date
         .emails[0] // "nomail@nomail.com",
@@ -33,8 +41,8 @@ cat patrons/patrons.0*.json |jq -cr '.entries[] | [
         .addresses[0].lines[0] // "",
         .addresses[0].lines[1] // "",
         .phones[0].number // "",
-        .fixedFields."47".value // "", # patron group
-        .fixedFields."56".value // "", # block
+        .patronType // "", # patron group
+        .blockInfo.code // "", # block
         .fixedFields."96".value // "0" # money owed
 ] |join("|")' | tr -d "'" |tr -d '"' > patrons.tmp
 
@@ -112,7 +120,7 @@ mkdir $rectype 2>/dev/null || true
 deletedrecs=''
 
 case $rectype in
-	patrons|items|bibs)
+	patrons|items|bibs|orders)
 		deletedrecs="&deleted=false"
 		;;
 esac
@@ -154,6 +162,10 @@ case $rectype in
 	patrons)
 		echo "Building TSV patron file"	
 		patrons2tsv
+		;;
+	orders)
+		echo "Building TSV order file"	
+		orders2tsv
 		;;
 esac
 

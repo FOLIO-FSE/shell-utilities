@@ -1,0 +1,50 @@
+outfile="items.tsv"
+
+rm ${outfile} 2>/dev/null
+
+
+declare -a groups
+group=(["1"]="Undergraduate" ["2"]="Graduate" ["3"]="Faculty" ["4"]="Staff" ["5"]="Alumni" ["6"]="Community" ["14"]="Retired" ["16"]="ILL")
+
+cat items/items.*.json | tr -d "|" | jq -r '.entries[] | [
+        .id // "",
+        .bibIds[0] // "",
+        .barcode // "",
+	.location.code // "",
+        .callNumber // "",
+        .itemType // "",
+	.fixedFields."58".value // "", # copy
+	(.varFields[] |select(.fieldTag=="v") | .content) // "", # volume
+	.fixedFields."59".value // "", # icode1
+	.fixedFields."60".value // "", # icode2
+	.fixedFields."97".value // "", # imessage
+	.fixedFields."108".value // "" # opacmsg
+	] |join("|")' |tr -d '"' |tr -d "'" > items.tmp
+
+
+echo -e "id\tbibId\tbarcode\tlocation\tcallNum\titype\tcopy\tvolume\ticode1\ticode2\timessage\topacmsg" > ${outfile}
+
+
+SECONDS=0
+counter=0
+
+while IFS=$'\n' read -r line; do
+	#### remove "-" values which indicate defaults
+	line=$(sed 's/|-/|/g' <<< ${line})
+
+	### remove copy 1 info
+	copy=$(sed 's/^1$//' <<< $copy)
+
+	timer=$SECONDS
+	IFS='|' read id bibId barcode location callNum itype copy volume icode1 icode2 imessage opacmsg <<< $line 
+
+	counter=$((${counter} + 1))
+	if [[ $((${counter}%100)) == 0 ]];then echo "${counter} records processed in ${timer} seconds"; fi
+
+	echo -e "${id}\t${bibId}\t${barcode}\t${location}\t${callNum}\t${itype}\t${copy}\t${volume}\t${icode1}\t${icode2}\t${imessage}\t${opacmsg}" >> ${outfile}
+
+done < items.tmp
+
+rm items.tmp
+
+

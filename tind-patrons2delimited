@@ -1,6 +1,72 @@
 cat caltech_patrons.tsv | tr -d "'" | tr -d '"' | tr $'\t' '|' |tr -d $'\r' > patrons.tmp 
 
-outfile="patrons.tsv"
+#outfile="patrons.tsv"
+outfile="folio_users.json"
+
+rm ${outfile} || true
+
+addtypedefault="Campus address"
+
+ptypedefault="uncoded"
+emaildomain="caltech.edu.edu"
+emaildefault="circ@library.caltech.edu"
+emaildefaultforall="1"
+convertemail2networkID="0"
+
+declare -a groups
+groups=( ["Blockedpatrons"]="blocked-patrons" ["Caltechaffiliates"]="caltechaffiliate" ["Caltech_facultytrustees"]="caltech-faculty-trustee" ["Caltechgraduatestudents"]="caltech-grad-student" ["Caltechstaff"]="caltech-staff" ["Caltechtempfacultypostdocs"]="caltech-postdoc" ["Caltechundergraduatestudents"]="caltech-undergrad-student" ["Graduatingseniors"]="caltech-undergrad-student" ["Guestreader"]="uncoded" ["JPLaffiliates"]="jpl-affiliate" ["Noattempttocode"]="uncoded" ["NonCITother"]="uncoded" ["NonCITsummerstudents"]="summer-program-student" ["Proxyborrowers"]="uncoded" ["Pseudoborrowers"]="pseudo-borrower" )
+
+function create_user() {
+
+IFS='' read -r -d '' user << EndOfUser
+{
+  "type": "object",
+  "personal": {
+    "lastName": "${lname}",
+    "firstName": "${fname}",
+    "middleName": "${mname}",
+    "email": "${email}",
+    "phone": "${phone}",
+    "mobilePhone": "${pphone}",
+    "dateOfBirth": "",
+    "addresses": [
+      {
+        "countryId": "",
+        "addressLine1": "${addr1}",
+        "addressLine2": "${addr2}",
+        "city": "${city}",
+        "region": "${state}",
+        "postalCode": "${zip}",
+        "addressTypeId": "${addrtype}",
+        "primaryAddress": true
+      },
+      {
+        "countryId": "",
+        "addressLine1": "${paddr1}",
+        "addressLine2": "${paddr2}",
+        "city": "${pcity}",
+        "region": "${pcity}",
+        "postalCode": "${pcity}",
+        "addressTypeId": "${paddrtype}",
+        "primaryAddress": false
+      }
+    ],
+    "preferredContactTypeId": "Email"
+  },
+  "customFields": {},
+  "username": "${username}",
+  "externalSystemId": "${externalid}",
+  "barcode": "${barcode}",
+  "patronGroup": "${ptype}",
+  "enrollmentDate": "${enrollment}",
+  "expirationDate": "${expiration}",
+  "active": true
+}
+EndOfUser
+
+}
+
+
 
 function fixname() {
 	fname=""
@@ -81,7 +147,7 @@ function fixaddress() {
 }
 
 
-echo -e "barcode\tfname\tmname\tlname\tpname\temail\ttype\taddrtype\taddr1\taddr2\tcity\tstate\tzip\tphone\texternalid" > ${outfile}
+#echo -e "barcode\tfname\tmname\tlname\tpname\temail\ttype\taddrtype\taddr1\taddr2\tcity\tstate\tzip\tphone\texternalid" > ${outfile}
 
 declare -A users
 
@@ -98,17 +164,27 @@ while IFS=$'\n' read -r line; do
         externalid=$(echo "$externalid" | sed "s/|.*$//" |xargs)
 
 	if [[ ${uid} =~ [0-9] ]];then barcode=${uid};fi
-	if ! [[ ${email} =~ @.*\.(edu|gov) ]];then email='';fi
+	if ! [[ ${email} =~ @.*\.(edu|gov|com) ]];then email='';fi
 	if ! [[ ${externalid} =~ [a-z] ]];then externalid=$(uuid);fi
+	username=${externalid}
+
+	if [[ ${emaildefaultforall}=="1" ]];then email="${emaildefault}";fi
+
+	ptype=$(sed 's/[^a-z]//i' <<< ${ptype})
+	ptype=${groups["${ptype}"]}
 
 	fixname
 	fixaddress
+
 	counter=$((${counter} + 1))
 	if [[ $((${counter}%100)) == 0 ]];then echo "${counter} records processed in ${timer} seconds"; fi
 
 	if ! [[ -z ${lname} ]]; then
 		if ! [ ${users["${username}+abc"]} ]; then
-			echo -e "${barcode}\t${fname}\t${mname}\t${lname}\t${pname}\t${email}\t${type}\t${addrtype}\t${addr1}\t${addr2}\t${city}\t${state}\t${zip}\t${phone}\t${externalid}" >> ${outfile}
+			create_user
+#			#echo -e "${barcode}\t${fname}\t${mname}\t${lname}\t${pname}\t${email}\t${type}\t${addrtype}\t${addr1}\t${addr2}\t${city}\t${state}\t${zip}\t${phone}\t${externalid}" >> ${outfile}
+
+			echo "${user}" | jq -c '.' >> ${outfile}
 		fi
 	fi
 

@@ -13,10 +13,22 @@ function auth () {
 }
 
 function get_data() {
+
+	case $rectype in
+		funds|vendors)
+			deletedrecs="&deleted=false"
+			apicall="${apiUri}&fields=${defaultFields}"
+			;;
+		*)
+			deletedrecs="&deleted=false"
+			apicall="${apiUri}?offset=${offset}&fields=${defaultFields}&limit=${increment}${deletedrecs}"
+			;;
+	esac
+
 	api=$(curl -s -k -w '\n' -X GET \
 	  -H "Content-type: application/json" \
 	  -H "Authorization: Bearer ${access_token}" \
-	  "${apiUri}?offset=${offset}&fields=${defaultFields}&limit=${increment}${deletedrecs}")
+	  "${apicall}")
 }
 
 function orders2tsv() {
@@ -141,6 +153,15 @@ do
 	printf -v filecounter "%04d" $counter
 	echo "$api" | jq '.' > "${rectype}/${rectype}.${filecounter}.json"
 	offset=$(($offset + $increment))
+
+	### Exit for record types only requiring one call
+	case $rectype in
+		funds|vendors)
+			echo "$rectype records have been retrieved"	
+			exit
+			;;
+	esac
+	
 	if [[ $counter -gt 0 ]]; then echo "$(( $increment*$counter )) records processed in $SECONDS seconds";fi
 	counter=$(($counter + 1))
 	

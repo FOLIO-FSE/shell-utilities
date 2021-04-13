@@ -214,7 +214,7 @@ IFS='' read -r -d '' org << EndOfOrg
  "id" : "${uuid}",
  "name" : "${name}",
  "code" : "${org_code}",
- "description" : "${note} ${contact}",
+ "description" : "${description}",
  "exportToAccounting" : false,
  "status" : "Active",
  "aliases" : [ ],
@@ -356,7 +356,7 @@ do
 	# break line into array
 	record=($line)
 	
-	org_code="${record[0]}"
+	org_code="${record[11]}"
 	account="${record[2]}"
 	name="${record[13]}"
 	orderflag="${record[17]}"
@@ -374,7 +374,7 @@ do
 	phone="${record[34]}"
 	note="${record[36]}"
 
-
+	description=$(echo "${account} ${note} ${contact}" |xargs)
 	
 	### convert text literal to ISO code
 	country=$(get_country_code "${country}")
@@ -389,6 +389,7 @@ do
 	fi
 
 	email=$(correct_email)
+	notes=
 
 	if [[ ${#email} > 0 ]]; then
 		add_email

@@ -1,0 +1,8 @@
+#!/bin/bash
+tables=("Alias" "AliasType" "Contact" "ContactRole" "ContactRoleProfile" "ExternalLogin" "ExternalLoginType" "IssueLog" "IssueLogType" "Organization" "OrganizationHierarchy" "OrganizationRole" "OrganizationRoleProfile" "Privilege" "User")
+
+for table in ${tables[@]}; do
+	mysql folio -e "select * from ${table}" -B > "${table}.tsv" 
+done
+
+

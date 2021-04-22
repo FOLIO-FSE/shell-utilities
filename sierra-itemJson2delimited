@@ -6,7 +6,13 @@ rm ${outfile} 2>/dev/null
 declare -a groups
 group=(["1"]="Undergraduate" ["2"]="Graduate" ["3"]="Faculty" ["4"]="Staff" ["5"]="Alumni" ["6"]="Community" ["14"]="Retired" ["16"]="ILL")
 
-cat items/items.*.json | tr -d "|" | jq -r '.entries[] | [
+echo "collecting harvested data"
+
+cat items/items.*.json | tr -d "|" | jq -c '.entries[]' > all_items.json
+
+echo "creating temporary files"
+
+cat all_items.json | jq ' . | [
         .id // "",
         .bibIds[0] // "",
         .barcode // "",

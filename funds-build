@@ -1,0 +1,59 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/finance/expense-classes?query=cql.allRecords=1&limit=100000")
+
+## load all expense classes into an array
+expenseclasses=( $(echo $apicall |jq -r '.expenseClasses[].id') )
+
+## build expense class object
+
+expenseclassobject='"statusExpenseClasses":['
+
+for id in "${expenseclasses[@]}";do
+	expenseclassobject="${expenseclassobject}{\"status\":\"Active\", \"expenseClassId\":\"${id}\"},"
+done
+
+## remove trailing comma and close array
+expenseclassobject=${expenseclassobject::-1}
+expenseclassobject="${expenseclassobject}]"
+
+fiscalyear="1d2f1d48-0cee-40ee-b98f-6f2712e8c5be"
+suffix="2023"
+
+declare -A ledger
+
+ledger['247']='6c95f83b-35c2-4b4a-812f-d4c4ba885d0d' #ccdp
+ledger['245']='317bf212-2b4e-46e4-9733-be396eed3d7f' #gll
+ledger['248']='f2cac6ab-21d6-4ff6-b49b-0161998e35e1' #hook
+ledger['250']='3e672ca6-7bc9-488e-9deb-5cf932cee667' #retiree
+ledger['249']='a94308a6-3a8a-4e86-a607-123bb71b5c82' #segal
+ledger['246']='5354e803-8154-409b-aacf-4a74f56f6265' #spcoll
+
+## load programs, split each line into array
+while IFS=$'\n' read -r line; do
+        IFS=$'\t' read voyagercode fundname fundcode <<< ${line}
+	if [[ -z $fundcode ]];then fundcode="${fundname}";fi
+
+	funduuid=$(uuidgen)
+	budgetuuid=$(uuidgen)
+
+	ledger=${ledger[${voyagercode}]}
+
+	### build the fund
+
+	funddata="{\"fund\":{\"id\": \"${funduuid}\", \"fundStatus\":\"Active\",\"name\":\"${fundname}\",\"code\":\"${fundcode}\",\"ledgerId\":\"${ledger}\",\"externalAccountNo\":\"not configured\"},\"groupIds\":[]}"
+
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${funddata}" "${okapi_url}/finance/funds")
+	#echo $apicall |jq .
+
+	### add a budget
+
+	budgetdata="{${expenseclassobject}, \"fiscalYearId\":\"${fiscalyear}\",\"budgetStatus\":\"Active\",\"allowableExpenditure\":100,\"allowableEncumbrance\":100,\"allocated\":\"0\",\"fundId\":\"${funduuid}\",\"name\":\"${fundcode}-FY2023\",\"id\":\"${budgetuuid}\"}"
+
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${budgetdata}" "${okapi_url}/finance/budgets")
+
+	echo $apicall |jq .
+
+done < programs

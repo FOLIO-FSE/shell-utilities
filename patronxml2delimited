@@ -1,0 +1,90 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+infile='patrons.xml'
+outfile='patrons.tsv'
+
+homeAddr='Home'
+workAddr='Work'
+email_domain='okanagan.edu'
+
+rm ${outfile} 2> /dev/null
+
+basepath='/patronList/patron'
+
+systemId='patronId'
+barcode="patronBarcodeList/patronBarcode[barcodeStatus='Active'][1]/barcode" # select only the first
+group="patronBarcodeList/patronBarcode[barcodeStatus='Active'][1]/patronGroup"
+created='registrationDate'
+expiration='expirationDate'
+fname='firstName'
+mname='middleName'
+lname='lastName'
+class='title'
+paddr1='permAddress/line1'
+pcity='permAddress/city'
+pstate='permAddress/stateProvince'
+pzip='permAddress/postalCode'
+pphone="permAddress/patronPhoneList/patronPhone[type='Primary']/phone"
+taddr1='tempAddressList/tempAddress[1]/line1'
+tcity='tempAddressList/tempAddress[1]/city'
+tstate='tempAddressList/tempAddress[1]/stateProvince'
+tzip='tempAddressList/tempAddress[1]/postalCode'
+tphone="tempAddressList/tempAddress/patronPhoneList/patronPhone[type='Primary'][1]/phone"
+email="emailList/patronEmail[addressStatusCode='Normal']/email"
+note="concat(';',noteList/patronNote/note)"
+stats="concat(';',patronStatList/patronStat)"
+
+echo -e "systemId\texternalid\tbarcode\tgroup\tcreated\texpiration\tfname\tmname\tlname\thomeAddr\tpaddr1\tpcity\tpstate\tpzip\tpphone\tworkAddr\ttaddr1\ttcity\ttstate\ttzip\ttphone\temail\tnote\tstats" > ${outfile}
+
+# strip line breaks to avoid problems with delimited, strip namespace because xmlstarlet can't deal with it
+
+cat ${infile} | tr $'\r' ' ' | sed 's/ xmlns="[^>]*//' |xmlstarlet sel -t -m ${basepath} \
+	-v ${systemId} -o '|' \
+	-v ${barcode} -o '|' \
+	-v ${group} -o '|' \
+	-v ${created} -o '|' \
+	-v ${expiration} -o '|' \
+	-v ${fname} -o '|' \
+	-v ${mname} -o '|' \
+	-v ${lname} -o '|' \
+	-v ${paddr1} -o '|' \
+	-v ${pcity} -o '|' \
+	-v ${pstate} -o '|' \
+	-v ${pzip} -o '|' \
+	-v ${pphone} -o '|' \
+	-v ${taddr1} -o '|' \
+	-v ${tcity} -o '|' \
+	-v ${tstate} -o '|' \
+	-v ${tzip} -o '|' \
+	-v ${tphone} -o '|' \
+	-v ${email} -o '|' \
+	-v ${note} -o '|' \
+	-v ${stats} \
+	-n | sed 's/;*|;*/|/g' | tr -d '"' | tr -d "'" > patrons.tmp
+
+counter=1
+SECONDS=0
+
+while IFS=$'\n' read -r line; do
+	timer=$SECONDS
+	IFS='|' read systemId barcode group created expiration fname mname lname paddr1 pcity pstate pzip pphone taddr1 tcity tstate tzip tphone email note stats <<< ${line}
+	
+	###############################
+	# create  network ID from email
+	if [[ ${email} =~ ${email_domain} ]]; then 
+		externalid=$(sed 's/@.*//' <<< ${email})
+	fi
+
+
+	echo -e "${systemId}\t${externalid}\t${barcode}\t${group}\t${created}\t${expiration}\t${fname}\t${mname}\t${lname}\t${class}\t${homeAddr}\t${paddr1}\t${pcity}\t${pstate}\t${pzip}\t${pphone}\t{workAddr}\t${taddr1}\t${tcity}\t${tstate}\t${tzip}\t${tphone}\t${email}\t${note}\t${stats}" >> ${outfile}
+	counter=$(($counter + 1))
+
+	if [[ $((${counter}%100)) == 0 ]];then echo "${counter} records processed in ${timer} seconds"; fi
+
+
+done < patrons.tmp
+
+
+echo -e "\n\nAll patrons have been exported a delimited file ${outfile} is in your current working directory\n"

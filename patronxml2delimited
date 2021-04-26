@@ -40,7 +40,7 @@ echo -e "systemId\texternalid\tbarcode\tgroup\tcreated\texpiration\tfname\tmname
 
 # strip line breaks to avoid problems with delimited, strip namespace because xmlstarlet can't deal with it
 
-cat ${infile} | tr $'\r' ' ' | sed 's/ xmlns="[^>]*//' |xmlstarlet sel -t -m ${basepath} \
+cat ${infile} | tr $'\r' ' ' |tr $'\n' ' ' | sed 's/ xmlns="[^>]*//' |xmlstarlet sel -t -m ${basepath} \
 	-v ${systemId} -o '|' \
 	-v ${barcode} -o '|' \
 	-v ${group} -o '|' \

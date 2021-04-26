@@ -32,7 +32,7 @@ tcity='tempAddressList/tempAddress[1]/city'
 tstate='tempAddressList/tempAddress[1]/stateProvince'
 tzip='tempAddressList/tempAddress[1]/postalCode'
 tphone="tempAddressList/tempAddress/patronPhoneList/patronPhone[type='Primary'][1]/phone"
-email="emailList/patronEmail[addressStatusCode='Normal']/email"
+email="(emailList/patronEmail[addressStatusCode='Normal'])[1]/email"
 note="concat(';',noteList/patronNote/note)"
 stats="concat(';',patronStatList/patronStat)"
 

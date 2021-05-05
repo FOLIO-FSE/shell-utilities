@@ -11,7 +11,7 @@ while read line
 do
 
 code=$(cut -f1 <<<$line)
-discovery=$(cut -f2 <<<$line)
+department=$(cut -f2 <<<$line)
 
 IFS='' read -r -d '' department << EndOfDepartment
 
@@ -21,9 +21,9 @@ IFS='' read -r -d '' department << EndOfDepartment
 }
 EndOfDepartment
 
-apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${department}" "${okapi_url}/locations")
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${department}" "${okapi_url}/departments")
 
-echo -e "${apicall}" |jq '.'
-done < department
+echo -e "${apicall}"  |jq '.'
+done < departments
 
 

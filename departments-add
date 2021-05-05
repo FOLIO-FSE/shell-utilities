@@ -1,0 +1,29 @@
+# Creates departments based on contents of tab delimited file
+#
+# Code is expected in column 1 of a file named "departments"
+# Dept name is set in column 2
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+while read line
+do
+
+code=$(cut -f1 <<<$line)
+discovery=$(cut -f2 <<<$line)
+
+IFS='' read -r -d '' department << EndOfDepartment
+
+{
+"code": "${code}",
+"name": "${department}"
+}
+EndOfDepartment
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${department}" "${okapi_url}/locations")
+
+echo -e "${apicall}" |jq '.'
+done < department
+
+

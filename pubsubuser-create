@@ -1,0 +1,44 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+permuser_uuid="1a260d35-70a6-4b2f-9e7d-06914607abbc"
+pubsub_uuid="24e554b7-46ce-4be6-be6c-596d64af4922"
+
+# create pubsub user
+
+IFS='' read -r -d '' data << EndOfJSON
+{
+  "active": true,
+  "personal": {
+    "firstName": "Pub Sub",
+    "lastName": "System",
+    "email": "fse-hosting@folio.ebsco.com",
+    "addresses": []
+  },
+  "id": "${pubsub_uuid}",
+  "username": "pub-sub"
+}
+EndOfJSON
+
+curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/users"
+
+# create permissions user
+
+IFS='' read -r -d '' data << EndOfJSON
+{
+  "id": "${permuser_uuid}",
+  "userId": "${pubsub_uuid}",
+  "permissions": [
+    "source-storage.events.post",
+    "source-records-manager.events.post",
+    "inventory.events.post",
+    "circulation.events.post",
+    "patron-blocks.events.post",
+    "audit-data.events.post"
+  ]
+}
+EndOfJSON
+
+curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/perms/users"
+

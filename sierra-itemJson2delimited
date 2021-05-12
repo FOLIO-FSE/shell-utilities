@@ -47,14 +47,11 @@ while IFS=$'\n' read -r line; do
 	inotetype=''
 	notesuppress=''
 
-	### remove copy 1 info
-	copy=$(sed 's/^1$//' <<< $copy)
-
 	timer=$SECONDS
 	IFS='|' read id bibId barcode location callNum itype copy volume icode1 icode2 mattype imessage note opacmsg <<< $line 
 
 	counter=$((${counter} + 1))
-	if [[ $((${counter}%100)) == 0 ]];then echo -en "${counter} records processed in ${timer} seconds\r"; fi
+	if [[ $((${counter}%10)) == 0 ]];then echo -en "${counter} records processed in ${timer} seconds\r"; fi
 
 	if [[ ${imessage} != "" ]];then pieces=$(sed 's/[^0-9]//g' <<< $imessage);fi	
 	if [[ ${pieces} != "" ]];then pieces=${imsg_dict[${pieces}]};pieces=${pieces_dict[${pieces}]};fi	

@@ -1,18 +1,21 @@
+### input is file of all sierra items with one item per line
+
 outfile="items.tsv"
+
+echo "Starting processing. Please be patient -- this can take many minutes"
 
 rm ${outfile} 2>/dev/null
 
+declare -A imsg_dict
+declare -A opacmsg_dict
+declare -A pieces_dict
 
-declare -a groups
-group=(["1"]="Undergraduate" ["2"]="Graduate" ["3"]="Faculty" ["4"]="Staff" ["5"]="Alumni" ["6"]="Community" ["14"]="Retired" ["16"]="ILL")
+imsg_dict=(['1']="CHECK FOR DISC" ['m']="CHECK FOR MAP" ['p']="CHECK FOR PTS." ['a']="CHECK FOR VIEWER" ['9']="CHK BATTERIES!" ['2']="CHK FOR 2 DISC" ['3']="CHK FOR 3 DISC" ['4']="CHK FOR 4 DISC" ['w']="HAS 2 ITEMS" ['v']="HAS 2 TAPES" ['x']="HAS 3 TAPES" ['y']="HAD 4 TAPES" ['z']="HAS 3 ITEMS" ['h']="HAS 4 ITEMS" ['i']="HAS 5 ITEMS" ['-']="")
 
-echo "collecting harvested data"
+pieces_dict=(['1']="2" ['m']="2" ['p']="2" ['a']="2" ['9']="2" ['2']="3" ['3']="4" ['4']="5" ['w']="3" ['v']="3" ['x']="4" ['y']="5" ['z']="4" ['h']="5" ['i']="6")
 
-cat items/items.*.json | tr -d "|" | jq -c '.entries[]' > all_items.json
 
-echo "creating temporary files"
-
-cat all_items.json | jq ' . | [
+cat all_items.json | tr -d "|" | jq -r '. | [
         .id // "",
         .bibIds[0] // "",
         .barcode // "",
@@ -23,13 +26,16 @@ cat all_items.json | jq ' . | [
 	(.varFields[] |select(.fieldTag=="v") | .content) // "", # volume
 	.fixedFields."59".value // "", # icode1
 	.fixedFields."60".value // "", # icode2
-	.fixedFields."97".value // "", # imessage
-	.fixedFields."108".value // "" # opacmsg
+	.fixedFields."61".display // "", # icode2
+	.fixedFields."97".display // "", # imessage
+	(.varFields[] |select(.fieldTag=="x") | .content) // "", # item note 
+	(.varFields[] |select(.fieldTag=="m") | .content) // "" # opac message
 	] |join("|")' |tr -d '"' |tr -d "'" > items.tmp
 
 
-echo -e "id\tbibId\tbarcode\tlocation\tcallNum\titype\tcopy\tvolume\ticode1\ticode2\timessage\topacmsg" > ${outfile}
+echo -e "id\tholdingsId\tbarcode\tlocation\tcallNum\titype\tcopy\tvolume\ticode1\ticode2\tmattype\timessage\tnote\topacmsg\timsgtype\tmsgsuppress" > ${outfile}
 
+echo "Items extracted from JSON. Analyzing file"
 
 SECONDS=0
 counter=0
@@ -38,18 +44,32 @@ while IFS=$'\n' read -r line; do
 	#### remove "-" values which indicate defaults
 	line=$(sed 's/|-/|/g' <<< ${line})
 
+	inotetype=''
+	notesuppress=''
+
 	### remove copy 1 info
 	copy=$(sed 's/^1$//' <<< $copy)
 
 	timer=$SECONDS
-	IFS='|' read id bibId barcode location callNum itype copy volume icode1 icode2 imessage opacmsg <<< $line 
+	IFS='|' read id bibId barcode location callNum itype copy volume icode1 icode2 mattype imessage note opacmsg <<< $line 
 
 	counter=$((${counter} + 1))
-	if [[ $((${counter}%100)) == 0 ]];then echo "${counter} records processed in ${timer} seconds"; fi
+	if [[ $((${counter}%100)) == 0 ]];then echo -en "${counter} records processed in ${timer} seconds\r"; fi
 
-	echo -e "${id}\t${bibId}\t${barcode}\t${location}\t${callNum}\t${itype}\t${copy}\t${volume}\t${icode1}\t${icode2}\t${imessage}\t${opacmsg}" >> ${outfile}
+	if [[ ${imessage} != "" ]];then pieces=$(sed 's/[^0-9]//g' <<< $imessage);fi	
+	if [[ ${pieces} != "" ]];then pieces=${imsg_dict[${pieces}]};pieces=${pieces_dict[${pieces}]};fi	
+	
+	### concatenate note types and put 2 in the pieces column to trigger the checkout message
+	if [[ ${opacmsg} != "" ]];then imessage="${opacmsg} ${imessage}";opacmsg=2;fi
+
+	if [[ ${note} != "" ]];then imsgtype='8d0a5eca-25de-4391-81a9-236eeefdd20b';fi
+	if [[ ${note} != "" ]];then msgsuppress='true';fi
+
+	echo -e "${id}\t${bibId}${location}\t${barcode}\t${location}\t${callNum}\t${itype}\t${copy}\t${volume}\t${icode1}\t${icode2}\t${mattype}\t${imessage}\t${note}\t${opacmsg}\t${inotetype}\t${notesuppress}" >> ${outfile}
 
 done < items.tmp
+
+echo "${counter} records processed in ${timer} seconds"
 
 rm items.tmp
 

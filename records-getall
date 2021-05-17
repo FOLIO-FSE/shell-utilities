@@ -4,7 +4,8 @@ okapi_token=$(cat okapi.token)
 
 #query='users?limit=1000000'
 #query='holdings-storage/holdings?limit=10000000'
-query='item-storage/items?limit=99000000'
+#query='item-storage/items?limit=99000000'
+query='tags?limit=99000000'
 
 apicall=$(curl -s -w '\n' -X GET -D \
   -H "Accept: application/json" \
@@ -12,7 +13,7 @@ apicall=$(curl -s -w '\n' -X GET -D \
   -H "x-okapi-token: ${okapi_token}" \
   ${okapi_url}/${query})
 
-echo $apicall |jq . 
+echo $apicall  |jq .
 
 
 

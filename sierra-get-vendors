@@ -1,0 +1,38 @@
+# sierra.url contains api endpoint, e.g. https://library.institution.edu/
+# sierra.auth contains apikey:secret (separated by a colon)
+# 
+# A valid username that can view the vendor file is also needed
+
+username="api"
+
+auth=$(curl -s -w '\n' -X POST \
+  -H "Content-type: application/json" \
+  -H "Authorization: Basic $(cat sierra.auth | base64)" \
+  "$(cat sierra.url)/token")
+
+access_token=$(echo ${auth} | jq -r '.access_token')
+
+api=$(curl -s -w '\n' -X GET \
+  -H "Content-type: application/json" \
+  -H "Authorization: Bearer ${access_token}" \
+  "$(cat sierra.url)/vendors/?login=${username}")
+
+echo -e "Name\tCode\tAccountNum\tEmail\tPhone\tDiscount\tAccountingUnit\tAddr1\tAddr2\tId" > vendors.txt
+
+echo "${api}" | jq -r '.entries[] | [
+	.vendorName // "",
+	.code // "",
+	.accountNum // "",
+	.email // "",
+	.phone // "",
+	.discount // "",
+	.accountingUnit // "",
+	.address1 // "",
+	.address2 // "",
+	.id // ""
+	] | @tsv' >> vendors.txt
+
+echo "Vendors have been written to vendors.txt"
+
+echo $api > junk
+

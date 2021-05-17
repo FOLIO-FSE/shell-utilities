@@ -1,0 +1,21 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+
+while IFS=$'\n' read -r line; do
+	user_id=$(echo $line |jq -r .id)
+	
+	apicall=$(curl --http1.1 -s -w '\n' -X PUT \
+	  -H "Content-type: application/json" \
+	  -H "Accept: text/plain" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  -d "${line}" \
+	  ${okapi_url}/users/${user_id})
+	
+	echo ${user_id}
+done < users
+
+
+

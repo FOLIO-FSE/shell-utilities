@@ -56,6 +56,7 @@ reftypes=("addresstypes" \
 "orders-storage/reporting-codes" \
 "organizations-storage/organizations" \
 "overdue-fines-policies" \
+"patron-block-conditions" \
 "patron-notice-policies" \
 "patron-notice-policy-storage/patron-notice-policies" \
 "refunds" \

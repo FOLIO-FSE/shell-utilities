@@ -12,7 +12,6 @@ apicall=$(curl -s -w '\n' -X GET -D \
   -H "x-okapi-token: ${okapi_token}" \
   "${okapi_url}/users?${query}")
 
-echo $apicall 
-echo "${okapi_url}/users/${query}"
+echo $apicall | jq .
 
 

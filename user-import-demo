@@ -6,6 +6,8 @@
 ### Users also won't update if the combination of unique ID points changes. In other words,
 ### you're not overlaying on a single field but rather the combo. So if the username or 
 ### external ID changes, that user won't overlay
+###
+### Number of users is a required parameter, recommended to send in batches of 1000 or fewer
 
 okapi_url="your_okapi_url"
 tenant="your_tenant_id"

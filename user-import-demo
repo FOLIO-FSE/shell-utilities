@@ -1,0 +1,88 @@
+### A couple gotchas -- users won't update if they're attached to a service point
+### or have permissions assigned (this will apply only to staff)
+###
+### If a user doesn't update, the rest of the batch still will.  
+### 
+### Users also won't update if the combination of unique ID points changes. In other words,
+### you're not overlaying on a single field but rather the combo. So if the username or 
+### external ID changes, that user won't overlay
+
+okapi_url="your_okapi_url"
+tenant="your_tenant_id"
+username="user_with_sufficient_permissions"
+pwd='and_password'
+
+
+### these must correspond to what's in FOLIO
+mainAddrType="Main"
+otherAddrType="Home"
+
+### first get an authentication token -- you can use the same one for as many 
+### calls as you want
+IFS='' read -r -d '' okapi_login << EndOfAuth
+{
+  "tenant": "${tenant}",
+  "username": "${username}",
+  "password": "${pwd}"
+}
+EndOfAuth
+
+auth=$(curl -s -w '\n' -X POST -D - \
+  -H "Content-type: application/json" \
+  -H "X-Okapi-Tenant: ${tenant}" \
+  -d "${okapi_login}" \
+  "${okapi_url}/authn/login")
+
+okapi_token=$(echo "${auth}" | grep 'x-okapi-token: ' |sed 's/^.* //')
+
+### just stick your data into a structure. If you have custom fields
+### to pass through, this will need to be modified
+
+IFS='' read -r -d '' users << EndOfUsers
+  {
+    "users" : [
+      {
+        "username" : "theusername",
+        "externalSystemId" : "theexternalId",
+        "barcode" : "99999999999",
+        "active" : true,
+        "patronGroup" : "faculty",
+        "personal" : {
+          "lastName" : "thelastname",
+          "firstName" : "thefirstname",
+          "email" : "name@institution.edu",
+          "phone" : "5555555555",
+          "mobilePhone" : "",
+          "addresses" : [
+            {
+              "addressLine1" : "first work address line",
+              "addressLine2" : "second work address line",
+              "city" : "thecity",
+              "postalCode" : "zip goes here",
+              "region" : "theregionorstate",
+              "addressTypeId" : "Main",
+              "primaryAddress" : true
+            },
+            {
+              "addressLine1" : "first home address line",
+              "addressLine2" : "second home address line",
+              "city" : "thecity",
+              "region" : "theregionorstate",
+              "postalCode" : "zip goes here",
+              "addressTypeId" : "Home",
+              "primaryAddress" : false
+            }
+          ]
+        },
+        "expirationDate" : null
+      }
+    ],
+    "totalRecords" : 1,
+    "deactivateMissingUsers" : false,
+    "updateOnlyPresentFields" : true
+  }
+EndOfUsers
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${users}" "${okapi_url}/user-import")
+
+echo "${apicall}"

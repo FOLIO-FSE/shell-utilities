@@ -8,6 +8,11 @@
 ### external ID changes, that user won't overlay
 ###
 ### Number of users is a required parameter, recommended to send in batches of 1000 or fewer
+###
+### API user requires user-import.add permission
+###
+### Be sure to change address types to reflect what is in your installation. To transmit custom fields,
+### you will need to encase them in an array. Using a GET request on /users is helpful for syntax
 
 okapi_url="your_okapi_url"
 tenant="your_tenant_id"

@@ -3,7 +3,11 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-echo "patron\tbarcode\titem\tduedate\tstatus" > outfile
+outfile="problem_loans.txt"
+
+declare -A statusArr
+
+echo -e "patron\tbarcode\titem\tduedate\tstatus" > ${outfile}
 
 counter=1
 SECONDS=0
@@ -18,16 +22,26 @@ while IFS=$'\n' read -r line; do
 	  ${okapi_url}/inventory/items?query=barcode=${barcode})
 
 	status=$(echo "${apicall}" |jq -r '.items[].status.name // "Not found"')
+	#status=$(echo "{$status}" |tr " " "_")
 
-	echo "${patron}\t${barcode}\t{item}\t{duedate}\t{status}" > outfile
+	if test ${statusArr[${status}]+isset}; then 
+		statusArr[${status}]=$((statusArr["${status}"] + 1))
+	else 
+		statusArr+=(["${status}"]=1)
+	fi
 
-	if [[ $((${counter}%2)) == 0 ]];then echo -en "${counter} records processed in $SECONDS seconds\r"; fi
+	for key in "${!statusArr[@]}"	
+	do
+		echo -en "${key}: ${statusArr[${key}]}\t"
+	done
+
+	echo -en "\r"
+
+	echo -e "${patron}\t${barcode}\t{item}\t{duedate}\t{status}" > ${outfile}
+
+	#if [[ $((${counter}%2)) == 0 ]];then echo -en "${counter} records processed in $SECONDS seconds\r"; fi
 	counter=$((${counter} + 1))
 
 done < openloans.tsv
 
 echo "Processing is complete"
-
-
-
-

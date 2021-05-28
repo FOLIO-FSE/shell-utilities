@@ -1,0 +1,33 @@
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+echo "patron\tbarcode\titem\tduedate\tstatus" > outfile
+
+counter=1
+SECONDS=0
+
+while IFS=$'\n' read -r line; do
+	IFS=$'\t' read -r patron barcode item duedate <<< $line
+
+	apicall=$(curl -s -w '\n' -X GET -D \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  ${okapi_url}/inventory/items?query=barcode=${barcode})
+
+	status=$(echo "${apicall}" |jq -r '.items[].status.name // "Not found"')
+
+	echo "${patron}\t${barcode}\t{item}\t{duedate}\t{status}" > outfile
+
+	if [[ $((${counter}%2)) == 0 ]];then echo -en "${counter} records processed in $SECONDS seconds\r"; fi
+	counter=$((${counter} + 1))
+
+done < openloans.tsv
+
+echo "Processing is complete"
+
+
+
+

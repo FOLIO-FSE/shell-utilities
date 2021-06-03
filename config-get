@@ -4,6 +4,4 @@ okapi_token=$(cat okapi.token)
 
 apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/configurations/entries")
 
-config=$(echo $apicall)
-
-echo $config |jq '.'
+echo "${apicall}"

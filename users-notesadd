@@ -1,4 +1,4 @@
-## takes a delimited file with user uuid in first column and note in the second
+## takes a delimited file with user barcode in first column and note in the second
 
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
@@ -6,7 +6,17 @@ okapi_token=$(cat okapi.token)
 
 noteTypeUuid="9be4a62a-4229-4207-8a39-11c46edf25ec"
 
-while read -r id note;do
+while read -r barcode note;do
+
+        apicall=$(curl -s -w '\n' -X GET -D \
+          -H "Accept: application/json" \
+          -H "X-Okapi-Tenant: ${tenant}" \
+          -H "x-okapi-token: ${okapi_token}" \
+          "${okapi_url}/users?query=barcode=${barcode}")
+
+	# get uuid from barcode
+        id=$(echo $apicall | jq -r .users[].id)
+        echo "Found id $id for barcode $barcode" 
 	
 	note_uuid=$(uuidgen)
 	
@@ -32,6 +42,6 @@ EndOfJSON
 	echo  "${id}  ---  ${note}" 
 	
 
-done < process
+done < patron_notes
 
 

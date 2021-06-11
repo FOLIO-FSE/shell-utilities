@@ -20,20 +20,21 @@ cat all_items.json | tr -d "|" | jq -r '. | [
         .bibIds[0] // "",
         .barcode // "",
 	.location.code // "",
-        .callNumber // "",
+	.status.code // "",
+        .callNumber // " ",
         .itemType // "",
 	.fixedFields."58".value // "", # copy
 	(.varFields[] |select(.fieldTag=="v") | .content) // "", # volume
 	.fixedFields."59".value // "", # icode1
 	.fixedFields."60".value // "", # icode2
 	.fixedFields."61".display // "", # icode2
-	.fixedFields."97".display // "", # imessage
+	.fixedFields."97".value // "", # imessage
 	(.varFields[] |select(.fieldTag=="x") | .content) // "", # item note 
 	(.varFields[] |select(.fieldTag=="m") | .content) // "" # opac message
 	] |join("|")' |tr -d '"' |tr -d "'" > items.tmp
 
 
-echo -e "id\tholdingsId\tbarcode\tlocation\tcallNum\titype\tcopy\tvolume\ticode1\ticode2\tmattype\timessage\tnote\topacmsg\timsgtype\tmsgsuppress" > ${outfile}
+echo -e "holdingsId\tbibId\titem_id\tbarcode\titem_location\tstatus\tcallNum\titype\tloantype\tcopy\tvolume\ticode1\ticode2\tmattype\timessage\tpieces\tnote\topacmsg\timsgtype\tmsgsuppress" > ${outfile}
 
 echo "Items extracted from JSON. Analyzing file"
 
@@ -46,12 +47,13 @@ while IFS=$'\n' read -r line; do
 
 	inotetype=''
 	notesuppress=''
+	loantype="${itype}"
 
 	timer=$SECONDS
-	IFS='|' read id bibId barcode location callNum itype copy volume icode1 icode2 mattype imessage note opacmsg <<< $line 
+	IFS='|' read id bibId barcode location status callNum itype copy volume icode1 icode2 mattype imessage note opacmsg <<< $line 
 
 	counter=$((${counter} + 1))
-	if [[ $((${counter}%10)) == 0 ]];then echo -en "${counter} records processed in ${timer} seconds\r"; fi
+	if [[ $((${counter}%100)) == 0 ]];then echo -en "${counter} records processed in ${timer} seconds\r"; fi
 
 	if [[ ${imessage} != "" ]];then pieces=$(sed 's/[^0-9]//g' <<< $imessage);fi	
 	if [[ ${pieces} != "" ]];then pieces=${imsg_dict[${pieces}]};pieces=${pieces_dict[${pieces}]};fi	
@@ -62,7 +64,7 @@ while IFS=$'\n' read -r line; do
 	if [[ ${note} != "" ]];then imsgtype='8d0a5eca-25de-4391-81a9-236eeefdd20b';fi
 	if [[ ${note} != "" ]];then msgsuppress='true';fi
 
-	echo -e "${id}\t${bibId}${location}\t${barcode}\t${location}\t${callNum}\t${itype}\t${copy}\t${volume}\t${icode1}\t${icode2}\t${mattype}\t${imessage}\t${note}\t${opacmsg}\t${inotetype}\t${notesuppress}" >> ${outfile}
+	echo -e "${bibId}${location}\t${bibId}\t${id}\t${barcode}\t${location}\t${status}\t${callNum}\t${itype}\t${location}\t${copy}\t${volume}\t${icode1}\t${icode2}\t${mattype}\t${imessage}\t${pieces}\t${note}\t${opacmsg}\t${inotetype}\t${notesuppress}" >> ${outfile}
 
 done < items.tmp
 

@@ -19,6 +19,10 @@ function get_data() {
 			deletedrecs="&deleted=false"
 			apicall="${apiUri}&fields=${defaultFields}"
 			;;
+		fines)
+			deletedrecs="&deleted=false"
+			apicall="${apiUri}?offset=${offset}&limit=${increment}&fields=${defaultFields}"
+			;;
 		*)
 			deletedrecs="&deleted=false"
 			apicall="${apiUri}?offset=${offset}&fields=${defaultFields}&limit=${increment}${deletedrecs}"
@@ -29,92 +33,6 @@ function get_data() {
 	  -H "Content-type: application/json" \
 	  -H "Authorization: Bearer ${access_token}" \
 	  "${apicall}")
-}
-
-function orders2tsv() {
-cat orders/orders.0*.json |jq -cr '.entries[] |
-	.code // "",
-	.fundName // ""'
-}
-
-
-function patrons2tsv() {
-
-
-cat patrons/patrons.0*.json |jq -cr '.entries[] | [
-        .id // "",
-        .barcodes[0] // "",
-	(.varFields[] |select(.fieldTag=="l") | .content) // "", # network
-	(.varFields[] |select(.fieldTag=="u") | .content) // "", # univ id
-        .createdDate // "",
-        .fixedFields."43".value // "",  # expiration date
-        .emails[0] // "nomail@nomail.com",
-        .names[0] // "",
-        .addresses[0].lines[0] // "",
-        .addresses[0].lines[1] // "",
-        .phones[0].number // "",
-        .patronType // "", # patron group
-        .blockInfo.code // "", # block
-        .fixedFields."96".value // "0" # money owed
-] |join("|")' | tr -d "'" |tr -d '"' > patrons.tmp
-
-echo -e "sierra_id\tbarcode\texternalid\tuni_id\tcreated\texpiration\temail\tfname\tlname\taddr1\taddr2\tcity\tstate\tzip\tphone\tgroup\tblock\towed" > patrons.tsv
-
-counter=1
-SECONDS=0
-
-while IFS=$'\n' read -r line; do
-	## make sure line has right number of fields
-	timer=$SECONDS
-	IFS='|' read sierra_id barcode externalid uni_id created expiration email name addr1 addr2 phone group block owed <<< $line 
-	
-	city=""
-	zip=""
-	state=""
-	fname=""
-	lname=""
-
-	## break address line into components. Assume that city/state/zip is in addr2
-	## Hope for the city followed by a comma followed by state and zip
-	## If comma not found or if it doesn't look like something that ends in a zip
-	## then leave everything as it is
-
-	IFS=',' read city statezip <<< ${addr2}
-
-	IFS=' ' read -r -a stziparr <<< ${statezip}
-	
-	if [[ ${#stziparr[@]} > 1 ]]; then
-		if [[ ${stziparr[-1]} =~ ^[0-9\-]*$ ]]; then
-			zip=${stziparr[-1]} 
-			state=${stziparr[-2]}
-			addr2=''
-		fi
-	fi
-
-	## generate consistent ids 
-	if [[ ${externalid} == "" ]]; then externalid="${sierra_id}";fi
-	if [[ ${uni_id} == ""  ]]; then uni_id="${sierra_id}";fi
-
-	## detect name
-	fname=" "
-	lname=" "
-
-	if [[ name != "" ]]; then
-		fname=$(echo $name | cut -f2 -d,)
-		lname=$(echo $name | cut -f1 -d,)
-	fi
-
-	counter=$(($counter + 1))
-
-	if [[ $(($counter % 100)) == 0 ]];then echo "${counter} records processed in ${timer} seconds";fi
-
-	echo -e "${sierra_id}\t${barcode}\t${externalid}\t${uni_id}\t${created}\t${expiration}\t${email}\t${fname}\t${lname}\t${addr1}\t${addr2}\t${city}\t${state}\t${zip}\t${phone}\t${group}\t${block}\t${owed}"  >> patrons.tsv
-done < patrons.tmp
-
-rm patrons.tmp
-
-
-echo -e "\n\nAll patrons have been exported. JSON files are in the patrons directory, and a delimited file patrons.tsv is in your current working directory\n"
 }
 
 baseUri=$(cat sierra.url)
@@ -178,15 +96,4 @@ do
 done
 
 echo "Completed processing in $SECONDS seconds"
-
-case $rectype in
-	patrons)
-		echo "Building TSV patron file"	
-		patrons2tsv
-		;;
-	orders)
-		echo "Building TSV order file"	
-		orders2tsv
-		;;
-esac
 

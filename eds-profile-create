@@ -1,0 +1,334 @@
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+IFS='' read -r -d '' job << EndOfJSON
+{
+  "id": "ae53edf0-599f-4be4-a175-8e32d12eec4b",
+  "name": "EDS Export Job Profile",
+  "mappingProfileId": "2c9ce305-d741-4bc3-b486-884b00335834"
+}
+EndOfJSON
+
+
+IFS='' read -r -d '' mapping << EndOfJSON
+{
+  "id": "2c9ce305-d741-4bc3-b486-884b00335834",
+  "name": "EDS Export Profile",
+  "recordTypes": [
+    "SRS",
+    "HOLDINGS",
+    "ITEM"
+  ],
+  "transformations": [
+    {
+      "fieldId": "holdings.electronic.access.linktext.default",
+      "path": "$.holdings[*].electronicAccess[?(!(@.relationshipId) || @.relationshipId == null)].linkText",
+      "enabled": true,
+      "transformation": "856  $y",
+      "recordType": "HOLDINGS"
+    },
+    {
+      "fieldId": "holdings.electronic.access.materialsspecification.default",
+      "path": "$.holdings[*].electronicAccess[?(!(@.relationshipId) || @.relationshipId == null)].materialsSpecification",
+      "enabled": true,
+      "transformation": "856  $3",
+      "recordType": "HOLDINGS"
+    },
+    {
+      "fieldId": "holdings.electronic.access.uri.default",
+      "path": "$.holdings[*].electronicAccess[?(!(@.relationshipId) || @.relationshipId == null)].uri",
+      "enabled": true,
+      "transformation": "856  $u",
+      "recordType": "HOLDINGS"
+    },
+    {
+      "fieldId": "holdings.electronic.access.publicnote.default",
+      "path": "$.holdings[*].electronicAccess[?(!(@.relationshipId) || @.relationshipId == null)].publicNote",
+      "enabled": true,
+      "transformation": "856  $z",
+      "recordType": "HOLDINGS"
+    },
+    {
+      "fieldId": "item.barcode",
+      "path": "$.holdings[*].items[*].barcode",
+      "enabled": true,
+      "transformation": "952ff$m",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.chronology",
+      "path": "$.holdings[*].items[*].chronology",
+      "enabled": true,
+      "transformation": "952ff$l",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.copynumber",
+      "path": "$.holdings[*].items[*].copyNumber",
+      "enabled": true,
+      "transformation": "952ff$n",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.callnumber",
+      "path": "$.holdings[*].items[*].effectiveCallNumberComponents.callNumber",
+      "enabled": true,
+      "transformation": "952ff$e",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.callnumberprefix",
+      "path": "$.holdings[*].items[*].effectiveCallNumberComponents.prefix",
+      "enabled": true,
+      "transformation": "952ff$f",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.callnumbersuffix",
+      "path": "$.holdings[*].items[*].effectiveCallNumberComponents.suffix",
+      "enabled": true,
+      "transformation": "952ff$g",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.callnumbertype",
+      "path": "$.holdings[*].items[*].effectiveCallNumberComponents.typeId",
+      "enabled": true,
+      "transformation": "952ff$h",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.effectivelocation.name",
+      "path": "$.holdings[*].items[*].effectiveLocationId",
+      "enabled": true,
+      "transformation": "952ff$d",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.effectivelocation.campus.name",
+      "path": "$.holdings[*].items[*].effectiveLocationId",
+      "enabled": true,
+      "transformation": "952ff$b",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.effectivelocation.institution.name",
+      "path": "$.holdings[*].items[*].effectiveLocationId",
+      "enabled": true,
+      "transformation": "952ff$a",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.effectivelocation.library.name",
+      "path": "$.holdings[*].items[*].effectiveLocationId",
+      "enabled": true,
+      "transformation": "952ff$c",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.electronic.access.linktext.default",
+      "path": "$.holdings[*].items[*].electronicAccess[?(!(@.relationshipId) || @.relationshipId == null)].linkText",
+      "enabled": true,
+      "transformation": "856  $y",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.electronic.access.materialsspecification.default",
+      "path": "$.holdings[*].items[*].electronicAccess[?(!(@.relationshipId) || @.relationshipId == null)].materialsSpecification",
+      "enabled": true,
+      "transformation": "856  $3",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.electronic.access.linktext.no.display.constant.generated",
+      "path": "$.holdings[*].items[*].electronicAccess[?(@.relationshipId=='ef03d582-219c-4221-8635-bc92f1107021')].linkText",
+      "enabled": true,
+      "transformation": "85648$y",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.electronic.access.materialsspecification.no.display.constant.generated",
+      "path": "$.holdings[*].items[*].electronicAccess[?(@.relationshipId=='ef03d582-219c-4221-8635-bc92f1107021')].materialsSpecification",
+      "enabled": true,
+      "transformation": "85648$3",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.electronic.access.uri.no.display.constant.generated",
+      "path": "$.holdings[*].items[*].electronicAccess[?(@.relationshipId=='ef03d582-219c-4221-8635-bc92f1107021')].uri",
+      "enabled": true,
+      "transformation": "85648$u",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.electronic.access.publicnote.no.display.constant.generated",
+      "path": "$.holdings[*].items[*].electronicAccess[?(@.relationshipId=='ef03d582-219c-4221-8635-bc92f1107021')].publicNote",
+      "enabled": true,
+      "transformation": "85648$z",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.electronic.access.linktext.no.information.provided",
+      "path": "$.holdings[*].items[*].electronicAccess[?(@.relationshipId=='f50c90c9-bae0-4add-9cd0-db9092dbc9dd')].linkText",
+      "enabled": true,
+      "transformation": "8564 $y",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.electronic.access.materialsspecification.no.information.provided",
+      "path": "$.holdings[*].items[*].electronicAccess[?(@.relationshipId=='f50c90c9-bae0-4add-9cd0-db9092dbc9dd')].materialsSpecification",
+      "enabled": true,
+      "transformation": "8564 $3",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.electronic.access.uri.no.information.provided",
+      "path": "$.holdings[*].items[*].electronicAccess[?(@.relationshipId=='f50c90c9-bae0-4add-9cd0-db9092dbc9dd')].uri",
+      "enabled": true,
+      "transformation": "8564 $u",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.electronic.access.publicnote.no.information.provided",
+      "path": "$.holdings[*].items[*].electronicAccess[?(@.relationshipId=='f50c90c9-bae0-4add-9cd0-db9092dbc9dd')].publicNote",
+      "enabled": true,
+      "transformation": "8564 $z",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.electronic.access.linktext.related.resource",
+      "path": "$.holdings[*].items[*].electronicAccess[?(@.relationshipId=='5bfe1b7b-f151-4501-8cfa-23b321d5cd1e')].linkText",
+      "enabled": true,
+      "transformation": "85642$y",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.electronic.access.materialsspecification.related.resource",
+      "path": "$.holdings[*].items[*].electronicAccess[?(@.relationshipId=='5bfe1b7b-f151-4501-8cfa-23b321d5cd1e')].materialsSpecification",
+      "enabled": true,
+      "transformation": "85642$3",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.electronic.access.uri.related.resource",
+      "path": "$.holdings[*].items[*].electronicAccess[?(@.relationshipId=='5bfe1b7b-f151-4501-8cfa-23b321d5cd1e')].uri",
+      "enabled": true,
+      "transformation": "85642$u",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.electronic.access.publicnote.related.resource",
+      "path": "$.holdings[*].items[*].electronicAccess[?(@.relationshipId=='5bfe1b7b-f151-4501-8cfa-23b321d5cd1e')].publicNote",
+      "enabled": true,
+      "transformation": "85642$z",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.electronic.access.linktext.resource",
+      "path": "$.holdings[*].items[*].electronicAccess[?(@.relationshipId=='f5d0068e-6272-458e-8a81-b85e7b9a14aa')].linkText",
+      "enabled": true,
+      "transformation": "85640$y",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.electronic.access.materialsspecification.resource",
+      "path": "$.holdings[*].items[*].electronicAccess[?(@.relationshipId=='f5d0068e-6272-458e-8a81-b85e7b9a14aa')].materialsSpecification",
+      "enabled": true,
+      "transformation": "85640$3",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.electronic.access.uri.resource",
+      "path": "$.holdings[*].items[*].electronicAccess[?(@.relationshipId=='f5d0068e-6272-458e-8a81-b85e7b9a14aa')].uri",
+      "enabled": true,
+      "transformation": "85640$u",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.electronic.access.publicnote.resource",
+      "path": "$.holdings[*].items[*].electronicAccess[?(@.relationshipId=='f5d0068e-6272-458e-8a81-b85e7b9a14aa')].publicNote",
+      "enabled": true,
+      "transformation": "85640$z",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.electronic.access.uri.default",
+      "path": "$.holdings[*].items[*].electronicAccess[?(!(@.relationshipId) || @.relationshipId == null)].uri",
+      "enabled": true,
+      "transformation": "856  $u",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.electronic.access.publicnote.default",
+      "path": "$.holdings[*].items[*].electronicAccess[?(!(@.relationshipId) || @.relationshipId == null)].publicNote",
+      "enabled": true,
+      "transformation": "856  $z",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.electronic.access.linktext.version.of.resource",
+      "path": "$.holdings[*].items[*].electronicAccess[?(@.relationshipId=='3b430592-2e09-4b48-9a0c-0636d66b9fb3')].linkText",
+      "enabled": true,
+      "transformation": "85641$y",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.electronic.access.materialsspecification.version.of.resource",
+      "path": "$.holdings[*].items[*].electronicAccess[?(@.relationshipId=='3b430592-2e09-4b48-9a0c-0636d66b9fb3')].materialsSpecification",
+      "enabled": true,
+      "transformation": "85641$3",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.electronic.access.uri.version.of.resource",
+      "path": "$.holdings[*].items[*].electronicAccess[?(@.relationshipId=='3b430592-2e09-4b48-9a0c-0636d66b9fb3')].uri",
+      "enabled": true,
+      "transformation": "85641$u",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.electronic.access.publicnote.version.of.resource",
+      "path": "$.holdings[*].items[*].electronicAccess[?(@.relationshipId=='3b430592-2e09-4b48-9a0c-0636d66b9fb3')].publicNote",
+      "enabled": true,
+      "transformation": "85641$z",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.enumeration",
+      "path": "$.holdings[*].items[*].enumeration",
+      "enabled": true,
+      "transformation": "952ff$k",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.materialtypeid",
+      "path": "$.holdings[*].items[*].materialTypeId",
+      "enabled": true,
+      "transformation": "952ff$i",
+      "recordType": "ITEM"
+    },
+    {
+      "fieldId": "item.volume",
+      "path": "$.holdings[*].items[*].volume",
+      "enabled": true,
+      "transformation": "952ff$j",
+      "recordType": "ITEM"
+    }
+  ],
+  "outputFormat": "MARC"
+}
+EndOfJSON
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${mapping}" "${okapi_url}/data-export/mapping-profiles")
+
+echo $apicall
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${job}" "${okapi_url}/data-export/job-profiles")
+
+echo $apicall
+
+
+
+

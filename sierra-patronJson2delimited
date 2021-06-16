@@ -18,7 +18,7 @@ group=(["1"]="Undergraduate" ["2"]="Graduate" ["3"]="Faculty" ["4"]="Staff" ["5"
 
 cat patrons/patrons.*.json | tr -d "|" | jq -r '.entries[] | [
         .id // "",
-        .barcodes[0] // "",
+        .barcodes[0] // .id,
 	(.varFields[] |select(.fieldTag=="l") | .content) // "", # network
 	(.varFields[] |select(.fieldTag=="u") | .content) // "", # univ id
 	.expirationDate // "",  # expiration date

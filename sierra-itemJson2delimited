@@ -10,9 +10,9 @@ declare -A imsg_dict
 declare -A opacmsg_dict
 declare -A pieces_dict
 
-imsg_dict=(['1']="CHECK FOR DISC" ['m']="CHECK FOR MAP" ['p']="CHECK FOR PTS." ['a']="CHECK FOR VIEWER" ['9']="CHK BATTERIES!" ['2']="CHK FOR 2 DISC" ['3']="CHK FOR 3 DISC" ['4']="CHK FOR 4 DISC" ['w']="HAS 2 ITEMS" ['v']="HAS 2 TAPES" ['x']="HAS 3 TAPES" ['y']="HAD 4 TAPES" ['z']="HAS 3 ITEMS" ['h']="HAS 4 ITEMS" ['i']="HAS 5 ITEMS" ['-']="")
+imsg_dict=(['1']="CHECK FOR DISC" ['m']="CHECK FOR MAP" ['p']="CHECK FOR PTS." ['a']="CHECK FOR VIEWER" ['9']="CHK BATTERIES!" ['2']="CHK FOR 2 DISC" ['3']="CHK FOR 3 DISC" ['4']="CHK FOR 4 DISC" ['w']="HAS 2 ITEMS" ['v']="HAS 2 TAPES" ['x']="HAS 3 TAPES" ['y']="HAD 4 TAPES" ['z']="HAS 3 ITEMS" ['h']="HAS 4 ITEMS" ['i']="HAS 5 ITEMS" ['-']="" [' ']="")
 
-pieces_dict=(['1']="2" ['m']="2" ['p']="2" ['a']="2" ['9']="2" ['2']="3" ['3']="4" ['4']="5" ['w']="3" ['v']="3" ['x']="4" ['y']="5" ['z']="4" ['h']="5" ['i']="6")
+pieces_dict=(['1']="2" ['m']="2" ['p']="2" ['a']="2" ['9']="2" ['2']="3" ['3']="4" ['4']="5" ['w']="3" ['v']="3" ['x']="4" ['y']="5" ['z']="4" ['h']="5" ['i']="6" ['-']="" [' ']="")
 
 
 cat all_items.json | tr -d "|" | jq -r '. | [
@@ -27,7 +27,7 @@ cat all_items.json | tr -d "|" | jq -r '. | [
 	(.varFields[] |select(.fieldTag=="v") | .content) // "", # volume
 	.fixedFields."59".value // "", # icode1
 	.fixedFields."60".value // "", # icode2
-	.fixedFields."61".display // "", # icode2
+	.fixedFields."61".display // "", # itype
 	.fixedFields."97".value // "", # imessage
 	(.varFields[] |select(.fieldTag=="x") | .content) // "", # item note 
 	(.varFields[] |select(.fieldTag=="m") | .content) // "" # opac message
@@ -55,7 +55,7 @@ while IFS=$'\n' read -r line; do
 	counter=$((${counter} + 1))
 	if [[ $((${counter}%100)) == 0 ]];then echo -en "${counter} records processed in ${timer} seconds\r"; fi
 
-	if [[ ${imessage} != "" ]];then pieces=$(sed 's/[^0-9]//g' <<< $imessage);fi	
+	if [[ ${imessage} != "" ]];then pieces=$(sed 's/[^0-9]//g' <<< $imessage);imessage=${imsg_dict[${imessage}]};fi	
 	if [[ ${pieces} != "" ]];then pieces=${imsg_dict[${pieces}]};pieces=${pieces_dict[${pieces}]};fi	
 	
 	### concatenate note types and put 2 in the pieces column to trigger the checkout message

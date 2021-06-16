@@ -1,0 +1,250 @@
+outfile="patrons.tsv"
+#outfile="folio_users.json"
+
+rm ${outfile} || true
+
+declare -A addtype
+addtype=( ["a"]="campus" ["h"]="Primary")
+addtypedefault="h"
+
+ptypedefault="Undefined"
+emaildomain="utm.edu"
+emaildefault="alleser@yahoo.com"
+emaildefaultforall="0"
+convertemail2networkID="1"
+
+declare -a groups
+group=(["1"]="Undergraduate" ["2"]="Graduate" ["3"]="Faculty" ["4"]="Staff" ["5"]="Alumni" ["6"]="Community" ["14"]="Retired" ["16"]="ILL")
+
+cat patrons/patrons.*.json | tr -d "|" | jq -r '.entries[] | [
+        .id // "",
+        .barcodes[0] // "",
+	(.varFields[] |select(.fieldTag=="l") | .content) // "", # network
+	(.varFields[] |select(.fieldTag=="u") | .content) // "", # univ id
+	.expirationDate // "",  # expiration date
+        .emails[0] // "",
+        .addresses[0].type // "$addtypedefault",
+        .addresses[0].lines[0] // "",
+        .addresses[0].lines[1] // "",
+        .addresses[1].type // "$addtypedefault",
+        .addresses[1].lines[0] // "",
+        .addresses[1].lines[1] // "",
+        .names[0] // "",
+        .phones[0].number // "",
+        .phones[1].number // "",
+	.patronType // "$ptypedefault",
+	.blockInfo.code // "",
+	.pMessage // "",
+	.message.code // "",
+	.moneyOwed // ""
+] |join("|")' |tr -d '"' |tr -d "'" > patrons.tmp
+
+function create_user() {
+
+IFS='' read -r -d '' foliouser << EndOfUser
+{
+  "type": "object",
+  "personal": {
+    "lastName": "${lname}",
+    "firstName": "${fname}",
+    "middleName": "${mname}",
+    "email": "${email}",
+    "phone": "${tphone}",
+    "mobilePhone": "${pphone}",
+    "dateOfBirth": "",
+    "addresses": [
+      {
+        "countryId": "",
+        "addressLine1": "${taddr1}",
+        "addressLine2": "${taddr2}",
+        "city": "${tcity}",
+        "region": "${tstate}",
+        "postalCode": "${tzip}",
+        "addressTypeId": "${taddrtype}",
+        "primaryAddress": true
+      },
+      {
+        "countryId": "",
+        "addressLine1": "${paddr1}",
+        "addressLine2": "${paddr2}",
+        "city": "${pcity}",
+        "region": "${pcity}",
+        "postalCode": "${city}",
+        "addressTypeId": "${addrtype}",
+        "primaryAddress": false
+      }
+    ],
+    "preferredContactTypeId": "Email"
+  },
+  "customFields": {},
+  "username": "${username}",
+  "externalSystemId": "${externalid}",
+  "barcode": "${barcode}",
+  "patronGroup": "${ptype}",
+  "enrollmentDate": "${enrollment}",
+  "expirationDate": "${expiration}",
+  "active": true
+}
+EndOfUser
+
+}
+
+function fixname() {
+	fname=""
+	lname=""
+	mname=""
+	pname=""
+
+	#### Pull preferred names out of parens 
+	if [[ ${name} =~ "("  ]]; then
+		pname=$(echo "${name}" |sed -n 's/[^(]*(\(.*\)).*/\1/p')
+		name=$(echo "${name}" |sed 's/(.*)//')	
+		fi
+
+	#### Remove leading and trailing whitespace and commas preceding titles
+	name=$(echo "$name" | xargs | sed -E 's/, (I*|[SJ]r)\.$/ \1/' |xargs)
+
+	#### Look for inverted names
+	IFS=',' read -r -a cnamearr <<< "${name}"
+
+	if [[ ${#cnamearr[@]} > 1 ]]; then
+		fname=$(sed 's/^ *\(.*\) *.*/\1/' <<< ${cnamearr[1]})
+		mname=$(sed "s/${fname} *//" <<< ${cnamearr[1]})
+		lname=${cnamearr[0]}
+	else
+		#### names in direct order
+		if [[ ${name} =~ " "  ]]; then
+			fname=$(sed -n 's/^\([^ ]*\).*/\1/p' <<< ${name})
+			mname=$(sed -n 's/.* \(.*\) .*/\1/p' <<< ${name})
+			lname=$(sed -n 's/.* //p' <<< ${name})
+		fi
+	fi
+			
+	#### deal with one word last name
+	if [[ -z ${lname} ]]; then lname="${name}";fi
+
+}
+
+function fixaddress() {
+	addIndex=$1		
+	
+	city=""
+	zip=""
+	state=""
+
+	case "$addIndex" in
+		"0")
+			addr1="${taddr1}"
+			addr2="${taddr2}"
+			;;
+		"1")
+			addr1="${paddr1}"
+			addr2="${paddr2}"
+			;;
+		*)
+			addr1="${taddr1}"
+			addr2="${taddr2}"
+			;;
+	esac
+
+
+
+	## Hope for the city followed by a comma followed by state and zip
+	## If comma not found or if it doesn't look like something that ends in a zip
+	## then leave everything as it is
+
+	IFS=',' read city statezip <<< ${addr2}
+
+	IFS=' ' read -r -a stziparr <<< "${statezip}"
+
+	if [[ ${#stziparr[@]} > 1 ]]; then
+		if [[ ${stziparr[-1]} =~ ^[0-9\-]*$ ]]; then
+			zip=${stziparr[-1]} 
+			state=${stziparr[-2]}
+			addr2=''
+		fi
+	fi
+
+
+	case "$addIndex" in
+		"0")
+			taddr1="${addr1}"
+			taddr2="${addr2}"
+			tcity="${city}"
+			tstate="${state}"
+			tzip="${zip}"
+			;;
+		"1")
+			paddr1="${addr1}"
+			paddr1="${addr1}"
+			paddr2="${addr2}"
+			pcity="${city}"
+			pstate="${state}"
+			pzip="${zip}"
+			;;
+		*)
+			taddr1="${addr1}"
+			taddr2="${addr2}"
+			tcity="${city}"
+			tstate="${state}"
+			tzip="${zip}"
+			;;
+	esac
+
+	addr1=""
+	addr2=""
+
+}
+
+
+echo -e "id\tbarcode\texternalid\tusername\tfname\tmname\tlname\tpname\temail\tptype\ttaddrtype\ttaddr1\ttaddr2\ttcity\ttstate\ttzip\ttphone\tpphone\tpaddrtype\tpaddr1\tpaddr2\tpcity\tpstate\tpzip\tpphone\tptype\tblock\tpmessage\tmessagecode\towed\texpiration" > ${outfile}
+
+
+SECONDS=0
+counter=0
+
+while IFS=$'\n' read -r line; do
+	#### remove "-" values which indicate defaults
+	line=$(sed 's/|-/|/g' <<< ${line})
+
+	timer=$SECONDS
+	IFS='|' read id barcode externalid username expiration email taddrtype taddr1 taddr2 paddrtype paddr1 paddr2 name tphone pphone ptype block pmessage messagecode owed <<< $line 
+	#
+	### create usernames and network names if desired and populate required fields
+	if [[ $convertemail2networkID="1" ]]; then
+		username=$(sed 's/@.*//' <<< ${email})
+	fi
+
+	if ! [[ ${email} =~ @.*\.(edu|gov|com|net) ]];then email=${emaildefault};fi
+
+	externalid=${barcode}
+	#if ! [[ ${externalid} =~ [a-z] ]];then externalid=$(uuid);fi
+	if ! [[ ${username} =~ [a-z] ]];then username=$(uuid);fi
+
+	taddrtype=${addtype[${taddrtype}]}
+	paddrtype=${addtype[${paddrtype}]}
+
+	fixname
+	fixaddress "0"
+	fixaddress "1"
+
+	ptype=${group[${ptype}]}
+
+	counter=$((${counter} + 1))
+	if [[ $((${counter}%100)) == 0 ]];then echo -en "${counter} records processed in ${timer} seconds\r"; fi
+
+	if [[ ${emaildefaultforall} == 1 ]];then email=${emaildefault};fi
+
+	echo -e "${id}\t${barcode}\t${externalid}\t${username}\t${fname}\t${mname}\t${lname}\t${pname}\t${email}\t${ptype}\t${taddrtype}\t${taddr1}\t${taddr2}\t${tcity}\t${tstate}\t${tzip}\t${tphone}\t${pphone}\t${paddrtype}\t${paddr1}\t${paddr2}\t${pcity}\t${pstate}\t${pzip}\t${pphone}\t${ptype}\t${block}\t${pmessage}\t${messagecode}\t${owed}\t${expiration}" >> ${outfile}
+
+#	create_user
+#	echo "${foliouser}" |jq -c >> ${outfile} 
+
+
+done < patrons.tmp
+
+rm patrons.tmp
+
+
+echo 
+echo

@@ -55,7 +55,7 @@ while IFS=$'\n' read -r line; do
 	counter=$((${counter} + 1))
 	if [[ $((${counter}%100)) == 0 ]];then echo -en "${counter} records processed in ${timer} seconds\r"; fi
 
-	if [[ ${imessage} != "" ]];then pieces=$(sed 's/[^0-9]//g' <<< $imessage);imessage=${imsg_dict[${imessage}]};fi	
+	if [[ ${imessage} =~ [a-z0-9] ]];then pieces=$(sed 's/[^0-9]//g' <<< $imessage);imessage=${imsg_dict[${imessage}]};fi	
 	if [[ ${pieces} != "" ]];then pieces=${imsg_dict[${pieces}]};pieces=${pieces_dict[${pieces}]};fi	
 	
 	### concatenate note types and put 2 in the pieces column to trigger the checkout message

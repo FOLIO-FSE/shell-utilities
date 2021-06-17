@@ -18,7 +18,7 @@ IFS='' read -r -d '' fine << EndOfJSON
   "paymentStatus":{"name":"Outstanding"},
   "status":{"name":"Open"},
   "amount": "${fine}",
-  "remaining": "${fine}}",
+  "remaining": "${fine}",
   "feeFineType": "Migration",
   "id": "${fineId}",
   "userId": "${userid}"

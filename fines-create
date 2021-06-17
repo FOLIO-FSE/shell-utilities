@@ -5,7 +5,10 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 
-while IFS=$'\t' read -r fine userid; do
+while IFS=$'\t' read -r fineamount userid; do
+
+userid=$(sed 's/[^0-9a-z\-]//g' <<< $userid)
+fineamount=$(sed 's/[^0-9\.]//g' <<< $fineamount)
 
 feeFineId=$(uuid)
 fineId=$(uuid)
@@ -17,8 +20,8 @@ IFS='' read -r -d '' fine << EndOfJSON
   "feeFineId": "${feeFineId}",
   "paymentStatus":{"name":"Outstanding"},
   "status":{"name":"Open"},
-  "amount": "${fine}",
-  "remaining": "${fine}",
+  "amount": "${fineamount}",
+  "remaining": "${fineamount}",
   "feeFineType": "Migration",
   "id": "${fineId}",
   "userId": "${userid}"
@@ -29,8 +32,8 @@ IFS='' read -r -d '' action << EndOfJSON
 {
   "typeAction":"Migration",
   "accountId": "${fineId}",
-  "amountAction": "${fine}",
-  "balance":"${fine}",
+  "amountAction": "${fineamount}",
+  "balance":"${fineamount}",
   "transactionInformation":"",
   "comments": "Migrated from Sierra",
   "notify":false,
@@ -43,7 +46,8 @@ apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" 
 echo -e "${apicall}" 
 
 apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${action}" "${okapi_url}/feefineactions")
-
+echo -e "${fine}"
+echo -e "${action}"
 echo -e "${apicall}" 
 done < fine_uuid
 

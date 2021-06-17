@@ -17,8 +17,8 @@ IFS='' read -r -d '' fine << EndOfJSON
   "feeFineId": "${feeFineId}",
   "paymentStatus":{"name":"Outstanding"},
   "status":{"name":"Open"},
-  "amount": "0.5",
-  "remaining": "0.5",
+  "amount": "${fine}",
+  "remaining": "${fine}}",
   "feeFineType": "Migration",
   "id": "${fineId}",
   "userId": "${userid}"
@@ -29,8 +29,8 @@ IFS='' read -r -d '' action << EndOfJSON
 {
   "typeAction":"Migration",
   "accountId": "${fineId}",
-  "amountAction": "0.5",
-  "balance":"0.5",
+  "amountAction": "${fine}",
+  "balance":"${fine}",
   "transactionInformation":"",
   "comments": "Migrated from Sierra",
   "notify":false,

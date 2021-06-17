@@ -1,0 +1,51 @@
+# expects fine amounts in column 1, patron uuid in column 2
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+
+while IFS=$'\t' read -r fine userid; do
+
+feeFineId=$(uuid)
+fineId=$(uuid)
+actionId=$(uuid)
+
+IFS='' read -r -d '' fine << EndOfJSON
+{
+  "ownerId": "38708240-92e3-447b-9265-434cde36cd35",
+  "feeFineId": "${feeFineId}",
+  "paymentStatus":{"name":"Outstanding"},
+  "status":{"name":"Open"},
+  "amount": "0.5",
+  "remaining": "0.5",
+  "feeFineType": "Migration",
+  "id": "${fineId}",
+  "userId": "${userid}"
+}
+EndOfJSON
+
+IFS='' read -r -d '' action << EndOfJSON
+{
+  "typeAction":"Migration",
+  "accountId": "${fineId}",
+  "amountAction": "0.5",
+  "balance":"0.5",
+  "transactionInformation":"",
+  "comments": "Migrated from Sierra",
+  "notify":false,
+  "id": "${actionId}",
+  "userId": "${userid}"
+}
+EndOfJSON
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${fine}" "${okapi_url}/accounts")
+
+echo -e "${apicall}" 
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${action}" "${okapi_url}/feefineactions")
+
+echo -e "${apicall}" 
+done < fine_uuid
+
+
+

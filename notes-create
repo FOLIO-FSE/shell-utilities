@@ -1,0 +1,42 @@
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+note_domain="users"
+note_type="user"
+note_title="Fine/Fee note"
+noteTypeUuid="39d76afa-bc59-4de3-8e7b-dee1fc5b6eda"
+
+while IFS=$'\t' read -r userid assess_date chargetype location itemcharge processing billing;do
+
+content="Assessed: ${assess_date}<br />Loc.: ${location}<br />${chargetype}: \$${itemcharge}<br />Proc. Fee: \$${processing}<br />Billing Fee \$${billing}"
+
+note_uuid=$(uuidgen)
+
+linked_to="${userid}"
+
+
+IFS='' read -r -d '' data << EndOfJSON
+{
+  "domain": "${note_domain}",
+  "title": "${note_title}",
+  "typeId": "${noteTypeUuid}",
+  "content": "${content}",
+  "links": [
+    {
+      "type": "${note_type}",
+      "id": "${linked_to}"
+    }
+  ],
+  "id": "${note_uuid}"
+}
+EndOfJSON
+
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/notes")
+
+echo -e "${apicall}" 
+done < utm-fines
+
+

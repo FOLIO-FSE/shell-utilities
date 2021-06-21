@@ -1,27 +1,34 @@
 outfile="patrons.tsv"
-#outfile="folio_users.json"
 
 rm ${outfile} || true
 
 declare -A addtype
-addtype=( ["a"]="campus" ["h"]="Primary")
+addtype=( ["a"]="Main" ["h"]="Home")
 addtypedefault="h"
 
 ptypedefault="Undefined"
-emaildomain="utm.edu"
-emaildefault="alleser@yahoo.com"
-emaildefaultforall="0"
-convertemail2networkID="1"
+emaildomain="mtsu.edu"
+emaildefault="robert.wilson@mtsu.edu"
+emaildefaultforall="1"
+convertemail2networkID="0"
 
 declare -a groups
-group=(["1"]="Undergraduate" ["2"]="Graduate" ["3"]="Faculty" ["4"]="Staff" ["5"]="Alumni" ["6"]="Community" ["14"]="Retired" ["16"]="ILL")
+declare -a departments 
 
-cat patrons/patrons.*.json | tr -d "|" | jq -r '.entries[] | [
-        .id // "",
-        .barcodes[0] // .id,
-	(.varFields[] |select(.fieldTag=="l") | .content) // "", # network
-	(.varFields[] |select(.fieldTag=="u") | .content) // "", # univ id
-	.expirationDate // "",  # expiration date
+groups=( ["0"]="systems" ["6"]="special" ["11"]="alumni" ["12"]="graduate" ["13"]="undergraduate" ["14"]="faculty" ["15"]="community" ["16"]="staff" ["17"]="ill" ["19"]="adjunct" ["20"]="administrative" ["21"]="talc" ["23"]="damaged" ["24"]="visiting" ["25"]="dependent" ["26"]="highschool" ["29"]="tnteacher" ["30"]="retiree" ["199"]="training" )
+
+departments=( ["0"]="Undeclared" ["1"]="Academic Enrichment" ["2"]="Accounting" ["3"]="Aerospace" ["4"]="African American Studies" ["5"]="Aging Studies" ["6"]="Agribusiness and Agriscience" ["7"]="Art" ["8"]="Basic and Applied Sciences" ["9"]="Biology" ["10"]="Business Comm Entrepreneurship" ["11"]="Chemistry" ["12"]="Computer Information Systems" ["13"]="Computer Science" ["14"]="RODP University College" ["15"]="Cont Educ & Distance Learning" ["16"]="Cooperative Education" ["17"]="Criminal Justice" ["18"]="Dyslexic Studies" ["19"]="Economics and Finance" ["20"]="Education" ["21"]="Educational Leadership" ["22"]="Electronic Media Communication" ["23"]="Elementary and Special Ed" ["24"]="Engineering Technology" ["25"]="English" ["26"]="Foreign Languages and Lit" ["27"]="Geosciences" ["28"]="Global Studies" ["29"]="Graduate Studies" ["30"]="Health and Human Performance" ["31"]="History" ["32"]="Human Sciences" ["33"]="Journalism" ["34"]="Liberal Arts" ["35"]="Library" ["36"]="Management and Marketing" ["37"]="Mass Communication" ["38"]="Mathematical Sciences" ["39"]="Middle East Studies" ["40"]="Military Science" ["41"]="Music" ["42"]="Nursing" ["43"]="Philosophy" ["44"]="Physics and Astronomy" ["45"]="Political Science" ["46"]="Psychology" ["47"]="Recording Industry" ["48"]="Regents Continuing Education" ["49"]="Social Work" ["50"]="Sociology and Anthropology" ["51"]="Speech and Theatre" ["52"]="Study Abroad" ["53"]="University Honors" ["54"]="University Studies" ["55"]="Women's Studies" ["56"]="Unspecified" ["57"]="Concrete Industry Management" ["59"]="University College" ["60"]="Academic Support Service Provost" ["61"]="Adams Chair" ["62"]="Associate Dean Business" ["63"]="Audio Visual Service" ["64"]="Band Projects" ["65"]="Business and Economic Research C" ["66"]="Center for Economic Education" ["67"]="Center for Educational Media" ["68"]="Center for Historic Preservation" ["69"]="Center for Popular Music" ["70"]="Criminal Justice Adm" ["71"]="Confucius Institute" ["72"]="Correspondence Courses" ["73"]="Dean Basic and Applied Sciences" ["74"]="Dean College of Business" ["75"]="Dean Education" ["76"]="Dean Liberal Arts" ["77"]="Dean Mass Communication" ["78"]="Dean of Behavioral and Health Sc" ["79"]="Dean University Honors College" ["80"]="Dir Grad Bus Studies" ["81"]="Distance Education" ["82"]="Dyslexia Services" ["83"]="Faculty Senate" ["84"]="Farm Laboratory" ["85"]="Flight Training Program" ["86"]="Forensic Institute for Res and E" ["87"]="General Education" ["88"]="Gore Research Center" ["89"]="Governor's School" ["90"]="Horse Science" ["91"]="Indirect Cost Sponsored Prog" ["92"]="Information Technology Division" ["93"]="Institutional Diversity" ["94"]="Institutional Effect" ["95"]="Instructional Media Resources" ["96"]="International Education" ["97"]="Learning Teaching and Innov Tech" ["98"]="Masters Fine Arts Recording Indu" ["99"]="McNair Program" ["100"]="Middle East Center" ["101"]="Miller Chair Equine Health" ["102"]="MIMIC Research" ["103"]="Online University" ["104"]="Prof Development and Persona" ["105"]="Professional Lab Field Experienc" ["106"]="Project Help" ["107"]="Project Help Typical Children" ["108"]="Public Service Horse Science" ["109"]="Research and Sponsored Programs" ["110"]="Small Business Development Cente" ["111"]="Speech Language and Hearing Clin" ["112"]="TN Center for Child Welfare" ["113"]="TN Ctr for Labor Mgmt Relations" ["114"]="TN Early Intervention" ["115"]="TN Math Science Tech Educ Ctr" ["116"]="University 1010" ["117"]="University College Administratio" ["118"]="University Provost" ["119"]="V Provost Res and Dean of Grad" ["120"]="Walker Library" ["121"]="Weatherford Chair of Finance" ["122"]="WMOT Radio" ["123"]="Womack Family Educational Leader" ["124"]="President" ["125"]="Business and Finance" ["126"]="Student Affairs" ["127"]="Development and Univ Relations" ["128"]="Information Technology" )
+
+cat patrons/patrons.*.json | tr -d "|" | jq -c '.entries[]' > all_patrons.json
+
+cat all_patrons.json |jq '. | [
+        "\(.id)" // "",
+        "\(.barcodes[0])" // "",
+	(.varFields[] |select(.fieldTag=="z") | "\(.content)") // "", # network
+	(.varFields[] |select(.fieldTag=="u") | "\(.content)") // "", # univ id
+	"\(.fixedFields."46".value)" // "0", # department
+	"\(.createdDate)" // "",  # expiration date
+	"\(.expirationDate)" // "",  # expiration date
         .emails[0] // "",
         .addresses[0].type // "$addtypedefault",
         .addresses[0].lines[0] // "",
@@ -30,14 +37,14 @@ cat patrons/patrons.*.json | tr -d "|" | jq -r '.entries[] | [
         .addresses[1].lines[0] // "",
         .addresses[1].lines[1] // "",
         .names[0] // "",
-        .phones[0].number // "",
-        .phones[1].number // "",
-	.patronType // "$ptypedefault",
-	.blockInfo.code // "",
-	.pMessage // "",
-	.message.code // "",
-	.moneyOwed // ""
-] |join("|")' |tr -d '"' |tr -d "'" > patrons.tmp
+        "\(.phones[0].number)" // "",
+        "\(.phones[1].number)" // "",
+	"\(.patronType)" // "$ptypedefault",
+	"\(.blockInfo.code)" // "",
+	"\(.pMessage)" // "",
+	"\(.message.code)" // "",
+	"\(.moneyOwed)" // ""
+] |join("|")' |tr -d '"' |tr -d "'" |sed 's#|null|#||#g' > patrons.tmp
 
 function create_user() {
 
@@ -68,15 +75,15 @@ IFS='' read -r -d '' foliouser << EndOfUser
         "addressLine1": "${paddr1}",
         "addressLine2": "${paddr2}",
         "city": "${pcity}",
-        "region": "${pcity}",
-        "postalCode": "${city}",
-        "addressTypeId": "${addrtype}",
+        "region": "${pstate}",
+        "postalCode": "${pzip}",
+        "addressTypeId": "${paddrtype}",
         "primaryAddress": false
       }
     ],
     "preferredContactTypeId": "Email"
   },
-  "customFields": {},
+  "customFields": { },
   "username": "${username}",
   "externalSystemId": "${externalid}",
   "barcode": "${barcode}",
@@ -176,7 +183,6 @@ function fixaddress() {
 			;;
 		"1")
 			paddr1="${addr1}"
-			paddr1="${addr1}"
 			paddr2="${addr2}"
 			pcity="${city}"
 			pstate="${state}"
@@ -190,14 +196,10 @@ function fixaddress() {
 			tzip="${zip}"
 			;;
 	esac
-
-	addr1=""
-	addr2=""
-
 }
 
 
-echo -e "id\tbarcode\texternalid\tusername\tfname\tmname\tlname\tpname\temail\tptype\ttaddrtype\ttaddr1\ttaddr2\ttcity\ttstate\ttzip\ttphone\tpphone\tpaddrtype\tpaddr1\tpaddr2\tpcity\tpstate\tpzip\tpphone\tptype\tblock\tpmessage\tmessagecode\towed\texpiration" > ${outfile}
+echo -e "id\tbarcode\texternalid\tusername\tdepartment\tfname\tmname\tlname\tpname\temail\tptype\ttaddrtype\ttaddr1\ttaddr2\ttcity\ttstate\ttzip\tpphone\ttphone\tpaddrtype\tpaddr1\tpaddr2\tpcity\tpstate\tpzip\tpphone\tptype\tblock\tpmessage\tmessagecode\towed\tcreated\texpiration" > ${outfile}
 
 
 SECONDS=0
@@ -208,18 +210,20 @@ while IFS=$'\n' read -r line; do
 	line=$(sed 's/|-/|/g' <<< ${line})
 
 	timer=$SECONDS
-	IFS='|' read id barcode externalid username expiration email taddrtype taddr1 taddr2 paddrtype paddr1 paddr2 name tphone pphone ptype block pmessage messagecode owed <<< $line 
-	#
+	IFS='|' read id barcode externalid username department created expiration email taddrtype taddr1 taddr2 paddrtype paddr1 paddr2 name tphone pphone ptype block pmessage messagecode owed <<< $line 
+
+#	uniID="${username}"
+
 	### create usernames and network names if desired and populate required fields
-	if [[ $convertemail2networkID="1" ]]; then
-		username=$(sed 's/@.*//' <<< ${email})
-	fi
+#	if [[ $convertemail2networkID=="1" ]]; then
+#		externalid=$(sed 's/@.*//' <<< ${email})
+#		username=$(sed 's/@.*//' <<< ${email})
+#	fi
 
 	if ! [[ ${email} =~ @.*\.(edu|gov|com|net) ]];then email=${emaildefault};fi
 
-	externalid=${barcode}
-	#if ! [[ ${externalid} =~ [a-z] ]];then externalid=$(uuid);fi
-	if ! [[ ${username} =~ [a-z] ]];then username=$(uuid);fi
+	if ! [[ ${externalid} =~ [a-z] ]];then externalid=$(uuid);fi
+	if ! [[ ${username} =~ [A-Za-z0-9\-] ]];then username=$(uuid);fi
 
 	taddrtype=${addtype[${taddrtype}]}
 	paddrtype=${addtype[${paddrtype}]}
@@ -228,23 +232,26 @@ while IFS=$'\n' read -r line; do
 	fixaddress "0"
 	fixaddress "1"
 
-	ptype=${group[${ptype}]}
+	ptype=${groups[${ptype}]}
+	department=${departments[${department}]}
 
 	counter=$((${counter} + 1))
 	if [[ $((${counter}%100)) == 0 ]];then echo -en "${counter} records processed in ${timer} seconds\r"; fi
 
-	if [[ ${emaildefaultforall} == 1 ]];then email=${emaildefault};fi
+	if ! [[ -z ${defaultemail} ]];then email=${defaultemail};fi
 
-	echo -e "${id}\t${barcode}\t${externalid}\t${username}\t${fname}\t${mname}\t${lname}\t${pname}\t${email}\t${ptype}\t${taddrtype}\t${taddr1}\t${taddr2}\t${tcity}\t${tstate}\t${tzip}\t${tphone}\t${pphone}\t${paddrtype}\t${paddr1}\t${paddr2}\t${pcity}\t${pstate}\t${pzip}\t${pphone}\t${ptype}\t${block}\t${pmessage}\t${messagecode}\t${owed}\t${expiration}" >> ${outfile}
+	if [[ ${emaildefaultforall}=="1" ]];then email=${emaildefault};fi
+
+	echo -e "${id}\t${barcode}\t${externalid}\t${username}\t${department}\t${fname}\t${mname}\t${lname}\t${pname}\t${email}\t${ptype}\t${taddrtype}\t${taddr1}\t${taddr2}\t${tcity}\t${tstate}\t${tzip}\t${tphone}\t${pphone}\t${paddrtype}\t${paddr1}\t${paddr2}\t${pcity}\t${pstate}\t${pzip}\t${pphone}\t${ptype}\t${block}\t${pmessage}\t${messagecode}\t${owed}\t${created}\t${expiration}" >> ${outfile}
 
 #	create_user
-#	echo "${foliouser}" |jq -c >> ${outfile} 
+#	echo "${foliouser}" |jq -c '.' >> ${outfile} 
 
 
 done < patrons.tmp
 
 rm patrons.tmp
 
-
-echo 
 echo
+
+

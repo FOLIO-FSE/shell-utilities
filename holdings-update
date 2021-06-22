@@ -4,6 +4,7 @@ okapi_token=$(cat okapi.token)
 
 
 while IFS=$'\n' read -r uuid; do
+	uuid=$(sed 's/[^0-9a-z\-]//g' <<< $uuid)
 	
 	apicall=$(curl -s -w '\n' -X GET -D \
 	  -H "Accept: application/json" \
@@ -11,7 +12,7 @@ while IFS=$'\n' read -r uuid; do
 	  -H "x-okapi-token: ${okapi_token}" \
 	  ${okapi_url}/holdings-storage/holdings/${uuid})
 
-	updated_holdings=$(echo ${apicall}  |jq '. | (.permanentLocationId = "1d0ec5e4-ba80-4eb9-8b0c-53da40d6335b")')
+	updated_holdings=$(echo ${apicall}  |jq '. | (.permanentLocationId = "e20f8605-150b-4424-8923-e6aec81ad6d6")')
 
 	apicall=$(curl --http1.1 -s -w '\n' -X PUT \
 	  -H "Content-type: application/json" \
@@ -21,6 +22,7 @@ while IFS=$'\n' read -r uuid; do
 	  -d "${updated_holdings}" \
 	  ${okapi_url}/holdings-storage/holdings/${uuid})
 	
+
 	echo $uuid
 done < holdings
 

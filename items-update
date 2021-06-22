@@ -4,6 +4,7 @@ okapi_token=$(cat okapi.token)
 
 
 while IFS=$'\n' read -r uuid; do
+	uuid=$(sed 's/[^0-9a-z\-]//g' <<< $uuid)
 	
 	checkinId=$(uuidgen)
 	checkoutId=$(uuidgen)
@@ -28,7 +29,7 @@ while IFS=$'\n' read -r uuid; do
 	  -d "${updated_item}" \
 	  ${okapi_url}/inventory/items/${uuid})
 	
-	echo "$uuid updated"
+	echo "$uuid"
 done < items 
 
 

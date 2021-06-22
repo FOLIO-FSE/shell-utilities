@@ -13,7 +13,7 @@ while IFS=$'\n' read -r uuid; do
 	  -H "Accept: application/json" \
 	  -H "X-Okapi-Tenant: ${tenant}" \
 	  -H "x-okapi-token: ${okapi_token}" \
-	  ${okapi_url}/inventory/items/${uuid})
+	  ${okapi_url}/item-storage/items/${uuid})
 
 	updated_item=$(echo ${apicall}  |jq --arg CHECKIN $(uuidgen) --arg CHECKOUT $(uuidgen) '
 		(.permanentLocation.id = "1d0ec5e4-ba80-4eb9-8b0c-53da40d6335b")
@@ -27,7 +27,7 @@ while IFS=$'\n' read -r uuid; do
 	  -H "X-Okapi-Tenant: ${tenant}" \
 	  -H "x-okapi-token: ${okapi_token}" \
 	  -d "${updated_item}" \
-	  ${okapi_url}/inventory/items/${uuid})
+	  ${okapi_url}/item-storage/items/${uuid})
 	
 	echo "$uuid"
 done < items 

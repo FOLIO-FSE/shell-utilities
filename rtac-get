@@ -3,7 +3,8 @@ edge_key=$(cat edge.key)
 
 instance_uuid="$1"
 
-apicall=$(curl -s -X GET "${edge_url}/rtac?InstanceIds=${instance_uuid}&apikey=${apikey}")
+apicall=$(curl -s -X GET "${edge_url}/rtac?InstanceIds=${instance_uuid}&apikey=${edge_key}")
+echo "${edge_url}/rtac?InstanceIds=${instance_uuid}&apikey=${apikey}"
 
 echo $apicall |xmlstarlet fo 
 

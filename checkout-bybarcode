@@ -1,0 +1,24 @@
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+while read -r barcode;do 
+
+IFS='' read -r -d '' data << EndOfJSON
+{
+    "itemBarcode" : "${barcode}",
+    "checkInDate" : "$(date -Is)",
+    "servicePointId" : "3a40852d-49fd-4df2-a1f9-6e2641a6e91f"
+  }
+EndOfJSON
+
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/circulation/check-in-by-barcode")
+
+echo -e "${apicall}" |jq '.'
+
+done < barcodes
+
+
+

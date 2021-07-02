@@ -1,0 +1,44 @@
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+while IFS=$'\t' read -r user_barcode item_barcode;do 
+
+IFS='' read -r -d '' data << EndOfJSON
+{
+  "userBarcode": "${user_barcode}",
+  "itemBarcode": "${item_barcode}",
+  "servicePointId":"3a40852d-49fd-4df2-a1f9-6e2641a6e91f",
+  "overrideBlocks": {
+    "patronBlock": {},
+    "renewalBlock":{},
+    "renewalDueDateRequiredBlock":{
+      "dueDate":"2022-07-02T15:59:59Z"
+    },
+    "comment": "Renewed by migration process"
+  }
+}
+EndOfJSON
+
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/circulation/renew-by-barcode")
+
+id=$(echo "${apicall}" |jq -r .id)
+echo ${id}
+
+IFS='' read -r -d '' data << EndOfJSON
+{
+  "dueDate":"2022-07-04T23:58:22Z"
+}
+EndOfJSON
+
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/circulation/loans/${id}/change-due-date")
+
+echo -e "${id}" 
+
+done < renew 
+
+
+

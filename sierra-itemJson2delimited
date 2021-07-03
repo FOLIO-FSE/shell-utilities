@@ -1,40 +1,36 @@
 ### input is file of all sierra items with one item per line
 
 outfile="items.tsv"
+## uuid for item notes
+notetype='8d0a5eca-25de-4391-81a9-236eeefdd20b'
 
 echo "Starting processing. Please be patient -- this can take many minutes"
 
 rm ${outfile} 2>/dev/null
 
 declare -A imsg_dict
-declare -A opacmsg_dict
-declare -A pieces_dict
 
-imsg_dict=(['1']="CHECK FOR DISC" ['m']="CHECK FOR MAP" ['p']="CHECK FOR PTS." ['a']="CHECK FOR VIEWER" ['9']="CHK BATTERIES!" ['2']="CHK FOR 2 DISC" ['3']="CHK FOR 3 DISC" ['4']="CHK FOR 4 DISC" ['w']="HAS 2 ITEMS" ['v']="HAS 2 TAPES" ['x']="HAS 3 TAPES" ['y']="HAD 4 TAPES" ['z']="HAS 3 ITEMS" ['h']="HAS 4 ITEMS" ['i']="HAS 5 ITEMS" ['-']="" [' ']="")
-
-pieces_dict=(['1']="2" ['m']="2" ['p']="2" ['a']="2" ['9']="2" ['2']="3" ['3']="4" ['4']="5" ['w']="3" ['v']="3" ['x']="4" ['y']="5" ['z']="4" ['h']="5" ['i']="6" ['-']="" [' ']="")
-
+imsg_dict=(['a']="2 pieces"  ['b']="3 pieces"  ['c']="circ review"  ['d']="4 pieces"  ['e']="5 pieces"  ['f']="Reserve Item"  ['g']="Refer to Zinia Randles"  ['h']="Reserve Item Do Not Renew"  ['i']="Inventory Review"  ['j']="6 pieces"  ['k']="give to kim in curr"  ['l']="reorder latest edition" ['m']="must pay replacement" ['n']="give to karen martin" ['o']="order replacement"  ['p']="popular reading"  ['q']="liaison review"  ['r']="reference book"  ['s']="No renewal - give to suzy"  ['t']="cataloging review" ['u']="file won't open" ['w']="curriculum withdrawl"  ['y']="more than one bib"  ['x']="Delete no replacement"  ['z']="withdrawn" ['-']="")
 
 cat all_items.json | tr -d "|" | jq -r '. | [
-        .id // "",
-        .bibIds[0] // "",
-        .barcode // "",
-	.location.code // "",
-	.status.code // "",
-        .callNumber // " ",
-        .itemType // "",
-	.fixedFields."58".value // "", # copy
-	(.varFields[] |select(.fieldTag=="v") | .content) // "", # volume
-	.fixedFields."59".value // "", # icode1
-	.fixedFields."60".value // "", # icode2
-	.fixedFields."61".display // "", # itype
-	.fixedFields."97".value // "", # imessage
-	(.varFields[] |select(.fieldTag=="x") | .content) // "", # item note 
-	(.varFields[] |select(.fieldTag=="m") | .content) // "" # opac message
+        "\(.id)" // "",
+        "\(.bibIds[0])" // "",
+        "\(.barcode)" // "",
+	"\(.location.code)" // "",
+        "\(.callNumber)" // "",
+        "\(.itemType)" // "",
+	"\(.fixedFields."58".value)" // "", # copy
+	(.varFields[] |select(.fieldTag=="v") | "\(.content)") // "", # volume
+	"\(.fixedFields."59".value)" // "", # icode1
+	"\(.fixedFields."60".value)" // "", # icode2
+	"\(.fixedFields."61".display)" // "", # mattype 
+	"\(.fixedFields."97".display)" // "", # imessage
+	(.varFields[] |select(.fieldTag=="x") | "\(.content)") // "", # item note 
+	(.varFields[] |select(.fieldTag=="m") | "\(.content)") // "" # opac message
 	] |join("|")' |tr -d '"' |tr -d "'" > items.tmp
 
 
-echo -e "holdingsId\tbibId\titem_id\tbarcode\titem_location\tstatus\tcallNum\titype\tloantype\tcopy\tvolume\ticode1\ticode2\tmattype\timessage\tpieces\tnote\topacmsg\timsgtype\tmsgsuppress" > ${outfile}
+echo -e "itemId\tbibId\tholdingsId\tbarcode\tlocation\tcallNum\titype\tcopy\tvolume\ticode1\ticode2\tmattype\timessage\tpieces\tnote\topacmsg\timsgtype\tmsgsuppress" > ${outfile}
 
 echo "Items extracted from JSON. Analyzing file"
 
@@ -47,24 +43,24 @@ while IFS=$'\n' read -r line; do
 
 	inotetype=''
 	notesuppress=''
-	loantype="${itype}"
 
 	timer=$SECONDS
-	IFS='|' read id bibId barcode location status callNum itype copy volume icode1 icode2 mattype imessage note opacmsg <<< $line 
+	IFS='|' read id bibId barcode location callNum itype copy volume icode1 icode2 mattype imessage note opacmsg <<< $line 
 
 	counter=$((${counter} + 1))
-	if [[ $((${counter}%100)) == 0 ]];then echo -en "${counter} records processed in ${timer} seconds\r"; fi
+	if [[ $((${counter}%10)) == 0 ]];then echo -en "${counter} records processed in ${timer} seconds\r"; fi
 
-	if [[ ${imessage} =~ [a-z0-9] ]];then pieces=$(sed 's/[^0-9]//g' <<< $imessage);imessage=${imsg_dict[${imessage}]};fi	
+	if [[ ${imessage} != "" ]];then pieces=$(sed 's/[^0-9]//g' <<< $imessage);fi	
 	if [[ ${pieces} != "" ]];then pieces=${imsg_dict[${pieces}]};pieces=${pieces_dict[${pieces}]};fi	
 	
-	### concatenate note types and put 2 in the pieces column to trigger the checkout message
-	if [[ ${opacmsg} != "" ]];then imessage="${opacmsg} ${imessage}";opacmsg=2;fi
+	if [[ ${icode2} =~ [vn] ]];then icode2="true"; else icode2="false";fi
 
-	if [[ ${note} != "" ]];then imsgtype='8d0a5eca-25de-4391-81a9-236eeefdd20b';fi
-	if [[ ${note} != "" ]];then msgsuppress='true';fi
+	###
 
-	echo -e "${bibId}${location}\t${bibId}\t${id}\t${barcode}\t${location}\t${status}\t${callNum}\t${itype}\t${location}\t${copy}\t${volume}\t${icode1}\t${icode2}\t${mattype}\t${imessage}\t${pieces}\t${note}\t${opacmsg}\t${inotetype}\t${notesuppress}" >> ${outfile}
+	if [[ ${note} != "" ]];then imsgtype="${notetype}";fi
+	if [[ ${note} != "" ]];then notesuppress='true';fi
+
+	echo -e "${id}\t${bibId}\t${bibId}${location}\t${barcode}\t${location}\t${callNum}\t${itype}\t${copy}\t${volume}\t${icode1}\t${icode2}\t${mattype}\t${imessage}\t${pieces}\t${note}\t${opacmsg}\t${inotetype}\t${notesuppress}" >> ${outfile}
 
 done < items.tmp
 

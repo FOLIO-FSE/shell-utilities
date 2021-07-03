@@ -1,0 +1,25 @@
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+while read -r item_uuid;do 
+
+item_uuid=$(sed 's/[^0-9a-z\-]//g' <<< $item_uuid)
+
+IFS='' read -r -d '' data << EndOfJSON
+{
+  "dueDate":"2022-07-02T15:59:59Z"
+}
+EndOfJSON
+
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/circulation/loans/${item_uuid}/change-due-date")
+
+echo $apicall
+echo $item_uuid
+
+done < update
+
+
+

@@ -1,0 +1,24 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+id="7e591197-f335-4afb-bc6d-a6d76ca3bace"
+name="Voyager ID"
+
+IFS='' read -r -d '' data << EndOfIdentifier
+{
+  "id": "${id}",
+  "name": "${name}",
+  "source": "folio"
+}
+EndOfIdentifier
+
+
+apicall=$(curl --http1.1 -s -X PUT \
+-H "Content-type: application/json" \
+-H "X-Okapi-Tenant: ${tenant}" \
+-H "x-okapi-token: ${okapi_token}" \
+-d "${data}" \
+"${okapi_url}/identifier-types/${id}")
+
+echo $apicall

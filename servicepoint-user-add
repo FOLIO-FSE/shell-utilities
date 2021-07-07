@@ -5,6 +5,7 @@ okapi_token=$(cat okapi.token)
 
 while IFS=$'\t' read -r userid servicepointsids;do 
 
+# servicepoint ids are an array of uuids e.g.  ["d788fa39-6dc4-49ef-b4d6-a4bed83bb636","23634f7b-cd73-4b7d-b363-86b0ceb75d95"]
 
 userid=$(sed 's/[^0-9a-z\-]//g' <<< $userid)
 

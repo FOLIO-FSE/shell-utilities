@@ -1,30 +1,13 @@
-#
-# for authentication, create file named okapi-login.json
-# formatted as follows:
-#
-#  {
-#    "tenant": "your_tenant",
-#    "username": "your_username",
-#    "password": "your_password"
-#  }
-#
-tenant="fs00001034"
-okapi_url="https://okapi-cornell.folio.ebsco.com"
+# list available permissions and subpermissions. Usage: ./permissions-list
 
-auth=$(curl -s -w '\n' -X POST -D - \
-  -H "Content-type: application/json" \
-  -H "X-Okapi-Tenant: ${tenant}" \
-  -d @okapi-login.json \
-  ${okapi_url}/authn/login)
-
-okapi_token=$(echo "${auth}" | grep 'x-okapi-token: ' |sed 's/^.* //')
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
 
 apicall=$(curl -s -w '\n' -X GET -D \
   -H "Accept: application/json" \
   -H "X-Okapi-Tenant: ${tenant}" \
   -H "x-okapi-token: ${okapi_token}" \
-  ${okapi_url}/perms/permissions?length=10000)
+  "${okapi_url}/perms/permissions?expanded=true&length=100000")
 
-echo $apicall
-#echo "Description       Values"
-#echo "$apicall" | jq -r '.[] |[.desc, ([(.values[] | .value)] | join(";"))] | @tsv'
+echo $apicall | jq .

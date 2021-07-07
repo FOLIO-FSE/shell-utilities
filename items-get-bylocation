@@ -8,7 +8,7 @@ apicall=$(curl -s -w '\n' -X GET -D \
   -H "Accept: application/json" \
   -H "X-Okapi-Tenant: ${tenant}" \
   -H "x-okapi-token: ${okapi_token}" \
-  "${okapi_url}/inventory/items?limite=1000000&query=(effectiveLocationId=${location})")
+  "${okapi_url}/inventory/items?limit=1000000&query=(effectiveLocationId=${location})")
 
 echo $apicall 
 

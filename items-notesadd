@@ -1,0 +1,41 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+noteType="8d0a5eca-25de-4391-81a9-236eeefdd20b"
+
+while IFS=$'\t' read -r barcode note; do
+	
+	apicall=$(curl -s -w '\n' -X GET -D \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  "${okapi_url}/inventory/items?query=barcode=${barcode}")
+
+	uuid=$(echo "${apicall}" |jq -r .items[0].id)
+
+	apicall=$(curl -s -w '\n' -X GET -D \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  ${okapi_url}/item-storage/items/${uuid})
+
+
+	updated_item=$(echo ${apicall}  |jq --arg NOTETYPE "${noteType}" --arg NOTE "${note}"  ' .
+		| .notes += [{"itemNoteTypeId": $NOTETYPE, "note": $NOTE, "staffOnly": "true"}]
+		| del(.notes[] | select(.note == "null"))
+		')
+
+
+	apicall=$(curl --http1.1 -s -w '\n' -X PUT \
+	  -H "Content-type: application/json" \
+	  -H "Accept: text/plain" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  -d "${updated_item}" \
+	  ${okapi_url}/item-storage/items/${uuid})
+	
+	echo "$uuid"
+done < notes 
+
+

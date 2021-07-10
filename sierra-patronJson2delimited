@@ -8,7 +8,7 @@ addtypedefault="h"
 
 ptypedefault="Undefined"
 emaildomain="mtsu.edu"
-emaildefault="robert.wilson@mtsu.edu"
+emaildefault=""
 emaildefaultforall="1"
 convertemail2networkID="0"
 
@@ -43,6 +43,7 @@ cat all_patrons.json |jq '. | [
 	"\(.blockInfo.code)" // "",
 	"\(.pMessage)" // "",
 	"\(.message.code)" // "",
+	([ .varFields[] |select(.fieldTag=="x") | "\(.content)" ] |join("; ")) // ""
 	"\(.moneyOwed)" // ""
 ] |join("|")' |tr -d '"' |tr -d "'" |sed 's#|null|#||#g' > patrons.tmp
 
@@ -199,7 +200,7 @@ function fixaddress() {
 }
 
 
-echo -e "id\tbarcode\texternalid\tusername\tdepartment\tfname\tmname\tlname\tpname\temail\tptype\ttaddrtype\ttaddr1\ttaddr2\ttcity\ttstate\ttzip\tpphone\ttphone\tpaddrtype\tpaddr1\tpaddr2\tpcity\tpstate\tpzip\tpphone\tptype\tblock\tpmessage\tmessagecode\towed\tcreated\texpiration" > ${outfile}
+echo -e "id\tbarcode\texternalid\tusername\tdepartment\tfname\tmname\tlname\tpname\temail\tptype\ttaddrtype\ttaddr1\ttaddr2\ttcity\ttstate\ttzip\tpphone\ttphone\tpaddrtype\tpaddr1\tpaddr2\tpcity\tpstate\tpzip\tpphone\tptype\tblock\tpmessage\tmessagecode\tnotes\towed\tcreated\texpiration" > ${outfile}
 
 
 SECONDS=0
@@ -210,7 +211,7 @@ while IFS=$'\n' read -r line; do
 	line=$(sed 's/|-/|/g' <<< ${line})
 
 	timer=$SECONDS
-	IFS='|' read id barcode externalid username department created expiration email taddrtype taddr1 taddr2 paddrtype paddr1 paddr2 name tphone pphone ptype block pmessage messagecode owed <<< $line 
+	IFS='|' read id barcode externalid username department created expiration email taddrtype taddr1 taddr2 paddrtype paddr1 paddr2 name tphone pphone ptype block pmessage messagecode notes owed <<< $line 
 
 #	uniID="${username}"
 
@@ -242,7 +243,7 @@ while IFS=$'\n' read -r line; do
 
 	if [[ ${emaildefaultforall}=="1" ]];then email=${emaildefault};fi
 
-	echo -e "${id}\t${barcode}\t${externalid}\t${username}\t${department}\t${fname}\t${mname}\t${lname}\t${pname}\t${email}\t${ptype}\t${taddrtype}\t${taddr1}\t${taddr2}\t${tcity}\t${tstate}\t${tzip}\t${tphone}\t${pphone}\t${paddrtype}\t${paddr1}\t${paddr2}\t${pcity}\t${pstate}\t${pzip}\t${pphone}\t${ptype}\t${block}\t${pmessage}\t${messagecode}\t${owed}\t${created}\t${expiration}" >> ${outfile}
+	echo -e "${id}\t${barcode}\t${externalid}\t${username}\t${department}\t${fname}\t${mname}\t${lname}\t${pname}\t${email}\t${ptype}\t${taddrtype}\t${taddr1}\t${taddr2}\t${tcity}\t${tstate}\t${tzip}\t${tphone}\t${pphone}\t${paddrtype}\t${paddr1}\t${paddr2}\t${pcity}\t${pstate}\t${pzip}\t${pphone}\t${ptype}\t${block}\t${pmessage}\t${messagecode}\t${notes}\t${owed}\t${created}\t${expiration}" >> ${outfile}
 
 #	create_user
 #	echo "${foliouser}" |jq -c '.' >> ${outfile} 

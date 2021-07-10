@@ -1,0 +1,42 @@
+#0cf-e4aa278110b7 expects fine amounts in column 1, patron uuid in column 2
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+
+while read -r patron_barcode; do
+
+patron_barcode=$(sed 's/[^0-9]//g' <<< $patron_barcode)
+block_uuid=$(uuidgen)
+
+#### get user id from barcode
+apicall=$(curl -s -w '\n' -X GET -D \
+    -H "Accept: application/json" \
+    -H "X-Okapi-Tenant: ${tenant}" \
+    -H "x-okapi-token: ${okapi_token}" \
+    "${okapi_url}/users?query=barcode=${patron_barcode}")
+
+userid=$(echo $apicall | jq -r .users[].id)
+
+IFS='' read -r -d '' manualblock << EndOfJSON
+{
+  "desc": "Manual block migrated from Sierra",
+  "staffInformation": "",
+  "patronMessage": "",
+  "expirationDate": "2099-12-31T00:00:00.000Z",
+  "borrowing": true,
+  "renewals": true,
+  "requests": true,
+  "type": "Manual",
+  "userId": "${userid}",
+  "id": "${block_uuid}"
+}
+EndOfJSON
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${manualblock}" "${okapi_url}/manualblocks")
+
+echo -e "${apicall}" 
+
+done < patron_blocks
+

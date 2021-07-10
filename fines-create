@@ -1,28 +1,38 @@
-# expects fine amounts in column 1, patron uuid in column 2
+#0cf-e4aa278110b7 expects fine amounts in column 1, patron uuid in column 2
 
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 
-while IFS=$'\t' read -r fineamount userid; do
+while IFS=$'\t' read -r item_barcode patron_barcode item_charge processing_fee fineamount fee_assess_date; do
 
-userid=$(sed 's/[^0-9a-z\-]//g' <<< $userid)
+patron_barcode=$(sed 's/[^0-9A-Z\-]//ig' <<< $patron_barcode)
 fineamount=$(sed 's/[^0-9\.]//g' <<< $fineamount)
+item_charge=$(sed 's/[^0-9\.]//g' <<< $item_charge)
 
 feeFineId=$(uuid)
 fineId=$(uuid)
 actionId=$(uuid)
 
+#### get user id from barcode
+apicall=$(curl -s -w '\n' -X GET -D \
+    -H "Accept: application/json" \
+    -H "X-Okapi-Tenant: ${tenant}" \
+    -H "x-okapi-token: ${okapi_token}" \
+    "${okapi_url}/users?query=barcode=${patron_barcode}")
+
+userid=$(echo $apicall | jq -r .users[].id)
+
 IFS='' read -r -d '' fine << EndOfJSON
 {
-  "ownerId": "38708240-92e3-447b-9265-434cde36cd35",
+  "ownerId": "be3e978d-ff04-4fe4-85f9-7c0557b4e4e4",
   "feeFineId": "${feeFineId}",
   "paymentStatus":{"name":"Outstanding"},
   "status":{"name":"Open"},
   "amount": "${fineamount}",
   "remaining": "${fineamount}",
-  "feeFineType": "Migration",
+  "feeFineType": "Migrated Fees/Fines",
   "id": "${fineId}",
   "userId": "${userid}"
 }
@@ -35,21 +45,20 @@ IFS='' read -r -d '' action << EndOfJSON
   "amountAction": "${fineamount}",
   "balance":"${fineamount}",
   "transactionInformation":"",
-  "comments": "Migrated from Sierra",
+  "comments": "Item charge: ${item_charge}, Processing fee: ${processing_fee} for item ${item_barcode} assessed ${fee_assess_date} migrated from Sierra",
   "notify":false,
   "id": "${actionId}",
   "userId": "${userid}"
 }
 EndOfJSON
+
 apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${fine}" "${okapi_url}/accounts")
 
 echo -e "${apicall}" 
 
 apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${action}" "${okapi_url}/feefineactions")
-echo -e "${fine}"
-echo -e "${action}"
+
 echo -e "${apicall}" 
-done < fine_uuid
 
-
+done < fines.tsv 
 

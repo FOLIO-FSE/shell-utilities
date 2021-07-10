@@ -23,7 +23,7 @@ cat patrons/patrons.*.json | tr -d "|" | jq -c '.entries[]' > all_patrons.json
 
 cat all_patrons.json |jq '. | [
         "\(.id)" // "",
-        "\(.barcodes[0])" // "",
+        "\(.barcodes[0])" // "\(.id)",
 	(.varFields[] |select(.fieldTag=="z") | "\(.content)") // "", # network
 	(.varFields[] |select(.fieldTag=="u") | "\(.content)") // "", # univ id
 	"\(.fixedFields."46".value)" // "0", # department

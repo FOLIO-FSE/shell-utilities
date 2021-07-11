@@ -1,0 +1,60 @@
+# updates item and holdings record location based on barcode
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+permanentLocationId="9bd862c2-825d-42ee-91e7-3ea43915298f"
+
+
+while IFS=$'\n' read -r barcode; do
+	barcode=$(sed 's/[^0-9a-z\-]//g' <<< $barcode)
+
+
+	apicall=$(curl -s -w '\n' -X GET -D \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  ${okapi_url}/inventory/items?query=barcode=${barcode})
+
+	itemId=$(echo ${apicall} |jq -r '.items[].id')
+	holdingsId=$(echo ${apicall} |jq -r '.items[].holdingsRecordId')
+
+	apicall=$(curl -s -w '\n' -X GET -D \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  ${okapi_url}/item-storage/items/${itemId})
+
+	updated_item=$(echo ${apicall}  |jq --arg LOCATION "${permanentLocationId}" ' (.permanentLocationId = $LOCATION)')
+
+	apicall=$(curl --http1.1 -s -w '\n' -X PUT \
+	  -H "Content-type: application/json" \
+	  -H "Accept: text/plain" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  -d "${updated_item}" \
+	  ${okapi_url}/item-storage/items/${itemId})
+
+	apicall=$(curl -s -w '\n' -X GET -D \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  ${okapi_url}/holdings-storage/holdings/${holdingsId})
+
+	updated_holdings=$(echo ${apicall}  |jq --arg LOCATION "${permanentLocationId}" ' (.permanentLocationId = $LOCATION)')
+
+	apicall=$(curl --http1.1 -s -w '\n' -X PUT \
+	  -H "Content-type: application/json" \
+	  -H "Accept: text/plain" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  -d "${updated_holdings}" \
+	  ${okapi_url}/holdings-storage/holdings/${holdingsId})
+	
+	echo "Updating item and holdings location for ${barcode}"
+
+done < barcodes
+
+
+

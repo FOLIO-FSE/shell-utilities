@@ -19,9 +19,12 @@ while IFS=$'\t' read -r barcode note; do
 	  -H "x-okapi-token: ${okapi_token}" \
 	  ${okapi_url}/item-storage/items/${uuid})
 
-	updated_item=$(echo ${apicall}  |jq --arg CHECKIN "${note}" --arg CHECKOUT "${note}" ' .
-		| .circulationNotes += [{"noteType": "Check in", "note": $CHECKIN, "staffOnly": "true"}]
-		| .circulationNotes += [{"noteType": "Check out", "note": $CHECKOUT, "staffOnly": "true"}]
+	checkinId=$(uuidgen)
+	checkoutId=$(uuidgen)
+
+	updated_item=$(echo ${apicall}  |jq --arg CHECKINID "${checkinId}" --arg CHECKIN "${note}" --arg CHECKOUTID "${checkoutId}" --arg CHECKOUT "${note}" ' .
+		| .circulationNotes += [{"id": $CHECKINID, "noteType": "Check in", "note": $CHECKIN, "staffOnly": "true"}]
+		| .circulationNotes += [{"id": $CHECKOUTID, "noteType": "Check out", "note": $CHECKOUT, "staffOnly": "true"}]
 ')
 
 

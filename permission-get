@@ -1,0 +1,15 @@
+# list available permissions and subpermissions. Usage: ./permissions-list
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+perm=$1
+
+apicall=$(curl -s -w '\n' -X GET -D \
+  -H "Accept: application/json" \
+  -H "X-Okapi-Tenant: ${tenant}" \
+  -H "x-okapi-token: ${okapi_token}" \
+  "${okapi_url}/perms/permissions/${perm}")
+
+echo $apicall | jq .

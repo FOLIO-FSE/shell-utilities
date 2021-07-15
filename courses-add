@@ -1,0 +1,74 @@
+# Creates location based on contents of tab delimited file
+#
+# Code is expected in column 1 of a file named "locations"
+# Display name is set in column 2
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+declare -A dept_dict
+default_coursetype='0ba9e0f9-7de4-4b32-8fe4-4f69eee4e46b'
+default_term='b70c47a1-1a1d-40a1-a89d-483c903d8a64'
+
+dept_dict=(['HSS']="77da7466-8eae-42f6-a445-57cac1f50490" ['PMA']="3a6c3a77-d974-4e60-bed2-bb318140afb8" ['EAS']="451f9923-ae7f-40ce-b474-27795c1fb83c" ['CCE']="9e0b3a17-144b-489f-8501-5bca8b1fb3c4" ['GPS']="1eed5a23-e449-4ab8-803e-0ad98e2615d3" ['BBE']="9c1c7a39-b8bf-4d36-b599-e36a69f30899" ['Not specified']="e3ba2ec9-4efa-40a3-b58f-5562ce50c58f")
+
+while IFS='^' read -r courseName courseNumber dept externalId registrarId instructorName;do
+external=''
+registrar=''
+
+if [[ ${externalId} != "" ]];then external="\"externalId\":\"${externalId}\",";fi
+if [[ ${registrarId} != "" ]];then registrar="\"registrarId\":\"${registrarId}\",";fi
+if [[ ${dept} == "" ]];then dept="Not specified";fi
+
+listingid=$(uuidgen)
+
+IFS='' read -r -d '' courselisting << EndOfCourseListing
+
+{
+"id": "${listingid}",
+"courseTypeId": "0ba9e0f9-7de4-4b32-8fe4-4f69eee4e46b",
+${registrar}
+${external}
+"termId": "b70c47a1-1a1d-40a1-a89d-483c903d8a64"
+}
+EndOfCourseListing
+
+
+courseid=$(uuidgen)
+departmentId=${dept_dict[${dept}]}
+
+IFS='' read -r -d '' course << EndOfCourse
+
+{
+"id": "${courseid}",
+"departmentId": "${departmentId}",
+"name": "${courseName}",
+"courseNumber": "${courseNumber}",
+"courseListingId": "${listingid}"
+}
+EndOfCourse
+
+instructorid=$(uuidgen)
+
+IFS='' read -r -d '' instructor << EndOfInstructor
+
+{
+"id": "${instructorid}",
+"name": "${nstructorName}",
+"courseListingId": "${listingid}"
+}
+EndOfInstructor
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${courselisting}" "${okapi_url}/coursereserves/courselistings")
+echo -e "${apicall}" 
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${course}" "${okapi_url}/coursereserves/courses")
+echo -e "${apicall}" 
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${instructor}" "${okapi_url}/coursereserves/courselistings/${listingid}/instructors")
+echo -e "${apicall}" 
+
+done < caltech.courses
+
+

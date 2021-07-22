@@ -8,10 +8,9 @@ apicall=$(curl -s -X GET -D \
   -H "Accept: application/json" \
   -H "X-Okapi-Tenant: ${tenant}" \
   -H "x-okapi-token: ${okapi_token}" \
-  "${okapi_url}/identifier-types")
+  "${okapi_url}/identifier-types?limit=1000")
 echo $apicall 
 
 
-echo $apicall 
 
 

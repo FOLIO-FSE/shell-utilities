@@ -1,0 +1,10 @@
+# useage ./permission-add "user_uuid" "new_permission"
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{  \"externalIdentifier\" : \"1112595568\",  \"internalIdentifier\": \"b84534e7-2c3c-4827-b7f3-8fe68e36f640\", \"profileId\" : \"d0ebb7b0-2f0f-11eb-adc1-0242ac120002\" }" "${okapi_url}/copycat/imports")
+
+echo "${apicall}"

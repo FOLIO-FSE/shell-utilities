@@ -11,6 +11,13 @@ apicall=$(curl -s -w '\n' -X GET -D \
   -H "Accept: application/json" \
   -H "X-Okapi-Tenant: ${tenant}" \
   -H "x-okapi-token: ${okapi_token}" \
+  "${okapi_url}/instance-storage/instances/${instance_uuid}")
+echo $apicall 
+
+apicall=$(curl -s -w '\n' -X GET -D \
+  -H "Accept: application/json" \
+  -H "X-Okapi-Tenant: ${tenant}" \
+  -H "x-okapi-token: ${okapi_token}" \
   "${okapi_url}/holdings-storage/holdings?limit=10000&query=instanceId==${instance_uuid}")
 echo $apicall 
 
@@ -18,7 +25,7 @@ apicall=$(curl -s -w '\n' -X GET -D \
   -H "Accept: application/json" \
   -H "X-Okapi-Tenant: ${tenant}" \
   -H "x-okapi-token: ${okapi_token}" \
-  "${okapi_url}/inventory/items?query=instance.id==${instance_uuid}")
+  "${okapi_url}/inventory/items?limit=10000&query=instance.id==${instance_uuid}")
 
 echo $apicall 
 

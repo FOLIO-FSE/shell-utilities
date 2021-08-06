@@ -1,0 +1,43 @@
+
+
+declare -A mfhd_dict
+numitems=0
+numholdings=0
+SECONDS=0
+
+rm -f mfhds.mrk || true
+
+while IFS=$'\t' read -r bibid location callno; do
+
+callno=${callno/ /\$i}
+numitems=$(($numitems + 1))
+timer=$SECONDS
+
+if [[ -z ${mfhd_dict[${bibid}${location}]+unset} ]]; then
+	numholdings=$(($numholdings + 1))
+
+IFS='' read -r -d '' mfhd << EndOfMFHD
+=LDR  00155cx   22000733  4500
+=001  ${bibid}${location}
+=004  ${bibid}
+=008  9810090p\\\\\\\\8\\\\\\4001aueng0000000
+=852  0\\\$b${location}\$h${callno}
+EndOfMFHD
+	mfhd_dict[${bibid}${location}]="${mfhd}"
+	if [[ $(($numholdings % 1000)) == 0 ]];then echo -en "${numitems} items and ${numholdings} holdings processed in ${timer} seconds\r";fi	
+fi
+
+
+done < mfhd_ready
+
+echo "${numitems} items and ${numholdings} holdings processed in ${timer} seconds. Creating textual file now. Please wait..."
+
+for mfhd in "${mfhd_dict[@]}"
+do
+	echo "${mfhd}" >> mfhds.mrk 
+done
+
+
+
+
+

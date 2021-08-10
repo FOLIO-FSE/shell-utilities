@@ -7,6 +7,7 @@ okapi_token=$(cat okapi.token)
 user_uuid=$(sed 's/[^0-9a-z\-]//g' <<< $1)
 remove_perm="ui-inventory.instance.view-staff-suppressed-records"
 
-apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/perms/users/${user_uuid}/permissions/${remove-perm}")
+apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/perms/users/${user_uuid}/permissions/${remove_perm}?indexField=userId")
+
 
 

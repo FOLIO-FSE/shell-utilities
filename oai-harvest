@@ -1,11 +1,22 @@
 
 oai_server='https://edge-xxxx.folio.ebsco.com/oai/your_edge_key?verb=ListRecords'
+
 resumption_token=''
 counter=0
 SECONDS=0
 
-rm -rf oaiharvest
-mkdir oaiharvest
+if [[ ${resumption_token} == '' ]]; then
+        rm -rf oaiharvest
+        mkdir oaiharvest
+
+        oai_data=$(curl -s --retry 9 "${oai_server}&metadataPrefix=marc21_withholdings")
+        echo -e "${oai_data}" > "oaiharvest/${counter}.xml"
+
+
+        counter=$((${counter} + 1))
+
+        resumption_token=$((grep -o '<resumptionToken.*</resumptionToken>' |grep -oi '>[a-z0-9]*<' |tr -d '<>') <<<  "${oai_data}")
+fi
 
 oai_data=$(curl -s --retry 9 "${oai_server}&metadataPrefix=marc21_withholdings")
 echo -e "${oai_data}" > "oaiharvest/${counter}.xml"

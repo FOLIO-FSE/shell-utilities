@@ -1,5 +1,5 @@
 
-oai_server='https://edge-xxxx.folio.ebsco.com/oai/your_edge_key?verb=ListRecords'
+oai_server='https://edge-caltech.folio.ebsco.com/oai/eyJzIjoic2FqU0piTDZtaSIsInQiOiJmczAwMDAxMDU3IiwidSI6ImZzMDAwMDEwNTcifQ==?verb=ListRecords'
 
 resumption_token=''
 counter=0
@@ -18,12 +18,6 @@ if [[ ${resumption_token} == '' ]]; then
         resumption_token=$((grep -o '<resumptionToken.*</resumptionToken>' |grep -oi '>[a-z0-9]*<' |tr -d '<>') <<<  "${oai_data}")
 fi
 
-oai_data=$(curl -s --retry 9 "${oai_server}&metadataPrefix=marc21_withholdings")
-echo -e "${oai_data}" > "oaiharvest/${counter}.xml"
-
-counter=$((${counter} + 1))
-
-resumption_token=$((grep -o '<resumptionToken.*</resumptionToken>' |grep -oi '>[a-z0-9]*<' |tr -d '<>') <<<  "${oai_data}")
 
 while [[ ${resumption_token} != '' ]]; do
 	oai_data=$(curl -s --retry 9 "${oai_server}&resumptionToken=${resumption_token}")
@@ -34,4 +28,6 @@ while [[ ${resumption_token} != '' ]]; do
 
 	echo -en "$(( $counter )) tokens processed in $SECONDS seconds\r"
 done
+
+echo "$(( $counter )) tokens processed in $SECONDS seconds"
 

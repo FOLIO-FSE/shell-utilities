@@ -1,0 +1,26 @@
+oai_server='https://edge-caltech.folio.ebsco.com/oai/your_edge_key?verb=GetRecord&metadataPrefix=marc21_withholdings&identifier=oai:folio.org:your_tenant/'
+
+counter=1
+SECONDS=0
+
+
+#rm -rf oairecords oairecord.log
+
+while read -r instance_id; do
+        oai_data=$(curl -s --retry 9 "${oai_server}${instance_id}" |sed 's/^.*\(<marc:record>\)/\1/' |sed 's/\(<\/record>\).*/\1/')
+
+        if [[ $oai_data == *"</record>"* ]]; then
+                status=good
+        else
+                status=fail
+        fi
+
+        echo "$instance_id      $status" >> oairecord.log
+
+        echo -e "${oai_data}" >> oairecords
+        counter=$((${counter} + 1))
+
+        echo -en "$(( $counter )) records processed in $SECONDS seconds\r"
+done < uuids
+
+echo "$(( $counter )) records processed in $SECONDS seconds"

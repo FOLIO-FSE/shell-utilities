@@ -1,0 +1,47 @@
+## takes a delimited file with user barcode in first column and note in the second
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+noteTypeUuid="uuid-for-note-type-in-your-system"
+
+while read -r barcode note;do
+
+        apicall=$(curl -s -w '\n' -X GET -D \
+          -H "Accept: application/json" \
+          -H "X-Okapi-Tenant: ${tenant}" \
+          -H "x-okapi-token: ${okapi_token}" \
+          "${okapi_url}/users?query=barcode=${barcode}")
+
+	# get uuid from barcode
+        id=$(echo $apicall | jq -r .users[].id)
+        echo "Found id $id for barcode $barcode" 
+	
+	note_uuid=$(uuidgen)
+	
+IFS='' read -r -d '' data << EndOfJSON
+{
+  "domain": "users",
+  "typeId": "${noteTypeUuid}",
+  "content": "<div>${note}</div>",
+  "title": "Patron note",
+  "links": [
+    {
+      "type": "user",
+      "id": "${id}"
+    }
+  ],
+  "id": "${note_uuid}"
+}
+EndOfJSON
+	
+	
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/notes")
+	
+	echo  "${id}  ---  ${note}" 
+	
+
+done < patron_notes
+
+

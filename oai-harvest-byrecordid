@@ -4,12 +4,15 @@ counter=1
 SECONDS=0
 
 
-#rm -rf oairecords oairecord.log
+rm -rf oairecords.xml oairecord.log
+
+echo -e '<?xml version="1.0" encoding="UTF-8" ?><marc:collection xmlns:marc="http://www.loc.gov/MARC21/slim" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.loc.gov/MARC21/slim http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd">' > oairecords.xml
 
 while read -r instance_id; do
         oai_data=$(curl -s --retry 9 "${oai_server}${instance_id}" |sed 's/^.*\(<marc:record>\)/\1/' |sed 's/\(<\/record>\).*/\1/')
 
         if [[ $oai_data == *"</record>"* ]]; then
+        	echo -e "${oai_data}" >> oairecords.xml
                 status=good
         else
                 status=fail
@@ -17,10 +20,11 @@ while read -r instance_id; do
 
         echo "$instance_id      $status" >> oairecord.log
 
-        echo -e "${oai_data}" >> oairecords
         counter=$((${counter} + 1))
 
         echo -en "$(( $counter )) records processed in $SECONDS seconds\r"
 done < uuids
+
+echo -e '</marc:collection>' >> oairecords.xml
 
 echo "$(( $counter )) records processed in $SECONDS seconds"

@@ -10,9 +10,9 @@
       "streamName": "patrons",
       "apiPath": "/patrons",
       "defaultFields":
-        "barcodes,names,emails,phones,addresses,blockInfo,createdDate,default,deleted,fixedFields,varFields,homeLibraryCode,langPref,patronCodes,patronType,pMessage,suppressed,updatedDate,message,createdDate,deletedDate,updatedDate",
+        "names,emails,addresses,barcodes,blockInfo,varFields,blockInfo,createdDate,default,deleted,fixedFields,homeLibraryCode,langPref,patronCodes,patronType,pMessage,suppressed,updatedDate,message,createdDate,deletedDate,updatedDate",
       "privacyConcernedFields":
-        "addresses,barcodes,birthDate,blockInfo,createdDate,default,deleted,emails,fixedFields,homeLibraryCode,langPref,names,patronCodes,patronType,phones,pMessage,suppressed,uniqueIds,updatedDate,varFields,message,createdDate,deletedDate,updatedDate"
+        "addresses,barcodes,birthDate,blockInfo,createdDate,default,deleted,emails,fixedFields,homeLibraryCode,langPref,names,patronCodes,patronType,phones,pMessage,suppressed,uniqueIds,updatedDate,message,createdDate,deletedDate,updatedDate,varFields"
     },
     {
       "streamName": "authorities",
@@ -22,7 +22,7 @@
     {
       "streamName": "agencies",
       "apiPath": "/agencies",
-      "defaultFields": "",
+      "defaultFields": "code,display",
       "noPaging": true
     },
     {
@@ -55,6 +55,11 @@
       "streamName": "orders",
       "apiPath": "/orders",
       "defaultFields": "varFields,fixedFields,updatedDate,deletedDate,suppressed,accountingUnit,estimatedPrice,vendorRecordCode,orderDate,chargedFunds,vendorTitles"
-    }    
+    },    
+    {
+      "streamName": "vendors",
+      "apiPath": "/vendors",
+      "defaultFields": "id,accountingUnit,code,vendorName,address1,address2,contact,email,phone,acctNum,discount,fixedFields,varFields"
+    }
   ]
 }

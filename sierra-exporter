@@ -3,6 +3,8 @@
 #
 # usage: ./sierra-exporter [rectype] e.g. ./sierra-exporter bibs
 
+username="cla"
+
 function auth () {
 	auth=$(curl -s -k -w '\n' -X POST \
 	  -H "Content-type: application/json" \
@@ -17,7 +19,7 @@ function get_data() {
 	case $rectype in
 		funds|vendors)
 			deletedrecs="&deleted=false"
-			apicall="${apiUri}&fields=${defaultFields}"
+			apicall="${apiUri}?login=${username}&limit=${increment}&fields=${defaultFields}"
 			;;
 		fines)
 			deletedrecs="&deleted=false"
@@ -96,4 +98,3 @@ do
 done
 
 echo "Completed processing in $SECONDS seconds"
-

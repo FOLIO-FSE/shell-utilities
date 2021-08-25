@@ -8,7 +8,7 @@ while read -r loan_uuid; do
 	  -H "Accept: application/json" \
 	  -H "X-Okapi-Tenant: ${tenant}" \
 	  -H "x-okapi-token: ${okapi_token}" \
-	  ${okapi_url}/loan-storage/loans/${loan_uuid})
+	  ${okapi_url}/circulation/loans/${loan_uuid})
 	
 	updated_loan=$(echo ${apicall}  |jq ' (.action = "dueDateChanged" | .dueDate = "2021-08-27T21:59:59.000+00:00")')
 
@@ -18,7 +18,7 @@ while read -r loan_uuid; do
           -H "X-Okapi-Tenant: ${tenant}" \
           -H "x-okapi-token: ${okapi_token}" \
           -d "${updated_loan}" \
-          ${okapi_url}/loan-storage/loans/${loan_uuid})
+          ${okapi_url}/circulation/loans/${loan_uuid})
 
 	echo $loan_uuid
 done < loan_uuids

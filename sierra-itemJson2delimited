@@ -15,7 +15,7 @@ imsg_dict=(['a']="2 pieces"  ['b']="3 pieces"  ['c']="circ review"  ['d']="4 pie
 cat all_items.json | tr -d "|" | jq -r '. | [
         "\(.id)" // "",
         "\(.bibIds[0])" // "",
-        "\(.barcode)" // "\(.id)",
+        (select(.barcode| test("[0-9]")) | "\(.barcode)") // "\(.id)",
 	"\(.location.code)" // "",
         "\(.callNumber)" // "",
         "\(.itemType)" // "",

@@ -25,7 +25,7 @@ cat patrons/patrons.*.json | tr -d "|" | jq -c '.entries[]' > all_patrons.json
 
 cat all_patrons.json |jq --arg addtypedefault "$addtypedefault" --arg addtypedefault2 "$addtypedefault2" --arg emaildefault "$emaildefault" --arg ptypedefault "$ptypedefault" '. | [
         "\(.id)" // "",
-        "\(.barcodes[0])" // "\(.id)",
+        (select(.barcode| test("[0-9]")) | "\(.barcode)") // "\(.id)",
 	(.varFields[] |select(.fieldTag=="z") | "\(.content)") // "\(.id)", # network
 	(.varFields[] |select(.fieldTag=="u") | "\(.content)") // "\(.id)", # univ id
 	"\(.fixedFields."46".value)" // "0", # department

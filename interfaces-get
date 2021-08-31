@@ -1,0 +1,16 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+query='organizations-storage/interfaces?limit=99000000'
+
+apicall=$(curl -s -w '\n' -X GET -D \
+  -H "Accept: application/json" \
+  -H "X-Okapi-Tenant: ${tenant}" \
+  -H "x-okapi-token: ${okapi_token}" \
+  ${okapi_url}/${query})
+
+echo $apicall |jq .
+
+
+

@@ -1,0 +1,68 @@
+# retrieves item and holdings data associated with
+# an instance
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+counter=1
+
+declare -a item_ids
+declare -a holdings_ids
+
+while read -r deletethis; do
+
+	instance_uuid=$(sed 's/[^0-9a-z\-]//g' <<< $deletethis)
+	
+	apicall=$(curl -s -w '\n' -X GET -D \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  "${okapi_url}/item-storage/items?limit=10000&query=instance.id==${instance_uuid}")
+	
+	item_ids=($(echo $apicall | jq -r .items[].id))
+	item_arr_size=${#item_ids[@]}
+	
+	if [[ $item_arr_size == 0 ]]
+	then
+		echo "No items were detected"
+	else
+		echo "$item_arr_size items were detected: Deleting items"
+	
+		for item in ${item_ids[*]};do
+	  		echo $item
+			apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-storage/items/${item}")
+			echo $apicall
+		done
+	fi
+	
+	apicall=$(curl -s -w '\n' -X GET -D \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  "${okapi_url}/holdings-storage/holdings?limit=10000&query=instanceId==${instance_uuid}")
+	
+	holdings_ids=($(echo $apicall | jq -r .holdingsRecords[].id))
+	holdings_arr_size=${#holdings_ids[@]}
+	
+	if [[ $holdings_arr_size == 0 ]]
+	then
+		echo "No holdings were detected"
+	else
+		echo "$holdings_arr_size items were detected. Deleting holdings:"
+	
+		for holding in ${holdings_ids[*]};do
+	  		echo $holding
+			apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-storage/holdings/${holding}")
+			echo $apicall
+		done
+	fi
+	
+	apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${instance_uuid}/source-record")
+	apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${instance_uuid}")
+	
+	echo ${apicall}
+	echo "Deleting record $counter -- ${instance_uuid}"
+	counter=$(($counter + 1))
+
+done < delete

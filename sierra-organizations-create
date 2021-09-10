@@ -1,0 +1,212 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+
+rm -rf orgs.txt orgs.tmp
+
+add_interface() {
+
+IFS='' read -r -d '' data << EndOfInterface
+{
+  "type": [
+    "Other"
+  ],
+  "name": "${code}",
+  "notes": "${fieldZ}",
+  "id": "${interface_id}"
+}
+EndOfInterface
+
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/organizations-storage/interfaces")
+
+}
+
+build_address() {
+
+line1=""
+line2=""
+city=""
+state=""
+zip=""
+citystatezip=""
+
+if [[ ${addr1} != "" ]]; then 
+	IFS='$' read -r orgname line1 line2 citystatezip <<< ${addr1}
+
+	if [[ -z ${citystatezip} ]];then 
+		citystatezip=${line2}
+		line2=""
+	fi
+
+	IFS=',' read city statezip <<< ${citystatezip}
+
+	IFS=' ' read -r -a statezip <<< "${citystatezip}"
+
+
+	if [[ ${#statezip[@]} > 1 ]]; then
+		if [[ ${statezip[-1]} =~ ^[0-9\-]*$ ]]; then
+
+			zip=${statezip[-1]} 
+			state=${statezip[-2]}
+			citystatezip=""
+		fi
+	fi
+
+	if [[ ${zip} == "" ]]; then
+		IFS=' ' read -r -a city state zip <<< "${citystatezip}"
+
+		if ! [[ ${zip} =~ ^[0-9\-]*$ ]]; then
+			city=""
+			state=""
+			zip=""
+		fi
+	fi
+
+	addr1="{\"isPrimary\":true,\"addressLine1\":\"${line1}\",\"addressLine2\":\"${line2}\",\"city\":\"${city}\",\"stateRegion\":\"${state}\",\"zipCode\":\"${zip}\"}"
+fi
+
+}
+
+create_org_record() {
+
+
+if [[ ${email} != "" ]]; then email="{ \"value\" : \"${email}\", \"isPrimary\" : true, \"categories\" : [] }";fi
+
+
+if [[ ${phone} != "" ]]; then phone="{ \"phoneNumber\" : \"${phone}\", \"isPrimary\" : true, \"categories\" : [] }";fi
+
+	
+IFS='' read -r -d '' org << EndOfOrg
+{
+ "id" : "${uuid}",
+ "name" : "${name}",
+ "code" : "${code}",
+ "description" : "",
+ "exportToAccounting" : false,
+ "status" : "Active",
+ "aliases" : [ ],
+ "addresses" : [${addr1}],
+ "phoneNumbers" : [${phone} ${fax}],
+ "emails" : [${email}],
+ "urls" : [ ],
+ "contacts" : [ ],
+ "agreements" : [ ],
+ "erpCode" : "",
+ "vendorCurrencies" : [ ],
+ "edi" : {
+   "vendorEdiType" : "31B/US-SAN",
+   "libEdiType" : "31B/US-SAN",
+   "ediFtp" : {
+     "ftpFormat" : "SFTP",
+     "ftpMode" : "ASCII",
+     "ftpConnMode" : "Active"
+   }
+ },
+ "interfaces" : ["${interface_id}"],
+ "accounts" : [${accountnum}],
+ "isVendor" : true,
+ "changelogs" : [ ],
+ "acqUnitIds" : [ ]
+} 
+EndOfOrg
+
+echo "${org}"
+}
+
+
+add_phone() {
+	org=$(echo ${org} | jq ".phoneNumbers += [{ \"phoneNumber\" : \"${phone}\", \"isPrimary\" : false, \"categories\" : [] }]")
+}
+
+add_note() {
+
+IFS='' read -r -d '' note << EndOfNote
+{
+  "domain": "organizations",
+  "typeId": "ebf00fad-3a78-430d-b471-64fd37c09401",
+  "content": "<div>${note}</div>",
+  "title": "${code} note",
+  "links": [
+    {
+      "type": "organization",
+      "id": "${uuid}"
+    }
+  ],
+  "id": "$(uuidgen)"
+}
+EndOfNote
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${note}" "${okapi_url}/notes")
+
+}
+
+
+echo -e "Name\tCode\tAccountNum\tContact\tEmail\tPhone\tAddr1\tAddr2\tFieldM\tFieldO\tFieldF\tFieldL\tFieldZ\tId" > orgs.txt
+
+cat vendors/* | jq -r '.entries[] | [
+        "\(.vendorName)" // "",
+        (select(.code != null) | "\(.code)") // "\(.id)",
+        "\(.accountNum)" // "",
+        "\(.contact)" // "",
+        "\(.email)" // "",
+        "\(.phone)" // "",
+        "\(.address1)" // "",
+        "\(.address2)" // "",
+	 (.varFields[] |select(.fieldTag=="k") | "\(.content)") // "", # note1
+	 (.varFields[] |select(.fieldTag=="m") | "\(.content)") // "", # note2
+	 (.varFields[] |select(.fieldTag=="n") | "\(.content)") // "", # note3
+	 (.varFields[] |select(.fieldTag=="o") | "\(.content)") // "", # Additional Phone
+	 (.varFields[] |select(.fieldTag=="f") | "\(.content)") // "", # Fax
+	 (.varFields[] |select(.fieldTag=="l") | "\(.content)") // "", # Account number
+	 (.varFields[] |select(.fieldTag=="z") | "\(.content)") // "", # Interface
+        "\(.id)" // ""
+        ] | join("|") ' |sed 's/null|/|/g'  |tr -d "'" |tr -d '"' >> orgs.tmp
+
+counter=1
+
+while IFS='|' read -r name code accountNum contact email phone addr1 addr2 fieldK fieldM fieldN fieldO fieldF fieldL fieldZ id;do
+	# org uuid -- needs to be global
+	uuid=$(uuidgen)
+
+	note="${fieldK} ${fieldM} ${fieldN} ${fieldO} ${fieldZ}"
+
+	if [[ ${fieldL} != "" ]]; then
+		accountnum="{\"name\":\"${name}\",\"accountNo\":\"${fieldL}\",\"paymentMethod\":\"Other\",\"accountStatus\":\"Active\",\"libraryCode\":\"-\",\"libraryEdiCode\":\"-\"}"
+	else
+		accountnum=""
+	fi
+
+	if [[ ${fieldF} != "" ]]; then
+		if [[ ${phone} != "" ]]; then
+			fax=",{\"phoneNumber\":\"${fieldF}\",\"type\":\"Fax\"}"
+		else
+			fax="{\"phoneNumber\":\"${fieldF}\",\"type\":\"Fax\"}"
+		fi
+
+	else
+		fax=""
+	fi
+#	if [[ ${fieldZ} != "" ]]; then
+#		interface_id=$(uuidgen)
+#		add_interface	
+#		echo "Interface created for $name $code"
+#		else
+#		interface_id=""
+#	fi
+	build_address
+	org=$(create_org_record)
+	
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${org}" "${okapi_url}/organizations/organizations")
+
+	if [[ ${note} =~ [a-z0-9A-Z] ]];then
+		note=$(sed 's/  */ /g' <<< ${note})
+		add_note
+		echo "note created for $code"
+	fi
+
+	echo "Processing $code -- record $counter"
+	counter=$((counter + 1))
+	echo -e "${name}\t${code}\t${accountNum}\t${contact}\t${email}\t${phone}\t${addr1}\t${addr2}\t${fieldK}\t${fieldM}\t${fieldN}\t${fieldO}\t${fieldF}\t${fieldL}\t${fieldZ}\t${id}" >> orgs.txt
+done < orgs.tmp
+

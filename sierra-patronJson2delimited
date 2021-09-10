@@ -25,9 +25,13 @@ cat patrons/patrons.*.json | tr -d "|" | jq -c '.entries[]' > all_patrons.json
 
 cat all_patrons.json |jq --arg addtypedefault "$addtypedefault" --arg addtypedefault2 "$addtypedefault2" --arg emaildefault "$emaildefault" --arg ptypedefault "$ptypedefault" '. | [
         "\(.id)" // "",
-        (select(.barcode| test("[0-9]")) | "\(.barcode)") // "\(.id)",
+	(select(.barcodes[0] != null) | "\(.barcodes[0])") // "\(.id)",
 	(.varFields[] |select(.fieldTag=="z") | "\(.content)") // "\(.id)", # network
 	(.varFields[] |select(.fieldTag=="u") | "\(.content)") // "\(.id)", # univ id
+	"\(.patronType)" // $ptypedefault,
+	"\(.patronCodes.pcode1)" // "",
+	"\(.patronCodes.pcode2)" // "",
+	"\(.patronCodes.pcode3)" // "",
 	"\(.fixedFields."46".value)" // "0", # department
 	"\(.createdDate)" // "",  # creation date
 	"\(.expirationDate)" // "",  # expiration date
@@ -36,14 +40,15 @@ cat all_patrons.json |jq --arg addtypedefault "$addtypedefault" --arg addtypedef
         .addresses[0].lines[0] // "",
         .addresses[0].lines[1] // "",
         .addresses[0].lines[2] // "",
+        .addresses[0].lines[3] // "",
         .addresses[1].type // $addtypedefault2,
         .addresses[1].lines[0] // "",
         .addresses[1].lines[1] // "",
         .addresses[1].lines[2] // "",
+        .addresses[1].lines[3] // "",
         .names[0] // "",
-         (.varFields[] |select(.fieldTag=="t") | "\(.content)") // "",
+	([ .varFields[] |select(.fieldTag=="t") | "\(.content)" ] |join("; ")) // "",
         "\(.phones[1].number)" // "",
-	"\(.patronType)" // $ptypedefault,
 	"\(.blockInfo.code)" // "",
 	"\(.pMessage)" // "",
 	"\(.message.code)" // "",
@@ -109,11 +114,6 @@ function fixaddress() {
 			addr2="${paddr2}"
 			addr3="${paddr3}"
 			;;
-		*)
-			addr1="${taddr1}"
-			addr2="${taddr2}"
-			addr3="${taddr3}"
-			;;
 	esac
 
 
@@ -148,6 +148,8 @@ function fixaddress() {
 	fi
 
 	if [[ $zip == "" ]]; then addr2="${citystatezip}";fi
+
+	city=$(sed "s/${state}.*${zip}.*//" <<< ${city}) 
 		
 	case "$addIndex" in
 		"0")
@@ -164,20 +166,12 @@ function fixaddress() {
 			pstate="${state}"
 			pzip="${zip}"
 			;;
-		*)
-			taddr1="${addr1}"
-			taddr2="${addr2}"
-			tcity="${city}"
-			tstate="${state}"
-			tzip="${zip}"
-			;;
 	esac
 
-	city=$(sed "s/${state} ${zip}//" <<< ${city}) 
 }
 
 
-echo -e "id\tbarcode\texternalid\tusername\tdepartment\tfname\tmname\tlname\tpname\temail\tptype\ttaddrtype\ttaddr1\ttaddr2\ttcity\ttstate\ttzip\tpphone\ttphone\tpaddrtype\tpaddr1\tpaddr2\tpcity\tpstate\tpzip\tpphone\tptype\tblock\tpmessage\tmessagecode\tnotes\towed\tcreated\texpiration" > ${outfile}
+echo -e "id\tbarcode\texternalid\tusername\tptype\tpcode1\tpcode2\tpcode3\tdepartment\tfname\tmname\tlname\tpname\temail\ttaddrtype\ttaddr1\ttaddr2\ttcity\ttstate\ttzip\ttphone\tpphone\tpaddrtype\tpaddr1\tpaddr2\tpcity\tpstate\tpzip\tpphone\tblock\tpmessage\tmessagecode\tnotes\towed\tcreated\texpiration" > ${outfile}
 
 
 SECONDS=0
@@ -185,10 +179,18 @@ counter=0
 
 while IFS=$'\n' read -r line; do
 	#### remove "-" values which indicate defaults
-	line=$(sed 's/|-/|/g' <<< ${line})
+	line=$(echo "${line}" |sed 's/|-/|/g' |sed 's/-|/|/g')
 
 	timer=$SECONDS
-	IFS='|' read id barcode externalid username department created expiration email taddrtype taddr1 taddr2 taddr3 paddrtype paddr1 paddr2 paddr3 name tphone pphone ptype block pmessage messagecode notes owed <<< $line 
+	IFS='|' read id barcode externalid username ptype pcode1 pcode2 pcode3 department created expiration email taddrtype taddr1 taddr2 taddr3 taddr4 paddrtype paddr1 paddr2 paddr3 paddr4 name tphone pphone block pmessage messagecode notes owed <<< $line 
+
+	if [[ ${taddr4} ]]; then
+		taddr3+=" ${taddr4}"
+	fi
+
+	if [[ ${paddr4} ]]; then
+		paddr3+=" ${paddr4}"
+	fi
 
 	if ! [[ ${email} =~ @.*\.(edu|gov|com|net) ]];then email=${emaildefault};fi
 
@@ -212,13 +214,19 @@ while IFS=$'\n' read -r line; do
 
 	if [[ ${emaildefaultforall}=="1" ]];then email=${emaildefault};fi
 
-	echo -e "${id}\t${barcode}\t${externalid}\t${username}\t${department}\t${fname}\t${mname}\t${lname}\t${pname}\t${email}\t${ptype}\t${taddrtype}\t${taddr1}\t${taddr2}\t${tcity}\t${tstate}\t${tzip}\t${tphone}\t${pphone}\t${paddrtype}\t${paddr1}\t${paddr2}\t${pcity}\t${pstate}\t${pzip}\t${pphone}\t${ptype}\t${block}\t${pmessage}\t${messagecode}\t${notes}\t${owed}\t${created}\t${expiration}" >> ${outfile}
+	if [[ ${pcode3} == "1" ]];then
+		pcode3="users-foml"
+	else
+		pcode3=""	
+	fi
 
+	if [[ ${name} ]];then
+		echo -e "${id}\t${barcode}\t${externalid}\t${username}\t${ptype}\t${pcode1}\t${pcode2}\t${pcode3}\t${department}\t${fname}\t${mname}\t${lname}\t${pname}\t${email}\t${taddrtype}\t${taddr1}\t${taddr2}\t${tcity}\t${tstate}\t${tzip}\t${tphone}\t${pphone}\t${paddrtype}\t${paddr1}\t${paddr2}\t${pcity}\t${pstate}\t${pzip}\t${pphone}\t${block}\t${pmessage}\t${messagecode}\t${notes}\t${owed}\t${created}\t${expiration}" >> ${outfile}
+	fi
 
 done < patrons.tmp
 
 rm patrons.tmp
 
 echo
-
 

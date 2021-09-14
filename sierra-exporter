@@ -25,6 +25,10 @@ function get_data() {
 			deletedrecs="&deleted=false"
 			apicall="${apiUri}?offset=${offset}&limit=${increment}&fields=${defaultFields}"
 			;;
+		holdings)
+			deletedrecs="&deleted=falseinheritLocation=true"
+			apicall="${apiUri}?offset=${offset}&limit=${increment}&fields=${defaultFields}"
+			;;
 		*)
 			deletedrecs="&deleted=false"
 			apicall="${apiUri}?offset=${offset}&fields=${defaultFields}&limit=${increment}${deletedrecs}"

@@ -1,6 +1,14 @@
 # extracts fields from MARCJSON and outputs in TSV
 #
 # usage: ./jqtotsv marcfile 
+# top sequence is from SRS record, bottom is from MARC dump
 
+#cat $1 |jq -r '[  (.parsedRecord.content.fields[] | select (."001" != null) | ."001"), ([ .parsedRecord.content.fields[]."650".subfields[]? | select(.a !=null) | .a ] |join(";"))] | @tsv'
 
-cat $1 |jq -r '[  (.parsedRecord.content.fields[] | select (."001" != null) | ."001"), ([ .parsedRecord.content.fields[]."650".subfields[]? | select(.a !=null) | .a ] |join(";"))] | @tsv'
+cat $1 |jq -r '
+select(.fields[]."856".subfields[]?  |select(.u != null and (.u |contains("http")))) |
+[
+(.fields[] | select (."001" != null) | ."001"),
+(.fields[]."245".subfields[]? | select(.a !=null) | .a),
+([ .fields[]."856".subfields[]? | select(.u != null) | .u ] |join(";"))
+] | @tsv' >urls

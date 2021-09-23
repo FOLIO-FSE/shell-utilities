@@ -2,33 +2,33 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
+counter=1
 
-while IFS=$'\n' read -r barcode; do
+while IFS=$'\n' read -r item_id; do
 
+	if [[ $item_id =~ ^[0-9][0-9*$ ]];then
+		barcode=$item_id
 
-	barcode=$(sed 's/[^0-9]//g' <<< $barcode)
-
-	apicall=$(curl -s -w '\n' -X GET -D \
-	  -H "Accept: application/json" \
-	  -H "X-Okapi-Tenant: ${tenant}" \
-	  -H "x-okapi-token: ${okapi_token}" \
-	  ${okapi_url}/inventory/items?query=barcode=${barcode})
-
-	uuid=$(echo ${apicall} | jq -r .items[].id)
-
+		apicall=$(curl -s -w '\n' -X GET -D \
+		  -H "Accept: application/json" \
+		  -H "X-Okapi-Tenant: ${tenant}" \
+		  -H "x-okapi-token: ${okapi_token}" \
+		  ${okapi_url}/inventory/items?query=barcode=${barcode})
 	
-	checkinId=$(uuidgen)
-	checkoutId=$(uuidgen)
-
+		uuid=$(echo ${apicall} | jq -r .items[].id)
+	else
+		uuid=$item_id
+	fi
+	
 	apicall=$(curl -s -w '\n' -X GET -D \
 	  -H "Accept: application/json" \
 	  -H "X-Okapi-Tenant: ${tenant}" \
 	  -H "x-okapi-token: ${okapi_token}" \
 	  ${okapi_url}/item-storage/items/${uuid})
 
-	updated_item=$(echo ${apicall}  |jq --arg CHECKIN $(uuidgen) --arg CHECKOUT $(uuidgen) '
-		(.circulationNotes[] |select(.noteType == "Check in" and .id == null) | .id) = $CHECKIN 
-		| (.circulationNotes[] |select(.noteType == "Check out" and .id == null) | .id) = $CHECKOUT
+	updated_item=$(echo ${apicall}  |jq '
+		(.materialTypeId = "1d516bbe-a3da-4148-a113-468a4312686b")
+		| (.permanentLoanTypeId = "95c95c05-9497-4e97-ac5e-c461513e3dae")
 ')
 
 	apicall=$(curl --http1.1 -s -w '\n' -X PUT \
@@ -39,7 +39,9 @@ while IFS=$'\n' read -r barcode; do
 	  -d "${updated_item}" \
 	  ${okapi_url}/item-storage/items/${uuid})
 
-	echo $barcode	
+	echo "Processing record $counter -- $item_id"
+	counter=$(($counter + 1))
+	
 done < items 
 
 

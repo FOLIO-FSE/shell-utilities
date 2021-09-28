@@ -1,0 +1,19 @@
+# retrieves item and holdings data associated with
+# an instance
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+counter=1
+
+
+while read -r notice_uuid; do
+
+	notice_uuid=$(sed 's/[^0-9a-z\-]//g' <<< $notice_uuid)
+	
+	apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/scheduled-notice-storage/scheduled-notices/${notice_uuid}")
+	
+	echo "Deleting record $counter -- ${notice_uuid}"
+	counter=$(($counter + 1))
+done < delete

@@ -1,0 +1,28 @@
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+counter=0
+
+while IFS=$'\t' read -r item_uuid user_uuid;do 
+
+IFS='' read -r -d '' data << EndOfJSON
+{
+  "userId": "${user_uuid}", 
+  "itemId": "${item_uuid}" 
+}
+EndOfJSON
+
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/circulation/renew-by-id")
+id=$(echo "${apicall}" |jq -r .id)
+
+counter=$(($counter + 1))
+echo "Processing loan ${counter} -- ${id}"
+
+
+done < renew 
+
+
+

@@ -19,7 +19,7 @@ apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" 
 id=$(echo "${apicall}" |jq -r .id)
 
 counter=$(($counter + 1))
-echo "Processing loan ${counter} -- ${id}"
+echo "Processing loan ${counter} -- loan: ${id} item: ${item_uuid}"
 
 
 done < renew 

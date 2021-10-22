@@ -55,7 +55,7 @@ IFS='' read -r -d '' instructor << EndOfInstructor
 
 {
 "id": "${instructorid}",
-"name": "${nstructorName}",
+"name": "${instructorName}",
 "courseListingId": "${listingid}"
 }
 EndOfInstructor

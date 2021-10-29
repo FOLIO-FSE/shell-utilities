@@ -52,7 +52,6 @@ while read -r deletethis; do
 		echo "$holdings_arr_size items were detected. Deleting holdings:"
 	
 		for holding in ${holdings_ids[*]};do
-	  		echo $holding
 			apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-storage/holdings/${holding}")
 			echo $apicall
 		done

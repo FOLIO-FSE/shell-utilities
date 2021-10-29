@@ -8,26 +8,40 @@ SECONDS=0
 
 rm -f mfhds.mrk || true
 
-while IFS=$'\t' read -r bibid location callno; do
+int_note=''
+note=''
+location='MIGRATION'
+
+while IFS='|' read -r bibid holdid callno libhas int_note note; do
+
 
 callno=${callno/ /\$i}
 numitems=$(($numitems + 1))
 timer=$SECONDS
 
-if [[ -z ${mfhd_dict[${bibid}${location}]+unset} ]]; then
+if [[ -z ${mfhd_dict[${holdid}]+unset} ]]; then
 	numholdings=$(($numholdings + 1))
 
 IFS='' read -r -d '' mfhd << EndOfMFHD
 =LDR  00155cx   22000733  4500
-=001  ${bibid}${location}
+=001  ${holdid}
 =004  ${bibid}
 =008  9810090p\\\\\\\\8\\\\\\4001aueng0000000
 =852  0\\\$b${location}\$h${callno}
 EndOfMFHD
+
+if [[ ${#note} > 0 ]]; then mfhd="${mfhd}=538  \\\\\$i${note}"$'\n';fi
+if [[ ${#int_note} > 0 ]]; then mfhd="${mfhd}=583  \\\\\$x${int_note}"$'\n';fi
+if [[ ${#libhas} > 0 ]]; then mfhd="${mfhd}=866  \\\\\$80$a${libhas}"$'\n';fi
+
+
 	mfhd_dict[${bibid}${location}]="${mfhd}"
 	if [[ $(($numholdings % 1000)) == 0 ]];then echo -en "${numitems} items and ${numholdings} holdings processed in ${timer} seconds\r";fi	
 fi
 
+int_note=''
+note=''
+libhas=''
 
 done < mfhd_ready
 
@@ -35,11 +49,11 @@ echo "${numitems} items and ${numholdings} holdings processed in ${timer} second
 
 for mfhd in "${mfhd_dict[@]}"
 do
-	echo "${mfhd}" >> mfhds.mrk 
-	if [[ $(($numrecords % 10000)) == 0 ]];then echo -en "${records} records have been written to mfhds.mrk\r";fi	
-	numrecords=$(($numrecords + 1))
-done
-echo "Processing completed in ${timer} seconds."
+echo "${mfhd}" >> mfhds.mrk 
+if [[ $(($numrecords % 10000)) == 0 ]];then echo -en "${records} records have been written to mfhds.mrk\r";fi	
+numrecords=$(($numrecords + 1))
+	done
+	echo "Processing completed in ${timer} seconds."
 
 
 

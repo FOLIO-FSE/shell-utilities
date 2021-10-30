@@ -27,10 +27,10 @@ BEGIN{FS="\t"}
 }
 
 END { 
-	print ""
 	for (record in mfhds ) { 
 		print mfhds[record] > "mfhds.mrk"
 		counter++
+		if(counter % 10000 == 0 ) {printf ("Items written to mfhds.mrk: %d\r", counter) }
 	}
 	print NR " item records processed to create  " counter " MFHDs" 
 } 

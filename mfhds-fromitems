@@ -1,0 +1,37 @@
+#!/usr/bin/awk -f
+#
+# expects tab delimited file named mfhd_ready 
+#
+
+# $1 = bibId
+# $2 = holdId
+# $3 = callNum
+# $4 = intNote
+# $5 = note
+
+BEGIN{FS="\t"}
+
+{
+	itemId=$1
+	bibId=$2
+	callNum=$3
+	location=$5
+
+	if (location == "") {location = "migration"}
+
+	holdId = bibId""location
+	sub(/ /,"$i",callNum)
+
+	mfhds[holdId] = "=LDR  00155cx   22000733  4500\n=001  "itemId"\n=004  "holdId"\n=008  9810090p\\\\\\\\8\\\\\\4001aueng0000000\n=852  0\\$b"location"$h"callNum"\n"
+
+}
+
+END { 
+	for (record in mfhds ) { 
+		print mfhds[record] > "mfhds.mrk"
+		counter++
+	}
+	print NR " item records processed to create  " counter " MFHDs" 
+} 
+
+

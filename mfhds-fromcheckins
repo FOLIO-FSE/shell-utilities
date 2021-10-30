@@ -1,0 +1,45 @@
+#!/usr/bin/awk -f
+#
+
+
+BEGIN{FS="\t"}
+
+{
+	bibId=$1
+	holdId=$2
+	callNum=$3
+	libHas=$4
+	intNote=$5
+	note=$6
+	location=$7
+
+	sub(/ /,"$i",callNum)
+	if (location == "") {location = "migration"}
+
+	mfhd = "=LDR  00155cx   22000733  4500\n=001  "holdId"\n=004  "bibId"\n=008  9810090p\\\\\\\\8\\\\\\4001aueng0000000\n"
+
+	if (note != "") { 
+		mfhd = mfhd"=538  \\\\$i"note"\n"
+	}
+	if (intNote != "") { 
+		mfhd = mfhd"=583  \\\\$x"intNote"\n"
+	}
+
+	mfhd = mfhd"=852  0\\$b"location"$h"callNum"\n"
+
+	if (libHas != "") { 
+		mfhd = mfhd"=866  \\\\$a"libHas"\n"
+	}
+
+	mfhds[holdId] = mfhd
+}
+
+END { 
+	for (record in mfhds ) { 
+		print mfhds[record] > "mfhds.mrk"
+		counter++
+	}
+	print NR " item records processed to create  " counter " MFHDs" 
+} 
+
+

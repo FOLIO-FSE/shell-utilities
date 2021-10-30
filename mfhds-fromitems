@@ -23,10 +23,11 @@ BEGIN{FS="\t"}
 	sub(/ /,"$i",callNum)
 
 	mfhds[holdId] = "=LDR  00155cx   22000733  4500\n=001  "itemId"\n=004  "holdId"\n=008  9810090p\\\\\\\\8\\\\\\4001aueng0000000\n=852  0\\$b"location"$h"callNum"\n"
-
+	if(NR % 10000 == 0 ) {printf ("Processed %d items\r", NR) }
 }
 
 END { 
+	print ""
 	for (record in mfhds ) { 
 		print mfhds[record] > "mfhds.mrk"
 		counter++

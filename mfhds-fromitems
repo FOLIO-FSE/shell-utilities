@@ -1,7 +1,5 @@
 #!/usr/bin/awk -f
 #
-# expects tab delimited file named mfhd_ready 
-#
 
 BEGIN{FS="\t"}
 
@@ -9,14 +7,14 @@ BEGIN{FS="\t"}
 	itemId=$1
 	bibId=$2
 	callNum=$3
-	location=$5
+	location=$4
 
 	if (location == "") {location = "migration"}
 
 	holdId = bibId""location
 	sub(/ /,"$i",callNum)
 
-	mfhds[holdId] = "=LDR  00155cx   22000733  4500\n=001  "itemId"\n=004  "holdId"\n=008  9810090p\\\\\\\\8\\\\\\4001aueng0000000\n=852  0\\$b"location"$h"callNum"\n"
+	mfhds[holdId] = "=LDR  00155cx   22000733  4500\n=001  "holdId"\n=004  "bibId"\n=008  9810090p\\\\\\\\8\\\\\\4001aueng0000000\n=852  0\\$b"location"$h"callNum"\n"
 	if(NR % 10000 == 0 ) {printf ("Processed %d items\r", NR) }
 }
 

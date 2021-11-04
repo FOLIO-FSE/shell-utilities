@@ -3,12 +3,6 @@
 # expects tab delimited file named mfhd_ready 
 #
 
-# $1 = bibId
-# $2 = holdId
-# $3 = callNum
-# $4 = intNote
-# $5 = note
-
 BEGIN{FS="\t"}
 
 {

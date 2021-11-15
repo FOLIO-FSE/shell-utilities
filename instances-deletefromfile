@@ -13,7 +13,7 @@ declare -a holdings_ids
 while read -r deletethis; do
 
 	instance_uuid=$(sed 's/[^0-9a-z\-]//g' <<< $deletethis)
-	
+
 	apicall=$(curl -s -w '\n' -X GET -D \
 	  -H "Accept: application/json" \
 	  -H "X-Okapi-Tenant: ${tenant}" \
@@ -52,15 +52,23 @@ while read -r deletethis; do
 		echo "$holdings_arr_size items were detected. Deleting holdings:"
 	
 		for holding in ${holdings_ids[*]};do
+	  		echo $holding
 			apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-storage/holdings/${holding}")
 			echo $apicall
 		done
 	fi
 	
-	apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${instance_uuid}/source-record")
+	srs_uuid=$(curl -s -w '\n' -X GET -D \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  "${okapi_url}/source-storage/records/${instance_uuid}/formatted?idType=INSTANCE" |jq -r '.matchedId')
+	
+	apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${srs_uuid}")
 	apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${instance_uuid}")
 	
 	echo ${apicall}
+
 	echo "Deleting record $counter -- ${instance_uuid}"
 	counter=$(($counter + 1))
 

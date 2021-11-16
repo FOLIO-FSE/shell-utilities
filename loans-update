@@ -2,43 +2,31 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-
-query='circulation/loans?query=(action="renewed")&limit=99000000'
-
-apicall=$(curl -s -w '\n' -X GET -D \
-  -H "Accept: application/json" \
-  -H "X-Okapi-Tenant: ${tenant}" \
-  -H "x-okapi-token: ${okapi_token}" \
-  ${okapi_url}/${query})
-
-echo $apicall |jq -r .loans[].id > loan_uuids
-
-query='circulation/loans?query=(action="renewedThroughOverride")&limit=99000000'
-
-apicall=$(curl -s -w '\n' -X GET -D \
-  -H "Accept: application/json" \
-  -H "X-Okapi-Tenant: ${tenant}" \
-  -H "x-okapi-token: ${okapi_token}" \
-  ${okapi_url}/${query})
-
-echo $apicall |jq -r .loans[].id >> loan_uuids
-
 while read -r loan_uuid; do
 	apicall=$(curl -s -w '\n' -X GET -D \
 	  -H "Accept: application/json" \
 	  -H "X-Okapi-Tenant: ${tenant}" \
 	  -H "x-okapi-token: ${okapi_token}" \
 	  ${okapi_url}/circulation/loans/${loan_uuid})
-	
-	updated_loan=$(echo ${apicall}  |jq ' (.action = "dueDateChanged")')
 
-        apicall=$(curl --http1.1 -s -w '\n' -X PUT \
-          -H "Content-type: application/json" \
-          -H "Accept: text/plain" \
-          -H "X-Okapi-Tenant: ${tenant}" \
-          -H "x-okapi-token: ${okapi_token}" \
-          -d "${updated_loan}" \
-          ${okapi_url}/circulation/loans/${loan_uuid})
+	status=$(echo ${apicall} |jq -r .item.status.name)
+
+	if [[ $status == "Checked out" ]];then 
+		updated_loan=$(echo ${apicall}  |jq ' (.action = "dueDateChanged")')
+
+	        apicall=$(curl --http1.1 -s -w '\n' -X PUT \
+	          -H "Content-type: application/json" \
+	          -H "Accept: text/plain" \
+	          -H "X-Okapi-Tenant: ${tenant}" \
+	          -H "x-okapi-token: ${okapi_token}" \
+	          -d "${updated_loan}" \
+	          ${okapi_url}/circulation/loans/${loan_uuid})
+		
+		echo "${loan_uuid} updated"
+	else
+		echo "${loan_uuid} not updated"
+		
+	fi
 
 	echo $loan_uuid
 done < loan_uuids

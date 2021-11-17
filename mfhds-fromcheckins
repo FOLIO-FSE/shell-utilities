@@ -28,8 +28,11 @@ BEGIN{FS="\t"}
 	mfhd = mfhd"=852  0\\$b"location"$h"callNum"\n"
 
 	if (libHas != "") { 
-		mfhd = mfhd"=866  \\\\$a"libHas"\n"
+		split(libHas, statements, ";")
+		for (statement in statements)
+			mfhd = mfhd"=866  \\\\$a"statements[statement]"\n"
 	}
+
 
 	mfhds[holdId] = mfhd
 }

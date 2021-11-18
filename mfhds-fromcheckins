@@ -8,10 +8,16 @@ BEGIN{FS="\t"}
 	bibId=$1
 	holdId=$2
 	callNum=$3
+	callPrefix=""
 	libHas=$4
-	intNote=$5
+	actionNote=$5 # intlNote
 	note=$6
 	location=$7
+	ownershipNote=""
+	bindingNote=""
+	reproductionNote=""
+	termsOfUse=""
+	url=""
 
 	sub(/ /,"$i",callNum)
 	if (location == "") {location = "migration"}
@@ -21,11 +27,25 @@ BEGIN{FS="\t"}
 	if (note != "") { 
 		mfhd = mfhd"=538  \\\\$i"note"\n"
 	}
-	if (intNote != "") { 
-		mfhd = mfhd"=583  \\\\$x"intNote"\n"
+	if (ownershipNote != "") { 
+		mfhd = mfhd"=561  0\\$a"ownershipNote"\n"
+	}
+	if (bindingNote != "") { 
+		mfhd = mfhd"=563  \\\\$x"bindingNote"\n"
+	}
+	if (ac3yytionNote != "") { 
+		mfhd = mfhd"=583  \\\\$x"actionNote"\n"
 	}
 
-	mfhd = mfhd"=852  0\\$b"location"$h"callNum"\n"
+	if (callPrefix != "") { 
+		callPrefix="$k"callPrefix
+	}
+
+	mfhd = mfhd"=852  0\\$b"location""callPrefix"$h"callNum"\n"
+
+	if (url != "") { 
+		mfhd = mfhd"=856  \\\\$u"url"\n"
+	}
 
 	if (libHas != "") { 
 		split(libHas, statements, ";")

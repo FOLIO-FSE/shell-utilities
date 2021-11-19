@@ -25,7 +25,9 @@ BEGIN{FS="\t"}
 	mfhd = "=LDR  00155cx   22000733  4500\n=001  "holdId"\n=004  "bibId"\n=008  9810090p\\\\\\\\8\\\\\\4001aueng0000000\n"
 
 	if (note != "") { 
-		mfhd = mfhd"=538  \\\\$i"note"\n"
+	        split(note, notes, ";")
+                for (n in notes)
+                        mfhd = mfhd"=538  \\\\$i"notes[n]"\n"
 	}
 	if (ownershipNote != "") { 
 		mfhd = mfhd"=561  0\\$a"ownershipNote"\n"

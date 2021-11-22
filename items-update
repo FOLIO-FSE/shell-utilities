@@ -6,7 +6,7 @@ counter=1
 
 while IFS=$'\n' read -r item_id; do
 
-	if [[ $item_id =~ ^[0-9][0-9*$ ]];then
+	if [[ $item_id =~ ^[0-9][0-9]*$ ]];then
 		barcode=$item_id
 
 		apicall=$(curl -s -w '\n' -X GET -D \
@@ -15,7 +15,7 @@ while IFS=$'\n' read -r item_id; do
 		  -H "x-okapi-token: ${okapi_token}" \
 		  ${okapi_url}/inventory/items?query=barcode=${barcode})
 	
-		uuid=$(echo ${apicall} | jq -r .items[].id)
+		uuid=$(echo ${apicall} | jq -r .items[0].id)
 	else
 		uuid=$item_id
 	fi
@@ -27,8 +27,7 @@ while IFS=$'\n' read -r item_id; do
 	  ${okapi_url}/item-storage/items/${uuid})
 
 	updated_item=$(echo ${apicall}  |jq '
-		(.materialTypeId = "1d516bbe-a3da-4148-a113-468a4312686b")
-		| (.permanentLoanTypeId = "95c95c05-9497-4e97-ac5e-c461513e3dae")
+		(.discoverySuppress = true)
 ')
 
 	apicall=$(curl --http1.1 -s -w '\n' -X PUT \

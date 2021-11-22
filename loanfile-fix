@@ -30,27 +30,33 @@ BEGIN{FS=OFS="\t";counter = 0;badrecs = 0;datesep = "-" }
 	renewal_count=$7
 	next_item_status="Available"
 
+	gsub("\"", "", item_barcode)
+	gsub("\"", "", item_identifier)
+	gsub("\"", "", patron_barcode)
+	gsub("\"", "", patron_identifier)
+	gsub("\"", "", out_date)
+	gsub("\"", "", due_date)
+	gsub("\"", "", renewal_count)
+
+
 	if (item_barcode == "") {item_barcode = item_identifier}
 	if (patron_barcode == "") {patron_barcode = patron_identifier}
 
 	gsub(/"/, "", $0)
-	if (NR==1) {print "item_barcode\tpatron_barcode\tout_date\tdue_date\tnext_item_status > "open_loans.tsv";expectedFields = NF} else {
+	if (NR==1) {print "item_barcode\tpatron_barcode\tout_date\tdue_date\trenewal_count\tnext_item_status" > "open_loans.tsv"} else {
 
 	counter++
 	out_date = fixdate(out_date) # 
 	due_date = fixdate(due_date) # 
+	
+	print item_barcode" "patron_barcode, out_date, due_date, renewal_count, next_item_status >> "open_loans.tsv" 
 
-	if (NF == expectedFields) {
-		for(i=1;i<=NF;i++){printf "%s	", $i >> "open_loans.tsv"}; printf "\n" >> "open_loans.tsv"
-			if (counter % 1000 == 0) {
-				printf "%s records\r", counter
-			}
-       	} else {
-		print $0 > "loan_errors.tsv"
-		badrecs++
+	if (counter % 1000 == 0) {
+		printf "%s records\r", counter
 	}
 
+
 }
 
 }
-END{ print counter" records were processed with "badrecs" errors. Errors were sent to loan_errors.tsv" }
+END{ print counter" records were processed" }

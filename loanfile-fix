@@ -1,0 +1,54 @@
+#!/usr/bin/awk -f
+#
+
+# Be sure to add a line for each date to be fixed and tweak to match format
+#
+# expected headers are item_barcode, out_date, due_date, renewal_count, patron_barcode, next_item_status
+
+function fixdate(value)
+{
+	gsub(/ .*/, "", value)
+	
+	if (value ~ /^[0-9]*-[0-9]*-[0-9]*$/) {
+		split(value, datearr, datesep)
+		retval = sprintf("%04d-%02d-%02d", datearr[3], datearr[1], datearr[2])
+	} else {retval = ""}
+
+	return retval
+
+}
+
+BEGIN{FS=OFS="\t";counter = 0;badrecs = 0;datesep = "-" }
+
+{
+	item_barcode=$1
+	item_identifier=$2
+	patron_barcode=$3
+	out_date=$4
+	due_date=$5
+	renewal_count=$6
+	next_item_status="Available"
+
+	if (item_barcode == "") {item_barcode = item_identifier}
+
+	gsub(/"/, "", $0)
+	if (NR==1) {print "item_barcode\tpatron_barcode\tout_date\tdue_date\tnext_item_status > "open_loans.tsv";expectedFields = NF} else {
+
+	counter++
+	out_date = fixdate(out_date) # 
+	due_date = fixdate(due_date) # 
+
+	if (NF == expectedFields) {
+		for(i=1;i<=NF;i++){printf "%s	", $i >> "open_loans.tsv"}; printf "\n" >> "open_loans.tsv"
+			if (counter % 1000 == 0) {
+				printf "%s records\r", counter
+			}
+       	} else {
+		print $0 > "loan_errors.tsv"
+		badrecs++
+	}
+
+}
+
+}
+END{ print counter" records were processed with "badrecs" errors. Errors were sent to loan_errors.tsv" }

@@ -24,12 +24,14 @@ BEGIN{FS=OFS="\t";counter = 0;badrecs = 0;datesep = "-" }
 	item_barcode=$1
 	item_identifier=$2
 	patron_barcode=$3
-	out_date=$4
-	due_date=$5
-	renewal_count=$6
+	patron_identifier=$4
+	out_date=$5
+	due_date=$6
+	renewal_count=$7
 	next_item_status="Available"
 
 	if (item_barcode == "") {item_barcode = item_identifier}
+	if (patron_barcode == "") {patron_barcode = patron_identifier}
 
 	gsub(/"/, "", $0)
 	if (NR==1) {print "item_barcode\tpatron_barcode\tout_date\tdue_date\tnext_item_status > "open_loans.tsv";expectedFields = NF} else {

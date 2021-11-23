@@ -7,16 +7,13 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-servicePointId="3a40852d-49fd-4df2-a1f9-6e2641a6e91f"
-institutionId="40ee00ca-a518-4b49-be01-0638d0a4ac57"
-campusId="296a90b3-c78b-421b-a16d-9089cdac323c"
-libraryId="008cf7ed-46fd-488f-a8ce-cb528b602b65"
+servicePointId="c2c72c79-a262-41e1-a1b6-cf1e5509898d"
+institutionId="92225d21-cab9-436d-9a4f-99444b8c506b"
+campusId="34ba45c6-4b95-4560-9d04-2b9cb0093ca1"
+libraryId="b933d672-1cf4-4b84-ae79-e37ca0d38247"
 
-while read location
+while IFS=$'\t' read -r code discovery 
 do
-
-code=$(cut -f1 <<<$location)
-discovery=$(cut -f2 <<<$location)
 
 IFS='' read -r -d '' location << EndOfLocation
 
@@ -42,4 +39,3 @@ echo -e "${apicall}" |jq '.'
 done < locations
 
 
-#echo $locations |jq '.'

@@ -13,6 +13,8 @@ BEGIN{FS="\t"}
 	actionNote=$5 # intlNote
 	note=$6
 	location=$7
+	indexes=""
+	supplements=""
 	ownershipNote=""
 	bindingNote=""
 	reproductionNote=""
@@ -35,7 +37,7 @@ BEGIN{FS="\t"}
 	if (bindingNote != "") { 
 		mfhd = mfhd"=563  \\\\$x"bindingNote"\n"
 	}
-	if (ac3yytionNote != "") { 
+	if (actionNote != "") { 
 		mfhd = mfhd"=583  \\\\$x"actionNote"\n"
 	}
 
@@ -55,6 +57,18 @@ BEGIN{FS="\t"}
 			mfhd = mfhd"=866  \\\\$a"statements[statement]"\n"
 	}
 
+
+	if (supplements != "") { 
+		split(supplements, statements, ";")
+		for (statement in statements)
+			mfhd = mfhd"=867  \\\\$a"statements[statement]"\n"
+	}
+
+	if (indexes != "") { 
+		split(indexes, statements, ";")
+		for (statement in statements)
+			mfhd = mfhd"=868  \\\\$a"statements[statement]"\n"
+	}
 
 	mfhds[holdId] = mfhd
 }

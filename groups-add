@@ -7,11 +7,8 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-while read group
+while IFS=$'\t' read code desc 
 do
-
-code=$(cut -f1 <<<$group)
-desc=$(cut -f2 <<<$group)
 
 code=$(echo ${code} |xargs)
 desc=$(echo ${desc} |xargs)
@@ -22,7 +19,7 @@ IFS='' read -r -d '' group << EndOfGroup
 
 {
 "group": "${code}",
-"desc": "${desc}",
+"desc": "{desc}",
 "id": "${uuid}"
 }
 EndOfGroup

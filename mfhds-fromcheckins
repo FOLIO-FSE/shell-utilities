@@ -13,6 +13,7 @@ BEGIN{FS="\t"}
 	actionNote=$5 # intlNote
 	note=$6
 	location=$7
+	copyNote=""
 	indexes=""
 	supplements=""
 	ownershipNote=""
@@ -33,6 +34,9 @@ BEGIN{FS="\t"}
 	}
 	if (ownershipNote != "") { 
 		mfhd = mfhd"=561  0\\$a"ownershipNote"\n"
+	}
+	if (copyNote != "") { 
+		mfhd = mfhd"=562  0\\$a"copyNote"\n"
 	}
 	if (bindingNote != "") { 
 		mfhd = mfhd"=563  \\\\$x"bindingNote"\n"

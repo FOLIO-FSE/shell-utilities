@@ -19,7 +19,8 @@ while read -r uuid; do
 	#recordtype="service-points"
 	#recordtype="users"
 	#recordtype="tags"
-	recordtype="groups"
+	#recordtype="groups"
+	recordtype="instance-types"
 	
 	echo "${okapi_url}/${recordtype}/${uuid}"
 	

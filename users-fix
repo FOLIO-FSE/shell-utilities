@@ -1,0 +1,47 @@
+#!/usr/bin/awk -f
+
+BEGIN{FS=OFS="\t"; errors=0}
+
+{
+	# remove nulls
+	if (NR == 1) {numfields = NF; print $0 > "patrons_fixed.tsv"; print "" > "patron_errors" } else
+
+	{
+
+	{for (i = 1; i<=NF ; i++) if ($i == "null") $i = "" }
+
+	# any field defined below that gets modified needs an inverse statement before printing
+	id=$1
+	barcode=$2
+	externalid=$3
+	username=$4
+	email=$15
+
+	$15="folio.implementation.testing@mail.com"
+
+	if (barcode == "") {barcode = id}
+	if (externalid == "") {externalid = id}
+	if (username == "") {username = id}
+
+	gsub(";.*", "", username)
+	gsub("[^0-9A-Za-z\-]", "", username)
+	gsub(";.*", "", externalid)
+	gsub("[^0-9A-Za-z\-]", "", externalid)
+
+	$2=barcode
+	$3=externalid
+	$4=username
+
+	if(NR % 10000 == 0 ) {printf ("Processed %d users\r", NR) }
+
+	if (NF == numfields) {
+		for(i=1;i<=NF;i++) {
+		       printf("%s%s",$i,i==NF?RS:OFS) >> "patrons_fixed.tsv"
+	       }
+	} else {
+		print $0 >> "patron_errors"
+		errors++
+	}
+	}
+}
+END {printf ("Processed %d users. %d records contained the wrong number of fields\n", NR, errors) }

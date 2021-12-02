@@ -6,13 +6,15 @@ search_for="$1"
 
 #query="limit=100&query=%28%28username%3D%22${search_for}%2A%22%20or%20personal.firstName%3D%22${search_for}%2A%22%20or%20personal.preferredFirstName%3D%22${search_for}%2A%22%20or%20personal.lastName%3D%22${search_for}%2A%22%20or%20personal.email%3D%22${search_for}%2A%22%20or%20barcode%3D%22${search_for}%2A%22%20or%20id%3D%22${search_for}%2A%22%20or%20externalSystemId%3D%22${search_for}%2A%22%29%29%20sortby%20personal.lastName%20personal.firstName"
 
-query="query=barcode=${search_for}"
+query="query=barcode=\"${search_for}\""
 
 apicall=$(curl -s -w '\n' -X GET -D \
   -H "Accept: application/json" \
   -H "X-Okapi-Tenant: ${tenant}" \
   -H "x-okapi-token: ${okapi_token}" \
   "${okapi_url}/users?${query}")
+
+echo "${okapi_url}/users?${query}"
 
 echo $apicall | jq .
 

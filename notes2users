@@ -32,7 +32,9 @@ IFS='' read -r -d '' data << EndOfJSON
       "id": "${id}"
     }
   ],
-  "id": "${note_uuid}"
+  "id": "${note_uuid}",
+  "popUpOnCheckOut" : true,
+  "popUpOnUser" : true
 }
 EndOfJSON
 	

@@ -1,0 +1,38 @@
+
+
+infile=infile
+outfile=outfile
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1) 
+numfields=$(awk 'BEGIN{FS="\t"}{print NF;exit}' ${infile})
+declare -A columns
+
+echo "Detected $numfields columns and $numrecs records in data file"
+
+
+columncounter=1
+
+IFS=$'\t' read -ra column_headers <<< $(head -1 ${infile})
+
+for header in "${column_headers[@]}"; do
+	
+	if [[ -f ${header} ]];then
+		echo "Mapping file found for ${header}"
+	
+		declare -A ${header}_file
+		declare -n arr="${header}_file"
+	
+		while IFS=$'\t' read -r key value;do
+			declare ${header}_file["${key}"]="${value}"
+			#echo ${arr["${key}"]}
+		done < "${header}"
+
+	else
+		echo "${header} is not mapped"
+		columns[$columncounter]=$(cut -f${columncounter} ${infile})
+	fi
+
+done
+
+
+

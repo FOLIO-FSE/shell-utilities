@@ -125,7 +125,5 @@ done
 
 paste $paste_expr > ${outfile}
 
-
 echo "Done mapping ${outfile}"
-
-
+rm -rf tmpcols

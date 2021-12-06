@@ -4,9 +4,9 @@ value-mapper looks for 2 column tab-delimited mapping files with the
 same names as column headers in the input file.
  
 It replaces values that match the first column of the mapping file 
-with the corresponding value in the second column. If no file is is
+with the corresponding value in the second column. If no file is
 found or no value in the mapping file matches the value in the input 
-column, the original value is output.
+column, the original value is output. 
 
 	Example:
 	 
@@ -89,7 +89,7 @@ for column in "${column_headers[@]}"; do
 			fi
 
 			mappedval=${maparr["${entry}"]}
-			if [[ ! -z "${mappedval}" ]];then
+			if [[ -n "${mappedval}" ]];then
 				mappedvals=$((mappedvals + 1))
 				entry="${mappedval}"
 			else

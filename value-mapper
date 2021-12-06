@@ -1,0 +1,127 @@
+
+read -d '' -r instructions << END
+value-mapper looks for 2 column tab-delimited mapping files with the same names as column headers in the input file.
+ 
+It replaces values that match the first column of the mapping file with the corresponding value in the second column. If no file is found or no value in the mapping file matches the value in the input column, the original value is output.
+
+ 
+Example:
+ 
+Input file:
+col1	col2	col3
+a	b	c
+d	e	f
+g	h	i
+ 
+mapping_file: (named col2.tsv)
+b	x
+e	z
+ 
+Output file generated:
+col1	col2	col3
+a	x	c
+d	z	f
+g	h	i
+
+
+
+END
+
+echo "Enter the name of the tab delimited input file"
+read infile
+
+echo -e "\nEnter the name of the output file"
+read outfile
+
+echo
+
+rm -rf tmpcols
+mkdir tmpcols 2>/dev/null
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1) 
+numfields=$(awk 'BEGIN{FS="\t"}{print NF;exit}' ${infile})
+
+echo "Detected $numfields columns and $numrecs records in data file"
+
+columncounter=1
+declare paste_expr
+
+# each column is processed as it is encountered
+
+IFS=$'\t' read -ra column_headers <<< $(head -1 ${infile})
+
+for column in "${column_headers[@]}"; do
+	echo "Processing column ${columncounter} (${column})"
+	cut -f${columncounter} ${infile} > "tmpcols/col_${columncounter}"
+
+	# clear out all mapped values to allow reinitialization
+	declare -gA maparr
+		
+	if [[ -f "${column}.tsv" ]];then
+		echo "   Mapping file found"
+
+		# read the mapped values into a temporary array
+	
+		while IFS=$'\t' read -r key value;do
+			maparr["${key}"]="${value}"
+		done < "${column}.tsv"
+
+		# load source file into array, map them
+		# and write to file
+
+		IFS=$'\n' read -d '' -r -a tmpcol < "tmpcols/col_${columncounter}"
+
+		mappedvals=0
+		unmappedvals=0
+		totalvals=0
+
+		finalcol=""
+
+		for entry in "${tmpcol[@]}";do
+			totalvals=$((totalvals + 1))
+
+			if [[ $(( totalvals % 10000 )) == 0 ]];then
+				printf "      Number of values processed: ${totalvals}\r"
+			fi
+
+			mappedval=${maparr["${entry}"]}
+			if [[ ! -z "${mappedval}" ]];then
+				mappedvals=$((mappedvals + 1))
+				entry="${mappedval}"
+			else
+				unmappedvals=$((unmappedvals + 1))
+			fi
+			
+			finalcol+="${entry}\n"
+
+		done
+
+		echo -e "\n      Mapped entries: ${mappedvals}"
+		echo -e "      Unmapped entries: ${unmappedvals}\n"
+		echo -e  "${finalcol}" > "tmpcols/col_${columncounter}"
+	
+	else
+		echo -e "   No mapping file found\n"
+	fi
+
+	columncounter=$((columncounter + 1))
+
+
+	
+done
+
+echo "Building output file"
+# create final string to paste
+colnum=1
+
+while [[ $colnum -lt $columncounter ]];do
+	paste_expr="${paste_expr} tmpcols/col_${colnum}"
+	colnum=$((colnum + 1)) 
+done
+
+paste $paste_expr > ${outfile}
+
+
+echo "Done mapping ${outfile}"
+
+

@@ -1,33 +1,37 @@
 
 read -d '' -r instructions << END
-value-mapper looks for 2 column tab-delimited mapping files with the same names as column headers in the input file.
+value-mapper looks for 2 column tab-delimited mapping files with the 
+same names as column headers in the input file.
  
-It replaces values that match the first column of the mapping file with the corresponding value in the second column. If no file is found or no value in the mapping file matches the value in the input column, the original value is output.
+It replaces values that match the first column of the mapping file 
+with the corresponding value in the second column. If no file is is
+found or no value in the mapping file matches the value in the input 
+column, the original value is output.
 
- 
-Example:
- 
-Input file:
-col1	col2	col3
-a	b	c
-d	e	f
-g	h	i
- 
-mapping_file: (named col2.tsv)
-b	x
-e	z
- 
-Output file generated:
-col1	col2	col3
-a	x	c
-d	z	f
-g	h	i
+	Example:
+	 
+	Input file:
+	col1	col2	col3
+	a	b	c
+	d	e	f
+	g	h	i
+	 
+	Mapping file (named col2.tsv):
+	b	x
+	e	z
+	 
+	Output file generated:
+	col1	col2	col3
+	a	x	c
+	d	z	f
+	g	h	i
 
 
-
+Enter the name of the tab delimited input file
 END
 
-echo "Enter the name of the tab delimited input file"
+echo "${instructions}"
+
 read infile
 
 echo -e "\nEnter the name of the output file"

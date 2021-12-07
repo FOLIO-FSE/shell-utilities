@@ -30,12 +30,18 @@ column, the original value is output.
 Enter the name of the tab delimited input file
 END
 
-echo "${instructions}"
+# allow paramters to be passed 
 
-read infile
+if [[ -n "${1}" ]]; then
+	infile="${1}"
+	outfile="${1/.tsv/""}"_fixed.tsv
+else
+	echo "${instructions}"
+	read infile
 
-echo -e "\nEnter the name of the output file"
-read outfile
+	echo -e "\nEnter the name of the output file"
+	read outfile
+fi
 
 echo
 

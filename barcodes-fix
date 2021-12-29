@@ -1,0 +1,38 @@
+#!/usr/bin/awk -f
+
+BEGIN{FS=OFS="\t"; dups=0}
+
+{
+	if (NR == 1) {numfields = NF; print $0 > "items_fixed.tsv" ;print "" > "duplicate_barcodes" } else
+
+	{
+
+	{for (i = 1; i<=NF ; i++) if ($i == "null") $i = "" }
+
+	# any field defined below that gets modified needs an inverse statement before printing
+	id=$1
+	barcode=$4
+
+	gsub(/;.*/, "", barcode)
+	if (barcode == ""){barcode = id}
+
+	if (detected[barcode] == "1") {
+		dups++
+		print barcode >> "duplicate_barcodes"
+		barcode=id
+		}
+
+	detected[barcode] = "1"
+		
+	$4=barcode
+
+	if(NR % 10000 == 0 ) {printf ("Processed %d items and %d duplicate barcodes\r", NR, dups) }
+
+	if (NF == numfields) {
+		for(i=1;i<=NF;i++) {
+		       printf("%s%s",$i,i==NF?RS:OFS) >> "items_fixed.tsv"
+	       }
+	} 
+	}
+}
+END {printf ("Processed %d items. %d records contained duplicate barcodes\n", NR, dups) }

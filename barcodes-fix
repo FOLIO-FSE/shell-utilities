@@ -17,17 +17,19 @@ BEGIN{FS=OFS="\t"; dups=0}
 	if (barcode == ""){barcode = id}
 
 	if (detected[barcode] == "1") {
-		detected[barcode] = "1"
 		dups++
 		print barcode >> "duplicate_barcodes"
-		barcode=id
+		str_generator = "tr -dc \047[:alnum:]\047 </dev/urandom | head -c 6"
+		str_generator | getline random_str
+		close(str_generator)
+		barcode=id"-"random_str
+		detected[barcode] = "1"
 		} else {
 		detected[barcode] = "1"
-	}
-
-	detected[barcode] = "1"
+		}
 		
 	$4=barcode
+	$1=id
 
 	if(NR % 10000 == 0 ) {printf ("Processed %d items and %d duplicate barcodes\r", NR, dups) }
 

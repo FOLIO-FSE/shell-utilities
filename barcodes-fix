@@ -17,10 +17,13 @@ BEGIN{FS=OFS="\t"; dups=0}
 	if (barcode == ""){barcode = id}
 
 	if (detected[barcode] == "1") {
+		detected[barcode] = "1"
 		dups++
 		print barcode >> "duplicate_barcodes"
 		barcode=id
-		}
+		} else {
+		detected[barcode] = "1"
+	}
 
 	detected[barcode] = "1"
 		

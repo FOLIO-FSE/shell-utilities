@@ -23,7 +23,6 @@ BEGIN{FS=OFS="\t"; dups=0}
 		barcode=barcode"-"detected[barcode]
 		detected[barcode]++
 		dups++
-		print barcode
 		} 
 		
 	$4=barcode

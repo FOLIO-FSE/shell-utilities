@@ -16,17 +16,15 @@ BEGIN{FS=OFS="\t"; dups=0}
 	gsub(/;.*/, "", barcode)
 	if (barcode == ""){barcode = id}
 
-	if (detected[barcode] == "1") {
-		dups++
-		print barcode >> "duplicate_barcodes"
-		str_generator = "tr -dc \047[:alnum:]\047 </dev/urandom | head -c 6"
-		str_generator | getline random_str
-		close(str_generator)
-		barcode=id"-"random_str
-		detected[barcode] = "1"
+	if (detected[barcode] == "") {
+		detected[barcode] = 1
 		} else {
-		detected[barcode] = "1"
-		}
+		print barcode >> "duplicate_barcodes"
+		barcode=barcode"-"detected[barcode]
+		detected[barcode]++
+		dups++
+		print barcode
+		} 
 		
 	$4=barcode
 	$1=id

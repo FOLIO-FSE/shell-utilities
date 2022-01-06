@@ -1,0 +1,22 @@
+#!/usr/bin/awk -f
+
+BEGIN{FS="\t"}
+function checkdigit(num) 
+{
+	m = 2
+	x = 0
+	i = num
+	while (i > 0) {
+		a = i % 10
+		i = int(i/10)
+		x += a * m
+		m += 1
+		}
+	r = x % 11
+	if (r == 10) {r = "x"}	
+	return num""r
+}
+{
+	gsub(/[^0-9]/, "", $0)
+	print checkdigit($0)
+}

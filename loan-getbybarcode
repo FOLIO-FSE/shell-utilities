@@ -8,16 +8,20 @@ apicall=$(curl -s -w '\n' -X GET -D \
   -H "Accept: application/json" \
   -H "X-Okapi-Tenant: ${tenant}" \
   -H "x-okapi-token: ${okapi_token}" \
-  "${okapi_url}/inventory/items?query=barcode=${barcode}")
+  ${okapi_url}/inventory/items?query=barcode=${barcode})
 
-   item_uuid=$(echo "${apicall}" |jq -r .items[0].id)
+itemId=$(echo "${apicall}" |jq .items[0].id)
 
-apicall=$(curl -s -w '\n' -X GET -D \
+apicall=$(curl -s -w '\n' -X GET \
   -H "Accept: application/json" \
   -H "X-Okapi-Tenant: ${tenant}" \
   -H "x-okapi-token: ${okapi_token}" \
-  ${okapi_url}/loan-storage/loans?query=itemId=%22${item_uuid}%22)
+  "${okapi_url}/circulation/loans?query=%28itemId==${itemId}%29")
 
-loan_uuid=$(echo "${apicall}" |jq -r .loans[0].id)
+labels="Due date:\t\nBorrower:\t\nPatron group:\t\nItem barcode:\t\nLocation:\t\nMat type:\t\nLoan policy:\t\nOverdue policy:\t\nLost policy:\t"
 
-echo $loan_uuid
+loandata=$(echo "${apicall}" |jq -r '.loans[] | .dueDate, .borrower.barcode, .patronGroupAtCheckout.name, .item.barcode, .item.location.name, .item.materialType.name, .loanPolicy.name, .overdueFinePolicy.name, .lostItemPolicy.name')
+
+paste <(echo -e "${labels}") <(echo -e "${loandata}")
+
+

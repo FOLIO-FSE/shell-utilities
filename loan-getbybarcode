@@ -22,6 +22,21 @@ labels="Due date:\t\nBorrower:\t\nPatron group:\t\nItem barcode:\t\nLocation:\t\
 
 loandata=$(echo "${apicall}" |jq -r '.loans[] | .dueDate, .borrower.barcode, .patronGroupAtCheckout.name, .item.barcode, .item.location.name, .item.materialType.name, .loanPolicy.name, .overdueFinePolicy.name, .lostItemPolicy.name')
 
+loanId=$(echo "${apicall}" |jq .loans[].id)
+
 paste <(echo -e "${labels}") <(echo -e "${loandata}")
+
+apicall=$(curl -s -w '\n' -X GET \
+  -H "Accept: application/json" \
+  -H "X-Okapi-Tenant: ${tenant}" \
+  -H "x-okapi-token: ${okapi_token}" \
+  "${okapi_url}/scheduled-notice-storage/scheduled-notices?query=%28loanId==${loanId}%29")
+
+echo
+echo "Scheduled notices are listed below along with next scheduled run time." 
+echo "If none are listed, no notices are scheduled"
+echo "${apicall}" |jq -r '.scheduledNotices[] | [.triggeringEvent, .nextRunTime] |@tsv'
+echo
+
 
 

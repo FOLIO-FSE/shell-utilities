@@ -1,0 +1,41 @@
+#!/usr/bin/awk -f
+
+BEGIN{FS=OFS="\t"}
+function checkdigit(num) 
+{
+	m = 2
+	x = 0
+	i = num
+	while (i > 0) {
+		a = i % 10
+		i = int(i/10)
+		x += a * m
+		m += 1
+		}
+	r = x % 11
+	if (r == 10) {r = "x"}	
+	return num""r
+}
+{
+	if (NR == 1) {numfields = NF; print $0 > "items_fixed.tsv" } else
+	{
+		bibId = $2
+	
+		gsub(/[^0-9]/, "", bibId)
+		$2 = ".b"checkdigit(bibId)
+
+		#### fix holdingsId -- combine bibId and location
+		$3 = $2$5
+	
+		{for (i = 1; i<=NF ; i++) if ($i == "null") $i = "" }
+	
+		if(NR % 10000 == 0 ) {printf ("Processed %d items\r", NR) }
+	
+		if (NF == numfields) {
+			for(i=1;i<=NF;i++) {
+			       printf("%s%s",$i,i==NF?RS:OFS) >> "items_fixed.tsv"
+		       }
+		}
+	}
+}
+END {printf ("Processed %d items.\n", NR) }

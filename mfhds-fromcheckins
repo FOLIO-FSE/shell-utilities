@@ -5,46 +5,81 @@
 BEGIN{FS="\t"}
 
 {
+	scode1["b"]=" CYO"
+	scode1["c"]=" C2YRS ONLY"
+	scode1["d"]=" M/FORM REPLACE"
+	scode1["e"]=" SSEDED TO ALBY"
+	scode1["h"]=" SSEDED TO SR"
+	scode1["i"]=" SSEDED TO REFS"
+	scode1["j"]=" CURR. ED. ONLY"
+	scode1["p"]=" C5YRS ONLY"
+	scode1["r"]=" C10YRS ONLY"
+	scode1["v"]=" SSEDED TO NZPS"
+	scode1["w"]=" REF C\'IN NOTES"
+
+	scode2["y"]=" COMP"
+	scode2["c"]=" DIRECT AUSTRAL"
+
+	$9=scode1[$9]
+	$10=scode2[$10]
+
 	bibId=$1
 	holdId=$2
 	callNum=$3
-	callPrefix=""
-	libHas=$4
-	actionNote=$5 # intlNote
-	note=$6
-	location=$7
-	copyNote=""
-	indexes=""
-	supplements=""
-	ownershipNote=""
-	bindingNote=""
+	callPrefix=$16
+	libHas=$5
+	actionNote=$6
+	actionNote2=$17
+	note=$7
+	note2=$10
+	copyNote=$9
+	location=$8
+	ownershipNote=$14
+	ownershipNote2=$15
+	bindingNote=$12
+	bindingNote2=$13
 	reproductionNote=""
 	termsOfUse=""
 	url=""
 
+	if (location ~ /[a-zA-Z0-9]/) holdId = bibId""location
+
 	sub(/ /,"$i",callNum)
-	if (location == "") {location = "migration"}
+	if (location == "") location = "migration"
 
 	mfhd = "=LDR  00155cx   22000733  4500\n=001  "holdId"\n=004  "bibId"\n=008  9810090p\\\\\\\\8\\\\\\4001aueng0000000\n"
 
 	if (note != "") { 
-	        split(note, notes, ";")
-                for (n in notes)
-                        mfhd = mfhd"=538  \\\\$i"notes[n]"\n"
+                split(note, notes, ";")
+		for (n in notes)
+			mfhd = mfhd"=538  \\\\$i"notes[n]"\n"
+	}
+	if (note2 != "") { 
+                split(note2, notes, ";")
+		for (n in notes)
+			mfhd = mfhd"=538  \\\\$i"notes[n]"\n"
 	}
 	if (ownershipNote != "") { 
 		mfhd = mfhd"=561  0\\$a"ownershipNote"\n"
 	}
-	if (copyNote != "") { 
-		mfhd = mfhd"=562  0\\$a"copyNote"\n"
+	if (ownershipNote2 != "") { 
+		mfhd = mfhd"=561  0\\$a"ownershipNote2"\n"
 	}
+        if (copyNote != "") {
+		mfhd = mfhd"=562  0\\$a"copyNote"\n"
+ 	}
 	if (bindingNote != "") { 
 		mfhd = mfhd"=563  \\\\$x"bindingNote"\n"
+	}
+	if (bindingNote2 != "") { 
+		mfhd = mfhd"=563  \\\\$x"bindingNote2"\n"
 	}
 	if (actionNote != "") { 
 		mfhd = mfhd"=583  \\\\$x"actionNote"\n"
 	}
-
+	if (actionNote2 != "") { 
+		mfhd = mfhd"=583  \\\\$x"actionNote2"\n"
+	}
 	if (callPrefix != "") { 
 		callPrefix="$k"callPrefix
 	}
@@ -61,18 +96,6 @@ BEGIN{FS="\t"}
 			mfhd = mfhd"=866  \\\\$a"statements[statement]"\n"
 	}
 
-
-	if (supplements != "") { 
-		split(supplements, statements, ";")
-		for (statement in statements)
-			mfhd = mfhd"=867  \\\\$a"statements[statement]"\n"
-	}
-
-	if (indexes != "") { 
-		split(indexes, statements, ";")
-		for (statement in statements)
-			mfhd = mfhd"=868  \\\\$a"statements[statement]"\n"
-	}
 
 	mfhds[holdId] = mfhd
 }

@@ -11,7 +11,7 @@ function fixdate(value)
 	
 	if (value ~ /^[0-9]*-[0-9]*-[0-9]*$/) {
 		split(value, datearr, datesep)
-		retval = sprintf("%04d-%02d-%02d", datearr[3], datearr[1], datearr[2])
+		retval = sprintf("%04d-%02d-%02d", datearr[3], datearr[2], datearr[1])
 	} else {retval = ""}
 
 	return retval
@@ -21,23 +21,24 @@ function fixdate(value)
 BEGIN{FS=OFS="\t";counter = 0;badrecs = 0;datesep = "-" }
 
 {
-	item_barcode=$1
-	item_identifier=$2
-	patron_barcode=$3
-	patron_identifier=$4
+	item_barcode=$2
+	item_identifier=""
+	patron_barcode=$1
+	patron_identifier=""
 	out_date=$5
-	due_date=$6
-	renewal_count=$7
-	next_item_status="Available"
+	due_date=$3
+	renewal_count=$6
+	next_item_status="Checked out"
 
 	gsub("\"", "", item_barcode)
 	gsub("\"", "", item_identifier)
 	gsub("\"", "", patron_barcode)
 	gsub("\"", "", patron_identifier)
 	gsub("\"", "", out_date)
+	gsub("/", "-", out_date)
 	gsub("\"", "", due_date)
+	gsub("/", "-", due_date)
 	gsub("\"", "", renewal_count)
-
 
 	if (item_barcode == "") {item_barcode = item_identifier}
 	if (patron_barcode == "") {patron_barcode = patron_identifier}

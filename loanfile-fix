@@ -50,7 +50,7 @@ BEGIN{FS=OFS="\t";counter = 0;badrecs = 0;datesep = "-" }
 	out_date = fixdate(out_date) # 
 	due_date = fixdate(due_date) # 
 	
-	print item_barcode" "patron_barcode, out_date, due_date, renewal_count, next_item_status >> "open_loans.tsv" 
+	print item_barcode, patron_barcode, out_date, due_date, renewal_count, next_item_status >> "open_loans.tsv" 
 
 	if (counter % 1000 == 0) {
 		printf "%s records\r", counter

@@ -8,16 +8,47 @@ apicall=$(curl -s -w '\n' -X GET -D \
   -H "Accept: application/json" \
   -H "X-Okapi-Tenant: ${tenant}" \
   -H "x-okapi-token: ${okapi_token}" \
-  "${okapi_url}/inventory/items?query=barcode=${barcode}")
+  ${okapi_url}/inventory/items?query=barcode=${barcode})
 
-   item_uuid=$(echo "${apicall}" |jq -r .items[0].id)
+itemId=$(echo "${apicall}" |jq .items[0].id)
+
+apicall=$(curl -s -w '\n' -X GET \
+  -H "Accept: application/json" \
+  -H "X-Okapi-Tenant: ${tenant}" \
+  -H "x-okapi-token: ${okapi_token}" \
+  "${okapi_url}/circulation/loans?query=%28itemId==${itemId}%29")
+
+labels="Due date:\t\nBorrower:\t\nPatron group:\t\nItem barcode:\t\nLocation:\t\nMat type:\t\nLoan policy:\t\nOverdue policy:\t\nLost policy:\t"
+
+loandata=$(echo "${apicall}" |jq -r '.loans[] | .dueDate, .borrower.barcode, .patronGroupAtCheckout.name, .item.barcode, .item.location.name, .item.materialType.name, .loanPolicy.name, .overdueFinePolicy.name, .lostItemPolicy.name')
+
+loanId=$(echo "${apicall}" |jq .loans[].id)
+
+paste <(echo -e "${labels}") <(echo -e "${loandata}")
+
+apicall=$(curl -s -w '\n' -X GET \
+  -H "Accept: application/json" \
+  -H "X-Okapi-Tenant: ${tenant}" \
+  -H "x-okapi-token: ${okapi_token}" \
+  "${okapi_url}/scheduled-notice-storage/scheduled-notices?query=%28loanId==${loanId}%29")
+
+echo
+echo "Scheduled notices are listed below along with next scheduled run time." 
+echo "If none are listed, no notices are scheduled"
+echo "${apicall}" |jq -r '.scheduledNotices[] | [.triggeringEvent, .nextRunTime] |@tsv'
+echo
 
 apicall=$(curl -s -w '\n' -X GET -D \
   -H "Accept: application/json" \
   -H "X-Okapi-Tenant: ${tenant}" \
   -H "x-okapi-token: ${okapi_token}" \
-  ${okapi_url}/loan-storage/loans?query=itemId=%22${item_uuid}%22)
+  "${okapi_url}/audit-data/circulation/logs?limit=30&query=%28items%3D%3D%22%2A${barcode}%2A%22%29%20sortby%20date%2Fsort.descending")
 
-loan_uuid=$(echo "${apicall}" |jq -r .loans[0].id)
+echo "Last 30 notices sent associated with the barcode of the user are listed below." 
+echo "This may involve different loans."
+echo "If none are listed, none were sent"
+echo "${apicall}" |jq -r '.logRecords[] | select(.object == "Notice") | [.userBarcode, .action, .date, .description] |@tsv '
+echo
 
-echo $loan_uuid
+
+

@@ -3,46 +3,48 @@
 
 
 BEGIN{FS="\t"}
+function checkdigit(num) 
+{
+	gsub(/;.*$/, "", num)
+	gsub(/[^0-9]/, "", num)
+
+	m = 2
+	x = 0
+	i = num
+	while (i > 0) {
+		a = i % 10
+		i = int(i/10)
+		x += a * m
+		m += 1
+		}
+	r = x % 11
+	if (r == 10) {r = "x"}	
+	return ".b"num""r
+}
 
 {
-	scode1["b"]=" CYO"
-	scode1["c"]=" C2YRS ONLY"
-	scode1["d"]=" M/FORM REPLACE"
-	scode1["e"]=" SSEDED TO ALBY"
-	scode1["h"]=" SSEDED TO SR"
-	scode1["i"]=" SSEDED TO REFS"
-	scode1["j"]=" CURR. ED. ONLY"
-	scode1["p"]=" C5YRS ONLY"
-	scode1["r"]=" C10YRS ONLY"
-	scode1["v"]=" SSEDED TO NZPS"
-	scode1["w"]=" REF C\'IN NOTES"
 
-	scode2["y"]=" COMP"
-	scode2["c"]=" DIRECT AUSTRAL"
-
-	$9=scode1[$9]
-	$10=scode2[$10]
-
-	bibId=$1
-	holdId=$2
-	callNum=$3
-	callPrefix=$16
-	libHas=$5
-	actionNote=$6
-	actionNote2=$17
-	note=$7
-	note2=$10
-	copyNote=$9
-	location=$8
-	ownershipNote=$14
-	ownershipNote2=$15
-	bindingNote=$12
-	bindingNote2=$13
+	bibId=checkdigit($3)
+	holdId=$1
+	callNum=$23
+	callPrefix=""
+	libHas=$21
+	actionNote=$25
+	actionNote2=$27
+	note=$24
+	note2=""
+	copyNote=""
+	location=$11
+	ownershipNote="$15"
+	ownershipNote2=""
+	bindingNote=""
+	bindingNote2=""
 	reproductionNote=""
 	termsOfUse=""
 	url=""
 
 	if (location ~ /[a-zA-Z0-9]/) holdId = bibId""location
+	gsub(/;.*/, "", callNum)
 
 	sub(/ /,"$i",callNum)
 	if (location == "") location = "migration"
@@ -97,15 +99,12 @@ BEGIN{FS="\t"}
 	}
 
 
-	mfhds[holdId] = mfhd
+	print mfhd > "mfhds.mrk"
+	if(NR % 10000 == 0 ) {printf ("%d checkin records processed\r", NR) }
 }
 
 END { 
-	for (record in mfhds ) { 
-		print mfhds[record] > "mfhds.mrk"
-		counter++
-	}
-	print NR " item records processed to create  " counter " MFHDs" 
+	print NR " checkin records processed" 
 } 
 
 

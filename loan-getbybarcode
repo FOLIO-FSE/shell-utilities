@@ -18,13 +18,14 @@ apicall=$(curl -s -w '\n' -X GET \
   -H "x-okapi-token: ${okapi_token}" \
   "${okapi_url}/circulation/loans?query=%28itemId==${itemId}%29")
 
-labels="Due date:\t\nBorrower:\t\nPatron group:\t\nItem barcode:\t\nLocation:\t\nMat type:\t\nLoan policy:\t\nOverdue policy:\t\nLost policy:\t"
+output="Due date:\tBorrower:\tPatron group:\tItem barcode:\tLocation:\tMat type:\tLoan policy:\tOverdue policy:\tLost policy:\n"
 
-loandata=$(echo "${apicall}" |jq -r '.loans[] | .dueDate, .borrower.barcode, .patronGroupAtCheckout.name, .item.barcode, .item.location.name, .item.materialType.name, .loanPolicy.name, .overdueFinePolicy.name, .lostItemPolicy.name')
+loandata=$(echo "${apicall}" |jq -r '.loans[] | [ .dueDate, .borrower.barcode, .patronGroupAtCheckout.name, .item.barcode, .item.location.name, .item.materialType.name, .loanPolicy.name, .overdueFinePolicy.name, .lostItemPolicy.name ] |@tsv')
 
 loanId=$(echo "${apicall}" |jq .loans[].id)
 
-paste <(echo -e "${labels}") <(echo -e "${loandata}")
+output="${output}${loandata}"
+column -t -s $'\t' -n <(echo -e "${output}")
 
 apicall=$(curl -s -w '\n' -X GET \
   -H "Accept: application/json" \

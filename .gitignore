@@ -1,2 +1,4 @@
-db-delete
+okapi.*
+tenant
+edge.*
 db-*

@@ -1,0 +1,15 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+today=$(date -I)"*"
+
+apicall=$(curl -s -w '\n' -X GET -D \
+  -H "Accept: application/json" \
+  -H "X-Okapi-Tenant: ${tenant}" \
+  -H "x-okapi-token: ${okapi_token}" \
+  ${okapi_url}/email?query=%28date==${today}%29&limit=4000)
+
+echo $apicall | jq .
+
+

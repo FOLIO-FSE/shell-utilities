@@ -1,0 +1,23 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+while IFS=$'\t' read -r name description;do
+
+deptid=$(uuidgen)
+
+IFS='' read -r -d '' newDept << EndOfDept
+
+{
+"id": "${deptid}",
+"name": "${name}",
+"description": "${description}"
+}
+EndOfDept
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${newDept}" "${okapi_url}/coursereserves/departments")
+echo -e "${apicall}" 
+
+done < depts
+
+

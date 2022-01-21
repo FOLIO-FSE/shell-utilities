@@ -1,0 +1,40 @@
+#
+# This program expect a list of course codes which it converts to course listing UUIDs
+# and then adds the barcode in the second colum
+#
+# e.g. ENG 101	340523520352
+#
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+declare -A dict_courses
+
+# get list of course departments and populate array using name as key with uuid as value
+ 
+eval "$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/coursereserves/courses?limit=100000" |  jq -r '.courses[] | @sh "dict_courses[\(.courseNumber|tostring)]=\(.courseListingId|tostring)"')"
+
+while IFS=$'\t' read -r courseNumber barcode;do
+
+
+courseListingId=${dict_courses["${courseNumber}"]}
+
+id=$(uuidgen)
+
+IFS='' read -r -d '' item << EndOfItem
+
+{
+"courseListingId": "${courseListingId}"
+"copiedItem": {"barcode": "${barcode}"},
+"id": "${id}"
+}
+EndOfItem
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${instructor}" "${okapi_url}/coursereserves/courselistings/${courseListingId}/reserves")
+echo -e "${apicall}" 
+
+
+done < course_barcodes
+
+

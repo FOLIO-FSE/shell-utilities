@@ -16,11 +16,12 @@ while read -r uuid; do
 	#recordtype="location-units/libraries"
 	#recordtype="locations"
 	#recordtype="organizations/organizations"
+	recordtype="circulation/requests"
 	#recordtype="service-points"
 	#recordtype="users"
 	#recordtype="tags"
 	#recordtype="groups"
-	recordtype="instance-types"
+	#recordtype="instance-types"
 	
 	echo "${okapi_url}/${recordtype}/${uuid}"
 	

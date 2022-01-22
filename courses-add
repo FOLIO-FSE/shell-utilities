@@ -3,14 +3,21 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 declare -A dept_dict
-default_coursetype='0ba9e0f9-7de4-4b32-8fe4-4f69eee4e46b'
-default_term='b3d8fb32-5bc3-4a17-85bd-1bbf7118ded2'
+declare -A dict_prof
+default_coursetype='b3d8fb32-5bc3-4a17-85bd-1bbf7118ded2'
+default_term='59569646-7801-49e4-98ad-cb422ad25ad3'
+
+dict_prof['ENG 101']='Doe, John'
 
 # get list of course departments and populate array using name as key with uuid as value
  
 eval "$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/coursereserves/departments?limit=100000" |  jq -r '.departments[] | @sh "dept_dict[\(.name|tostring)]=\(.id|tostring)"')"
 
-while IFS='^' read -r courseName courseNumber dept externalId registrarId instructorName;do
+
+while IFS=$'\t' read -r dept courseNumber courseName;do
+
+
+instructorName=${dict_prof["${courseNumber}"]}
 external=''
 registrar=''
 
@@ -49,7 +56,6 @@ EndOfCourse
 instructorid=$(uuidgen)
 
 IFS='' read -r -d '' instructor << EndOfInstructor
-
 {
 "id": "${instructorid}",
 "name": "${instructorName}",
@@ -66,6 +72,11 @@ echo -e "${apicall}"
 apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${instructor}" "${okapi_url}/coursereserves/courselistings/${listingid}/instructors")
 echo -e "${apicall}" 
 
-done < caltech.courses
+
+#echo "${courselisting}"
+#echo "${course}"
+#echo "${instructor}"
+
+done < ecok_courses.txt
 
 

@@ -1,0 +1,27 @@
+#0cf-e4aa278110b7 expects fine amounts in column 1, patron uuid in column 2
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+
+while IFS=$'\t' read -r account_id amount; do
+
+IFS='' read -r -d '' fine << EndOfJSON
+{
+  "amount": "${amount}",
+  "paymentMethod": "Library/system error",
+  "notifyPatron":false,
+  "comments":"STAFF : Automatic wave",
+  "servicePointId":"22b564d4-5cb0-4d5a-9358-f7e25e3d8fad",
+  "userName":"admin, admin"
+}
+EndOfJSON
+
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${fine}" "${okapi_url}/accounts/${account_id}/waive")
+
+echo -e "${apicall}" 
+
+done < waive.tsv 
+

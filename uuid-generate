@@ -1,0 +1,9 @@
+# namespace is 8405ae4d-b315-42e1-918a-d1919900cf3f
+#
+# The name is constructed as OKAPI_URL:OBJECT_TYPE_NAME:LEGACY_IDENTIFIER
+# e.g. https://okapi-bugfest-juniper.folio.ebsco.com:items:i3696836
+
+okapi_url="https://okapi-bugfest-juniper.folio.ebsco.com"
+object_type="items"
+identifier="i3696836"
+uuidgen --sha1 -n 8405ae4d-b315-42e1-918a-d1919900cf3f -N ${okapi_url}:${object_type}:${identifier}

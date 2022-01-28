@@ -1,0 +1,33 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+counter=1
+
+while IFS=$'\n' read -r request_id; do
+	
+	apicall=$(curl -s -w '\n' -X GET -D \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  ${okapi_url}/circulation/requests/${request_id})
+
+	updated_request=$(echo ${apicall}  |jq '
+		(.requestType = "Hold")
+')
+
+	apicall=$(curl --http1.1 -s -w '\n' -X PUT \
+	  -H "Content-type: application/json" \
+	  -H "Accept: text/plain" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  -d "${updated_request}" \
+	  ${okapi_url}/circulation/requests/${request_id})
+
+	echo "Processing request $counter -- $item_id"
+echo $apicall
+	counter=$(($counter + 1))
+	
+done < request_uuids 
+
+

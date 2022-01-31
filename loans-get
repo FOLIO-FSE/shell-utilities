@@ -10,8 +10,5 @@ apicall=$(curl -s -w '\n' -X GET -D \
   -H "x-okapi-token: ${okapi_token}" \
   ${okapi_url}/${query})
 
-echo "${apicall}" | jq -r '.loans[] | [.id, .dueDate, .userId, .borrower.barcode, .patronGroupAtCheckout.name, .item.barcode, .item.location.name, .item.materialType.name, .loanPolicy.name, .overdueFinePolicy.name, .lostItemPolicy.name ] | @tsv' > loans
-
-echo "Loan data has been output to 'loans'"
-
-
+#echo "${apicall}" | jq -r '.loans[] | [.id, .dueDate, .userId, .borrower.barcode, .patronGroupAtCheckout.name, .item.barcode, .item.location.name, .item.materialType.name, .loanPolicy.name, .overdueFinePolicy.name, .lostItemPolicy.name ] | @tsv' > loans
+echo $apicall

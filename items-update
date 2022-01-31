@@ -4,27 +4,26 @@ okapi_token=$(cat okapi.token)
 
 counter=1
 
-while IFS=$'\n' read -r item_id; do
+while IFS=$'\n' read -r search; do
+	barcode=0
 
-	if [[ $item_id =~ ^[0-9][0-9]*$ ]];then
-		barcode=$item_id
-
-		apicall=$(curl -s -w '\n' -X GET -D \
-		  -H "Accept: application/json" \
-		  -H "X-Okapi-Tenant: ${tenant}" \
-		  -H "x-okapi-token: ${okapi_token}" \
-		  ${okapi_url}/inventory/items?query=barcode=${barcode})
-	
-		uuid=$(echo ${apicall} | jq -r .items[0].id)
+	if [[ ${search} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+        	endpoint="${okapi_url}/item-storage/items/${search}"
 	else
-		uuid=$item_id
+        	endpoint="${okapi_url}/item-storage/items?query=barcode==${search}"
+		barcode=1
 	fi
-	
+
 	apicall=$(curl -s -w '\n' -X GET -D \
 	  -H "Accept: application/json" \
 	  -H "X-Okapi-Tenant: ${tenant}" \
 	  -H "x-okapi-token: ${okapi_token}" \
-	  ${okapi_url}/item-storage/items/${uuid})
+	  "${endpoint}")
+
+	if [[ ${barcode} -eq 1 ]];then
+        	apicall=$(echo $apicall |jq '.items[0]')
+	fi	
+
 
 	updated_item=$(echo ${apicall}  |jq '
 		(.discoverySuppress = true)

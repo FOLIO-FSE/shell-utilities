@@ -2,13 +2,19 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-item_uuid="$1"
+search=$(sed 's/[^a-f0-9\-]//gi' <<< $1)
+
+if [[ ${search} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+	endpoint="${okapi_url}/item-storage/items/${search}"
+else
+	endpoint="${okapi_url}/item-storage/items?query=barcode==${search}"
+fi
 
 apicall=$(curl -s -w '\n' -X GET -D \
   -H "Accept: application/json" \
   -H "X-Okapi-Tenant: ${tenant}" \
   -H "x-okapi-token: ${okapi_token}" \
-  ${okapi_url}/inventory/items/${item_uuid})
+  "${endpoint}")
 
 echo $apicall |jq '.'
 

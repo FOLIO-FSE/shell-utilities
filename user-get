@@ -2,19 +2,27 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-search_for="$1"
+search_for=$(sed 's/[^0-9a-f\-]//gi' <<< "$1")
 
-#query="limit=100&query=%28%28username%3D%22${search_for}%2A%22%20or%20personal.firstName%3D%22${search_for}%2A%22%20or%20personal.preferredFirstName%3D%22${search_for}%2A%22%20or%20personal.lastName%3D%22${search_for}%2A%22%20or%20personal.email%3D%22${search_for}%2A%22%20or%20barcode%3D%22${search_for}%2A%22%20or%20id%3D%22${search_for}%2A%22%20or%20externalSystemId%3D%22${search_for}%2A%22%29%29%20sortby%20personal.lastName%20personal.firstName"
+barcodefound=0
 
-query="query=barcode=\"${search_for}\""
+if [[ ${search_for} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+        endpoint="${okapi_url}/users/${search_for}"
+else
+        endpoint="${okapi_url}/users?query=barcode==${search_for}"
+        barcodefound=1
+fi
 
 apicall=$(curl -s -w '\n' -X GET -D \
   -H "Accept: application/json" \
   -H "X-Okapi-Tenant: ${tenant}" \
   -H "x-okapi-token: ${okapi_token}" \
-  "${okapi_url}/users?${query}")
+  "${endpoint}")
 
-echo "${okapi_url}/users?${query}"
+if [[ ${barcodefound} -eq 1 ]];then
+        apicall=$(echo $apicall |jq '.users[0]')
+        id=$(echo $apicall |jq .id)
+fi
 
 echo $apicall | jq .
 

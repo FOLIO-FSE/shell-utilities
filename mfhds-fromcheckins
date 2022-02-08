@@ -24,18 +24,44 @@ function checkdigit(num)
 
 {
 
-	bibId=checkdigit($3)
-	holdId=$1
-	callNum=$23
+if (NR == 1) {
+	for(i=1;i<=NF;i++) {
+		switch($i) {
+			case "bibIds":
+				bibId = i
+				break
+			case "CALL_#":
+				callNum = i
+				break
+			case "LOCATION":
+				location = i
+				break
+			case "LIBHAS(HoldingsStatement)":
+				libHas = i
+				break
+			case "SCODE4":
+				ownershipNote = i
+				break
+			case "NOTE":
+				note = i
+				break
+			case "INT_NOTE":
+				actionNote = i
+				break
+			case "MESSAGE":
+				actionNote2 = i
+				break
+			}
+		}
+	}
+
+
+### Only process if attached to a bib
+if ($bibId != "") {
+	$bibId=checkdigit($bibId)
 	callPrefix=""
-	libHas=$21
-	actionNote=$25
-	actionNote2=$27
-	note=$24
 	note2=""
 	copyNote=""
-	location=$11
-	ownershipNote="$15"
 	ownershipNote2=""
 	bindingNote=""
 	bindingNote2=""
@@ -43,16 +69,16 @@ function checkdigit(num)
 	termsOfUse=""
 	url=""
 
-	if (location ~ /[a-zA-Z0-9]/) holdId = bibId""location
-	gsub(/;.*/, "", callNum)
+	if (location ~ /[a-zA-Z0-9]/) holdId = $bibId""$location
+	gsub(/;.*/, "", $callNum)
 
-	sub(/ /,"$i",callNum)
-	if (location == "") location = "migration"
+	sub(/ /,"$i",$callNum)
+	if ($location == "") $location = "migration"
 
-	mfhd = "=LDR  00155cx   22000733  4500\n=001  "holdId"\n=004  "bibId"\n=008  9810090p\\\\\\\\8\\\\\\4001aueng0000000\n"
+	mfhd = "=LDR  00155cx   22000733  4500\n=001  "holdId"\n=004  "$bibId"\n=008  9810090p\\\\\\\\8\\\\\\4001aueng0000000\n"
 
 	if (note != "") { 
-                split(note, notes, ";")
+                split($note, notes, ";")
 		for (n in notes)
 			mfhd = mfhd"=538  \\\\$i"notes[n]"\n"
 	}
@@ -62,45 +88,50 @@ function checkdigit(num)
 			mfhd = mfhd"=538  \\\\$i"notes[n]"\n"
 	}
 	if (ownershipNote != "") { 
-		mfhd = mfhd"=561  0\\$a"ownershipNote"\n"
+		mfhd = mfhd"=561  0\\$a"$ownershipNote"\n"
 	}
 	if (ownershipNote2 != "") { 
 		mfhd = mfhd"=561  0\\$a"ownershipNote2"\n"
 	}
         if (copyNote != "") {
-		mfhd = mfhd"=562  0\\$a"copyNote"\n"
+		mfhd = mfhd"=562  0\\$a"$copyNote"\n"
  	}
 	if (bindingNote != "") { 
-		mfhd = mfhd"=563  \\\\$x"bindingNote"\n"
+		mfhd = mfhd"=563  \\\\$x"$bindingNote"\n"
 	}
 	if (bindingNote2 != "") { 
-		mfhd = mfhd"=563  \\\\$x"bindingNote2"\n"
+		mfhd = mfhd"=563  \\\\$x"$bindingNote2"\n"
 	}
-	if (actionNote != "") { 
-		mfhd = mfhd"=583  \\\\$x"actionNote"\n"
+	if ($actionNote != "") { 
+		split($actionNote, statements, ";")
+		for (statement in statements)
+			mfhd = mfhd"=583  \\\\$x"statements[statement]"\n"
 	}
-	if (actionNote2 != "") { 
-		mfhd = mfhd"=583  \\\\$x"actionNote2"\n"
+	if ($actionNote2 != "") { 
+		split($actionNote2, statements, ";")
+		for (statement in statements)
+			mfhd = mfhd"=583  \\\\$x"statements[statement]"\n"
 	}
 	if (callPrefix != "") { 
-		callPrefix="$k"callPrefix
+		$callPrefix="$k"$callPrefix
 	}
 
-	mfhd = mfhd"=852  0\\$b"location""callPrefix"$h"callNum"\n"
+	mfhd = mfhd"=852  0\\$b"$location"$h"$callNum"\n"
 
 	if (url != "") { 
-		mfhd = mfhd"=856  \\\\$u"url"\n"
+		mfhd = mfhd"=856  \\\\$u"$url"\n"
 	}
 
-	if (libHas != "") { 
-		split(libHas, statements, ";")
+	if ($libHas != "") { 
+		split($libHas, statements, ";")
 		for (statement in statements)
 			mfhd = mfhd"=866  \\\\$a"statements[statement]"\n"
 	}
 
 
-	print mfhd > "mfhds.mrk"
+	print mfhd > "mfhds_fromcheckins.mrk"
 	if(NR % 10000 == 0 ) {printf ("%d checkin records processed\r", NR) }
+	}
 }
 
 END { 

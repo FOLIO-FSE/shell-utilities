@@ -4,25 +4,42 @@
 BEGIN{FS="\t"}
 
 {
-	itemId=$1
-	bibId=$2
-	callNum=$3
-	location=$4
+if (NR == 1) {
+	for(i=1;i<=NF;i++) {
+		switch($i) {
+			case "itemId":
+				itemId = i
+				break
+			case "bibId":
+				bibId = i
+				break
+			case "callNum":
+				callNum = i
+				break
+			case "location":
+				location = i
+				break
+			case "holdId":
+				holdId = i
+				break
+			}
+		}
+	}
 
-	if (location == "") {location = "migration"}
+	if ($location == "") {$location = "migration"}
 
-	holdId = bibId""location
-	sub(/ /,"$i",callNum)
+	sub(/ /,"$i",$callNum)
+	sub(/;.*/,"",$bibId)
 
-	mfhds[holdId] = "=LDR  00155cx   22000733  4500\n=001  "holdId"\n=004  "bibId"\n=008  9810090p\\\\\\\\8\\\\\\4001aueng0000000\n=852  0\\$b"location"$h"callNum"\n"
+	mfhds[$holdId] = "=LDR  00155cx   22000733  4500\n=001  "$holdId"\n=004  "$bibId"\n=008  9810090p\\\\\\\\8\\\\\\4001aueng0000000\n=852  0\\$b"$location"$h"$callNum"\n"
 	if(NR % 10000 == 0 ) {printf ("Processed %d items\r", NR) }
 }
 
 END { 
 	for (record in mfhds ) { 
-		print mfhds[record] > "mfhds.mrk"
+		print mfhds[record] > "mfhds_fromitems.mrk"
 		counter++
-		if(counter % 10000 == 0 ) {printf ("Items written to mfhds.mrk: %d\r", counter) }
+		if(counter % 10000 == 0 ) {printf ("Items written to mfhds_fromitems.mrk: %d\r", counter) }
 	}
 	print NR " item records processed to create  " counter " MFHDs" 
 } 

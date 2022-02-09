@@ -234,7 +234,6 @@ echo "${org}" > org.log
 	fi
 
 	if [[ ${contact1} =~ [a-z0-9A-Z] ]];then
-		echo "Adding contact to $code"
 		add_contact "${contact1}"
 	fi
 	if [[ ${contact2} =~ [a-z0-9A-Z] ]];then

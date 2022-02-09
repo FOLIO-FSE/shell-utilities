@@ -1,0 +1,19 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+recordtype="organizations-storage/organizations"
+apicall=$(curl -X DELETE -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}")
+
+recordtype="organizations-storage/contacts"
+apicall=$(curl -X DELETE -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}")
+
+recordtype="organizations-storage/emails"
+apicall=$(curl -X DELETE -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}")
+
+recordtype="organizations-storage/address"
+apicall=$(curl -X DELETE -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}")
+
+recordtype="organizations-storage/interfaces"
+apicall=$(curl -X DELETE -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}")
+

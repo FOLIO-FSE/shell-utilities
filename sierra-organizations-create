@@ -3,26 +3,11 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 
-rm -rf orgs.txt orgs.tmp
-
-add_interface() {
-
-IFS='' read -r -d '' data << EndOfInterface
-{
-  "type": [
-    "Other"
-  ],
-  "name": "${code}",
-  "notes": "${fieldZ}",
-  "id": "${interface_id}"
-}
-EndOfInterface
-
-	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/organizations-storage/interfaces")
-
-}
 
 build_address() {
+IFS='$' read -a addr_arr <<< ${addr}
+
+lenarr=${#addr_arr[@]}
 
 line1=""
 line2=""
@@ -31,52 +16,59 @@ state=""
 zip=""
 citystatezip=""
 
-if [[ ${addr1} != "" ]]; then 
-	IFS='$' read -r orgname line1 line2 citystatezip <<< ${addr1}
-
-	if [[ -z ${citystatezip} ]];then 
-		citystatezip=${line2}
-		line2=""
-	fi
-
-	IFS=',' read city statezip <<< ${citystatezip}
-
-	IFS=' ' read -r -a statezip <<< "${citystatezip}"
-
-
-	if [[ ${#statezip[@]} > 1 ]]; then
-		if [[ ${statezip[-1]} =~ ^[0-9\-]*$ ]]; then
-
-			zip=${statezip[-1]} 
-			state=${statezip[-2]}
-			citystatezip=""
-		fi
-	fi
-
-	if [[ ${zip} == "" ]]; then
-		IFS=' ' read -r -a city state zip <<< "${citystatezip}"
-
-		if ! [[ ${zip} =~ ^[0-9\-]*$ ]]; then
-			city=""
-			state=""
-			zip=""
-		fi
-	fi
-
-	addr1="{\"isPrimary\":true,\"addressLine1\":\"${line1}\",\"addressLine2\":\"${line2}\",\"city\":\"${city}\",\"stateRegion\":\"${state}\",\"zipCode\":\"${zip}\"}"
+if [[ "$lenarr" -eq "2" ]]; then 
+	citystatezip="${addr_arr[1]}"	
+	line2="${addr_arr[0]}"	
+fi
+if [[ "$lenarr" -eq "3" ]]; then 
+	citystatezip="${addr_arr[2]}"	
+	line2="${addr_arr[1]}"	
+	line1="${addr_arr[0]}"	
 fi
 
+if [[ "$lenarr" -eq "4" ]]; then 
+	citystatezip="${addr_arr[3]}"	
+	line2="${addr_arr[2]}"	
+	line1="${addr_arr[0]}, ${addr_arr[1]}"	
+fi
+
+
+IFS=',' read city statezip <<< ${citystatezip}
+
+IFS=' ' read -r -a statezip <<< "${citystatezip}"
+
+
+if [[ ${#statezip[@]} > 1 ]]; then
+	if [[ ${statezip[-1]} =~ ^[0-9\-]*$ ]]; then
+
+		zip=${statezip[-1]} 
+		state=${statezip[-2]}
+		citystatezip=""
+	fi
+fi
+
+if [[ ${zip} == "" ]]; then
+	IFS=' ' read -r -a city state zip <<< "${citystatezip}"
+
+	if ! [[ ${zip} =~ ^[0-9A-Z\-]*$ ]]; then
+		city=""
+		state=""
+		zip=""
+	fi
+fi
+
+address="{\"isPrimary\":true,\"addressLine1\":\"${line1}\",\"addressLine2\":\"${line2}\",\"city\":\"${city}\",\"stateRegion\":\"${state}\",\"zipCode\":\"${zip}\"}"
 }
 
 create_org_record() {
 
 
-if [[ ${email} != "" ]]; then email="{ \"value\" : \"${email}\", \"isPrimary\" : true, \"categories\" : [] }";fi
+if [[ ${email1} =~ @ ]]; then email="{ \"value\" : \"${email1}\", \"isPrimary\" : true, \"categories\" : [] }";fi
+if [[ ${email2} =~ @ ]]; then email="${email}, { \"value\" : \"${email2}\", \"isPrimary\" : false, \"categories\" : [] }";fi
+if [[ ${email3} =~ @ ]]; then email="${email}, { \"value\" : \"${email3}\", \"isPrimary\" : false, \"categories\" : [] }";fi
+if [[ ${email4} =~ @ ]]; then email="${email}, { \"value\" : \"${email4}\", \"isPrimary\" : false, \"categories\" : [] }";fi
 
 
-if [[ ${phone} != "" ]]; then phone="{ \"phoneNumber\" : \"${phone}\", \"isPrimary\" : true, \"categories\" : [] }";fi
-
-	
 IFS='' read -r -d '' org << EndOfOrg
 {
  "id" : "${uuid}",
@@ -86,10 +78,10 @@ IFS='' read -r -d '' org << EndOfOrg
  "exportToAccounting" : false,
  "status" : "Active",
  "aliases" : [ ],
- "addresses" : [${addr1}],
+ "addresses" : [${address}],
  "phoneNumbers" : [${phone} ${fax}],
  "emails" : [${email}],
- "urls" : [ ],
+ "urls" : [${url} ],
  "contacts" : [ ],
  "agreements" : [ ],
  "erpCode" : "",
@@ -103,7 +95,7 @@ IFS='' read -r -d '' org << EndOfOrg
      "ftpConnMode" : "Active"
    }
  },
- "interfaces" : ["${interface_id}"],
+ "interfaces" : [ ],
  "accounts" : [${accountnum}],
  "isVendor" : true,
  "changelogs" : [ ],
@@ -112,6 +104,7 @@ IFS='' read -r -d '' org << EndOfOrg
 EndOfOrg
 
 echo "${org}"
+
 }
 
 
@@ -119,12 +112,58 @@ add_phone() {
 	org=$(echo ${org} | jq ".phoneNumbers += [{ \"phoneNumber\" : \"${phone}\", \"isPrimary\" : false, \"categories\" : [] }]")
 }
 
+add_contact() {
+	newcontact="$1"	
+	contactname=""
+	contactnote=""
+	name=""
+	fname=""
+	lname=""
+
+	delim=" - "
+
+	if [[ ${newcontact} =~ $delim ]];then
+		contactname=$(sed 's/ - .*$//' <<< ${newcontact})
+		contactnote=$(sed 's/[^\-]* //' <<< ${newcontact})
+	else
+		contactname="${newcontact}"
+	fi
+
+	contactname=$(sed 's/(.*)$//' <<< ${contactname})
+
+	IFS=" " read -a name_arr <<< "${contactname}"
+	lname="${name_arr[-1]}"
+	fname="${name_arr[0]}"
+
+	contactId=$(uuidgen)
+	contact="{\"firstName\":\"${fname}\",\"lastName\":\"${lname}\",\"notes\":\"${contactNote}\",\"id\":\"${contactId}\"}"
+
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${contact}" "${okapi_url}/organizations-storage/contacts")
+
+	apicall=$(curl -s -w '\n' -X GET -D \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  ${okapi_url}/organizations-storage/organizations/${uuid})
+	
+	updated_org=$(echo ${apicall} | jq ".contacts += [\"${contactId}\"]")
+
+	apicall=$(curl --http1.1 -s -w '\n' -X PUT \
+	  -H "Content-type: application/json" \
+	  -H "Accept: text/plain" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  -d "${updated_org}" \
+	  ${okapi_url}/organizations-storage/organizations/${uuid})
+echo "${updated_org}" >> orgs
+}
+
 add_note() {
 
 IFS='' read -r -d '' note << EndOfNote
 {
   "domain": "organizations",
-  "typeId": "ebf00fad-3a78-430d-b471-64fd37c09401",
+  "typeId": "874a6555-01af-4fc7-b6ea-c1627a7187cf",
   "content": "<div>${note}</div>",
   "title": "${code} note",
   "links": [
@@ -142,71 +181,70 @@ apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" 
 }
 
 
-echo -e "Name\tCode\tAccountNum\tContact\tEmail\tPhone\tAddr1\tAddr2\tFieldM\tFieldO\tFieldF\tFieldL\tFieldZ\tId" > orgs.txt
-
-cat vendors/* | jq -r '.entries[] | [
-        "\(.vendorName)" // "",
-        (select(.code != null) | "\(.code)") // "\(.id)",
-        "\(.accountNum)" // "",
-        "\(.contact)" // "",
-        "\(.email)" // "",
-        "\(.phone)" // "",
-        "\(.address1)" // "",
-        "\(.address2)" // "",
-	 (.varFields[] |select(.fieldTag=="k") | "\(.content)") // "", # note1
-	 (.varFields[] |select(.fieldTag=="m") | "\(.content)") // "", # note2
-	 (.varFields[] |select(.fieldTag=="n") | "\(.content)") // "", # note3
-	 (.varFields[] |select(.fieldTag=="o") | "\(.content)") // "", # Additional Phone
-	 (.varFields[] |select(.fieldTag=="f") | "\(.content)") // "", # Fax
-	 (.varFields[] |select(.fieldTag=="l") | "\(.content)") // "", # Account number
-	 (.varFields[] |select(.fieldTag=="z") | "\(.content)") // "", # Interface
-        "\(.id)" // ""
-        ] | join("|") ' |sed 's/null|/|/g'  |tr -d "'" |tr -d '"' >> orgs.tmp
-
-counter=1
-
-while IFS='|' read -r name code accountNum contact email phone addr1 addr2 fieldK fieldM fieldN fieldO fieldF fieldL fieldZ id;do
+while IFS='^' read -r code name role addr phone1 phone2 fax email1 email2 email3 email4  note1 note2 note3 note4 url contact1 contact2 contact3;do
 	# org uuid -- needs to be global
 	uuid=$(uuidgen)
 
-	note="${fieldK} ${fieldM} ${fieldN} ${fieldO} ${fieldZ}"
+	note="${note1} ${note2} ${note3} ${note4}"
 
-	if [[ ${fieldL} != "" ]]; then
+	if [[ ${accountnum} != "" ]]; then
 		accountnum="{\"name\":\"${name}\",\"accountNo\":\"${fieldL}\",\"paymentMethod\":\"Other\",\"accountStatus\":\"Active\",\"libraryCode\":\"-\",\"libraryEdiCode\":\"-\"}"
 	else
 		accountnum=""
 	fi
 
-	if [[ ${fieldF} != "" ]]; then
+	if [[ ${phone1} != "" ]]; then phone="{ \"phoneNumber\" : \"${phone1}\", \"isPrimary\" : true, \"categories\" : [] }";fi
+
+	if [[ ${phone2} != "" ]]; then
+		if [[ ${phone} != "" ]]; then phone="${phone} ,{ \"phoneNumber\" : \"${phone2}\", \"isPrimary\" : false, \"categories\" : [] }";fi
+
+	fi
+
+	if [[ ${fax} != "" ]]; then
 		if [[ ${phone} != "" ]]; then
-			fax=",{\"phoneNumber\":\"${fieldF}\",\"type\":\"Fax\"}"
+			fax=",{\"phoneNumber\":\"${fax}\",\"type\":\"Fax\"}"
 		else
-			fax="{\"phoneNumber\":\"${fieldF}\",\"type\":\"Fax\"}"
+			fax="{\"phoneNumber\":\"${fax}\",\"type\":\"Fax\"}"
 		fi
 
 	else
 		fax=""
 	fi
-#	if [[ ${fieldZ} != "" ]]; then
-#		interface_id=$(uuidgen)
-#		add_interface	
-#		echo "Interface created for $name $code"
-#		else
-#		interface_id=""
-#	fi
-	build_address
+
+	url=$(sed 's/ .*//' <<< ${url})
+	url=$(sed 's/^[^h].*//' <<< ${url})
+
+	if [[ ${url} =~ ^http ]]; then
+		url="{ \"language\" : \"en\", \"isPrimary\" : true, \"value\" : \"${url}\" }"
+	fi
+	address=""
+	if [[ "${#addr}" -gt "5" ]]; then 
+		build_address
+	fi
+	echo "Processing $code"
 	org=$(create_org_record)
 	
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${org}" "${okapi_url}/organizations/organizations")
 
+echo "${org}" > org.log
+
 	if [[ ${note} =~ [a-z0-9A-Z] ]];then
 		note=$(sed 's/  */ /g' <<< ${note})
 		add_note
-		echo "note created for $code"
+	fi
+
+	if [[ ${contact1} =~ [a-z0-9A-Z] ]];then
+		echo "Adding contact to $code"
+		add_contact "${contact1}"
+	fi
+	if [[ ${contact2} =~ [a-z0-9A-Z] ]];then
+		add_contact "${contact2}"
+	fi
+	if [[ ${contact3} =~ [a-z0-9A-Z] ]];then
+		add_contact "${contact3}"
 	fi
 
 	echo "Processing $code -- record $counter"
 	counter=$((counter + 1))
-	echo -e "${name}\t${code}\t${accountNum}\t${contact}\t${email}\t${phone}\t${addr1}\t${addr2}\t${fieldK}\t${fieldM}\t${fieldN}\t${fieldO}\t${fieldF}\t${fieldL}\t${fieldZ}\t${id}" >> orgs.txt
-done < orgs.tmp
+done < unimelb_vendors.txt
 

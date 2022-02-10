@@ -1,0 +1,364 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+IFS='' read -r -d '' acq_admin << EndOfPermission
+
+{
+  "permissionName" : "acq-admin",
+  "displayName" : "acq-admin ",
+  "id" : "12e408b9-facc-4955-83c9-83ad1efdc3db",
+  "tags" : [ ],
+  "subPermissions" : ["ui-agreements.agreements.delete","ui-agreements.agreements.edit","ui-agreements.resources.edit","ui-agreements.agreements.view","ui-agreements.resources.view","ui-finance.acq.unit.assignment.assign","ui-finance.allocations.create","ui-finance.transfers.create","ui-finance.acq.unit.assignment.manage","ui-finance.fiscal-year.view","ui-finance.fund-budget.view","ui-finance.group.view","ui-finance.ledger.view","ui-finance.fiscal-year.edit","ui-finance.fund-budget.edit","ui-finance.group.edit","ui-finance.ledger.edit","ui-finance.fiscal-year.create","ui-finance.fund-budget.create","ui-finance.group.create","ui-finance.ledger.create","ui-finance.fiscal-year.delete","ui-finance.fund-budget.delete","ui-finance.group.delete","ui-finance.ledger.delete","ui-plugin-find-agreement.search","ui-inventory.all-permissions.TEMPORARY","ui-inventory.items.mark-items-withdrawn","ui-inventory.holdings.move","ui-inventory.item.move","ui-inventory.instance.view-staff-suppressed-records","ui-inventory.instance.view","ui-inventory.holdings.create","ui-inventory.instance.create","ui-inventory.item.create","ui-inventory.holdings.edit","ui-inventory.instance.edit","ui-inventory.item.edit","ui-inventory.holdings.delete","ui-inventory.item.delete","ui-inventory.item.markasmissing","ui-invoice.approve","ui-invoice.acq.unit.assignment.assign","ui-invoice.batchVoucher.download","ui-invoice.acq.unit.assignment.manage","ui-invoice.pay","ui-invoice.invoice.create","ui-invoice.invoice.delete","ui-orders.acq.unit.assignment.assign","ui-orders.order-lines.create","ui-orders.order.create","ui-orders.order-lines.delete","ui-orders.order-lines.edit","ui-orders.order.edit","ui-orders.acq.unit.assignment.manage","ui-orders.order.delete","ui-orders.order.reopen","ui-orders.order.unopen","ui-orders.order-lines.view","ui-orders.order.view","ui-organizations.acqUnits.assign","ui-organizations.creds.view","ui-organizations.creds.manage","ui-organizations.acqUnits.manage","ui-organizations.view","ui-organizations.edit","ui-organizations.create","ui-organizations.delete","ui-receiving.view","ui-receiving.edit","ui-receiving.create","ui-receiving.delete","ui-requests.all","ui-requests.all","ui-requests.moveRequest","ui-requests.reorderQueue","ui-requests.view","ui-requests.create","ui-requests.edit","ui-agreements.generalSettings.manage","ui-agreements.supplementaryProperties.manage","ui-agreements.picklists.manage","ui-finance.settings.all","ui-inventory.settings.hrid-handling","ui-inventory.settings.ill-policies","ui-inventory.settings.electronic-access-relationships","ui-inventory.settings.alternative-title-types","ui-inventory.settings.call-number-types","ui-inventory.settings.classification-types","ui-inventory.settings.contributor-types","ui-inventory.settings.instance-formats","ui-inventory.settings.holdings-note-types","ui-inventory.settings.holdings-types","ui-inventory.settings.instance-note-types","ui-inventory.settings.instance-statuses","ui-inventory.settings.item-note-types","ui-inventory.settings.loantypes","ui-inventory.settings.modes-of-issuance","ui-inventory.settings.instance-types","ui-inventory.settings.materialtypes","ui-inventory.settings.nature-of-content-terms","ui-inventory.settings.identifier-types","ui-inventory.settings.statistical-code-types","ui-inventory.settings.statistical-codes","ui-invoice.settings.all","ui-orders.settings.all","ui-organizations.settings","ui-receiving.settings","ui-users.settings.addresstypes","ui-users.settings.feefines.all","ui-users.settings.comments","ui-users.settings.feefines","ui-users.settings.owners","ui-users.settings.conditions","ui-users.settings.limits","ui-users.settings.usergroups","ui-users.settings.payments","ui-users.settings.permsets","ui-users.settings.permsets","ui-users.settings.refunds","ui-users.settings.transfers","ui-users.settings.transfertypes","ui-users.settings.waives","ui-users.settings.customfields.edit","ui-users.settings.customfields.all","ui-users.settings.customfields.view","ui-developer.settings.passwd","ui-eholdings.settings.kb","ui-eholdings.settings.kb.delete","ui-eholdings.settings.root-proxy","ui-eholdings.settings.enabled","ui-eholdings.settings.access-types.create-edit","ui-eholdings.settings.access-types.all","ui-eholdings.settings.access-types.view","ui-users.editperms","ui-users.edituserservicepoints","ui-users.create","ui-users.feesfines.actions.all","ui-users.patron_blocks","ui-users.editproxies","ui-users.edit","ui-users.viewperms","ui-users.viewproxies","ui-users.viewuserservicepoints","ui-users.view","ui-users.reset.password","ui-users.loans.claim-item-returned","ui-users.loans.declare-item-lost","ui-users.loans.declare-claimed-returned-item-as-missing","ui-users.loans.renew-override","ui-users.loans.renew","ui-users.loans.view","ui-users.loans.all","ui-users.requests.all","ui-users.requests.all","ui-eholdings.titles-packages.create-delete","ui-eholdings.records.edit","ui-eholdings.package-title.select-unselect"],
+  "mutable" : true,
+  "visible" : true
+
+}
+EndOfPermission
+
+IFS='' read -r -d '' acq_manager << EndOfPermission
+
+{
+  "permissionName" : "acq-manager",
+  "displayName" : "acq-manager ",
+  "id" : "26e59818-df70-4d80-88f3-7480b5b7e115",
+  "tags" : [ ],
+  "subPermissions" : ["ui-agreements.agreements.delete","ui-agreements.agreements.edit","ui-agreements.resources.edit","ui-agreements.agreements.view","ui-agreements.resources.view","ui-finance.acq.unit.assignment.assign","ui-finance.allocations.create","ui-finance.transfers.create","ui-finance.acq.unit.assignment.manage","ui-finance.fiscal-year.view","ui-finance.fund-budget.view","ui-finance.group.view","ui-finance.ledger.view","ui-finance.fiscal-year.edit","ui-finance.fund-budget.edit","ui-finance.group.edit","ui-finance.ledger.edit","ui-finance.fiscal-year.create","ui-finance.fund-budget.create","ui-finance.group.create","ui-finance.ledger.create","ui-finance.fiscal-year.delete","ui-finance.fund-budget.delete","ui-finance.group.delete","ui-finance.ledger.delete","ui-plugin-find-agreement.search","ui-inventory.items.mark-items-withdrawn","ui-inventory.holdings.move","ui-inventory.item.move","ui-inventory.instance.view-staff-suppressed-records","ui-inventory.instance.view","ui-inventory.holdings.create","ui-inventory.instance.create","ui-inventory.item.create","ui-inventory.holdings.edit","ui-inventory.instance.edit","ui-inventory.item.edit","ui-inventory.holdings.delete","ui-inventory.item.delete","ui-inventory.item.markasmissing","ui-invoice.approve","ui-invoice.acq.unit.assignment.assign","ui-invoice.batchVoucher.download","ui-invoice.acq.unit.assignment.manage","ui-invoice.pay","ui-invoice.invoice.create","ui-invoice.invoice.delete","ui-orders.acq.unit.assignment.assign","ui-orders.order-lines.create","ui-orders.order.create","ui-orders.order-lines.delete","ui-orders.order-lines.edit","ui-orders.order.edit","ui-orders.acq.unit.assignment.manage","ui-orders.order.delete","ui-orders.order.reopen","ui-orders.order.unopen","ui-orders.order-lines.view","ui-orders.order.view","ui-organizations.acqUnits.assign","ui-organizations.creds.view","ui-organizations.creds.manage","ui-organizations.acqUnits.manage","ui-organizations.view","ui-organizations.edit","ui-organizations.create","ui-organizations.delete","ui-receiving.view","ui-receiving.edit","ui-receiving.create","ui-receiving.delete","ui-requests.moveRequest","ui-requests.reorderQueue","ui-requests.view","ui-requests.create","ui-requests.edit","ui-users.editperms","ui-users.edituserservicepoints","ui-users.create","ui-users.feesfines.actions.all","ui-users.patron_blocks","ui-users.editproxies","ui-users.edit","ui-users.viewperms","ui-users.viewproxies","ui-users.viewuserservicepoints","ui-users.view","ui-users.reset.password","ui-users.loans.claim-item-returned","ui-users.loans.declare-item-lost","ui-users.loans.declare-claimed-returned-item-as-missing","ui-users.loans.renew-override","ui-users.loans.renew","ui-users.loans.view","ui-users.loans.all","ui-users.requests.all","ui-eholdings.titles-packages.create-delete","ui-eholdings.records.edit","ui-eholdings.package-title.select-unselect"],
+  "mutable" : true,
+  "visible" : true
+
+}
+
+{
+  "permissionName" : "acq-observer",
+  "displayName" : "acq-observer ",
+  "id" : "dacd23e2-9cd5-46b2-acc7-4b64798212ae",
+  "tags" : [ ],
+  "subPermissions" : ["ui-agreements.agreements.view","ui-agreements.resources.view","ui-finance.fiscal-year.view","ui-finance.fund-budget.view","ui-finance.group.view","ui-finance.ledger.view","ui-plugin-find-agreement.search","ui-inventory.instance.view-staff-suppressed-records","ui-inventory.instance.view","ui-invoice.invoice.view","ui-orders.acq.unit.assignment.assign","ui-orders.order-lines.create","ui-orders.order.create","ui-orders.order-lines.delete","ui-orders.order-lines.edit","ui-orders.order.edit","ui-orders.order.delete","ui-orders.order.reopen","ui-orders.order.unopen","ui-orders.order-lines.view","ui-orders.order.view","ui-organizations.creds.view","ui-organizations.view","ui-receiving.view","ui-requests.view","ui-users.viewperms","ui-users.viewproxies","ui-users.viewuserservicepoints","ui-users.view","ui-users.loans.view","ui-users.requests.all","ui-eholdings.package-title.select-unselect"],
+  "mutable" : true,
+  "visible" : true
+
+}
+EndOfPermission
+
+IFS='' read -r -d '' acq_staff << EndOfPermission
+
+{
+  "permissionName" : "acq-staff",
+  "displayName" : "acq-staff ",
+  "id" : "8e1a5763-a787-4cb7-8269-3af9a1cb6ae3",
+  "tags" : [ ],
+  "subPermissions" : ["ui-agreements.agreements.edit","ui-agreements.resources.edit","ui-agreements.agreements.view","ui-agreements.resources.view","ui-finance.acq.unit.assignment.assign","ui-finance.fiscal-year.view","ui-finance.fund-budget.view","ui-finance.group.view","ui-finance.ledger.view","ui-finance.fiscal-year.edit","ui-finance.fund-budget.edit","ui-finance.group.edit","ui-finance.ledger.edit","ui-finance.fiscal-year.create","ui-finance.fund-budget.create","ui-finance.group.create","ui-finance.ledger.create","ui-plugin-find-agreement.search","ui-inventory.items.mark-items-withdrawn","ui-inventory.holdings.move","ui-inventory.item.move","ui-inventory.instance.view-staff-suppressed-records","ui-inventory.instance.view","ui-inventory.holdings.create","ui-inventory.instance.create","ui-inventory.item.create","ui-inventory.holdings.edit","ui-inventory.instance.edit","ui-inventory.item.edit","ui-inventory.item.markasmissing","ui-invoice.acq.unit.assignment.assign","ui-invoice.batchVoucher.download","ui-invoice.invoice.create","ui-invoice.invoice.delete","ui-orders.acq.unit.assignment.assign","ui-orders.order-lines.create","ui-orders.order.create","ui-orders.order-lines.delete","ui-orders.order-lines.edit","ui-orders.order.edit","ui-orders.order.delete","ui-orders.order.reopen","ui-orders.order.unopen","ui-orders.order-lines.view","ui-orders.order.view","ui-organizations.acqUnits.assign","ui-organizations.creds.view","ui-organizations.creds.manage","ui-organizations.view","ui-organizations.edit","ui-organizations.create","ui-receiving.view","ui-receiving.edit","ui-receiving.create","ui-requests.moveRequest","ui-requests.reorderQueue","ui-requests.view","ui-requests.create","ui-requests.edit","ui-users.edituserservicepoints","ui-users.create","ui-users.feesfines.actions.all","ui-users.patron_blocks","ui-users.editproxies","ui-users.edit","ui-users.viewperms","ui-users.viewproxies","ui-users.viewuserservicepoints","ui-users.view","ui-users.reset.password","ui-users.loans.claim-item-returned","ui-users.loans.declare-item-lost","ui-users.loans.declare-claimed-returned-item-as-missing","ui-users.loans.renew-override","ui-users.loans.renew","ui-users.loans.view","ui-users.loans.all","ui-users.requests.all","ui-users.requests.all","ui-eholdings.titles-packages.create-delete","ui-eholdings.records.edit","ui-eholdings.package-title.select-unselect"],
+  "mutable" : true,
+  "visible" : true
+
+}
+EndOfPermission
+
+IFS='' read -r -d '' cataloger << EndOfPermission
+
+{
+  "permissionName" : "cataloger",
+  "displayName" : "cataloger ",
+  "id" : "1770c14e-0bb2-408e-81ab-47e2145bad77",
+  "tags" : [ ],
+  "subPermissions" : ["ui-inventory.holdings.move","ui-inventory.item.move","ui-inventory.instance.edit","ui-inventory.holdings.delete","ui-inventory.item.delete","ui-inventory.item.markasmissing","ui-inventory.settings.ill-policies","ui-inventory.settings.electronic-access-relationships","ui-inventory.settings.alternative-title-types","ui-inventory.settings.call-number-types","ui-inventory.settings.classification-types","ui-inventory.settings.contributor-types","ui-inventory.settings.instance-formats","ui-inventory.settings.holdings-note-types","ui-inventory.settings.holdings-types","ui-inventory.settings.instance-note-types","ui-inventory.settings.instance-statuses","ui-inventory.settings.item-note-types","ui-inventory.settings.loantypes","ui-inventory.settings.modes-of-issuance","ui-inventory.settings.instance-types","ui-inventory.settings.materialtypes","ui-inventory.settings.nature-of-content-terms","ui-inventory.settings.identifier-types","ui-inventory.settings.statistical-code-types","ui-inventory.settings.statistical-codes","ui-inventory.settings.list.view","ui-data-export.settings.enabled","settings.data-import.enabled","ui-quick-marc.quick-marc-editor.all","ui-quick-marc.quick-marc-editor.duplicate"],
+  "mutable" : true,
+  "visible" : true
+
+}
+EndOfPermission
+
+IFS='' read -r -d '' checkin_all << EndOfPermission
+
+{
+  "permissionName" : "checkin-all",
+  "displayName" : "checkin-all ",
+  "id" : "b0e3d42d-5c4e-4adc-8143-6da3161cc43d",
+  "tags" : [ ],
+  "subPermissions" : ["ui-checkin.all"],
+  "mutable" : true,
+  "visible" : true
+
+}
+EndOfPermission
+
+IFS='' read -r -d '' checkout_all << EndOfPermission
+
+{
+  "permissionName" : "checkout-all",
+  "displayName" : "checkout-all ",
+  "id" : "96ac18aa-b072-4c6b-ae55-b592b9166b68",
+  "tags" : [ ],
+  "subPermissions" : ["ui-checkout.all"],
+  "mutable" : true,
+  "visible" : true
+
+}
+EndOfPermission
+
+IFS='' read -r -d '' circ_admin << EndOfPermission
+
+{
+  "permissionName" : "circ-admin",
+  "displayName" : "circ-admin ",
+  "id" : "1f93a9f1-df53-49f5-95f7-06d194353a19",
+  "tags" : [ ],
+  "subPermissions" : ["ui-checkin.all","ui-checkout.all","ui-plugin-create-inventory-records.create","ui-users.feefineactions","ui-inventory.instance.view","ui-inventory.item.markasmissing","ui-notes.item.assign-unassign","ui-notes.item.create","ui-notes.item.delete","ui-notes.item.edit","ui-notes.item.view","ui-requests.all","ui-calendar.edit","ui-calendar.all","ui-calendar.view","ui-circulation.settings.cancellation-reasons","ui-circulation.settings.circulation-rules","ui-circulation.settings.fixed-due-date-schedules","ui-circulation.settings.loan-policies","ui-circulation.settings.lost-item-fees-policies","ui-circulation.settings.notice-policies","ui-circulation.settings.other-settings","ui-circulation.settings.overdue-fines-policies","ui-circulation.settings.notice-templates","ui-circulation.settings.request-policies","ui-circulation.settings.staff-slips","ui-circulation.settings.loan-history","ui-courses.maintain-settings","ui-users.settings.feefines.all","ui-tags.view","ui-tags.all","ui-users.editperms","ui-users.edituserservicepoints","ui-users.create","ui-users.feesfines.actions.all","ui-users.patron_blocks","ui-users.editproxies","ui-users.edit","ui-users.viewperms","ui-users.viewproxies","ui-users.viewuserservicepoints","ui-users.view","ui-users.reset.password","ui-users.loans.claim-item-returned","ui-users.loans.declare-item-lost","ui-users.loans.declare-claimed-returned-item-as-missing","ui-users.loans.renew-override","ui-users.loans.renew","ui-users.loans.view","ui-users.requests.all"],
+  "mutable" : true,
+  "visible" : true
+
+}
+EndOfPermission
+
+IFS='' read -r -d '' circ_manager << EndOfPermission
+
+{
+  "permissionName" : "circ-manager",
+  "displayName" : "circ-manager ",
+  "id" : "987a1f18-9bdb-400e-8ea3-9b0b5315af9a",
+  "tags" : [ ],
+  "subPermissions" : ["ui-checkin.all","ui-checkout.all","ui-plugin-create-inventory-records.create","ui-users.feefineactions","ui-inventory.instance.view","ui-inventory.item.markasmissing","ui-notes.item.assign-unassign","ui-notes.item.create","ui-notes.item.delete","ui-notes.item.edit","ui-notes.item.view","ui-requests.all","ui-tags.view","ui-tags.all","ui-users.editperms","ui-users.edituserservicepoints","ui-users.create","ui-users.feesfines.actions.all","ui-users.patron_blocks","ui-users.editproxies","ui-users.edit","ui-users.viewperms","ui-users.viewproxies","ui-users.viewuserservicepoints","ui-users.view","ui-users.reset.password","ui-users.loans.claim-item-returned","ui-users.loans.declare-item-lost","ui-users.loans.declare-claimed-returned-item-as-missing","ui-users.loans.renew-override","ui-users.loans.renew","ui-users.loans.view","ui-users.requests.all"],
+  "mutable" : true,
+  "visible" : true
+
+}
+EndOfPermission
+
+IFS='' read -r -d '' circ_observer << EndOfPermission
+
+{
+  "permissionName" : "circ-observer",
+  "displayName" : "circ-observer ",
+  "id" : "2a1e357c-12e3-4d16-a7b6-09f93ccd7672",
+  "tags" : [ ],
+  "subPermissions" : ["ui-checkin.all","ui-checkout.circulation","ui-inventory.instance.view","ui-notes.item.view","ui-users.viewproxies","ui-users.viewuserservicepoints","ui-users.view","ui-users.loans.view","ui-users.requests.all"],
+  "mutable" : true,
+  "visible" : true
+
+}
+EndOfPermission
+
+IFS='' read -r -d '' circ_staff << EndOfPermission
+
+{
+  "permissionName" : "circ-staff",
+  "displayName" : "circ-staff ",
+  "id" : "dfd04823-64fc-44b4-9242-675f3c304a4f",
+  "tags" : [ ],
+  "subPermissions" : ["ui-checkin.all","ui-checkout.all","ui-plugin-create-inventory-records.create","ui-inventory.instance.view","ui-inventory.item.markasmissing","ui-notes.item.assign-unassign","ui-notes.item.create","ui-notes.item.delete","ui-notes.item.edit","ui-notes.item.view","ui-requests.all","ui-tags.view","ui-tags.all","ui-users.editperms","ui-users.edituserservicepoints","ui-users.create","ui-users.feesfines.actions.all","ui-users.patron_blocks","ui-users.editproxies","ui-users.edit","ui-users.viewperms","ui-users.viewproxies","ui-users.viewuserservicepoints","ui-users.view","ui-users.reset.password","ui-users.loans.claim-item-returned","ui-users.loans.declare-item-lost","ui-users.loans.declare-claimed-returned-item-as-missing","ui-users.loans.renew-override","ui-users.loans.renew","ui-users.loans.view"],
+  "mutable" : true,
+  "visible" : true
+
+}
+EndOfPermission
+
+IFS='' read -r -d '' circ_student << EndOfPermission
+
+{
+  "permissionName" : "circ-student",
+  "displayName" : "circ-student ",
+  "id" : "e3e73ae0-8965-4409-96b7-e1092108d65e",
+  "tags" : [ ],
+  "subPermissions" : ["ui-checkin.all","ui-checkout.circulation","ui-plugin-create-inventory-records.create","ui-inventory.instance.view","ui-notes.item.assign-unassign","ui-notes.item.create","ui-notes.item.view","ui-requests.create","ui-tags.view","ui-users.viewperms","ui-users.viewproxies","ui-users.viewuserservicepoints","ui-users.view","ui-users.loans.renew","ui-users.loans.view","ui-users.requests.all"],
+  "mutable" : true,
+  "visible" : true
+
+}
+EndOfPermission
+
+IFS='' read -r -d '' copy_cataloger << EndOfPermission
+
+{
+  "permissionName" : "copy-cataloger",
+  "displayName" : "copy-cataloger ",
+  "id" : "e7a0c148-66aa-480f-b7f6-08bc892a8d5d",
+  "tags" : [ ],
+  "subPermissions" : ["ui-inventory.items.mark-items-withdrawn","ui-inventory.holdings.move","ui-inventory.item.move","ui-inventory.instance.edit","ui-inventory.holdings.delete","ui-inventory.item.delete","ui-inventory.item.markasmissing","ui-inventory.settings.list.view","ui-data-export.settings.enabled","settings.data-import.enabled","ui-data-export.app.enabled","ui-quick-marc.quick-marc-editor.all"],
+  "mutable" : true,
+  "visible" : true
+
+}
+EndOfPermission
+
+IFS='' read -r -d '' data_export_admin << EndOfPermission
+
+{
+  "permissionName" : "data-export-admin",
+  "displayName" : "data-export-admin ",
+  "id" : "d97c1c1e-8b56-4c0e-a35b-cc127b23c48d",
+  "tags" : [ ],
+  "subPermissions" : ["ui-data-export.settings.enabled"],
+  "mutable" : true,
+  "visible" : true
+
+}
+EndOfPermission
+
+IFS='' read -r -d '' data_export << EndOfPermission
+
+{
+  "permissionName" : "data-export",
+  "displayName" : "data-export ",
+  "id" : "108922fc-085c-4b13-9aef-2d82bd3592de",
+  "tags" : [ ],
+  "subPermissions" : ["ui-data-export.app.enabled"],
+  "mutable" : true,
+  "visible" : true
+
+}
+EndOfPermission
+
+IFS='' read -r -d '' data_import << EndOfPermission
+
+{
+  "permissionName" : "data-import",
+  "displayName" : "data-import ",
+  "id" : "2eb73697-25f7-4dd9-ac32-7db71ccd4f2e",
+  "tags" : [ ],
+  "subPermissions" : ["ui-inventory.all-permissions.TEMPORARY","ui-inventory.settings.list.view","settings.data-import.enabled","module.data-import.enabled","ui-invoice.acq.unit.assignment.assign","ui-invoice.invoice.create","ui-invoice.invoice.delete","ui-invoice.settings.all"],
+  "mutable" : true,
+  "visible" : true
+
+}
+EndOfPermission
+
+IFS='' read -r -d '' erm_admin << EndOfPermission
+
+{
+  "permissionName" : "erm-admin",
+  "displayName" : "erm-admin ",
+  "id" : "4bbcccd5-24c2-4046-8121-a350c8fdf855",
+  "tags" : [ ],
+  "subPermissions" : ["ui-agreements.agreements.delete","ui-agreements.agreements.edit","ui-agreements.resources.edit","ui-agreements.platforms.edit","ui-agreements.agreements.file.download","ui-agreements.agreements.view","ui-agreements.resources.view","ui-agreements.platforms.view","ui-dashboard.dashboards.manage","ui-eholdings.titles-packages.create-delete","ui-eholdings.records.edit","ui-eholdings.package-title.select-unselect","ui-eholdings.costperuse.view","ui-erm-comparisons.jobs.edit","ui-erm-comparisons.jobs.delete","ui-erm-comparisons.jobs.view","ui-plugin-find-agreement.search","ui-plugin-find-eresource.search","ui-plugin-find-license.search","ui-licenses.licenses.view","ui-licenses.licenses.edit","ui-licenses.licenses.file.download","ui-licenses.licenses.delete","ui-local-kb-admin.jobs.edit","ui-local-kb-admin.jobs.delete","ui-local-kb-admin.proxyServer.manage","ui-local-kb-admin.kbs.manage","ui-local-kb-admin.jobs.view","ui-notes.item.assign-unassign","ui-notes.item.create","ui-notes.item.delete","ui-notes.item.edit","ui-notes.item.view","ui-orders.acq.unit.assignment.assign","ui-orders.order-lines.create","ui-orders.order.create","ui-orders.order-lines.delete","ui-orders.order-lines.edit","ui-orders.order.edit","ui-orders.acq.unit.assignment.manage","ui-orders.order.delete","ui-orders.order.reopen","ui-orders.order.unopen","ui-orders.order-lines.view","ui-orders.order.view","ui-organizations.acqUnits.assign","ui-organizations.creds.view","ui-organizations.creds.manage","ui-organizations.acqUnits.manage","ui-organizations.view","ui-organizations.edit","ui-organizations.create","ui-organizations.delete","ui-agreements.generalSettings.manage","ui-agreements.supplementaryProperties.manage","ui-agreements.picklists.manage","ui-eholdings.settings.assignedUser","ui-eholdings.settings.kb","ui-eholdings.settings.kb.delete","ui-eholdings.settings.root-proxy","ui-eholdings.settings.enabled","ui-eholdings.settings.access-types.create-edit","ui-eholdings.settings.access-types.all","ui-eholdings.settings.custom-labels.all","ui-eholdings.settings.access-types.view","ui-eholdings.settings.usage-consolidation.create-edit","ui-licenses.picklists.manage","ui-licenses.terms.manage","ui-users.editperms","ui-users.edituserservicepoints","ui-users.create","ui-users.feesfines.actions.all","ui-users.patron_blocks","ui-users.editproxies","ui-users.edit","ui-users.viewperms","ui-users.viewproxies","ui-users.viewuserservicepoints","ui-users.view","ui-users.reset.password"],
+  "mutable" : true,
+  "visible" : true
+
+}
+EndOfPermission
+
+IFS='' read -r -d '' erm_manager << EndOfPermission
+
+{
+  "permissionName" : "erm-manager",
+  "displayName" : "erm-manager ",
+  "id" : "dbf1d575-63c8-4e16-8e5c-c5d1766da05b",
+  "tags" : [ ],
+  "subPermissions" : ["ui-agreements.agreements.delete","ui-agreements.agreements.edit","ui-agreements.resources.edit","ui-agreements.platforms.edit","ui-agreements.agreements.file.download","ui-dashboard.dashboards.manage","ui-eholdings.titles-packages.create-delete","ui-eholdings.records.edit","ui-eholdings.package-title.select-unselect","ui-eholdings.costperuse.view","ui-erm-comparisons.jobs.edit","ui-erm-comparisons.jobs.delete","ui-plugin-find-agreement.search","ui-plugin-find-eresource.search","ui-plugin-find-license.search","ui-licenses.licenses.edit","ui-licenses.licenses.file.download","ui-licenses.licenses.delete","ui-local-kb-admin.jobs.edit","ui-local-kb-admin.jobs.delete","ui-notes.item.assign-unassign","ui-notes.item.create","ui-notes.item.delete","ui-notes.item.edit","ui-notes.item.view","ui-orders.order-lines.create","ui-orders.order.create","ui-orders.order-lines.delete","ui-orders.order-lines.edit","ui-orders.order.edit","ui-orders.order.delete","ui-orders.order.reopen","ui-orders.order.unopen","ui-orders.order-lines.view","ui-orders.order.view","ui-organizations.creds.manage","ui-organizations.create","ui-organizations.delete","ui-users.view"],
+  "mutable" : true,
+  "visible" : true
+
+}
+EndOfPermission
+
+IFS='' read -r -d '' erm_observer << EndOfPermission
+
+{
+  "permissionName" : "erm-observer",
+  "displayName" : "erm-observer ",
+  "id" : "16b99d5d-c264-4ef7-8d2f-e60809007755",
+  "tags" : [ ],
+  "subPermissions" : ["ui-agreements.agreements.view","ui-agreements.resources.view","ui-agreements.platforms.view","ui-dashboard.dashboards.manage","ui-eholdings.app.enabled","ui-eholdings.costperuse.view","ui-erm-comparisons.jobs.view","ui-licenses.licenses.view","ui-local-kb-admin.jobs.view","ui-notes.item.view","ui-orders.order-lines.view","ui-organizations.view","ui-users.view"],
+  "mutable" : true,
+  "visible" : true
+
+}
+EndOfPermission
+
+IFS='' read -r -d '' erm_staff << EndOfPermission
+
+{
+  "permissionName" : "erm-staff",
+  "displayName" : "erm-staff ",
+  "id" : "679f577d-15c3-453e-a7c0-91d3883fca95",
+  "tags" : [ ],
+  "subPermissions" : ["ui-agreements.agreements.edit","ui-agreements.resources.edit","ui-agreements.platforms.edit","ui-agreements.agreements.file.download","ui-dashboard.dashboards.manage","ui-eholdings.records.edit","ui-eholdings.package-title.select-unselect","ui-eholdings.costperuse.view","ui-erm-comparisons.jobs.edit","ui-plugin-find-agreement.search","ui-plugin-find-eresource.search","ui-plugin-find-license.search","ui-licenses.licenses.edit","ui-licenses.licenses.file.download","ui-local-kb-admin.jobs.edit","ui-notes.item.assign-unassign","ui-notes.item.create","ui-notes.item.delete","ui-notes.item.edit","ui-notes.item.view","ui-orders.order-lines.view","ui-orders.order.view","ui-organizations.creds.view","ui-organizations.create","ui-users.view"],
+  "mutable" : true,
+  "visible" : true
+
+}
+EndOfPermission
+
+
+IFS='' read -r -d '' technical_service_staff << EndOfPermission
+
+{
+  "permissionName" : "technical-service-staff",
+  "displayName" : "technical-service-staff ",
+  "id" : "da65b709-8f76-4bba-b6a9-6938af141478",
+  "tags" : [ ],
+  "subPermissions" : ["ui-inventory.items.mark-items-withdrawn","ui-inventory.holdings.move","ui-inventory.item.move","ui-inventory.instance.edit","ui-inventory.holdings.delete","ui-inventory.item.delete","ui-inventory.item.markasmissing","ui-inventory.settings.hrid-handling","ui-inventory.settings.ill-policies","ui-inventory.settings.instance-note-types","ui-inventory.settings.electronic-access-relationships","ui-inventory.settings.alternative-title-types","ui-inventory.settings.call-number-types","ui-inventory.settings.classification-types","ui-inventory.settings.contributor-types","ui-inventory.settings.instance-formats","ui-inventory.settings.holdings-note-types","ui-inventory.settings.holdings-types","ui-inventory.settings.instance-statuses","ui-inventory.settings.item-note-types","ui-inventory.settings.loantypes","ui-inventory.settings.modes-of-issuance","ui-inventory.settings.instance-types","ui-inventory.settings.materialtypes","ui-inventory.settings.nature-of-content-terms","ui-inventory.settings.identifier-types","ui-inventory.settings.statistical-code-types","ui-inventory.settings.statistical-codes","ui-inventory.settings.list.view","ui-data-export.settings.enabled","settings.data-import.enabled","ui-data-export.app.enabled","module.data-import.enabled","ui-quick-marc.quick-marc-editor.all","ui-quick-marc.quick-marc-editor.duplicate"],
+  "mutable" : true,
+  "visible" : true
+
+}
+EndOfPermission
+
+
+IFS='' read -r -d '' metadata_admin << EndOfPermission
+
+{
+  "permissionName" : "metadata-admin",
+  "displayName" : "metadata-admin ",
+  "id" : "9bed4640-897d-40db-a6d3-bf0c38d6493a",
+  "tags" : [ ],
+  "subPermissions" : ["ui-inventory.holdings.move","ui-inventory.item.move","ui-inventory.instance.edit","ui-inventory.holdings.delete","ui-inventory.item.delete","ui-inventory.item.markasmissing","ui-inventory.settings.hrid-handling","ui-inventory.settings.ill-policies","ui-inventory.settings.instance-note-types","ui-inventory.settings.electronic-access-relationships","ui-inventory.settings.alternative-title-types","ui-inventory.settings.call-number-types","ui-inventory.settings.classification-types","ui-inventory.settings.contributor-types","ui-inventory.settings.instance-formats","ui-inventory.settings.holdings-note-types","ui-inventory.settings.holdings-types","ui-inventory.settings.instance-statuses","ui-inventory.settings.item-note-types","ui-inventory.settings.loantypes","ui-inventory.settings.modes-of-issuance","ui-inventory.settings.instance-types","ui-inventory.settings.materialtypes","ui-inventory.settings.nature-of-content-terms","ui-inventory.settings.identifier-types","ui-inventory.settings.statistical-code-types","ui-inventory.settings.statistical-codes","ui-inventory.settings.list.view","ui-data-export.settings.enabled","settings.data-import.enabled","ui-data-export.app.enabled","ui-quick-marc.quick-marc-editor.all","ui-quick-marc.quick-marc-editor.duplicate"],
+  "mutable" : true,
+  "visible" : true
+
+}
+EndOfPermission
+
+IFS='' read -r -d '' quick_marc_all << EndOfPermission
+
+{
+  "permissionName" : "quick-marc-all",
+  "displayName" : "quick-marc-all ",
+  "id" : "1655ccbd-6c37-4d84-8e67-a84b98a1f016",
+  "tags" : [ ],
+  "subPermissions" : ["ui-quick-marc.quick-marc-editor.all","ui-quick-marc.quick-marc-editor.duplicate"],
+  "mutable" : true,
+  "visible" : true
+
+}
+EndOfPermission
+
+IFS='' read -r -d '' user_basic_view << EndOfPermission
+
+{
+  "permissionName" : "user-basic-view",
+  "displayName" : "user-basic-view ",
+  "id" : "860f8c42-77f5-4a0b-9b21-b8ad808a5264",
+  "tags" : [ ],
+  "subPermissions" : ["ui-users.view"],
+  "mutable" : true,
+  "visible" : true
+
+}
+EndOfPermission
+
+
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "X-Okapi-Tenant: " -H "x-okapi-token: "${okapi_token} -d "${acq_admin}" "${okapi_url}/perms/permissions"
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "X-Okapi-Tenant: " -H "x-okapi-token: "${okapi_token} -d "${acq_manager}" "${okapi_url}/perms/permissions"
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "X-Okapi-Tenant: " -H "x-okapi-token: "${okapi_token} -d "${acq_observer}" "${okapi_url}/perms/permissions"
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "X-Okapi-Tenant: " -H "x-okapi-token: "${okapi_token} -d "${acq_staff}" "${okapi_url}/perms/permissions"
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "X-Okapi-Tenant: " -H "x-okapi-token: "${okapi_token} -d "${cataloger}" "${okapi_url}/perms/permissions"
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "X-Okapi-Tenant: " -H "x-okapi-token: "${okapi_token} -d "${checkin_all}" "${okapi_url}/perms/permissions"
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "X-Okapi-Tenant: " -H "x-okapi-token: "${okapi_token} -d "${checkout_all}" "${okapi_url}/perms/permissions"
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "X-Okapi-Tenant: " -H "x-okapi-token: "${okapi_token} -d "${circ_admin}" "${okapi_url}/perms/permissions"
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "X-Okapi-Tenant: " -H "x-okapi-token: "${okapi_token} -d "${circ_manager}" "${okapi_url}/perms/permissions"
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "X-Okapi-Tenant: " -H "x-okapi-token: "${okapi_token} -d "${circ_observer}" "${okapi_url}/perms/permissions"
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "X-Okapi-Tenant: " -H "x-okapi-token: "${okapi_token} -d "${circ_staff}" "${okapi_url}/perms/permissions"
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "X-Okapi-Tenant: " -H "x-okapi-token: "${okapi_token} -d "${circ_student}" "${okapi_url}/perms/permissions"
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "X-Okapi-Tenant: " -H "x-okapi-token: "${okapi_token} -d "${copy_cataloger}" "${okapi_url}/perms/permissions"
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "X-Okapi-Tenant: " -H "x-okapi-token: "${okapi_token} -d "${data_export}" "${okapi_url}/perms/permissions"
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "X-Okapi-Tenant: " -H "x-okapi-token: "${okapi_token} -d "${data_export_admin}" "${okapi_url}/perms/permissions"
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "X-Okapi-Tenant: " -H "x-okapi-token: "${okapi_token} -d "${data_import}" "${okapi_url}/perms/permissions"
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "X-Okapi-Tenant: " -H "x-okapi-token: "${okapi_token} -d "${erm_admin}" "${okapi_url}/perms/permissions"
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "X-Okapi-Tenant: " -H "x-okapi-token: "${okapi_token} -d "${erm_manager}" "${okapi_url}/perms/permissions"
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "X-Okapi-Tenant: " -H "x-okapi-token: "${okapi_token} -d "${erm_observer}" "${okapi_url}/perms/permissions"
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "X-Okapi-Tenant: " -H "x-okapi-token: "${okapi_token} -d "${erm_staff}" "${okapi_url}/perms/permissions"
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "X-Okapi-Tenant: " -H "x-okapi-token: "${okapi_token} -d "${metadata_admin}" "${okapi_url}/perms/permissions"
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "X-Okapi-Tenant: " -H "x-okapi-token: "${okapi_token} -d "${quick_marc_all}" "${okapi_url}/perms/permissions"
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "X-Okapi-Tenant: " -H "x-okapi-token: "${okapi_token} -d "${technical_service_staff}" "${okapi_url}/perms/permissions"
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "X-Okapi-Tenant: " -H "x-okapi-token: "${okapi_token} -d "${user_basic_view}" "${okapi_url}/perms/permissions"

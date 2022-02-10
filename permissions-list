@@ -8,6 +8,6 @@ apicall=$(curl -s -w '\n' -X GET -D \
   -H "Accept: application/json" \
   -H "X-Okapi-Tenant: ${tenant}" \
   -H "x-okapi-token: ${okapi_token}" \
-  "${okapi_url}/perms/permissions?expanded=true&length=100000")
+  "${okapi_url}/perms/permissions?expandSubs=true&query=(mutable==true)&length=100000")
 
 echo $apicall | jq .

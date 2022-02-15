@@ -12,16 +12,26 @@ else
 	barcode=1
 fi
 
-apicall=$(curl -s -w '\n' -X GET -D \
-  -H "Accept: application/json" \
-  -H "X-Okapi-Tenant: ${tenant}" \
-  -H "x-okapi-token: ${okapi_token}" \
-  "${endpoint}")
-
-if [[ ${barcode} -eq 1 ]];then
-	echo $apicall |jq '.items[0]'
+if [[ $search != "" ]];then
+	apicall=$(curl -s -w '\n' -X GET -D \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  "${endpoint}")
+	
+	if [[ ${barcode} -eq 1 ]];then
+		echo $apicall |jq '.items[0]'
+	else
+		echo $apicall |jq '.'
+	fi
 else
-	echo $apicall |jq '.'
-fi
+	apicall=$(curl -s -w '\n' -X GET -D \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  "${okapi_url}/item-storage/items?limit=0")
 
+	echo ${apicall}
+fi
+	
 

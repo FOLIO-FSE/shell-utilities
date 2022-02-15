@@ -5,28 +5,38 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-instance_uuid="$1"
+instance_uuid=$(sed 's/[^a-f0-9\-]//g' <<< "$1")
 
-apicall=$(curl -s -w '\n' -X GET -D \
-  -H "Accept: application/json" \
-  -H "X-Okapi-Tenant: ${tenant}" \
-  -H "x-okapi-token: ${okapi_token}" \
-  "${okapi_url}/instance-storage/instances/${instance_uuid}")
-echo $apicall 
+if [[ ${instance_uuid} != "" ]];then
+	
+	apicall=$(curl -s -w '\n' -X GET -D \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  "${okapi_url}/instance-storage/instances/${instance_uuid}")
+	echo $apicall 
+	
+	apicall=$(curl -s -w '\n' -X GET -D \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  "${okapi_url}/holdings-storage/holdings?limit=10000&query=instanceId==${instance_uuid}")
+	echo $apicall 
+	
+	apicall=$(curl -s -w '\n' -X GET -D \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  "${okapi_url}/inventory/items?limit=10000&query=instance.id==${instance_uuid}")
+	
+	echo $apicall 
 
-apicall=$(curl -s -w '\n' -X GET -D \
-  -H "Accept: application/json" \
-  -H "X-Okapi-Tenant: ${tenant}" \
-  -H "x-okapi-token: ${okapi_token}" \
-  "${okapi_url}/holdings-storage/holdings?limit=10000&query=instanceId==${instance_uuid}")
-echo $apicall 
-
-apicall=$(curl -s -w '\n' -X GET -D \
-  -H "Accept: application/json" \
-  -H "X-Okapi-Tenant: ${tenant}" \
-  -H "x-okapi-token: ${okapi_token}" \
-  "${okapi_url}/inventory/items?limit=10000&query=instance.id==${instance_uuid}")
-
-echo $apicall 
-
+else
+	apicall=$(curl -s -w '\n' -X GET -D \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  "${okapi_url}/instance-storage/instances?limit=0")
+	echo $apicall
+fi
 

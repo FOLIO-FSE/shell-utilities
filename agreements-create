@@ -1,0 +1,97 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+declare -A roles
+rm -f agreement.log
+
+roles["Content Provider"]="content_provider"
+roles["Vendor"]="vendor"
+roles["Subscription Agent"]="subscription_agent"
+
+create_agreement() {
+
+IFS='' read -r -d '' agreement << EndOfAgreement
+{
+  "periods": [
+    {
+      "startDate": "${start_date}",
+      "endDate": "${end_date}",
+      "note": "${period_note}"
+    }
+  ],
+ "name" : "${name}",
+ "agreementStatus" : "active",
+ "orgs" : [ ],
+ "alternateNames" : [ ],
+ "outwardRelationships" : [ ],
+ "inwardRelationships" : [ ],
+ "id" : "${uuid}"
+} 
+EndOfAgreement
+
+echo "${agreement}"
+
+}
+
+
+add_organization() {
+	apicall=$(curl -G -s -w '\n' -X GET \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  --data-urlencode "query=code=${org}" \
+	  "${okapi_url}/organizations/organizations")
+
+	org_uuid=$(echo ${apicall}  |jq -r .organizations[0].id)
+	org_name=$(echo ${apicall}  |jq -r .organizations[0].name)
+
+	if [[ ${#org_uuid} == "36" ]];then
+		agreement=$(echo "${agreement}" | jq ".orgs += [{ \"_delete\" : false, \"role\" : \"${role}\", \"org\" : { \"name\" : \"${org_name}\", \"orgsUuid\" : \"${org_uuid}\"} }]")
+	fi
+
+	echo "${agreement}"
+}
+
+
+
+while IFS=$'\n' read -r line;do 
+	line=$(echo "${line}" |tr "\t" "^")
+
+	IFS='^' read -r name altname org1 org1role org2 org2role start_date end_date period_note<<< "${line}"
+	# agreement uuid -- needs to be global
+
+	echo "Processing $name"
+	uuid=$(uuidgen)
+	agreement=$(create_agreement)
+
+	if [[ ${altname} != "" ]]; then
+		agreement=$(echo "${agreement}" | jq ".alternateNames += [{ \"_delete\" : false, \"name\" : \"${altname}\" }]")
+	fi
+
+	org=""
+	role=""
+	org1role="Subscription Agent"
+
+	if [[ ${org1} != "" ]]; then
+		org="${org1}"
+		role="${roles[${org1role}]}"
+		agreement=$(add_organization)
+	fi
+	if [[ ${org2} != "" ]]; then
+		org="${org2}"
+		role="${roles[${org2role}]}"
+		agreement=$(add_organization)
+	fi
+
+	
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement}" "${okapi_url}/erm/sas")
+
+echo "${apicall}" >> agreement.log
+
+
+	#echo "Processing $name -- record $counter"
+	echo "${apicall}"
+	counter=$((counter + 1))
+done < agreements.tsv
+

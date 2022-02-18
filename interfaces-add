@@ -1,0 +1,69 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+add_interface() {
+
+IFS='' read -r -d '' credentials << EndOfCredentials
+{
+  "username": ${user},
+  "password": ${password},
+  "interfaceId": "${interface_id}"
+}
+EndOfCredentials
+
+
+IFS='' read -r -d '' interface << EndOfInterface
+{
+  "type": [
+    "Admin"
+  ],
+  "name": "${org}",
+  "uri": ${uri},
+  "notes": ${notes},
+  "id": "${interface_id}"
+}
+EndOfInterface
+
+apiinterface=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${interface}" "${okapi_url}/organizations-storage/interfaces")
+
+apicreds=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${credentials}" "${okapi_url}/organizations-storage/interfaces/${interface_id}/credentials")
+
+}
+
+while IFS=$'\t' read -r org uri user password notes;do
+	uri=$(echo ${uri} | jq -aRs .)
+	user=$(echo ${user} | jq -aRs .)
+	password=$(echo ${password} | jq -aRs .)
+	notes=$(echo ${notes} | jq -aRs .)
+
+	interface_id=$(uuidgen)
+	
+	apicall=$(curl -G -s -w '\n' -X GET \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  --data-urlencode "query=code=${org}" \
+	  "${okapi_url}/organizations/organizations")
+	
+	
+	organization=$(echo $apicall |jq .organizations[])
+	org_uuid=$(echo ${organization} |jq -r .id)
+	
+	add_interface
+	
+	updated_org=$(echo ${organization} | jq ".interfaces += [ \"${interface_id}\"]")
+	
+	apicall=$(curl --http1.1 -s -w '\n' -X PUT \
+	  -H "Content-type: application/json" \
+	  -H "Accept: text/plain" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  -d "${updated_org}" \
+	  ${okapi_url}/organizations-storage/organizations/${org_uuid})
+
+echo $apiinterface 
+echo $apicredentials 
+echo $apicall 
+
+done < interfaces

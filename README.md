@@ -11,4 +11,4 @@ To get an okapi token, you will first need to run the *auth* script. The *auth* 
 API operations are allowed based on the permissions assigned to the user, so you'll need to make sure you've assigned yourself what you need. If all the permissions you've assigned via the interface are insufficient, you'll need to retrieve your user via the API, generate a token using your administrative users and run the permission-add script.
 
 
-Some scripts here require the jq utility to use.
+Some scripts here require the jq utility to use. A smaller number use namevars which requires bash 4.3 to run

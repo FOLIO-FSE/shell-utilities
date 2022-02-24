@@ -11,6 +11,6 @@ instance_id=$(sed 's/[^a-f0-9\-]//g' <<< $1)
 	  -H "Accept: application/json" \
 	  -H "X-Okapi-Tenant: ${tenant}" \
 	  -H "x-okapi-token: ${okapi_token}" \
-	  "${okapi_url}/change-manager/parsedRecords?instanceId=${instance_id}")
+	  "${okapi_url}/source-storage/source-records/${instance_id}?idType=INSTANCE")
 	echo $apicall 
 	

@@ -3,7 +3,6 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 IFS='' read -r -d '' acq_admin << EndOfPermission
-
 {
   "permissionName" : "acq-admin",
   "displayName" : "acq-admin ",
@@ -12,12 +11,10 @@ IFS='' read -r -d '' acq_admin << EndOfPermission
   "subPermissions" : ["ui-agreements.agreements.delete","ui-agreements.agreements.edit","ui-agreements.resources.edit","ui-agreements.agreements.view","ui-agreements.resources.view","ui-finance.acq.unit.assignment.assign","ui-finance.allocations.create","ui-finance.transfers.create","ui-finance.acq.unit.assignment.manage","ui-finance.fiscal-year.view","ui-finance.fund-budget.view","ui-finance.group.view","ui-finance.ledger.view","ui-finance.fiscal-year.edit","ui-finance.fund-budget.edit","ui-finance.group.edit","ui-finance.ledger.edit","ui-finance.fiscal-year.create","ui-finance.fund-budget.create","ui-finance.group.create","ui-finance.ledger.create","ui-finance.fiscal-year.delete","ui-finance.fund-budget.delete","ui-finance.group.delete","ui-finance.ledger.delete","ui-plugin-find-agreement.search","ui-inventory.all-permissions.TEMPORARY","ui-inventory.items.mark-items-withdrawn","ui-inventory.holdings.move","ui-inventory.item.move","ui-inventory.instance.view-staff-suppressed-records","ui-inventory.instance.view","ui-inventory.holdings.create","ui-inventory.instance.create","ui-inventory.item.create","ui-inventory.holdings.edit","ui-inventory.instance.edit","ui-inventory.item.edit","ui-inventory.holdings.delete","ui-inventory.item.delete","ui-inventory.item.markasmissing","ui-invoice.approve","ui-invoice.acq.unit.assignment.assign","ui-invoice.batchVoucher.download","ui-invoice.acq.unit.assignment.manage","ui-invoice.pay","ui-invoice.invoice.create","ui-invoice.invoice.delete","ui-orders.acq.unit.assignment.assign","ui-orders.order-lines.create","ui-orders.order.create","ui-orders.order-lines.delete","ui-orders.order-lines.edit","ui-orders.order.edit","ui-orders.acq.unit.assignment.manage","ui-orders.order.delete","ui-orders.order.reopen","ui-orders.order.unopen","ui-orders.order-lines.view","ui-orders.order.view","ui-organizations.acqUnits.assign","ui-organizations.creds.view","ui-organizations.creds.manage","ui-organizations.acqUnits.manage","ui-organizations.view","ui-organizations.edit","ui-organizations.create","ui-organizations.delete","ui-receiving.view","ui-receiving.edit","ui-receiving.create","ui-receiving.delete","ui-requests.all","ui-requests.all","ui-requests.moveRequest","ui-requests.reorderQueue","ui-requests.view","ui-requests.create","ui-requests.edit","ui-agreements.generalSettings.manage","ui-agreements.supplementaryProperties.manage","ui-agreements.picklists.manage","ui-finance.settings.all","ui-inventory.settings.hrid-handling","ui-inventory.settings.ill-policies","ui-inventory.settings.electronic-access-relationships","ui-inventory.settings.alternative-title-types","ui-inventory.settings.call-number-types","ui-inventory.settings.classification-types","ui-inventory.settings.contributor-types","ui-inventory.settings.instance-formats","ui-inventory.settings.holdings-note-types","ui-inventory.settings.holdings-types","ui-inventory.settings.instance-note-types","ui-inventory.settings.instance-statuses","ui-inventory.settings.item-note-types","ui-inventory.settings.loantypes","ui-inventory.settings.modes-of-issuance","ui-inventory.settings.instance-types","ui-inventory.settings.materialtypes","ui-inventory.settings.nature-of-content-terms","ui-inventory.settings.identifier-types","ui-inventory.settings.statistical-code-types","ui-inventory.settings.statistical-codes","ui-invoice.settings.all","ui-orders.settings.all","ui-organizations.settings","ui-receiving.settings","ui-users.settings.addresstypes","ui-users.settings.feefines.all","ui-users.settings.comments","ui-users.settings.feefines","ui-users.settings.owners","ui-users.settings.conditions","ui-users.settings.limits","ui-users.settings.usergroups","ui-users.settings.payments","ui-users.settings.permsets","ui-users.settings.permsets","ui-users.settings.refunds","ui-users.settings.transfers","ui-users.settings.transfertypes","ui-users.settings.waives","ui-users.settings.customfields.edit","ui-users.settings.customfields.all","ui-users.settings.customfields.view","ui-developer.settings.passwd","ui-eholdings.settings.kb","ui-eholdings.settings.kb.delete","ui-eholdings.settings.root-proxy","ui-eholdings.settings.enabled","ui-eholdings.settings.access-types.create-edit","ui-eholdings.settings.access-types.all","ui-eholdings.settings.access-types.view","ui-users.editperms","ui-users.edituserservicepoints","ui-users.create","ui-users.feesfines.actions.all","ui-users.patron_blocks","ui-users.editproxies","ui-users.edit","ui-users.viewperms","ui-users.viewproxies","ui-users.viewuserservicepoints","ui-users.view","ui-users.reset.password","ui-users.loans.claim-item-returned","ui-users.loans.declare-item-lost","ui-users.loans.declare-claimed-returned-item-as-missing","ui-users.loans.renew-override","ui-users.loans.renew","ui-users.loans.view","ui-users.loans.all","ui-users.requests.all","ui-users.requests.all","ui-eholdings.titles-packages.create-delete","ui-eholdings.records.edit","ui-eholdings.package-title.select-unselect"],
   "mutable" : true,
   "visible" : true
-
 }
 EndOfPermission
 
 IFS='' read -r -d '' acq_manager << EndOfPermission
-
 {
   "permissionName" : "acq-manager",
   "displayName" : "acq-manager ",
@@ -26,7 +23,6 @@ IFS='' read -r -d '' acq_manager << EndOfPermission
   "subPermissions" : ["ui-agreements.agreements.delete","ui-agreements.agreements.edit","ui-agreements.resources.edit","ui-agreements.agreements.view","ui-agreements.resources.view","ui-finance.acq.unit.assignment.assign","ui-finance.allocations.create","ui-finance.transfers.create","ui-finance.acq.unit.assignment.manage","ui-finance.fiscal-year.view","ui-finance.fund-budget.view","ui-finance.group.view","ui-finance.ledger.view","ui-finance.fiscal-year.edit","ui-finance.fund-budget.edit","ui-finance.group.edit","ui-finance.ledger.edit","ui-finance.fiscal-year.create","ui-finance.fund-budget.create","ui-finance.group.create","ui-finance.ledger.create","ui-finance.fiscal-year.delete","ui-finance.fund-budget.delete","ui-finance.group.delete","ui-finance.ledger.delete","ui-plugin-find-agreement.search","ui-inventory.items.mark-items-withdrawn","ui-inventory.holdings.move","ui-inventory.item.move","ui-inventory.instance.view-staff-suppressed-records","ui-inventory.instance.view","ui-inventory.holdings.create","ui-inventory.instance.create","ui-inventory.item.create","ui-inventory.holdings.edit","ui-inventory.instance.edit","ui-inventory.item.edit","ui-inventory.holdings.delete","ui-inventory.item.delete","ui-inventory.item.markasmissing","ui-invoice.approve","ui-invoice.acq.unit.assignment.assign","ui-invoice.batchVoucher.download","ui-invoice.acq.unit.assignment.manage","ui-invoice.pay","ui-invoice.invoice.create","ui-invoice.invoice.delete","ui-orders.acq.unit.assignment.assign","ui-orders.order-lines.create","ui-orders.order.create","ui-orders.order-lines.delete","ui-orders.order-lines.edit","ui-orders.order.edit","ui-orders.acq.unit.assignment.manage","ui-orders.order.delete","ui-orders.order.reopen","ui-orders.order.unopen","ui-orders.order-lines.view","ui-orders.order.view","ui-organizations.acqUnits.assign","ui-organizations.creds.view","ui-organizations.creds.manage","ui-organizations.acqUnits.manage","ui-organizations.view","ui-organizations.edit","ui-organizations.create","ui-organizations.delete","ui-receiving.view","ui-receiving.edit","ui-receiving.create","ui-receiving.delete","ui-requests.moveRequest","ui-requests.reorderQueue","ui-requests.view","ui-requests.create","ui-requests.edit","ui-users.editperms","ui-users.edituserservicepoints","ui-users.create","ui-users.feesfines.actions.all","ui-users.patron_blocks","ui-users.editproxies","ui-users.edit","ui-users.viewperms","ui-users.viewproxies","ui-users.viewuserservicepoints","ui-users.view","ui-users.reset.password","ui-users.loans.claim-item-returned","ui-users.loans.declare-item-lost","ui-users.loans.declare-claimed-returned-item-as-missing","ui-users.loans.renew-override","ui-users.loans.renew","ui-users.loans.view","ui-users.loans.all","ui-users.requests.all","ui-eholdings.titles-packages.create-delete","ui-eholdings.records.edit","ui-eholdings.package-title.select-unselect"],
   "mutable" : true,
   "visible" : true
-
 }
 
 {
@@ -37,12 +33,10 @@ IFS='' read -r -d '' acq_manager << EndOfPermission
   "subPermissions" : ["ui-agreements.agreements.view","ui-agreements.resources.view","ui-finance.fiscal-year.view","ui-finance.fund-budget.view","ui-finance.group.view","ui-finance.ledger.view","ui-plugin-find-agreement.search","ui-inventory.instance.view-staff-suppressed-records","ui-inventory.instance.view","ui-invoice.invoice.view","ui-orders.acq.unit.assignment.assign","ui-orders.order-lines.create","ui-orders.order.create","ui-orders.order-lines.delete","ui-orders.order-lines.edit","ui-orders.order.edit","ui-orders.order.delete","ui-orders.order.reopen","ui-orders.order.unopen","ui-orders.order-lines.view","ui-orders.order.view","ui-organizations.creds.view","ui-organizations.view","ui-receiving.view","ui-requests.view","ui-users.viewperms","ui-users.viewproxies","ui-users.viewuserservicepoints","ui-users.view","ui-users.loans.view","ui-users.requests.all","ui-eholdings.package-title.select-unselect"],
   "mutable" : true,
   "visible" : true
-
 }
 EndOfPermission
 
 IFS='' read -r -d '' acq_staff << EndOfPermission
-
 {
   "permissionName" : "acq-staff",
   "displayName" : "acq-staff ",
@@ -51,12 +45,10 @@ IFS='' read -r -d '' acq_staff << EndOfPermission
   "subPermissions" : ["ui-agreements.agreements.edit","ui-agreements.resources.edit","ui-agreements.agreements.view","ui-agreements.resources.view","ui-finance.acq.unit.assignment.assign","ui-finance.fiscal-year.view","ui-finance.fund-budget.view","ui-finance.group.view","ui-finance.ledger.view","ui-finance.fiscal-year.edit","ui-finance.fund-budget.edit","ui-finance.group.edit","ui-finance.ledger.edit","ui-finance.fiscal-year.create","ui-finance.fund-budget.create","ui-finance.group.create","ui-finance.ledger.create","ui-plugin-find-agreement.search","ui-inventory.items.mark-items-withdrawn","ui-inventory.holdings.move","ui-inventory.item.move","ui-inventory.instance.view-staff-suppressed-records","ui-inventory.instance.view","ui-inventory.holdings.create","ui-inventory.instance.create","ui-inventory.item.create","ui-inventory.holdings.edit","ui-inventory.instance.edit","ui-inventory.item.edit","ui-inventory.item.markasmissing","ui-invoice.acq.unit.assignment.assign","ui-invoice.batchVoucher.download","ui-invoice.invoice.create","ui-invoice.invoice.delete","ui-orders.acq.unit.assignment.assign","ui-orders.order-lines.create","ui-orders.order.create","ui-orders.order-lines.delete","ui-orders.order-lines.edit","ui-orders.order.edit","ui-orders.order.delete","ui-orders.order.reopen","ui-orders.order.unopen","ui-orders.order-lines.view","ui-orders.order.view","ui-organizations.acqUnits.assign","ui-organizations.creds.view","ui-organizations.creds.manage","ui-organizations.view","ui-organizations.edit","ui-organizations.create","ui-receiving.view","ui-receiving.edit","ui-receiving.create","ui-requests.moveRequest","ui-requests.reorderQueue","ui-requests.view","ui-requests.create","ui-requests.edit","ui-users.edituserservicepoints","ui-users.create","ui-users.feesfines.actions.all","ui-users.patron_blocks","ui-users.editproxies","ui-users.edit","ui-users.viewperms","ui-users.viewproxies","ui-users.viewuserservicepoints","ui-users.view","ui-users.reset.password","ui-users.loans.claim-item-returned","ui-users.loans.declare-item-lost","ui-users.loans.declare-claimed-returned-item-as-missing","ui-users.loans.renew-override","ui-users.loans.renew","ui-users.loans.view","ui-users.loans.all","ui-users.requests.all","ui-users.requests.all","ui-eholdings.titles-packages.create-delete","ui-eholdings.records.edit","ui-eholdings.package-title.select-unselect"],
   "mutable" : true,
   "visible" : true
-
 }
 EndOfPermission
 
 IFS='' read -r -d '' cataloger << EndOfPermission
-
 {
   "permissionName" : "cataloger",
   "displayName" : "cataloger ",
@@ -65,12 +57,10 @@ IFS='' read -r -d '' cataloger << EndOfPermission
   "subPermissions" : ["ui-inventory.holdings.move","ui-inventory.item.move","ui-inventory.instance.edit","ui-inventory.holdings.delete","ui-inventory.item.delete","ui-inventory.item.markasmissing","ui-inventory.settings.ill-policies","ui-inventory.settings.electronic-access-relationships","ui-inventory.settings.alternative-title-types","ui-inventory.settings.call-number-types","ui-inventory.settings.classification-types","ui-inventory.settings.contributor-types","ui-inventory.settings.instance-formats","ui-inventory.settings.holdings-note-types","ui-inventory.settings.holdings-types","ui-inventory.settings.instance-note-types","ui-inventory.settings.instance-statuses","ui-inventory.settings.item-note-types","ui-inventory.settings.loantypes","ui-inventory.settings.modes-of-issuance","ui-inventory.settings.instance-types","ui-inventory.settings.materialtypes","ui-inventory.settings.nature-of-content-terms","ui-inventory.settings.identifier-types","ui-inventory.settings.statistical-code-types","ui-inventory.settings.statistical-codes","ui-inventory.settings.list.view","ui-data-export.settings.enabled","settings.data-import.enabled","ui-quick-marc.quick-marc-editor.all","ui-quick-marc.quick-marc-editor.duplicate"],
   "mutable" : true,
   "visible" : true
-
 }
 EndOfPermission
 
 IFS='' read -r -d '' checkin_all << EndOfPermission
-
 {
   "permissionName" : "checkin-all",
   "displayName" : "checkin-all ",
@@ -79,12 +69,10 @@ IFS='' read -r -d '' checkin_all << EndOfPermission
   "subPermissions" : ["ui-checkin.all"],
   "mutable" : true,
   "visible" : true
-
 }
 EndOfPermission
 
 IFS='' read -r -d '' checkout_all << EndOfPermission
-
 {
   "permissionName" : "checkout-all",
   "displayName" : "checkout-all ",
@@ -93,12 +81,10 @@ IFS='' read -r -d '' checkout_all << EndOfPermission
   "subPermissions" : ["ui-checkout.all"],
   "mutable" : true,
   "visible" : true
-
 }
 EndOfPermission
 
 IFS='' read -r -d '' circ_admin << EndOfPermission
-
 {
   "permissionName" : "circ-admin",
   "displayName" : "circ-admin ",
@@ -107,12 +93,10 @@ IFS='' read -r -d '' circ_admin << EndOfPermission
   "subPermissions" : ["ui-checkin.all","ui-checkout.all","ui-plugin-create-inventory-records.create","ui-users.feefineactions","ui-inventory.instance.view","ui-inventory.item.markasmissing","ui-notes.item.assign-unassign","ui-notes.item.create","ui-notes.item.delete","ui-notes.item.edit","ui-notes.item.view","ui-requests.all","ui-calendar.edit","ui-calendar.all","ui-calendar.view","ui-circulation.settings.cancellation-reasons","ui-circulation.settings.circulation-rules","ui-circulation.settings.fixed-due-date-schedules","ui-circulation.settings.loan-policies","ui-circulation.settings.lost-item-fees-policies","ui-circulation.settings.notice-policies","ui-circulation.settings.other-settings","ui-circulation.settings.overdue-fines-policies","ui-circulation.settings.notice-templates","ui-circulation.settings.request-policies","ui-circulation.settings.staff-slips","ui-circulation.settings.loan-history","ui-courses.maintain-settings","ui-users.settings.feefines.all","ui-tags.view","ui-tags.all","ui-users.editperms","ui-users.edituserservicepoints","ui-users.create","ui-users.feesfines.actions.all","ui-users.patron_blocks","ui-users.editproxies","ui-users.edit","ui-users.viewperms","ui-users.viewproxies","ui-users.viewuserservicepoints","ui-users.view","ui-users.reset.password","ui-users.loans.claim-item-returned","ui-users.loans.declare-item-lost","ui-users.loans.declare-claimed-returned-item-as-missing","ui-users.loans.renew-override","ui-users.loans.renew","ui-users.loans.view","ui-users.requests.all"],
   "mutable" : true,
   "visible" : true
-
 }
 EndOfPermission
 
 IFS='' read -r -d '' circ_manager << EndOfPermission
-
 {
   "permissionName" : "circ-manager",
   "displayName" : "circ-manager ",
@@ -121,12 +105,10 @@ IFS='' read -r -d '' circ_manager << EndOfPermission
   "subPermissions" : ["ui-checkin.all","ui-checkout.all","ui-plugin-create-inventory-records.create","ui-users.feefineactions","ui-inventory.instance.view","ui-inventory.item.markasmissing","ui-notes.item.assign-unassign","ui-notes.item.create","ui-notes.item.delete","ui-notes.item.edit","ui-notes.item.view","ui-requests.all","ui-tags.view","ui-tags.all","ui-users.editperms","ui-users.edituserservicepoints","ui-users.create","ui-users.feesfines.actions.all","ui-users.patron_blocks","ui-users.editproxies","ui-users.edit","ui-users.viewperms","ui-users.viewproxies","ui-users.viewuserservicepoints","ui-users.view","ui-users.reset.password","ui-users.loans.claim-item-returned","ui-users.loans.declare-item-lost","ui-users.loans.declare-claimed-returned-item-as-missing","ui-users.loans.renew-override","ui-users.loans.renew","ui-users.loans.view","ui-users.requests.all"],
   "mutable" : true,
   "visible" : true
-
 }
 EndOfPermission
 
 IFS='' read -r -d '' circ_observer << EndOfPermission
-
 {
   "permissionName" : "circ-observer",
   "displayName" : "circ-observer ",
@@ -135,12 +117,10 @@ IFS='' read -r -d '' circ_observer << EndOfPermission
   "subPermissions" : ["ui-checkin.all","ui-checkout.circulation","ui-inventory.instance.view","ui-notes.item.view","ui-users.viewproxies","ui-users.viewuserservicepoints","ui-users.view","ui-users.loans.view","ui-users.requests.all"],
   "mutable" : true,
   "visible" : true
-
 }
 EndOfPermission
 
 IFS='' read -r -d '' circ_staff << EndOfPermission
-
 {
   "permissionName" : "circ-staff",
   "displayName" : "circ-staff ",
@@ -149,12 +129,10 @@ IFS='' read -r -d '' circ_staff << EndOfPermission
   "subPermissions" : ["ui-checkin.all","ui-checkout.all","ui-plugin-create-inventory-records.create","ui-inventory.instance.view","ui-inventory.item.markasmissing","ui-notes.item.assign-unassign","ui-notes.item.create","ui-notes.item.delete","ui-notes.item.edit","ui-notes.item.view","ui-requests.all","ui-tags.view","ui-tags.all","ui-users.editperms","ui-users.edituserservicepoints","ui-users.create","ui-users.feesfines.actions.all","ui-users.patron_blocks","ui-users.editproxies","ui-users.edit","ui-users.viewperms","ui-users.viewproxies","ui-users.viewuserservicepoints","ui-users.view","ui-users.reset.password","ui-users.loans.claim-item-returned","ui-users.loans.declare-item-lost","ui-users.loans.declare-claimed-returned-item-as-missing","ui-users.loans.renew-override","ui-users.loans.renew","ui-users.loans.view"],
   "mutable" : true,
   "visible" : true
-
 }
 EndOfPermission
 
 IFS='' read -r -d '' circ_student << EndOfPermission
-
 {
   "permissionName" : "circ-student",
   "displayName" : "circ-student ",
@@ -163,12 +141,10 @@ IFS='' read -r -d '' circ_student << EndOfPermission
   "subPermissions" : ["ui-checkin.all","ui-checkout.circulation","ui-plugin-create-inventory-records.create","ui-inventory.instance.view","ui-notes.item.assign-unassign","ui-notes.item.create","ui-notes.item.view","ui-requests.create","ui-tags.view","ui-users.viewperms","ui-users.viewproxies","ui-users.viewuserservicepoints","ui-users.view","ui-users.loans.renew","ui-users.loans.view","ui-users.requests.all"],
   "mutable" : true,
   "visible" : true
-
 }
 EndOfPermission
 
 IFS='' read -r -d '' copy_cataloger << EndOfPermission
-
 {
   "permissionName" : "copy-cataloger",
   "displayName" : "copy-cataloger ",
@@ -177,12 +153,10 @@ IFS='' read -r -d '' copy_cataloger << EndOfPermission
   "subPermissions" : ["ui-inventory.items.mark-items-withdrawn","ui-inventory.holdings.move","ui-inventory.item.move","ui-inventory.instance.edit","ui-inventory.holdings.delete","ui-inventory.item.delete","ui-inventory.item.markasmissing","ui-inventory.settings.list.view","ui-data-export.settings.enabled","settings.data-import.enabled","ui-data-export.app.enabled","ui-quick-marc.quick-marc-editor.all"],
   "mutable" : true,
   "visible" : true
-
 }
 EndOfPermission
 
 IFS='' read -r -d '' data_export_admin << EndOfPermission
-
 {
   "permissionName" : "data-export-admin",
   "displayName" : "data-export-admin ",
@@ -191,12 +165,10 @@ IFS='' read -r -d '' data_export_admin << EndOfPermission
   "subPermissions" : ["ui-data-export.settings.enabled"],
   "mutable" : true,
   "visible" : true
-
 }
 EndOfPermission
 
 IFS='' read -r -d '' data_export << EndOfPermission
-
 {
   "permissionName" : "data-export",
   "displayName" : "data-export ",
@@ -205,12 +177,10 @@ IFS='' read -r -d '' data_export << EndOfPermission
   "subPermissions" : ["ui-data-export.app.enabled"],
   "mutable" : true,
   "visible" : true
-
 }
 EndOfPermission
 
 IFS='' read -r -d '' data_import << EndOfPermission
-
 {
   "permissionName" : "data-import",
   "displayName" : "data-import ",
@@ -219,12 +189,10 @@ IFS='' read -r -d '' data_import << EndOfPermission
   "subPermissions" : ["ui-inventory.all-permissions.TEMPORARY","ui-inventory.settings.list.view","settings.data-import.enabled","module.data-import.enabled","ui-invoice.acq.unit.assignment.assign","ui-invoice.invoice.create","ui-invoice.invoice.delete","ui-invoice.settings.all"],
   "mutable" : true,
   "visible" : true
-
 }
 EndOfPermission
 
 IFS='' read -r -d '' erm_admin << EndOfPermission
-
 {
   "permissionName" : "erm-admin",
   "displayName" : "erm-admin ",
@@ -233,12 +201,10 @@ IFS='' read -r -d '' erm_admin << EndOfPermission
   "subPermissions" : ["ui-agreements.agreements.delete","ui-agreements.agreements.edit","ui-agreements.resources.edit","ui-agreements.platforms.edit","ui-agreements.agreements.file.download","ui-agreements.agreements.view","ui-agreements.resources.view","ui-agreements.platforms.view","ui-dashboard.dashboards.manage","ui-eholdings.titles-packages.create-delete","ui-eholdings.records.edit","ui-eholdings.package-title.select-unselect","ui-eholdings.costperuse.view","ui-erm-comparisons.jobs.edit","ui-erm-comparisons.jobs.delete","ui-erm-comparisons.jobs.view","ui-plugin-find-agreement.search","ui-plugin-find-eresource.search","ui-plugin-find-license.search","ui-licenses.licenses.view","ui-licenses.licenses.edit","ui-licenses.licenses.file.download","ui-licenses.licenses.delete","ui-local-kb-admin.jobs.edit","ui-local-kb-admin.jobs.delete","ui-local-kb-admin.proxyServer.manage","ui-local-kb-admin.kbs.manage","ui-local-kb-admin.jobs.view","ui-notes.item.assign-unassign","ui-notes.item.create","ui-notes.item.delete","ui-notes.item.edit","ui-notes.item.view","ui-orders.acq.unit.assignment.assign","ui-orders.order-lines.create","ui-orders.order.create","ui-orders.order-lines.delete","ui-orders.order-lines.edit","ui-orders.order.edit","ui-orders.acq.unit.assignment.manage","ui-orders.order.delete","ui-orders.order.reopen","ui-orders.order.unopen","ui-orders.order-lines.view","ui-orders.order.view","ui-organizations.acqUnits.assign","ui-organizations.creds.view","ui-organizations.creds.manage","ui-organizations.acqUnits.manage","ui-organizations.view","ui-organizations.edit","ui-organizations.create","ui-organizations.delete","ui-agreements.generalSettings.manage","ui-agreements.supplementaryProperties.manage","ui-agreements.picklists.manage","ui-eholdings.settings.assignedUser","ui-eholdings.settings.kb","ui-eholdings.settings.kb.delete","ui-eholdings.settings.root-proxy","ui-eholdings.settings.enabled","ui-eholdings.settings.access-types.create-edit","ui-eholdings.settings.access-types.all","ui-eholdings.settings.custom-labels.all","ui-eholdings.settings.access-types.view","ui-eholdings.settings.usage-consolidation.create-edit","ui-licenses.picklists.manage","ui-licenses.terms.manage","ui-users.editperms","ui-users.edituserservicepoints","ui-users.create","ui-users.feesfines.actions.all","ui-users.patron_blocks","ui-users.editproxies","ui-users.edit","ui-users.viewperms","ui-users.viewproxies","ui-users.viewuserservicepoints","ui-users.view","ui-users.reset.password"],
   "mutable" : true,
   "visible" : true
-
 }
 EndOfPermission
 
 IFS='' read -r -d '' erm_manager << EndOfPermission
-
 {
   "permissionName" : "erm-manager",
   "displayName" : "erm-manager ",
@@ -247,12 +213,10 @@ IFS='' read -r -d '' erm_manager << EndOfPermission
   "subPermissions" : ["ui-agreements.agreements.delete","ui-agreements.agreements.edit","ui-agreements.resources.edit","ui-agreements.platforms.edit","ui-agreements.agreements.file.download","ui-dashboard.dashboards.manage","ui-eholdings.titles-packages.create-delete","ui-eholdings.records.edit","ui-eholdings.package-title.select-unselect","ui-eholdings.costperuse.view","ui-erm-comparisons.jobs.edit","ui-erm-comparisons.jobs.delete","ui-plugin-find-agreement.search","ui-plugin-find-eresource.search","ui-plugin-find-license.search","ui-licenses.licenses.edit","ui-licenses.licenses.file.download","ui-licenses.licenses.delete","ui-local-kb-admin.jobs.edit","ui-local-kb-admin.jobs.delete","ui-notes.item.assign-unassign","ui-notes.item.create","ui-notes.item.delete","ui-notes.item.edit","ui-notes.item.view","ui-orders.order-lines.create","ui-orders.order.create","ui-orders.order-lines.delete","ui-orders.order-lines.edit","ui-orders.order.edit","ui-orders.order.delete","ui-orders.order.reopen","ui-orders.order.unopen","ui-orders.order-lines.view","ui-orders.order.view","ui-organizations.creds.manage","ui-organizations.create","ui-organizations.delete","ui-users.view"],
   "mutable" : true,
   "visible" : true
-
 }
 EndOfPermission
 
 IFS='' read -r -d '' erm_observer << EndOfPermission
-
 {
   "permissionName" : "erm-observer",
   "displayName" : "erm-observer ",
@@ -261,12 +225,10 @@ IFS='' read -r -d '' erm_observer << EndOfPermission
   "subPermissions" : ["ui-agreements.agreements.view","ui-agreements.resources.view","ui-agreements.platforms.view","ui-dashboard.dashboards.manage","ui-eholdings.app.enabled","ui-eholdings.costperuse.view","ui-erm-comparisons.jobs.view","ui-licenses.licenses.view","ui-local-kb-admin.jobs.view","ui-notes.item.view","ui-orders.order-lines.view","ui-organizations.view","ui-users.view"],
   "mutable" : true,
   "visible" : true
-
 }
 EndOfPermission
 
 IFS='' read -r -d '' erm_staff << EndOfPermission
-
 {
   "permissionName" : "erm-staff",
   "displayName" : "erm-staff ",
@@ -275,13 +237,11 @@ IFS='' read -r -d '' erm_staff << EndOfPermission
   "subPermissions" : ["ui-agreements.agreements.edit","ui-agreements.resources.edit","ui-agreements.platforms.edit","ui-agreements.agreements.file.download","ui-dashboard.dashboards.manage","ui-eholdings.records.edit","ui-eholdings.package-title.select-unselect","ui-eholdings.costperuse.view","ui-erm-comparisons.jobs.edit","ui-plugin-find-agreement.search","ui-plugin-find-eresource.search","ui-plugin-find-license.search","ui-licenses.licenses.edit","ui-licenses.licenses.file.download","ui-local-kb-admin.jobs.edit","ui-notes.item.assign-unassign","ui-notes.item.create","ui-notes.item.delete","ui-notes.item.edit","ui-notes.item.view","ui-orders.order-lines.view","ui-orders.order.view","ui-organizations.creds.view","ui-organizations.create","ui-users.view"],
   "mutable" : true,
   "visible" : true
-
 }
 EndOfPermission
 
 
 IFS='' read -r -d '' technical_service_staff << EndOfPermission
-
 {
   "permissionName" : "technical-service-staff",
   "displayName" : "technical-service-staff ",
@@ -290,13 +250,11 @@ IFS='' read -r -d '' technical_service_staff << EndOfPermission
   "subPermissions" : ["ui-inventory.items.mark-items-withdrawn","ui-inventory.holdings.move","ui-inventory.item.move","ui-inventory.instance.edit","ui-inventory.holdings.delete","ui-inventory.item.delete","ui-inventory.item.markasmissing","ui-inventory.settings.hrid-handling","ui-inventory.settings.ill-policies","ui-inventory.settings.instance-note-types","ui-inventory.settings.electronic-access-relationships","ui-inventory.settings.alternative-title-types","ui-inventory.settings.call-number-types","ui-inventory.settings.classification-types","ui-inventory.settings.contributor-types","ui-inventory.settings.instance-formats","ui-inventory.settings.holdings-note-types","ui-inventory.settings.holdings-types","ui-inventory.settings.instance-statuses","ui-inventory.settings.item-note-types","ui-inventory.settings.loantypes","ui-inventory.settings.modes-of-issuance","ui-inventory.settings.instance-types","ui-inventory.settings.materialtypes","ui-inventory.settings.nature-of-content-terms","ui-inventory.settings.identifier-types","ui-inventory.settings.statistical-code-types","ui-inventory.settings.statistical-codes","ui-inventory.settings.list.view","ui-data-export.settings.enabled","settings.data-import.enabled","ui-data-export.app.enabled","module.data-import.enabled","ui-quick-marc.quick-marc-editor.all","ui-quick-marc.quick-marc-editor.duplicate"],
   "mutable" : true,
   "visible" : true
-
 }
 EndOfPermission
 
 
 IFS='' read -r -d '' metadata_admin << EndOfPermission
-
 {
   "permissionName" : "metadata-admin",
   "displayName" : "metadata-admin ",
@@ -305,12 +263,10 @@ IFS='' read -r -d '' metadata_admin << EndOfPermission
   "subPermissions" : ["ui-inventory.holdings.move","ui-inventory.item.move","ui-inventory.instance.edit","ui-inventory.holdings.delete","ui-inventory.item.delete","ui-inventory.item.markasmissing","ui-inventory.settings.hrid-handling","ui-inventory.settings.ill-policies","ui-inventory.settings.instance-note-types","ui-inventory.settings.electronic-access-relationships","ui-inventory.settings.alternative-title-types","ui-inventory.settings.call-number-types","ui-inventory.settings.classification-types","ui-inventory.settings.contributor-types","ui-inventory.settings.instance-formats","ui-inventory.settings.holdings-note-types","ui-inventory.settings.holdings-types","ui-inventory.settings.instance-statuses","ui-inventory.settings.item-note-types","ui-inventory.settings.loantypes","ui-inventory.settings.modes-of-issuance","ui-inventory.settings.instance-types","ui-inventory.settings.materialtypes","ui-inventory.settings.nature-of-content-terms","ui-inventory.settings.identifier-types","ui-inventory.settings.statistical-code-types","ui-inventory.settings.statistical-codes","ui-inventory.settings.list.view","ui-data-export.settings.enabled","settings.data-import.enabled","ui-data-export.app.enabled","ui-quick-marc.quick-marc-editor.all","ui-quick-marc.quick-marc-editor.duplicate"],
   "mutable" : true,
   "visible" : true
-
 }
 EndOfPermission
 
 IFS='' read -r -d '' quick_marc_all << EndOfPermission
-
 {
   "permissionName" : "quick-marc-all",
   "displayName" : "quick-marc-all ",
@@ -319,12 +275,10 @@ IFS='' read -r -d '' quick_marc_all << EndOfPermission
   "subPermissions" : ["ui-quick-marc.quick-marc-editor.all","ui-quick-marc.quick-marc-editor.duplicate"],
   "mutable" : true,
   "visible" : true
-
 }
 EndOfPermission
 
 IFS='' read -r -d '' user_basic_view << EndOfPermission
-
 {
   "permissionName" : "user-basic-view",
   "displayName" : "user-basic-view ",
@@ -333,7 +287,6 @@ IFS='' read -r -d '' user_basic_view << EndOfPermission
   "subPermissions" : ["ui-users.view"],
   "mutable" : true,
   "visible" : true
-
 }
 EndOfPermission
 

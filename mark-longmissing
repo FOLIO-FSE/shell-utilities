@@ -1,0 +1,46 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+counter=1
+
+while IFS=$'\n' read -r search; do
+	barcode=0
+
+	if [[ ${search} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+        	endpoint="${okapi_url}/item-storage/items/${search}"
+	else
+        	endpoint="${okapi_url}/item-storage/items?query=barcode==${search}"
+		barcode=1
+	fi
+
+	apicall=$(curl -s -w '\n' -X GET -D \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  "${endpoint}")
+
+	if [[ "${barcode}" -eq "1" ]];then
+        	apicall=$(echo $apicall |jq '.items[0]')
+	fi	
+
+	barcode=$(echo ${apicall} |jq -r '.barcode')
+	barcode=$(sed 's/ //g' <<< $barcode)
+	uuid=$(echo ${apicall} |jq -r '.id')
+
+
+	apicall=$(curl --http1.1 -s -w '\n' -X POST \
+	  -H "Content-type: application/json" \
+	  -H "Accept: text/plain" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  -d "{}" \
+	  "${okapi_url}/inventory/items/${uuid}/mark-long-missing")
+
+	counter=$(($counter + 1))
+	echo "$counter -- $uuid -- $barcode"
+	
+done < missing
+
+
+

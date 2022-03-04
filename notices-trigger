@@ -7,12 +7,12 @@ while read -r loan_uuid; do
 	  -H "Accept: application/json" \
 	  -H "X-Okapi-Tenant: ${tenant}" \
 	  -H "x-okapi-token: ${okapi_token}" \
-	  ${okapi_url}/loan-storage/loans/${loan_uuid})
+	  ${okapi_url}/circulation/loans/${loan_uuid})
 
-	status=$(echo ${apicall} |jq -r .itemStatus)
+	status=$(echo ${apicall} |jq -r .item.status.name)
 
-	if [[ $status == "Available" ]];then 
-		updated_loan=$(echo ${apicall}  |jq ' (.itemStatus = "Checked out")')
+	if [[ $status == "Checked out" ]];then 
+		updated_loan=$(echo ${apicall}  |jq ' (.action = "dueDateChanged")')
 
 	        apicall=$(curl --http1.1 -s -w '\n' -X PUT \
 	          -H "Content-type: application/json" \
@@ -20,7 +20,7 @@ while read -r loan_uuid; do
 	          -H "X-Okapi-Tenant: ${tenant}" \
 	          -H "x-okapi-token: ${okapi_token}" \
 	          -d "${updated_loan}" \
-	          ${okapi_url}/loan-storage/loans/${loan_uuid})
+	          ${okapi_url}/circulation/loans/${loan_uuid})
 		
 		echo "${loan_uuid} updated"
 	else
@@ -28,6 +28,7 @@ while read -r loan_uuid; do
 		
 	fi
 
+	echo $loan_uuid
 done < loan_uuids
 
 

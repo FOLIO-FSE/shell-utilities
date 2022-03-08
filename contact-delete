@@ -1,13 +1,11 @@
-# Supply without a uuid to delete all of many record types
-# 
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-uuid=$(sed 's/[^0-9a-z\-]//g' <<< $1)
 
+contact_uuid=$(echo "$1" |tr -dc [0-9a-f\-])
 
-apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/contacts/${uuid}")
+apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/contacts/${contact_uuid}")
 
-echo ${apicall}
+echo $apicall
 

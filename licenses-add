@@ -4,27 +4,54 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-while read license
+declare -A org_uuid_dict
+declare -A org_name_dict
 
-name=$(cut -f1 <<<$license)
-alternateNames=$(cut -f2 <<<$license)
+counter=0
 
-do
+# convert org codes into a scalar array pointing to UUIDs
+apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/organizations?limit=100000")
 
-IFS='' read -r -d '' location << EndOfLicense
+eval "$(echo ${apicall} |  jq -r '.organizations[] | @sh "org_uuid_dict[\(.code|tostring)]=\(.id|tostring)"')"
+eval "$(echo ${apicall} |  jq -r '.organizations[] | @sh "org_name_dict[\(.code|tostring)]=\(.name|tostring)"')"
 
+
+while IFS=$'\n' read line;do
+
+	line=$(echo "${line}" |tr "\t" "|")
+	IFS='|' read  name type status contact role1 org1name org1code org1role org2name org2code org2role <<< ${line}
+
+	id=$(uuidgen)
+
+	type=$(echo ${type} |tr [A-Z] [a-z])
+	org1role=$(echo ${org1role} |tr [A-Z] [a-z])
+	org2role=$(echo ${org2role} |tr [A-Z] [a-z])
+
+	contact='{ "_delete": false, "user": "ba3c643b-87fc-4b03-880a-29151174a2fd", "role": "erm_librarian" }'
+
+	if [[ ! -z $org1code ]];then
+		if [[ "${org_name_dict[${org1code}]+abc}" ]];then
+			orgs="{ \"_delete\": false, \"org\": { \"name\": \"${org_name_dict[${org1code}]}\", \"orgsUuid\": \"${org_uuid_dict[${org1code}]}\" }, \"role\": \"${org1role}\" }"
+		fi
+	fi
+
+	if [[ ! -z $org2code ]];then
+		if [[ "${org_name_dict[${org2code}]+abc}" ]];then
+			orgs=${orgs}", { \"_delete\": false, \"org\": { \"name\": \"${org_name_dict[${org2code}]}\", \"orgsUuid\": \"${org_uuid_dict[${org2code}]}\" }, \"role\": \"${org2role}\" }"
+		fi
+	fi
+
+
+IFS='' read -r -d '' license << EndOfLicense
 {
   "links": [],
   "customProperties": {},
-  "contacts": [],
+  "contacts": [${contact}],
   "tags": [],
   "docs": [],
   "name": "${name}",
-  "status": {
-    "id": "",
-    "value": "active",
-    "label": "Active"
-  },
+  "status": "active",
+  "type": "local",
   "supplementaryDocs": [],
   "_links": {
     "linkedResources": {
@@ -33,18 +60,23 @@ IFS='' read -r -d '' location << EndOfLicense
   },
   "openEnded": false,
   "amendments": [],
-  "orgs": [],
+  "orgs": [${orgs}],
   "type": {
     "value": "local",
     "label": "Local"
   },
-  "alternateNames": [${alternateNames}]
+  "alternateNames": [${alternateNames}],
+  "id": "${id}"
 }
 
 EndOfLicense
 
-apicall=$(curl --http1.1 -v -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${license}" "${okapi_url}/licenses/licenses")
+if [[ $counter -gt 0 ]]  ;then
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${license}" "${okapi_url}/licenses/licenses")
+	echo $apicall
+fi
 
-echo "${apicall}"
 
-done < licenses
+counter=$((${counter} + 1))
+
+done < licenses.tsv

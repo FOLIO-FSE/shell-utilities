@@ -7,9 +7,11 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
+snapshot_id=$(tr -dc [0-9a-f\-] <<< $1)
+
 IFS='' read -r -d '' data << EndOfJSON
 {
-    "jobExecutionId" : "67dfac11-1caf-4470-9ad1-d533f6360bdd",
+    "jobExecutionId" : "${snapshot_id}",
     "status" : "COMMITTED"
   }
 EndOfJSON
@@ -17,7 +19,7 @@ EndOfJSON
 
 
 
-curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/source-storage/snapshots/67dfac11-1caf-4470-9ad1-d533f6360bdd"
+curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/source-storage/snapshots/${snapshot_id}"
 
 echo -e "${apicall}" |jq '.'
 

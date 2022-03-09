@@ -1,10 +1,10 @@
 edge_url=$(cat okapi.url |sed 's/okapi/edge/')
 edge_key=$(cat edge.key)
 
-patron_externalid="$1"
+patron_uuid=$(tr -dc [0-9a-f\-] <<< $1)
+apicall=$(curl -s -X GET "${edge_url}/patron/account/${patron_uuid)&apikey=${edge_key}")
 
-apicall=$(curl -s -X GET "${edge_url}/patron/account/${patron_externalid}?includeLoans=true&includeCharges=true&includeHolds=true&apikey=${edge_key}")
+echo $apicall |xmlstarlet fo 
 
-echo $apicall 
 
 

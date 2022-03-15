@@ -1,13 +1,8 @@
-# Creates a snapshot
-#
-# usage ./snapshot-create
-# 
-
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-snapshot_id=$(tr -dc [0-9a-f\-] <<< $1)
+snapshot_id=$(tr -dc "[0-9a-f\-]" <<< $1)
 
 IFS='' read -r -d '' data << EndOfJSON
 {

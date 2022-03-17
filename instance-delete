@@ -8,7 +8,9 @@ okapi_token=$(cat okapi.token)
 declare -a item_ids
 declare -a holdings_ids
 
-instance_uuid=$(sed 's/[^0-9a-z\-]//g' <<< $1)
+instance_uuid=$(tr -dc "[a-f0-9\-]" <<< $1)
+
+if [[ $instance_uuid == "" ]];then echo "No input was detected";exit;fi
 
 apicall=$(curl -s -w '\n' -X GET -D \
   -H "Accept: application/json" \

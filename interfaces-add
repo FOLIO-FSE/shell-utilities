@@ -18,7 +18,7 @@ IFS='' read -r -d '' interface << EndOfInterface
   "type": [
     "Admin"
   ],
-  "name": "${org}",
+  "name": "${org} Admin",
   "uri": ${uri},
   "notes": ${notes},
   "id": "${interface_id}"
@@ -31,7 +31,11 @@ apicreds=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json"
 
 }
 
-while IFS=$'\t' read -r org uri user password notes;do
+while IFS=$'\n' read -r line;do
+        line=$(tr "\t" "^" <<< ${line})
+	
+	IFS=$'^' read -r org uri user password notes <<< ${line}
+
 	uri=$(echo ${uri} | jq -aRs .)
 	user=$(echo ${user} | jq -aRs .)
 	password=$(echo ${password} | jq -aRs .)
@@ -49,6 +53,11 @@ while IFS=$'\t' read -r org uri user password notes;do
 	
 	organization=$(echo $apicall |jq .organizations[])
 	org_uuid=$(echo ${organization} |jq -r .id)
+
+        if [[ ! ${org_uuid} =~ [a-f] ]];then
+                echo "No organization found for ${org}"
+                continue
+        fi
 	
 	add_interface
 	
@@ -65,5 +74,5 @@ while IFS=$'\t' read -r org uri user password notes;do
 echo $apiinterface 
 echo $apicredentials 
 echo $apicall 
-
+exit
 done < interfaces

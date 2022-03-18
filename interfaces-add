@@ -74,5 +74,4 @@ while IFS=$'\n' read -r line;do
 echo $apiinterface 
 echo $apicredentials 
 echo $apicall 
-exit
 done < interfaces

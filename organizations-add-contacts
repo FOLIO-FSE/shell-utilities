@@ -58,6 +58,14 @@ while IFS=$'\n' read -r line;do
 	if [[ ${fname} !=  "" ]] || [[ ${lname} != "" ]];then goodrecord=1;fi
 
 	if [[ $goodrecord == "0" ]];then 
+		if [[ ${phone} =~ [0-9] ]] || [[  "$email" =~ "@" ]];then
+			fname=" "
+			lname="${code}"
+			goodrecord=1
+		fi
+	fi
+
+	if [[ $goodrecord == "0" ]];then 
 		echo "No name found for ${code}"
 		continue
 	fi
@@ -65,6 +73,7 @@ while IFS=$'\n' read -r line;do
 	if [[ $goodrecord == "1" ]];then 
 		if [[ ${fname} ==  "" ]];then fname=" ";fi	
 		if [[ ${lname} ==  "" ]];then lname=" ";fi	
+	
 	fi
 
 	if [[ ${phone} =~ [0-9] ]]; then phones="{ \"phoneNumber\" : \"${phone}\", \"isPrimary\" : true, \"categories\" : [] }";fi

@@ -1,0 +1,14 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+while IFS=$'\n' read -r boundwith
+do
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${boundwith}" "${okapi_url}/inventory-storage/bound-with-parts")
+
+echo "${apicall}"
+
+done < boundwiths.json
+
+

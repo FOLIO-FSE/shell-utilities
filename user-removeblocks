@@ -3,20 +3,37 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-
-while IFS=$'\n' read -r user_uuid; do
-
-user_uuid=$(tr -dc "[a-f0-9\-]" <<< $user_uuid)
-
+build_post() {
 IFS='' read -r -d '' data << EndOfJSON
 {
   "scope": "user",
   "userId": "${user_uuid}"
 }
 EndOfJSON
+echo $data
+}
 
+post_data() {
 
 apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/automated-patron-blocks/synchronization/job")
 
 echo $apicall
+}
+
+user_uuid=$(tr -dc "[a-f0-9\-]" <<< $1)
+
+if [[ ${user_uuid} =~ [a-f0-9\-] ]];then 
+	data=$(build_post)
+	output=$(post_data)
+	echo $output
+else
+
+while IFS=$'\n' read -r user_uuid; do
+
+user_uuid=$(tr -dc "[a-f0-9\-]" <<< $user_uuid)
+data=$(build_post)
+output=$(post_data)
+echo $output
+
 done < outfile
+fi

@@ -1,0 +1,28 @@
+
+okapi_url=$(cat okapi.url)
+namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
+
+rm -rf boundwiths.json
+counter=0
+SECONDS=0
+
+while IFS=$'\t' read -r holdid itemid;do
+	bwname="${holdid}${itemid}"
+	timer=$SECONDS
+
+	bwid=$(uuidgen --sha1 -n ${namespace} -N ${bwname})
+
+	# no modification needed for holdings id
+	holdid=$(uuidgen --sha1 -n ${namespace} -N "${okapi_url}:holdings:${holdid}")
+
+	itemid=${itemid:1:-1} # strip leading dot and trailing checkdigit
+	itemid=$(uuidgen --sha1 -n ${namespace} -N "${okapi_url}:items:${itemid}")
+
+	boundwith="{\"id\": \"${bwid}\", \"holdingsRecordId\": \"${holdid}\", \"itemId\": \"${itemid}\"}"
+	echo "${boundwith}" >> boundwiths.json
+
+	counter=$(($counter + 1))
+	if [[ $(($counter % 100)) == 0 ]];then printf "Processed ${counter} records in ${timer} seconds\r";fi
+	
+
+done < boundwiths_needuuids.tsv

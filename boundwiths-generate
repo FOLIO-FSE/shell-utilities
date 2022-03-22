@@ -7,7 +7,7 @@ namespace=uuid.UUID(b'8405ae4d-b315-42e1-918a-d1919900cf3f')
 bwfile = open('boundwiths_needuuids.tsv', 'r')
 boundwiths = csv.reader(bwfile, delimiter = '\t')
 
-base='https://okapi-umsystem.folio.ebsco.com:'
+base='https://okapi-xxxxx.folio.ebsco.com:'
 
 holding_base = base + 'holdings:'
 item_base = base + 'items:'

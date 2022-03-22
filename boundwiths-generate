@@ -1,28 +1,39 @@
+#!/usr/bin/python
+import csv
+import uuid
 
-okapi_url=$(cat okapi.url)
-namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
+namespace=uuid.UUID(b'8405ae4d-b315-42e1-918a-d1919900cf3f')
 
-rm -rf boundwiths.json
-counter=0
-SECONDS=0
+bwfile = open('boundwiths_needuuids.tsv', 'r')
+boundwiths = csv.reader(bwfile, delimiter = '\t')
 
-while IFS=$'\t' read -r holdid itemid;do
-	bwname="${holdid}${itemid}"
-	timer=$SECONDS
+base='https://okapi-umsystem.folio.ebsco.com:'
 
-	bwid=$(uuidgen --sha1 -n ${namespace} -N ${bwname})
+holding_base = base + 'holdings:'
+item_base = base + 'items:'
+bw_base = base + 'boundwiths:'
 
-	# no modification needed for holdings id
-	holdid=$(uuidgen --sha1 -n ${namespace} -N "${okapi_url}:holdings:${holdid}")
 
-	itemid=${itemid:1:-1} # strip leading dot and trailing checkdigit
-	itemid=$(uuidgen --sha1 -n ${namespace} -N "${okapi_url}:items:${itemid}")
+outfile = open('boundwiths.json', 'w')
 
-	boundwith="{\"id\": \"${bwid}\", \"holdingsRecordId\": \"${holdid}\", \"itemId\": \"${itemid}\"}"
-	echo "${boundwith}" >> boundwiths.json
+counter = 0
 
-	counter=$(($counter + 1))
-	if [[ $(($counter % 100)) == 0 ]];then printf "Processed ${counter} records in ${timer} seconds\r";fi
-	
+for entry in boundwiths:
+    holdid = entry[0]
+    itemid = entry[1]
+    bwid = bw_base + holdid + itemid 
+    holdid = holding_base + holdid
+    itemid = item_base + itemid
+    
+    holdid = str(uuid.uuid5(namespace, holdid))
+    itemid = str(uuid.uuid5(namespace, itemid))
+    bwid = str(uuid.uuid5(namespace, bwid))
 
-done < boundwiths_needuuids.tsv
+    record = '{"id": "' + bwid + '", "holdingsRecordId": "' + holdid + '", "itemId": "' + itemid + '"}' 
+    outfile.write(record)
+    
+    if counter % 10000 == 0:
+        print("Number of records processed: %s \r" % counter)    
+
+    counter = counter + 1
+

@@ -1,0 +1,15 @@
+tenant="$(cat tenant)"
+okapi_url="$(cat okapi.url)"
+okapi_token="$(cat okapi.token)"
+
+
+
+apicall=$(curl -s -w '\n' -X GET \
+  -H "Accept: application/json" \
+  -H "X-Okapi-Tenant: ${tenant}" \
+  -H "x-okapi-token: ${okapi_token}" \
+  "${okapi_url}/licenses/refdata?query=cql.allRecords=1&limit=100000")
+
+echo ${apicall} |jq .
+
+

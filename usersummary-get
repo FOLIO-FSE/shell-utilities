@@ -2,14 +2,14 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-user_uuid=$(tr -dc '[a-f0-9\-]' <<< "$1")
+user_uuid=$(sed 's/[^a-z0-9\-]//g' <<< "$1")
 
 apicall=$(curl -s -w '\n' -X GET -D \
   -H "Accept: application/json" \
   -H "X-Okapi-Tenant: ${tenant}" \
   -H "x-okapi-token: ${okapi_token}" \
-  "${okapi_url}/manualblocks?query=(userId==${user_uuid})&limit=1000")
+  ${okapi_url}/user-summary/${user_uuid})
 
-echo $apicall 
+echo $apicall | jq .
 
 

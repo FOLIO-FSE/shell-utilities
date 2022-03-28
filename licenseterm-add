@@ -1,0 +1,166 @@
+# Expects data in delimited file named licenses
+#
+# Terms are mapped by their labels, list items by term uuid and normalized value
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+declare -A dict_org_uuid
+declare -A dict_org_name
+declare -A dict_picklist_uuid
+declare -A dict_picklist_values
+declare -A dict_license_uuid
+declare -A dict_fulllicense
+
+declare -a license_names
+declare -a license_uuids
+declare -a picklist_uuids
+declare -a picklist_desc
+declare -a picklist_labels
+declare -a picklist_values
+
+add_custom_field() {
+IFS='' read -r -d '' custom_field << EndOfField
+    "${fieldname}": [
+      {
+        "id": ${fieldid},
+        "internal": false,
+        "value": {
+          "value": "$fieldvalue"
+        }
+      }
+    ]
+EndOfField
+
+echo "${custom_field}"
+}
+
+licenses=$(curl -s -w '\n' -X GET \
+  -H "Accept: application/json" \
+  -H "X-Okapi-Tenant: ${tenant}" \
+  -H "x-okapi-token: ${okapi_token}" \
+  "${okapi_url}/licenses/licenses?query=cql.allRecords=1&limit=100000")
+
+### create a map of names to license uuids
+license_uuids=($(echo ${licenses} |jq -r '.[].id' |tr -cd "[0-9a-f\-\n]"))
+license_names=($(echo ${licenses} |jq -r '.[].name' |tr [A-Z] [a-z] |tr -cd "[0-9a-z\-\n]"))
+
+counter=0
+for name in "${license_names[@]}";do
+	dict_license_uuid[${name}]="${license_uuids[$counter]}"
+echo $name
+	counter=$(($counter + 1))
+done
+
+### get the actual licenses
+eval "$(echo ${licenses} |  jq -r '.[] | @sh "dict_fulllicense[\(.id|tostring)]=\(.|tostring)"')"
+exit
+
+picklists=$(curl -s -w '\n' -X GET \
+  -H "Accept: application/json" \
+  -H "X-Okapi-Tenant: ${tenant}" \
+  -H "x-okapi-token: ${okapi_token}" \
+  "${okapi_url}/licenses/refdata?query=cql.allRecords=1&limit=100000")
+
+picklist_uuids=($(echo ${picklists} |jq -r '.[].id' |tr -cd "[0-9a-zA-Z\-\n]"))
+picklist_desc=($(echo ${picklists} |jq -r '.[].desc' |tr -cd "[0-9a-zA-Z\-\n]"))
+picklist_values=($(echo ${picklists} |jq -r '.[] | [ .values[].value ] |join("^")' ))
+picklist_labels=($(echo ${picklists} |jq -r '.[] |  [ .values[].label ] |join("^")' |tr -d " " |tr [A-Z] [a-z] ))
+
+# a bunch of arrays need to be glued together using index position
+
+counter=0
+# declare scalar arrays pointing from term type to uuid
+for key in "${picklist_desc[@]}";do
+	declare -A "dict_${picklist_desc}"
+	dict_picklist_uuid[${key}]="${picklist_uuids[$counter]}"
+
+	#populate the individual dropdown items, prefix with term uuid
+	IFS='^' read -r -a label_arr <<< "${picklist_values[$counter]}"
+
+	for entry in "${label_arr[@]}";do	
+		tempval="${picklist_uuids[${counter}]}${entry}"
+		dict_picklist_values[${tempval}]="${entry}"
+	done
+
+	counter=$(($counter + 1))
+done
+
+
+for x in "${dict_picklist_uuid[@]}";do
+	echo $x
+done
+
+exit
+# convert org codes into a scalar array pointing to UUIDs
+apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/organizations?limit=100000")
+
+eval "$(echo ${apicall} |  jq -r '.organizations[] | @sh "dict_org_uuid[\(.code|tostring)]=\(.id|tostring)"')"
+eval "$(echo ${apicall} |  jq -r '.organizations[] | @sh "dict_org_name[\(.code|tostring)]=\(.name|tostring)"')"
+
+
+while IFS=$'\n' read line;do
+
+	line=$(echo "${line}" |tr "\t" "|")
+	IFS='|' read  name type status contact role1 org1name org1code org1role org2name org2code org2role <<< ${line}
+
+	id=$(uuidgen)
+
+	type=$(echo ${type} |tr [A-Z] [a-z])
+	org1role=$(echo ${org1role} |tr [A-Z] [a-z])
+	org2role=$(echo ${org2role} |tr [A-Z] [a-z])
+
+	contact='{ "_delete": false, "user": "ba3c643b-87fc-4b03-880a-29151174a2fd", "role": "erm_librarian" }'
+
+	if [[ ! -z $org1code ]];then
+		if [[ "${dict_org_name[${org1code}]+abc}" ]];then
+			orgs="{ \"_delete\": false, \"org\": { \"name\": \"${dict_org_name[${org1code}]}\", \"orgsUuid\": \"${dict_org_uuid[${org1code}]}\" }, \"role\": \"${org1role}\" }"
+		fi
+	fi
+
+	if [[ ! -z $org2code ]];then
+		if [[ "${dict_org_name[${org2code}]+abc}" ]];then
+			orgs=${orgs}", { \"_delete\": false, \"org\": { \"name\": \"${dict_org_name[${org2code}]}\", \"orgsUuid\": \"${dict_org_uuid[${org2code}]}\" }, \"role\": \"${org2role}\" }"
+		fi
+	fi
+
+
+IFS='' read -r -d '' license << EndOfLicense
+{
+  "links": [],
+  "customProperties": {},
+  "contacts": [${contact}],
+  "tags": [],
+  "docs": [],
+  "name": "${name}",
+  "status": "active",
+  "type": "local",
+  "supplementaryDocs": [],
+  "_links": {
+    "linkedResources": {
+      "href": "/licenses/licenseLinks?filter=owner.id%"
+    }
+  },
+  "openEnded": false,
+  "amendments": [],
+  "orgs": [${orgs}],
+  "type": {
+    "value": "local",
+    "label": "Local"
+  },
+  "alternateNames": [${alternateNames}],
+  "id": "${id}"
+}
+
+EndOfLicense
+
+if [[ $counter -gt 0 ]]  ;then
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${license}" "${okapi_url}/licenses/licenses")
+	echo $apicall
+fi
+
+
+counter=$((${counter} + 1))
+
+done < licenses.tsv

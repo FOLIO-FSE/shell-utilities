@@ -1,16 +1,13 @@
-# retrieves item and holdings data associated with
-# an instance
+# Id expected is Instance Id
 
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-instance_id=$(sed 's/[^a-f0-9\-]//g' <<< $1)
+uuid=$(sed 's/[^0-9a-z\-]//g' <<< $1)
 
-	apicall=$(curl -s -w '\n' -X GET -D \
-	  -H "Accept: application/json" \
-	  -H "X-Okapi-Tenant: ${tenant}" \
-	  -H "x-okapi-token: ${okapi_token}" \
-	  "${okapi_url}/source-storage/source-records/${instance_id}?idType=INSTANCE")
-	echo $apicall 
-	
+apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/records-editor/records?externalId=${uuid}")
+
+echo "${apicall}" |jq . > marc.json
+echo "Record has been saved to marc.json"
+

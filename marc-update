@@ -1,0 +1,16 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+datafile="marc.json"
+
+uuid=$(cat "${datafile}" |jq -r .parsedRecordId)
+
+apicall=$(curl --http1.1 -s -X PUT \
+-H "Content-type: application/json" \
+-H "X-Okapi-Tenant: ${tenant}" \
+-H "x-okapi-token: ${okapi_token}" \
+-d @${datafile} \
+"${okapi_url}/records-editor/records/${uuid}")
+
+echo $apicall

@@ -1,0 +1,31 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+counter=1
+
+while IFS=$'\n' read -r uuid; do
+	uuid=$(tr -dc "[0-9a-f\-]" <<< ${uuid})
+
+	apicall=$(curl -s -w '\n' -X GET -D \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  "${okapi_url}/instance-storage/instances/${uuid}")
+
+	apicall=$(curl --http1.1 -s -w '\n' -X PUT \
+	  -H "Content-type: application/json" \
+	  -H "Accept: text/plain" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  -d "${apicall}" \
+	  "${okapi_url}/instance-storage/instances/${uuid}")
+
+	echo "Processing record $counter -- ${uuid}"
+echo "${apicall}"
+	counter=$(($counter + 1))
+	
+done < uuids
+
+
+

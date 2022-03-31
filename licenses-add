@@ -90,8 +90,15 @@ IFS='' read -r -d '' license << EndOfLicense
   "customProperties": {},
   "contacts": [${contact}],
   "tags": [],
-  "docs": [],
+  "docs": [    {
+      "_delete": false,
+      "name": "License",
+      "location": "$location"
+    }, 
+  "startDate": "2022-12-12",
+  "endDate": "2022-12-23"],
   "name": "${name}",
+  "description": "${description}",
   "status": "active",
   "type": "local",
   "supplementaryDocs": [],

@@ -4,7 +4,8 @@ okapi_token=$(cat okapi.token)
 
 readarray -t entries < picklist
 
-name=${entries[0]}
+picklistName="${entries[0]}"
+termName=$(echo "${picklistName}" |tr -dc "[0-9a-zA-Z]")
 
 # strip dashes from ID
 id=$(uuidgen |tr -d "-")
@@ -12,7 +13,7 @@ id=$(uuidgen |tr -d "-")
 IFS='' read -r -d '' picklist << EndOfPicklist
 {
     "id": "${id}",
-    "desc": "${name}",
+    "desc": "${picklistName}",
     "internal": "false",
     "values": []
 
@@ -29,6 +30,25 @@ done
 
 
 apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${picklist}" "${okapi_url}/licenses/refdata")
+echo ${apicall}
+
+picklistid=$(echo ${apicall} |jq -r .id)
+
+IFS='' read -r -d '' term << EndOfTerm
+{
+  "defaultInternal": true,
+  "primary": false,
+  "category": "${picklistid}",
+  "defaultInternal": "true",
+  "weight": 0,
+  "label": "${picklistName}",
+  "name": "${termName}",
+  "description": "${picklistName}",
+  "type": "Refdata"
+}
+EndOfTerm
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${term}" "${okapi_url}/licenses/custprops")
 
 echo "${apicall}"
 

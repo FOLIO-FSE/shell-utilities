@@ -1,0 +1,27 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+
+# strip dashes from ID
+
+label=$(echo "${1}" |xargs -0 |jq -aRs)
+name=$(tr -dc "[0-9A-Za-z]" <<< ${label})
+
+
+IFS='' read -r -d '' term << EndOfTerm
+{
+  "defaultInternal": true,
+  "primary": false,
+  "weight": 0,
+  "label": ${label},
+  "name": "${name}",
+  "description": ${label},
+  "type": "Text"
+}
+EndOfTerm
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${term}" "${okapi_url}/licenses/custprops")
+
+echo "${apicall}"
+

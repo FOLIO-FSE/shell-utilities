@@ -1,0 +1,28 @@
+tenant="$(cat tenant)"
+okapi_url="$(cat okapi.url)"
+okapi_token="$(cat okapi.token)"
+
+declare -A dict_fullList
+
+name="${1}"
+foundlist=0
+
+apicall=$(curl -s -w '\n' -X GET \
+  -H "Accept: application/json" \
+  -H "X-Okapi-Tenant: ${tenant}" \
+  -H "x-okapi-token: ${okapi_token}" \
+  "${okapi_url}/licenses/refdata?query=cql.allRecords=1&perPage=10000")
+
+eval "$(echo ${apicall} |  jq -r '.[] | @sh "dict_fullList[\(.desc|tostring)]=\(.|tostring)"')"
+
+for key in "${dict_fullList[@]}";do
+	name_compare=$(echo "${key}" |jq -r .desc)
+	if [[ "${name}" == "${name_compare}" ]];then
+		foundlist=1
+		deleteid=$(jq -r .id <<< "${key}")
+		curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/licenses/refdata/${deleteid}"
+	fi
+done
+
+if [[ $foundlist -eq 0 ]];then echo "Picklist not found";fi
+

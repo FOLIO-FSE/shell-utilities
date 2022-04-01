@@ -20,7 +20,7 @@ picklists=$(curl -s -w '\n' -X GET \
   -H "Accept: application/json" \
   -H "X-Okapi-Tenant: ${tenant}" \
   -H "x-okapi-token: ${okapi_token}" \
-  "${okapi_url}/licenses/refdata?query=cql.allRecords=1&limit=100000")
+  "${okapi_url}/licenses/refdata?query=cql.allRecords=1&perPage=100000")
 
 term_uuids=($(echo ${picklists} |jq -r '.[].id' |tr -cd "[0-9a-zA-Z\-\n]"))
 term_desc=($(echo ${picklists} |jq -r '.[].desc' |tr -cd "[0-9a-zA-Z\-\n]"))
@@ -47,9 +47,9 @@ for key in "${term_desc[@]}";do
 done
 
 
-for x in "${dict_term_values[@]}";do
-	echo $x
-done
+#for x in "${dict_term_values[@]}";do
+#	echo $x
+#done
 
 # convert org codes into a scalar array pointing to UUIDs
 apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/organizations?limit=100000")
@@ -57,11 +57,10 @@ apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Te
 eval "$(echo ${apicall} |  jq -r '.organizations[] | @sh "dict_org_uuid[\(.code|tostring)]=\(.id|tostring)"')"
 eval "$(echo ${apicall} |  jq -r '.organizations[] | @sh "dict_org_name[\(.code|tostring)]=\(.name|tostring)"')"
 
-
 while IFS=$'\n' read line;do
-
 	line=$(echo "${line}" |tr "\t" "|")
-	IFS='|' read  name type status contact role1 org1name org1code org1role org2name org2code org2role <<< ${line}
+	IFS='|' read  name desc location note1 note2 note3 <<< ${line}
+	notes=$(echo -e "Migrated from Sierra\n\n${note1}\n${note2}\n${note3}" |xargs -0 |jq -aRs)
 
 	id=$(uuidgen)
 
@@ -69,7 +68,7 @@ while IFS=$'\n' read line;do
 	org1role=$(echo ${org1role} |tr [A-Z] [a-z])
 	org2role=$(echo ${org2role} |tr [A-Z] [a-z])
 
-	contact='{ "_delete": false, "user": "ba3c643b-87fc-4b03-880a-29151174a2fd", "role": "erm_librarian" }'
+	#contact='{ "_delete": false, "user": "ba3c643b-87fc-4b03-880a-29151174a2fd", "role": "erm_librarian" }'
 
 	if [[ ! -z $org1code ]];then
 		if [[ "${dict_org_name[${org1code}]+abc}" ]];then
@@ -88,17 +87,17 @@ IFS='' read -r -d '' license << EndOfLicense
 {
   "links": [],
   "customProperties": {},
+  "description": ${notes},
   "contacts": [${contact}],
   "tags": [],
-  "docs": [    {
+  "docs": [
+    {
       "_delete": false,
       "name": "License",
-      "location": "$location"
-    }, 
-  "startDate": "2022-12-12",
-  "endDate": "2022-12-23"],
+      "location": "${location}"
+    }
+  ],
   "name": "${name}",
-  "description": "${description}",
   "status": "active",
   "type": "local",
   "supplementaryDocs": [],
@@ -120,12 +119,12 @@ IFS='' read -r -d '' license << EndOfLicense
 
 EndOfLicense
 
+
 if [[ $counter -gt 0 ]]  ;then
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${license}" "${okapi_url}/licenses/licenses")
 	echo $apicall
 fi
 
-
 counter=$((${counter} + 1))
 
-done < licenses.tsv
+done < unimelb_licenses.txt

@@ -10,11 +10,7 @@ declare -A dict_org_uuid
 declare -A dict_org_name
 declare -A dict_picklist_uuid
 declare -A dict_picklist_values
-declare -A dict_license_uuid
-declare -A dict_fulllicense
 
-declare -a license_names
-declare -a license_uuids
 declare -a picklist_uuids
 declare -a picklist_desc
 declare -a picklist_labels
@@ -36,32 +32,11 @@ EndOfField
 echo "${custom_field}"
 }
 
-licenses=$(curl -s -w '\n' -X GET \
-  -H "Accept: application/json" \
-  -H "X-Okapi-Tenant: ${tenant}" \
-  -H "x-okapi-token: ${okapi_token}" \
-  "${okapi_url}/licenses/licenses?query=cql.allRecords=1&limit=100000")
-
-### create a map of names to license uuids
-license_uuids=($(echo ${licenses} |jq -r '.[].id' |tr -cd "[0-9a-f\-\n]"))
-license_names=($(echo ${licenses} |jq -r '.[].name' |tr [A-Z] [a-z] |tr -cd "[0-9a-z\-\n]"))
-
-counter=0
-for name in "${license_names[@]}";do
-	dict_license_uuid[${name}]="${license_uuids[$counter]}"
-echo $name
-	counter=$(($counter + 1))
-done
-
-### get the actual licenses
-eval "$(echo ${licenses} |  jq -r '.[] | @sh "dict_fulllicense[\(.id|tostring)]=\(.|tostring)"')"
-exit
-
 picklists=$(curl -s -w '\n' -X GET \
   -H "Accept: application/json" \
   -H "X-Okapi-Tenant: ${tenant}" \
   -H "x-okapi-token: ${okapi_token}" \
-  "${okapi_url}/licenses/refdata?query=cql.allRecords=1&limit=100000")
+  "${okapi_url}/licenses/refdata?query=cql.allRecords=1&perPage=100000")
 
 picklist_uuids=($(echo ${picklists} |jq -r '.[].id' |tr -cd "[0-9a-zA-Z\-\n]"))
 picklist_desc=($(echo ${picklists} |jq -r '.[].desc' |tr -cd "[0-9a-zA-Z\-\n]"))

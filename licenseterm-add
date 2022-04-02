@@ -47,7 +47,6 @@ for ((pickcounter=0; pickcounter<=${picklist_length};pickcounter++));do
 		for ((entry=0; entry<${#label_arr[@]}; entry++));do
 			label=$(echo "${label_arr[$entry],,}" |tr -d " ")
 			value=${value_arr[$entry]}
-			echo "$label -- $value"
 			dict_picklist_values["${label}"]="${value}"
 		done
 	fi
@@ -62,11 +61,14 @@ while IFS=$'\t' read license_name term_value;do
 	term_value=$(echo ${term_value,,} |tr -d " ")
 	term_value=${dict_picklist_values["${term_value}"]}
 
-	license=$(echo ${license} |jq ".customProperties.${field_name} = [ {\"value\": \"${term_value}\"} ] ")
+	if [[ ! -z ${term_value} ]];then
+
+		license=$(echo ${license} |jq ".customProperties.${field_name} = [ {\"value\": \"${term_value}\"} ] ")
 echo ${license} |jq .
 #if [[ $counter -gt 0 ]]  ;then
-	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${license}" "${okapi_url}/licenses/licenses/${license_id}")
-	echo $apicall
+		apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${license}" "${okapi_url}/licenses/licenses/${license_id}")
+		echo $apicall
+	fi
 #fi
 
 

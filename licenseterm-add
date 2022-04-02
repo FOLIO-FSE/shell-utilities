@@ -63,8 +63,10 @@ while IFS=$'\t' read license_name term_value;do
 
 	if [[ ! -z ${term_value} ]];then
 
-		license=$(echo ${license} |jq ".customProperties.${field_name} = [ {\"value\": \"${term_value}\"} ] ")
-echo ${license} |jq .
+		license=$(echo ${license} |jq "
+			del(.customProperties.${field_name}) |
+			.customProperties.${field_name} = [ {\"value\": \"${term_value}\"} ] |
+			.customProperties.undefined = [ {\"_delete\": true} ]")
 #if [[ $counter -gt 0 ]]  ;then
 		apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${license}" "${okapi_url}/licenses/licenses/${license_id}")
 		echo $apicall

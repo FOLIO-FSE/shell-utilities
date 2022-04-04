@@ -6,8 +6,6 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-declare -A dict_org_uuid
-declare -A dict_org_name
 declare -A dict_term_uuid
 declare -A dict_term_values
 
@@ -47,20 +45,17 @@ for key in "${term_desc[@]}";do
 done
 
 
-#for x in "${dict_term_values[@]}";do
-#	echo $x
-#done
-
 # convert org codes into a scalar array pointing to UUIDs
 apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/organizations?limit=100000")
 
-eval "$(echo ${apicall} |  jq -r '.organizations[] | @sh "dict_org_uuid[\(.code|tostring)]=\(.id|tostring)"')"
-eval "$(echo ${apicall} |  jq -r '.organizations[] | @sh "dict_org_name[\(.code|tostring)]=\(.name|tostring)"')"
+#eval "$(echo ${apicall} |  jq -r '.organizations[] | @sh "dict_org_uuid[\(.code|tostring)]=\(.id|tostring)"')"
+#eval "$(echo ${apicall} |  jq -r '.organizations[] | @sh "dict_org_name[\(.code|tostring)]=\(.name|tostring)"')"
 
 while IFS=$'\n' read line;do
 	line=$(echo "${line}" |tr "\t" "|")
-	IFS='|' read  name desc location note1 note2 note3 <<< ${line}
-	notes=$(echo -e "Migrated from Sierra\n\n${note1}\n${note2}\n${note3}" |xargs -0 |jq -aRs)
+	IFS='|' read  name location note1 note2 note3 <<< ${line}
+	notes=$(echo -e "${note1}\n${note2}\n${note3}\nMigrated from Sierra" |xargs -0 |jq -aRs)
+	location=$(echo -e "${location}" |xargs -0 |jq -aRs)
 
 	id=$(uuidgen)
 
@@ -94,7 +89,7 @@ IFS='' read -r -d '' license << EndOfLicense
     {
       "_delete": false,
       "name": "License",
-      "location": "${location}"
+      "location": ${location}
     }
   ],
   "name": "${name}",
@@ -109,22 +104,15 @@ IFS='' read -r -d '' license << EndOfLicense
   "openEnded": false,
   "amendments": [],
   "orgs": [${orgs}],
-  "type": {
-    "value": "local",
-    "label": "Local"
-  },
   "alternateNames": [${alternateNames}],
   "id": "${id}"
 }
 
 EndOfLicense
 
-
-if [[ $counter -gt 0 ]]  ;then
-	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${license}" "${okapi_url}/licenses/licenses")
-	echo $apicall
-fi
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${license}" "${okapi_url}/licenses/licenses")
+echo $apicall
 
 counter=$((${counter} + 1))
 
-done < unimelb_licenses.txt
+done < licenses_core.txt

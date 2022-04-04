@@ -1,12 +1,15 @@
 # Expects data in delimited file named licenses
 #
 # Terms are mapped by their labels, list items by term uuid and normalized value
+#
+# infile should have same name as term
 
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-field_name="Walkins"
+field_name="PerpetualAccess"
+infile=${field_name}
 
 declare -A dict_picklist_uuid
 declare -A dict_picklist_values
@@ -52,8 +55,14 @@ for ((pickcounter=0; pickcounter<=${picklist_length};pickcounter++));do
 	fi
 done
 
-while IFS=$'\t' read license_name term_value;do
+termcounter=1
+
+while IFS=$'\t' read license_name term_value public_note;do
+	echo -e "Processng term ${termcounter}"
+
 	license=$(curl  --data-urlencode "term=${license_name}" --data-urlencode "match=name" -G -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/licenses/licenses" |jq -r '.[0]')
+
+	public_note=$(jq . -Rs <<< ${public_note})
 
 	license_id=$(echo ${license} |jq -r '.id')
 	dict_licenses[${license_id}]="${license}"
@@ -65,15 +74,14 @@ while IFS=$'\t' read license_name term_value;do
 
 		license=$(echo ${license} |jq "
 			del(.customProperties.${field_name}) |
-			.customProperties.${field_name} = [ {\"value\": \"${term_value}\"} ] |
-			.customProperties.undefined = [ {\"_delete\": true} ]")
-#if [[ $counter -gt 0 ]]  ;then
+			.customProperties.${field_name}[0].value = \"${term_value}\" |
+			.customProperties.${field_name}[0].publicNote = ${public_note} |
+			.customProperties.undefined[0]._delete = true")
+
 		apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${license}" "${okapi_url}/licenses/licenses/${license_id}")
-		echo $apicall
+		echo $apicall 
 	fi
-#fi
 
+termcounter=$((${termcounter} + 1))
 
-counter=$((${counter} + 1))
-
-done < test
+done < ${infile}

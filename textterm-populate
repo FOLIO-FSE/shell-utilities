@@ -1,0 +1,75 @@
+# Expects data in delimited file named licenses
+#
+# Terms are mapped by their names, list items by term uuid and normalized value
+#
+# infile should have same name as term
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+field_name="Print"
+infile=${field_name}
+
+declare -A dict_textterm_uuid
+declare -A dict_license_uuid
+declare -A dict_licenses
+
+declare -a textterm_uuids
+declare -a textterm_name
+declare -a license_names
+declare -a license_uuids
+declare -a all_licenses
+
+textterms=$(curl -s -w '\n' -X GET \
+  -H "Accept: application/json" \
+  -H "X-Okapi-Tenant: ${tenant}" \
+  -H "x-okapi-token: ${okapi_token}" \
+  "${okapi_url}/licenses/custprops")
+
+textterm_uuids=($(echo ${textterms} |jq -r '.[].id' |tr -cd "[0-9a-zA-Z\-\n]"))
+textterm_name=($(echo ${textterms} |jq -r '.[].name' |tr -cd "[0-9a-zA-Z\-\n]"))
+
+# a bunch of arrays need to be glued together using index position
+
+# declare scalar arrays pointing from term type to uuid
+textterm_length=${#textterm_name[@]}
+for ((pickcounter=0; pickcounter<=${textterm_length};pickcounter++));do
+	# select the textterm for the column
+	if [[ ${textterm_name[$pickcounter]}  == "${field_name}" ]];then
+		term_uuid="${textterm_uuids[$pickcounter]}"
+	fi
+done
+
+if [[ -z ${term_uuid} ]];then echo "Text term ${field_name} not found";exit; fi
+
+termcounter=1
+
+while IFS=$'\t' read license_name term_value;do
+	echo -e "Processing term ${termcounter} for ${license_name}"
+	
+	license=$(curl  --data-urlencode "filters=name==${license_name}" -G -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/licenses/licenses" |jq -r '.[0]')
+
+	license_id=$(echo ${license} |jq -r '.id')
+	dict_licenses[${license_id}]="${license}"
+	
+	if [[ ${#license_id} -eq 36 ]];then
+		if [[ ! -z ${term_value} ]];then
+			term_value=$(jq -aRs <<< ${term_value})
+	
+			license=$(echo ${license} |jq "
+				del(.customProperties.${field_name}) |
+				.customProperties.${field_name}[0].value = ${term_value} |
+				.customProperties.undefined[0]._delete = true")
+
+			apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${license}" "${okapi_url}/licenses/licenses/${license_id}")
+			echo $apicall 
+
+		fi
+	else
+		echo "No license found for ${term_value}"
+	fi
+
+termcounter=$((${termcounter} + 1))
+
+done < ${infile}

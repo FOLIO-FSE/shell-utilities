@@ -1,0 +1,47 @@
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+uuid=$(tr -dc "[0-9a-f\-]" <<< $1)
+
+IFS='' read -r -d '' data << EndOfJSON
+{
+	"uuids":["${uuid}"],
+	"type": "uuid",
+	"recordType": "INSTANCE"
+
+}
+EndOfJSON
+
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/data-export/quick-export")
+
+jobexecution_id=$(echo ${apicall} |jq -r .jobExecutionId)
+counter=0
+
+echo "Waiting 10 seconds before first attempt to download file"
+sleep 10
+
+while [[ -z ${file_id} ]];do
+	if [[ ${counter} -gt 0 ]];then echo "Download file not found. Retrying after 10 seconds";sleep 10;fi
+	if [[ ${counter} -gt 10 ]];then echo "Download file not found after 10 attempts, exiting";exit;fi
+
+
+	jobexecution=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-export/job-executions?query=status=(COMPLETED%20OR%20COMPLETED_WITH_ERRORS%20OR%20FAIL)%20sortBy%20completedDate/sort.descending&limit=25" |jq -r ".jobExecutions[] |select(.id == \"${jobexecution_id}\")")
+
+	file_id=$(echo ${jobexecution} |jq -r '.exportedFiles[0].fileId')
+	counter=$(($counter + 1))
+
+done
+
+	file_link=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-export/job-executions/${jobexecution_id}/download/${file_id}" |jq -r .link)
+
+echo -e "File link is *${file_link}* \n Sleeping 15 seconds before downloading"
+sleep 15
+
+curl -o "export.mrc" "${file_link}"
+
+echo "Output has been saved to export.mrc"
+
+

@@ -4,6 +4,8 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
+fines_file="fines.tsv"
+fine_owner="be3e978d-ff04-4fe4-85f9-7c0557b4e4e4"
 
 while IFS=$'\t' read -r item_barcode patron_barcode item_charge processing_fee fineamount fee_assess_date; do
 
@@ -26,7 +28,7 @@ userid=$(echo $apicall | jq -r .users[].id)
 
 IFS='' read -r -d '' fine << EndOfJSON
 {
-  "ownerId": "be3e978d-ff04-4fe4-85f9-7c0557b4e4e4",
+  "ownerId": "${fine_owner}",
   "feeFineId": "${feeFineId}",
   "paymentStatus":{"name":"Outstanding"},
   "status":{"name":"Open"},
@@ -60,5 +62,5 @@ apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" 
 
 echo -e "${apicall}" 
 
-done < fines.tsv 
+done < ${fines_file}
 

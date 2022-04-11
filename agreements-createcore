@@ -1,0 +1,56 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+declare -A roles
+rm -f agreement.log
+
+create_agreement() {
+
+IFS='' read -r -d '' agreement << EndOfAgreement
+{
+  "periods": [
+    {
+      "startDate": "${start_date}"
+    }
+  ],
+  "name": "${name}",
+  "agreementStatus": "active",
+  "orgs": [],
+  "alternateNames": [],
+  "outwardRelationships": [],
+  "inwardRelationships": [],
+  "linkedLicenses": [],
+  "id": "${uuid}"
+}
+EndOfAgreement
+
+echo "${agreement}"
+
+}
+
+
+while IFS=$'\n' read -r line;do 
+	line=$(echo "${line}" |tr "\t" "^")
+
+	IFS='^' read -r name <<< "${line}"
+	echo "Processing $name"
+
+	# agreement uuid -- needs to be global
+	uuid=$(uuidgen)
+
+	#  start_date is required
+	start_date=$(date -I)
+
+	agreement=$(create_agreement)
+	
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement}" "${okapi_url}/erm/sas")
+
+echo "${apicall}" >> agreement.log
+
+
+	#echo "Processing $name -- record $counter"
+	echo "${apicall}"
+	counter=$((counter + 1))
+done < names
+

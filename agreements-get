@@ -1,7 +1,27 @@
+
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/sas?perPage=10000")
+all_agreements=""
 
-echo ${apicall}
+offset=0
+recsretrieved=100
+
+while [[ $recsretrieved -eq 100 ]] ;do
+	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/sas?perPage=100&offset=$offset")
+
+	recsretrieved=$(echo ${apicall} |jq '. |length')
+	printf "%s records retrieved\r" $(($offset + $recsretrieved))
+
+	all_agreements="${all_agreements}$(echo ${apicall} |jq .[])"
+	offset=$(($offset + 100))
+	done
+
+echo -e "$num_orgs records retrieved\r"
+
+echo "${all_agreements}" > agreements
+echo 'Agreements have been exported to "agreements"'
+
+
+

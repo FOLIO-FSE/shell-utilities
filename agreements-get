@@ -12,13 +12,14 @@ while [[ $recsretrieved -eq 100 ]] ;do
 	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/sas?perPage=100&offset=$offset")
 
 	recsretrieved=$(echo ${apicall} |jq '. |length')
-	printf "%s records retrieved\r" $(($offset + $recsretrieved))
+	totalrecs=$(($offset + $recsretrieved))
+	printf "%s records retrieved\r" $totalrecs
 
 	all_agreements="${all_agreements}$(echo ${apicall} |jq .[])"
 	offset=$(($offset + 100))
 	done
 
-echo -e "$num_orgs records retrieved\r"
+echo "$totalrecs records retrieved"
 
 echo "${all_agreements}" > agreements
 echo 'Agreements have been exported to "agreements"'

@@ -4,6 +4,6 @@ okapi_token=$(cat okapi.token)
 
 license_name="${1}"
 
-license=$(curl  -s -w '\n' --data-urlencode "match=name" --data-urlencode "term=${license_name}" -G -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/licenses/licenses")
+license=$(curl  -s -w '\n' --data-urlencode "match=name" --data-urlencode "perPage=100" --data-urlencode "term=${license_name}" -G -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/licenses/licenses")
 
 echo "${license}" 

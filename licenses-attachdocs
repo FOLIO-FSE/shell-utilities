@@ -38,17 +38,23 @@ done
 # attach docs
 
 while IFS=$'\t' read -r license file;do
-	# post file and get id
-	apicall=$(curl --http1.1 -s -w '\n' -X POST -H  "Content-Type:multipart/form-data" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -F upload=@${file} "${okapi_url}/licenses/files")
-
-	file_uuid=$(echo ${apicall} |jq -r .id)
 	comparekey=$(tr -dc "[0-9a-z]" <<< "${license,,}")
+	record="${license_dict[$comparekey]}"
 
-	# fix json and PUT
-	record=$(echo "${license_dict[$comparekey]}" | jq ".docs += [{ \"_delete\": false,\"fileUpload\": \"${file_uuid}\", \"name\": \"test\" }]")
-	record_uuid=$(echo ${record} |jq -r .id)
+	if [[ ${record} =~ [a-z0-9A-Z] ]];then
+		# post file and get id
+		apicall=$(curl --http1.1 -s -w '\n' -X POST -H  "Content-Type:multipart/form-data" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -F upload=@${file} "${okapi_url}/licenses/files")
 
-	curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/licenses/licenses/${record_uuid}"
+		file_uuid=$(echo ${apicall} |jq -r .id)
+		record_uuid=$(echo ${record} |jq -r .id)
+
+		# fix json and PUT
+		record=$(echo "${record}" | jq ".docs += [{ \"_delete\": false,\"fileUpload\": \"${file_uuid}\", \"name\": \"test\" }]")
+
+		curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/licenses/licenses/${record_uuid}"
+	else
+		echo "${license} not found"
+	fi
 	
-done < docs
+done < docs.tsv
 

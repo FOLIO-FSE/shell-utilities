@@ -9,10 +9,10 @@ all_orgs=""
 
 for (( offset=0; offset<=$num_orgs; offset = offset + 100 ));do
 	all_orgs=${all_orgs}$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/organizations?query=%28status%3D%3D%22Active%22%29+sortby+name%2Fsort.ascending&limit=100&offset=$offset" |jq .organizations[])
-	if [[ $offset -ne 0 ]];then printf "%s records retrieved\r" $offset;fi
+	if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset, $num_orgs;fi
 	done
 
-echo -e "$num_orgs records retrieved\r"
+echo -e "$num_orgs records retrieved          \r"
 
 echo "${all_orgs}" > orgs
 echo 'Organizations have been exported to "orgs"'

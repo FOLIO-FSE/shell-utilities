@@ -1,0 +1,57 @@
+#!/usr/bin/awk -f
+
+BEGIN{
+	RS=ORS="\n\n";FS="\n"
+}
+
+function extract_marc_data(){
+	ORS=""
+
+	system_id=sierra_id=bcode3=""
+
+	for(i=1; i<=NF; i++) {
+		if(substr($i, 2, 3) == "001") {
+			system_id = substr($i, 7)
+		}
+
+		if(substr($i, 2, 3) == "907") {
+			split($i, holdings_info, "$")
+
+			for (j in holdings_info) {
+				if (substr(holdings_info[j], 1, 1) == "a") {
+					sierra_id = substr(holdings_info[j], 2)
+					}
+				}
+
+			}
+		if(substr($i, 2, 3) == "998") {
+			split($i, holdings_info, "$")
+
+			for (j in holdings_info) {
+				if (substr(holdings_info[j], 1, 1) == "d") {
+					bcode3 = substr(holdings_info[j], 2)
+					}
+				}
+			print system_id"\t"sierra_id"\t"bcode3"\n" >> "outfile.tsv" 
+
+			}
+		}
+	
+}
+
+{
+
+ORS="\n\n"
+
+if ($0 ~ "\n=998") {
+	extract_marc_data()
+	bibcounter++
+	}
+
+	if(NR % 10000 == 0 ) {printf ("Processed %d bib records\r", bibcounter)}
+}
+
+END {
+	print bibcounter " bib records were processed"
+}
+

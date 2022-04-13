@@ -49,7 +49,7 @@ while IFS=$'\t' read -r license file;do
 		record_uuid=$(echo ${record} |jq -r .id)
 
 		# fix json and PUT
-		record=$(echo "${record}" | jq ".docs += [{ \"_delete\": false,\"fileUpload\": \"${file_uuid}\", \"name\": \"test\" }]")
+		record=$(echo "${record}" | jq ".docs += [{ \"_delete\": false,\"fileUpload\": \"${file_uuid}\", \"name\": \"${file}\" }]")
 
 		curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/licenses/licenses/${record_uuid}"
 	else

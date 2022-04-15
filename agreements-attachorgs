@@ -80,8 +80,9 @@ while IFS=$'\t' read -r agreement organization;do
 		agreement_uuid=$(echo ${agreement_record} |jq -r .id)
 		 if [[ ${organization_record} =~ [a-z0-9A-Z] ]];then
 			organization_uuid=$(echo ${organization_record} |jq -r .id)
+			organization_name=$(echo ${organization_record} |jq -r .name)
 			# fix json and PUT
-			record=$(echo "${agreement_record}" | jq ".orgs += [ { \"_delete\": false, \"org\": {\"orgsUuid\": \"${organization_uuid}\", \"primaryOrg\": false, \"roles\": [ {  \"value\": \"content_provider\" } ] }} ]")
+			record=$(echo "${agreement_record}" | jq ".orgs += [ { \"_delete\": false, \"org\": {\"name\": \"${organization_name}\", \"orgsUuid\": \"${organization_uuid}\", \"primaryOrg\": false, \"roles\": [ {  \"value\": \"content_provider\" } ] }} ]")
 	
 			curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/erm/sas/${agreement_uuid}"
 		else

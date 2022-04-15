@@ -3,12 +3,16 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-search="$1"
+field="$1"
+subfield="$2"
+operator="$3"
+value="'"${4}"'"
+
 searchtype="fieldsearch"
 
 IFS='' read -r -d '' fieldsearch << EndOfJSON
 {
-	"fieldsSearchExpression": "${search}"
+	"fieldsSearchExpression": "${field}.${subfield} ${operator} ${value}"
 }
 EndOfJSON
 

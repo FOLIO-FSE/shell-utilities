@@ -7,7 +7,9 @@ okapi_token=$(cat okapi.token)
 fines_file="fines.tsv"
 fine_owner="be3e978d-ff04-4fe4-85f9-7c0557b4e4e4"
 
-while IFS=$'\t' read -r item_barcode patron_barcode item_charge processing_fee fineamount fee_assess_date; do
+while IFS=$'\n' read -r line; do
+	line=$(tr "\t" "^" <<< ${line})
+	IFS=$'^' read -r item_barcode patron_barcode item_charge processing_fee fineamount fee_assess_date <<< "${line}"
 
 patron_barcode=$(sed 's/[^0-9A-Z\-]//ig' <<< $patron_barcode)
 fineamount=$(sed 's/[^0-9\.]//g' <<< $fineamount)

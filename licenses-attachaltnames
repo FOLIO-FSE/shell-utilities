@@ -57,7 +57,8 @@ while IFS=$'\t' read -r license name;do
 	if [[ ${license_record} =~ [a-z0-9A-Z] ]];then
 		license_uuid=$(echo ${license_record} |jq -r .id)
 		# fix json and PUT
-		record=$(echo "${license_record}" | jq ".alternateNames += [ { \"_delete\": false, \"name\": \"${name}\"} ]")
+		name=$(echo ${name} |jq -aRs .)
+		record=$(echo "${license_record}" | jq ".alternateNames += [ { \"_delete\": false, \"name\": ${name}} ]")
 	
 		curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/licenses/licenses/${license_uuid}"
 	else 

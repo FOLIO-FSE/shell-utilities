@@ -34,10 +34,19 @@ eval "$(echo ${all_licenses} |jq -r '. | @sh "license_dict[\(.name|tostring|asci
 
 echo "Normalizing License keys"
 # normalize keys
+
+counter=0
+# normalize keys
 for key in "${!license_dict[@]}";do
-	newkey=$(tr -dc [a-z0-9] <<< "${key}")
-	license_dict[${newkey}]=${license_dict["${key}"]}
+        newkey=$(tr -dc [a-z0-9] <<< "${key}")
+        license_dict[${newkey}]=${license_dict["${key}"]}
+
+        if (( $counter % 10 == 0 ));then
+                printf "%s keys normalized\r" $counter
+        fi
+        counter=$(($counter + 1))
 done
+echo "$counter keys normalized"
 
 offset=0
 recsretrieved=100
@@ -62,10 +71,17 @@ eval "$(echo ${all_organizations} |jq -r '. | @sh "organization_dict[\(.name|tos
 
 echo "Normalizing Organization keys"
 # normalize keys
+counter=0
 for key in "${!organization_dict[@]}";do
 	newkey=$(tr -dc [a-z0-9] <<< "${key}")
 	organization_dict[${newkey}]=${organization_dict["${key}"]}
+
+        if (( $counter % 10 == 0 ));then
+                printf "%s keys normalized\r" $counter
+        fi
+        counter=$(($counter + 1))
 done
+echo "$counter keys normalized"
 
 # attach organization 
 

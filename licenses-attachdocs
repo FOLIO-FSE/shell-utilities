@@ -30,11 +30,19 @@ eval "$(echo ${all_licenses} |jq -r '. | @sh "license_dict[\(.name|tostring|asci
 
 echo "Normalizing keys"
 # normalize keys
-for key in "${!license_dict[@]}";do
-	newkey=$(tr -dc [a-z0-9] <<< "${key}")
-	license_dict[${newkey}]=${license_dict["${key}"]}
-done
 
+counter=0
+# normalize keys
+for key in "${!license_dict[@]}";do
+        newkey=$(tr -dc [a-z0-9] <<< "${key}")
+        license_dict[${newkey}]=${license_dict["${key}"]}
+
+        if (( $counter % 10 == 0 ));then
+                printf "%s keys normalized\r" $counter
+        fi
+        counter=$(($counter + 1))
+done
+echo "$counter keys normalized"
 # attach docs
 
 while IFS=$'\t' read -r license file;do

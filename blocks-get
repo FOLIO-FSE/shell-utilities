@@ -2,7 +2,29 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-user_uuid=$(sed 's/[^a-z0-9\-]//g' <<< "$1")
+search_for=$(tr -dc "[0-9a-f\-]" <<< "$1")
+
+barcodefound=0
+
+if [[ ${search_for} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+        endpoint="${okapi_url}/users/${search_for}"
+else
+        endpoint="${okapi_url}/users?query=barcode==${search_for}"
+        barcodefound=1
+fi
+
+apicall=$(curl -s -w '\n' -X GET -D \
+  -H "Accept: application/json" \
+  -H "X-Okapi-Tenant: ${tenant}" \
+  -H "x-okapi-token: ${okapi_token}" \
+  "${endpoint}")
+
+if [[ ${barcodefound} -eq 1 ]];then
+        apicall=$(echo $apicall |jq '.users[0]')
+        user_uuid=$(echo $apicall |jq -r .id)
+else
+        user_uuid=${search_for}
+fi
 
 apicall=$(curl -s -w '\n' -X GET -D \
   -H "Accept: application/json" \
@@ -10,6 +32,6 @@ apicall=$(curl -s -w '\n' -X GET -D \
   -H "x-okapi-token: ${okapi_token}" \
   ${okapi_url}/user-summary/${user_uuid})
 
-echo $apicall | jq .
+echo $apicall  |jq .
 
 

@@ -1,0 +1,18 @@
+# Expects data in delimited file named licenses
+#
+# Terms are mapped by their labels, list items by term uuid and normalized value
+#
+# infile should have same name as term
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+while IFS=$'\t' read -r license_id license;do
+	echo -e "Processng term ${license_id}"
+
+
+	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${license}" "${okapi_url}/licenses/licenses/${license_id}")
+	echo $apicall 
+
+done < infile

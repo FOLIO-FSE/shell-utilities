@@ -1,0 +1,51 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+declare -A course_dict
+namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
+
+apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/coursereserves/courses?limit=100000")
+
+eval "$(echo ${apicall} |  jq -r '.courses[] | @sh "course_dict[\(.courseNumber|tostring|ascii_downcase)]=\(.courseListingId|tostring)"')"
+
+echo "Normalizing Course Listing Id keys"
+# normalize keys
+counter=0
+
+for key in "${!course_dict[@]}";do
+	newkey=$(tr -dc [a-z0-9] <<< "${key}")
+	course_dict[${newkey}]=${course_dict["${key}"]}
+        if (( $counter % 10 == 0 ));then
+                printf "%s keys normalized\r" $counter
+        fi
+        counter=$(($counter + 1))
+done
+
+echo "$counter keys normalized"
+
+while IFS=$'\t' read -r courseNumber instructorName;do
+
+instructorId=$(uuidgen --sha1 -n ${namespace} -N ${okapi_url}:instructors:${instructorName})
+instructorId=$(uuidgen)
+
+courseNumber=$(tr -dc "[0-9a-z]" <<< ${courseNumber,,})
+listingId=${course_dict[${courseNumber}]}
+
+
+
+IFS='' read -r -d '' instructor << EndOfInstructor
+{
+"id": "${instructorId}",
+"name": "${instructorName}",
+"courseListingId": "${listingId}"
+}
+EndOfInstructor
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${instructor}" "${okapi_url}/coursereserves/courselistings/${listingId}/instructors")
+echo -e "${apicall}" 
+
+done < courseNumber-instructor.tsv
+
+
+

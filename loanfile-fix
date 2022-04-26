@@ -5,13 +5,16 @@
 #
 # expected headers are item_barcode, out_date, due_date, renewal_count, patron_barcode, next_item_status
 
+
+# Be sure to change separator for date (usually dash or slash) 
+
 function fixdate(value)
 {
 	gsub(/ .*/, "", value)
 	
 	if (value ~ /^[0-9]*-[0-9]*-[0-9]*$/) {
 		split(value, datearr, datesep)
-		retval = sprintf("%04d-%02d-%02d", datearr[3], datearr[2], datearr[1])
+		retval = sprintf("%04d-%02d-%02d", datearr[3], datearr[1], datearr[2])
 	} else {retval = ""}
 
 	return retval
@@ -21,43 +24,62 @@ function fixdate(value)
 BEGIN{FS=OFS="\t";counter = 0;badrecs = 0;datesep = "-" }
 
 {
-	item_barcode=$2
-	item_identifier=""
-	patron_barcode=$1
-	patron_identifier=""
-	out_date=$5
-	due_date=$3
-	renewal_count=$6
-	next_item_status="Checked out"
 
-	gsub("\"", "", item_barcode)
-	gsub("\"", "", item_identifier)
-	gsub("\"", "", patron_barcode)
-	gsub("\"", "", patron_identifier)
-	gsub("\"", "", out_date)
-	gsub("/", "-", out_date)
-	gsub("\"", "", due_date)
-	gsub("/", "-", due_date)
-	gsub("\"", "", renewal_count)
+	if (NR == 1) {
+		numfields = NF
 
-	if (item_barcode == "") {item_barcode = item_identifier}
-	if (patron_barcode == "") {patron_barcode = patron_identifier}
+		for (i=1;i<=NF;i++) {
+			switch($i) {
+				case "item_barcode":
+					item_barcode=i
+					$i = "item_barcode"
+					break
+				case "patron_barcode":
+					patron_barcode=i
+					$i = "patron_barcode"
+					break
+				case "out_date":
+					out_date=i
+					$i = "out_date"
+					break
+				case "due_date":
+					due_date=i
+					$i = "due_date"
+					break
+				case "renewal_count":
+					renewal_count=i
+					$i = "renewal_count"
+					break
+				case "next_item_status":
+					next_item_status=i
+					$i = "next_item_status"
+					break
+				}
+		} 
 
-	gsub(/"/, "", $0)
-	if (NR==1) {print "item_barcode\tpatron_barcode\tout_date\tdue_date\trenewal_count\tnext_item_status" > "open_loans.tsv"} else {
+		print "item_barcode\tpatron_barcode\tout_date\tdue_date\trenewal_count\tnext_item_status" > "open_loans.tsv"
 
-	counter++
-	out_date = fixdate(out_date) # 
-	due_date = fixdate(due_date) # 
+	} else {
+		gsub("\"", "", $item_barcode)
+		gsub("\"", "", $patron_barcode)
+		gsub("\"", "", $out_date)
+		gsub("/", "-", $out_date)
+		gsub("\"", "", $due_date)
+		gsub("/", "-", $due_date)
+		gsub("\"", "", $renewal_count)
 	
-	print item_barcode, patron_barcode, out_date, due_date, renewal_count, next_item_status >> "open_loans.tsv" 
-
-	if (counter % 1000 == 0) {
-		printf "%s records\r", counter
+		gsub(/"/, "", $0)
+	
+		counter++
+		$out_date = fixdate($out_date) # 
+		$due_date = fixdate($due_date) # 
+		
+		print $item_barcode, $patron_barcode, $out_date, $due_date, $renewal_count, "Checked out" >> "open_loans.tsv" 
+	
+		if (counter % 100 == 0) {
+			printf "%s records\r", counter
+		}
 	}
-
-
-}
 
 }
 END{ print counter" records were processed" }

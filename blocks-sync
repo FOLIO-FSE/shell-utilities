@@ -5,7 +5,7 @@ okapi_token=$(cat okapi.token)
 
 IFS='' read -r -d '' data << EndOfJSON
 {
-  "scope": "full",
+  "scope": "full"
 }
 EndOfJSON
 

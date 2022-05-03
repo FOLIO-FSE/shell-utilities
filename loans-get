@@ -4,23 +4,13 @@ okapi_token=$(cat okapi.token)
 
 
 offset=0
-recsretrieved=1000
 
-while [[ $recsretrieved -eq 1000 ]] ;do
+num_loans=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/loans?limit=0" |jq -r .totalRecords)
 
-	apicall=$(curl -s -w '\n' -X GET -D \
-	  -H "Accept: application/json" \
-	  -H "X-Okapi-Tenant: ${tenant}" \
-	  -H "x-okapi-token: ${okapi_token}" \
-	  ${okapi_url}/circulation/loans?limit=1000&offset=${offset})
-	
-	recsretrieved=$(echo ${apicall} |jq '.loans |length')
-	totalrecs=$(($offset + $recsretrieved))
-	printf "%s records retrieved\r" $totalrecs
-
-	all_loans="${all_loans}$(echo ${apicall} |jq .loans[])"
-	offset=$(($offset + 1000))
-done
+for (( offset=0; offset<=$num_loans; offset = offset + 1000 ));do
+	all_loans=${all_loans}$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/loans?query=cql.allRecords=1&limit=100&offset=$offset" |jq .loans[])
+	if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset, $num_loans;fi
+	done
 
 echo "${all_loans}" > loans 
 echo 'Loans have been exported to "loans"'

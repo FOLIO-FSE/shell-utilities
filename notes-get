@@ -1,16 +1,21 @@
+
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-query='notes?limit=99000000'
+num_notes=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/notes?limit=0" |jq -r .totalRecords)
 
-apicall=$(curl -s -w '\n' -X GET -D \
-  -H "Accept: application/json" \
-  -H "X-Okapi-Tenant: ${tenant}" \
-  -H "x-okapi-token: ${okapi_token}" \
-  ${okapi_url}/${query})
+all_notes=""
 
-echo $apicall |jq .
+for (( offset=0; offset<=$num_notes; offset = offset + 1000 ));do
+	all_notes=${all_notes}$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/notes?query=cql.allRecords=1&limit=1000&offset=$offset" |jq .notes[])
+	if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset $num_notes;fi
+	done
+
+echo -e "$num_notes records retrieved          \r"
+
+echo "${all_notes}" > notes
+echo 'Notes have been exported to "notes"'
 
 
 

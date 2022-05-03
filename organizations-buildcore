@@ -1,0 +1,151 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+filename="orgs.tsv"
+dos2unix ${filename}
+
+#####################################
+
+build_sierra_address() {
+IFS='$' read -a addr_arr <<< ${addr}
+
+lenarr=${#addr_arr[@]}
+
+line1=""
+line2=""
+city=""
+state=""
+zip=""
+citystatezip=""
+
+if [[ "$lenarr" -eq "2" ]]; then 
+	citystatezip="${addr_arr[1]}"	
+	line2="${addr_arr[0]}"	
+fi
+if [[ "$lenarr" -eq "3" ]]; then 
+	citystatezip="${addr_arr[2]}"	
+	line2="${addr_arr[1]}"	
+	line1="${addr_arr[0]}"	
+fi
+
+if [[ "$lenarr" -eq "4" ]]; then 
+	citystatezip="${addr_arr[3]}"	
+	line2="${addr_arr[2]}"	
+	line1="${addr_arr[0]}, ${addr_arr[1]}"	
+fi
+
+if [[ "$lenarr" -eq "5" ]]; then 
+	citystatezip="${addr_arr[3]} ${addr_arr[4]}"	
+	line2="${addr_arr[2]}"	
+	line1="${addr_arr[0]}, ${addr_arr[1]}"	
+fi
+
+IFS=',' read city statezip <<< ${citystatezip}
+
+IFS=' ' read -r -a statezip <<< "${citystatezip}"
+
+if [[ ${#statezip[@]} > 1 ]]; then
+	if [[ ${statezip[-1]} =~ ^[0-9\-]*$ ]]; then
+
+		zip=${statezip[-1]} 
+		state=${statezip[-2]}
+		citystatezip=""
+	fi
+fi
+
+if [[ ${zip} == "" ]]; then
+	IFS=' ' read -r -a city state zip <<< "${citystatezip}"
+
+	if ! [[ ${zip} =~ ^[0-9A-Z\-]*$ ]]; then
+		city=""
+		state=""
+		zip=""
+	fi
+fi
+
+if [[ ${state} == "" ]]; then
+	state=$(echo ${citystatezip:${#city}} |xargs)
+fi
+
+address="{\"isPrimary\":true,\"addressLine1\":\"${line1}\",\"addressLine2\":\"${line2}\",\"city\":\"${city}\",\"stateRegion\":\"${state}\",\"zipCode\":\"${zip}\"}"
+}
+##############################
+
+create_org_record() {
+
+IFS='' read -r -d '' org << EndOfOrg
+{
+ "id" : "${uuid}",
+ "name" : "${name}",
+ "code" : "${code}",
+ "description" : "",
+ "exportToAccounting" : false,
+ "status" : "Active",
+ "aliases" : [${alias}],
+ "addresses" : [${address}],
+ "phoneNumbers" : [${phone} ${fax}],
+ "emails" : [${email}],
+ "urls" : [${url} ],
+ "contacts" : [ ],
+ "agreements" : [ ],
+ "erpCode" : "",
+ "vendorCurrencies" : [ ],
+ "edi" : {
+   "vendorEdiType" : "31B/US-SAN",
+   "libEdiType" : "31B/US-SAN",
+   "ediFtp" : {
+     "ftpFormat" : "SFTP",
+     "ftpMode" : "ASCII",
+     "ftpConnMode" : "Active"
+   }
+ },
+ "interfaces" : [],
+ "accounts" : [${accountnum}],
+ "isVendor" : true,
+ "changelogs" : [ ],
+ "acqUnitIds" : [ ]
+} 
+EndOfOrg
+
+echo "${org}"
+
+}
+###############################
+counter=0
+
+while IFS=$'\n' read line;do
+	line=$(tr "\t" "^" <<< ${line})
+	#IFS='^' read -r code name alias addr phone fax email url accountnum <<< ${line}
+	IFS='^' read -r code name alias addr phone fax email url <<< ${line}
+
+	# uuid needs to be global, not deterministic since repair/addition tools can't assume deterministic uuids
+	uuid=$(uuidgen)
+
+	if [[ ${alias} != "" ]]; then alias="{\"value\":\"${alias}\"}";fi
+	if [[ ${phone} != "" ]]; then phone="{ \"phoneNumber\" : \"${phone}\", \"type\":\"Office\", \"isPrimary\" : true, \"categories\" : [] }";fi
+	if [[ ${email} =~ @ ]]; then email="{ \"value\" : \"${email}\", \"isPrimary\" : true, \"categories\" : [] }";fi
+	if [[ ${accountnum} != "" ]]; then accountnum="{\"name\":\"${name}\",\"accountNo\":\"${fieldL}\",\"paymentMethod\":\"Other\",\"accountStatus\":\"Active\",\"libraryCode\":\"-\",\"libraryEdiCode\":\"-\"}"; fi
+
+	if [[ ${fax} != "" ]]; then
+		if [[ ${phone} != "" ]]; then
+			fax=",{\"phoneNumber\":\"${fax}\",\"type\":\"Fax\"}"
+		else
+			fax="{\"phoneNumber\":\"${fax}\",\"type\":\"Fax\"}"
+		fi
+	fi
+
+	url=$(sed 's/ .*//' <<< ${url})
+	url=$(sed 's/^[^h].*//' <<< ${url})
+	if [[ ${url} =~ ^http ]]; then url="{ \"language\" : \"en\", \"isPrimary\" : true, \"value\" : \"${url}\" }";fi
+
+	if (( ${#addr} > 5 ));then build_sierra_address;fi
+
+	org=$(create_org_record)
+	
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${org}" "${okapi_url}/organizations/organizations")
+
+	counter=$((counter + 1))
+	echo "Processing $code -- record $counter"
+done < ${filename}
+

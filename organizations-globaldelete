@@ -1,19 +1,30 @@
+
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-recordtype="organizations-storage/organizations"
-apicall=$(curl -X DELETE -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}")
+declare -a org_ids
 
-recordtype="organizations-storage/contacts"
-apicall=$(curl -X DELETE -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}")
+num_orgs=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/organizations?limit=0" |jq -r .totalRecords)
 
-recordtype="organizations-storage/emails"
-apicall=$(curl -X DELETE -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}")
+all_orgs=""
 
-recordtype="organizations-storage/address"
-apicall=$(curl -X DELETE -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}")
+for (( offset=0; offset<=$num_orgs; offset = offset + 100 ));do
+	all_orgs=${all_orgs}$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/organizations?query=%28status%3D%3D%22Active%22%29+sortby+name%2Fsort.ascending&limit=100&offset=$offset" |jq .organizations[])
+	if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset, $num_orgs;fi
+	done
 
-recordtype="organizations-storage/interfaces"
-apicall=$(curl -X DELETE -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}")
+echo -e "$num_orgs records retrieved          \r"
+
+org_ids=( $(echo ${all_orgs} | jq -r .id) )
+
+counter=0
+
+for org_id in ${org_ids[@]};do
+	echo "Deleting entry ${counter} -- ${org_id}"
+	curl -X DELETE -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/organizations/${org_id}"
+	counter=$(($counter + 1))
+done
+
+
 

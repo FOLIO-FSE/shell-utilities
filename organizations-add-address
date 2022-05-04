@@ -1,0 +1,145 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+declare -A organization_dict
+
+filename="org_address.tsv"
+dos2unix ${filename}
+
+get_orgs() {
+
+recsretrieved=100
+offset=0
+all_organizations=""
+
+# retrieve all records
+while [[ $recsretrieved -eq 100 ]] ;do
+        apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/organizations?query=%28status%3D%3D%22Active%22%29+sortby+name%2Fsort.ascending&limit=100&offset=$offset" |jq .organizations)
+
+        recsretrieved=$(echo ${apicall} |jq '. |length')
+        totalrecs=$(($offset + $recsretrieved))
+        printf "%s Organizations retrieved\r" $totalrecs
+
+        all_organizations="${all_organizations}$(echo ${apicall} |jq .[])"
+        offset=$(($offset + 100))
+        done
+
+echo "$totalrecs Organizations retrieved"
+
+# load organizations into scalar array keyed by downcased name
+eval "$(echo ${all_organizations} |jq -r '. | @sh "organization_dict[\(.code|tostring|ascii_downcase)]=\(.|tostring)"')"
+
+echo "Normalizing Organization keys"
+
+# normalize keys
+for key in "${!organization_dict[@]}";do
+        newkey=$(tr -dc [a-z0-9] <<< "${key}")
+        organization_dict[${newkey}]=${organization_dict["${key}"]}
+done
+}
+
+#####################################
+
+build_sierra_address() {
+IFS='$' read -a addr_arr <<< ${addr}
+
+lenarr=${#addr_arr[@]}
+
+line1=""
+line2=""
+city=""
+state=""
+zip=""
+citystatezip=""
+
+if [[ "$lenarr" -eq "2" ]]; then 
+	citystatezip="${addr_arr[1]}"	
+	line2="${addr_arr[0]}"	
+fi
+if [[ "$lenarr" -eq "3" ]]; then 
+	citystatezip="${addr_arr[2]}"	
+	line2="${addr_arr[1]}"	
+	line1="${addr_arr[0]}"	
+fi
+
+if [[ "$lenarr" -eq "4" ]]; then 
+	citystatezip="${addr_arr[3]}"	
+	line2="${addr_arr[2]}"	
+	line1="${addr_arr[0]}, ${addr_arr[1]}"	
+fi
+
+if [[ "$lenarr" -eq "5" ]]; then 
+	citystatezip="${addr_arr[3]} ${addr_arr[4]}"	
+	line2="${addr_arr[2]}"	
+	line1="${addr_arr[0]}, ${addr_arr[1]}"	
+fi
+
+if [[ ${line2}  =~ ^[A-Z].*,.*[0-9]$ ]];then
+	citystatezip="${line2}"
+	line2=""
+fi
+
+IFS=',' read city statezip <<< ${citystatezip}
+
+IFS=' ' read -r -a statezip <<< "${citystatezip}"
+
+if [[ ${#statezip[@]} > 1 ]]; then
+	if [[ ${statezip[-1]} =~ ^[0-9\-]*$ ]]; then
+
+		zip=${statezip[-1]} 
+		state=${statezip[-2]}
+		citystatezip=""
+	fi
+fi
+
+if [[ ${zip} == "" ]]; then
+	IFS=' ' read -r -a city state zip <<< "${citystatezip}"
+
+	if ! [[ ${zip} =~ ^[0-9A-Z\-]*$ ]]; then
+		city=""
+		state=""
+		zip=""
+	fi
+fi
+
+if [[ ${state} == "" ]]; then
+	state=$(echo ${citystatezip:${#city}} |sed 's/ *$//')
+fi
+
+if [[ ${state} == "" ]]; then
+	state=$(echo ${citystatezip:${#city}} |sed 's/ *$//')
+fi
+
+if [[ ${state} =~ ^[A-Z] ]]; then
+	city=$(echo ${city} |sed 's/ ${state}.*$//')
+	city=$(echo ${city} |sed 's/,.*$//')
+fi
+
+
+address="{\"isPrimary\":false,\"addressLine1\":\"${line1}\",\"addressLine2\":\"${line2}\",\"city\":\"${city}\",\"stateRegion\":\"${state}\",\"zipCode\":\"${zip}\"}"
+echo "${address}"
+}
+##############################
+
+get_orgs
+
+counter=0
+
+while IFS=$'\n' read line;do
+	line=$(echo "${line}" | tr -d '"' | tr "\t" "^")
+	IFS='^' read -r code addr <<< ${line}
+	code=$(tr -dc [0-9a-z] <<< ${code,,})
+	organization="${organization_dict[$code]}"
+	uuid=$(echo ${organization} |jq -r .id)
+
+	address=$(build_sierra_address)
+
+	updated_org=$(echo ${organization} | jq ".addresses += [ ${address} ]")
+
+	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_org}" ${okapi_url}/organizations-storage/organizations/${uuid})
+
+	counter=$((counter + 1))
+	echo "Processing $code -- record $counter"
+done < ${filename}
+

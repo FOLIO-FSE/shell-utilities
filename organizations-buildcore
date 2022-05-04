@@ -41,6 +41,11 @@ if [[ "$lenarr" -eq "5" ]]; then
 	line1="${addr_arr[0]}, ${addr_arr[1]}"	
 fi
 
+if [[ ${line2}  =~ ^[A-Z].*,.*[0-9]$ ]];then
+	citystatezip="${line2}"
+	line2=""
+fi
+
 IFS=',' read city statezip <<< ${citystatezip}
 
 IFS=' ' read -r -a statezip <<< "${citystatezip}"
@@ -65,8 +70,18 @@ if [[ ${zip} == "" ]]; then
 fi
 
 if [[ ${state} == "" ]]; then
-	state=$(echo ${citystatezip:${#city}} |xargs)
+	state=$(echo ${citystatezip:${#city}} |sed 's/ *$//')
 fi
+
+if [[ ${state} == "" ]]; then
+	state=$(echo ${citystatezip:${#city}} |sed 's/ *$//')
+fi
+
+if [[ ${state} =~ ^[A-Z] ]]; then
+	city=$(echo ${city} |sed 's/ ${state}.*$//')
+	city=$(echo ${city} |sed 's/,.*$//')
+fi
+
 
 address="{\"isPrimary\":true,\"addressLine1\":\"${line1}\",\"addressLine2\":\"${line2}\",\"city\":\"${city}\",\"stateRegion\":\"${state}\",\"zipCode\":\"${zip}\"}"
 }
@@ -115,7 +130,7 @@ echo "${org}"
 counter=0
 
 while IFS=$'\n' read line;do
-	line=$(tr "\t" "^" <<< ${line})
+	line=$(echo "${line}" |tr "\t" "^" |tr -d '"')
 	#IFS='^' read -r code name alias addr phone fax email url accountnum <<< ${line}
 	IFS='^' read -r code name alias addr phone fax email url <<< ${line}
 
@@ -144,6 +159,7 @@ while IFS=$'\n' read line;do
 	org=$(create_org_record)
 	
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${org}" "${okapi_url}/organizations/organizations")
+	echo ${apicall}
 
 	counter=$((counter + 1))
 	echo "Processing $code -- record $counter"

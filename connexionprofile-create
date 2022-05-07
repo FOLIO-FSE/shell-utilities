@@ -1,0 +1,19 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+IFS='' read -r -d '' profile << EndOfProfile
+{
+  "profile": {
+    "id" : "f26df83c-aa25-40b6-876e-96852c3d4fd4",
+    "name": "OCLC Connexion Profile -- DO NOT DELETE",
+    "description": "Create SRS MARC Bib record and corresponding Instance",
+    "dataType": "MARC"
+  },
+  "addedRelations": [],
+  "deletedRelations": []
+}
+EndOfProfile
+
+curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${profile}" "${okapi_url}/data-import-profiles/jobProfiles"
+

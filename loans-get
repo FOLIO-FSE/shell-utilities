@@ -8,7 +8,7 @@ offset=0
 num_loans=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/loans?limit=0" |jq -r .totalRecords)
 
 for (( offset=0; offset<=$num_loans; offset = offset + 1000 ));do
-	all_loans=${all_loans}$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/loans?query=cql.allRecords=1&limit=100&offset=$offset" |jq .loans[])
+	all_loans=${all_loans}$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/loans?query=cql.allRecords=1&limit=1000&offset=$offset" |jq .loans[])
 	if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset, $num_loans;fi
 	done
 

@@ -2,7 +2,7 @@ edge_url=$(cat okapi.url |sed 's/okapi/edge/')
 edge_key=$(cat edge.key)
 
 external_id=$1
-apicall=$(curl -s -X GET "${edge_url}/patron/account/${external_id}?&apikey=${edge_key}")
+apicall=$(curl -s -X GET "${edge_url}/patron/account/${external_id}?includeLoans=true&includeCharges=true&includeHolds=true&limit=100000&apikey=${edge_key}")
 
 echo $apicall |jq .
 

@@ -25,7 +25,7 @@ apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/octet-
 
 echo "${apicall}"
 
-payload="{\"uploadDefinition\":${apicall},\"jobProfileInfo\": {\"id\": \"e34d7b92-9b83-11eb-a8b3-0242ac130003\", \"dataType\": \"MARC\"}}"
+payload="{\"uploadDefinition\":${apicall},\"jobProfileInfo\": {\"id\": \"${jobProfileId}\", \"dataType\": \"MARC\"}}"
 
 apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${payload}" "${okapi_url}/data-import/uploadDefinitions/${uploadDefinitionId}/processFiles?defaultMapping=true")
 

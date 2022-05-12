@@ -1,0 +1,35 @@
+# useage ./permission-add "user_uuid" "new_permission"
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+marcfile="$1"
+
+# get job profile of default
+jobProfileId=$(curl --http1.1 -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-import-profiles/jobProfiles?limit=1000" |jq -r '.jobProfiles[] | select(.name=="Default - Create instance and SRS MARC Bib") | .id')
+
+if ! [[ $jobProfileId =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]]; then
+	echo "No valid profile found. Exiting."
+	exit
+fi
+
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{\"fileDefinitions\":[{ \"name\":\"${marcfile}\"}]}" "${okapi_url}/data-import/uploadDefinitions")
+
+fileId=$(echo ${apicall} | jq -r '.fileDefinitions[0].id')
+jobExecutionId=$(echo ${apicall} | jq -r '.fileDefinitions[0].jobExecutionId')
+uploadDefinitionId=$(echo ${apicall} | jq -r '.fileDefinitions[0].uploadDefinitionId')
+
+echo "${apicall}"
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/octet-stream" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "@${marcfile}" "${okapi_url}/data-import/uploadDefinitions/${uploadDefinitionId}/files/${fileId}")
+
+echo "${apicall}"
+
+payload="{\"uploadDefinition\":${apicall},\"jobProfileInfo\": {\"id\": \"e34d7b92-9b83-11eb-a8b3-0242ac130003\", \"dataType\": \"MARC\"}}"
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${payload}" "${okapi_url}/data-import/uploadDefinitions/${uploadDefinitionId}/processFiles?defaultMapping=true")
+
+echo "${apicall}"
+

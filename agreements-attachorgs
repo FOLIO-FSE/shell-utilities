@@ -35,7 +35,7 @@ eval "$(echo ${all_agreements} |jq -r '. | @sh "agreement_dict[\(.name|tostring|
 echo "Normalizing Agreement keys"
 # normalize keys
 for key in "${!agreement_dict[@]}";do
-	newkey=$(tr -dc [a-z0-9] <<< "${key}")
+	newkey=${key//[^a-z0-9]/}
 	agreement_dict[${newkey}]=${agreement_dict["${key}"]}
 done
 
@@ -57,13 +57,14 @@ while [[ $recsretrieved -eq 100 ]] ;do
 echo "$totalrecs Organizations retrieved"
 echo "${all_organizations}" > orgs
 
-# load organizations into scalar array keyed by downcased name
-eval "$(echo ${all_organizations} |jq -r '. | @sh "organization_dict[\(.name|tostring|ascii_downcase)]=\(.|tostring)"')"
+# load organizations into scalar array keyed by downcased name or code
+eval "$(echo ${all_organizations} |jq -r '. | @sh "organization_dict[\(.code|tostring|ascii_downcase)]=\(.|tostring)"')"
+#eval "$(echo ${all_organizations} |jq -r '. | @sh "organization_dict[\(.name|tostring|ascii_downcase)]=\(.|tostring)"')"
 
 echo "Normalizing Organization keys"
 # normalize keys
 for key in "${!organization_dict[@]}";do
-	newkey=$(tr -dc [a-z0-9] <<< "${key}")
+	newkey=${key//[^a-z0-9]/}
 	organization_dict[${newkey}]=${organization_dict["${key}"]}
 done
 

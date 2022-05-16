@@ -39,7 +39,6 @@ while IFS=$'\n' read -r line;do
 
 	IFS='^' read -r description name code2 form org start_date <<< "${line}"
 	echo "Processing $name"
-echo ${start_date}
 
 	# agreement uuid -- needs to be global
 	uuid=$(uuidgen)

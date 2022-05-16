@@ -35,6 +35,7 @@ for key in ${!agreement_dict[@]};do
 done
 
 for agreement_uuid in ${key_arr[@]};do
-	curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement_dict[$agreement_uuid]}" "${okapi_url}/erm/sas/${agreement_uuid}"
+	record=$(echo "${agreement_dict[$agreement_uuid]}" |jq '.orgs[].roles[0]={"_delete": false,"role": {"id": "2c9180867dbf118b017de20776fe0001"}}')
+	curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/erm/sas/${agreement_uuid}"
 done
 	

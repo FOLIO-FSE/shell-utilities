@@ -4,7 +4,7 @@ okapi_token=$(cat okapi.token)
 
 declare -A organization_dict
 
-filename="org_email.tsv"
+filename="org_phone.tsv"
 dos2unix ${filename}
 
 get_orgs() {
@@ -47,14 +47,14 @@ counter=0
 
 while IFS=$'\n' read line;do
 	line=$(echo "${line}" | tr -d '"' | tr "\t" "^")
-	IFS='^' read -r code email <<< ${line}
+	IFS='^' read -r code phone <<< ${line}
 	code=$(tr -dc [0-9a-z] <<< ${code,,})
 	organization="${organization_dict[$code]}"
 	uuid=$(echo ${organization} |jq -r .id)
 
-	email="{ \"value\" : \"${email}\", \"isPrimary\" : false, \"categories\" : [] }"
+	phone="{ \"phoneNumber\" : \"${phone}\", \"type\": null, \"isPrimary\" : false, \"categories\" : [] }"
 
-	updated_org=$(echo ${organization} | jq ".emails += [ ${email} ]")
+	updated_org=$(echo ${organization} | jq ".phoneNumbers += [ ${phone} ]")
 
 	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_org}" ${okapi_url}/organizations-storage/organizations/${uuid})
 

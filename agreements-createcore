@@ -33,24 +33,32 @@ echo "${agreement}"
 while IFS=$'\n' read -r line;do 
 	line=$(echo "${line}" |tr "\t" "^")
 
-	IFS='^' read -r name <<< "${line}"
+	# allow population of some default values
+	isPerpetual="yes"
+	renewalPriority="for_review"
+
+	IFS='^' read -r description name code2 form org start_date <<< "${line}"
 	echo "Processing $name"
 
 	# agreement uuid -- needs to be global
 	uuid=$(uuidgen)
 
 	#  start_date is required
-	start_date=$(date -I)
+	if [[ ! start_date =~ [12][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] ]];then start_date=$(date -I);fi
 
 	agreement=$(create_agreement)
+
+	if [[ ${isPerpetual} =~ [a-zA-Z] ]];then agreement=$(echo "${agreement}" | jq ".isPerpetual = { \"value\": \"${isPerpetual}\" } ");fi
+	if [[ ${renewalPriority} =~ [a-zA-Z] ]];then agreement=$(echo "${agreement}" | jq ".renewalPriority = { \"value\": \"${renewalPriority}\" } ");fi
 	
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement}" "${okapi_url}/erm/sas")
 
 echo "${apicall}" >> agreement.log
 
 
-	#echo "Processing $name -- record $counter"
 	echo "${apicall}"
 	counter=$((counter + 1))
-done < names
+
+done < agreements.tsv
+
 

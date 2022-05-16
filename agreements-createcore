@@ -48,6 +48,7 @@ while IFS=$'\n' read -r line;do
 
 	agreement=$(create_agreement)
 
+	if [[ ${description} =~ [a-zA-Z] ]];then description=$(echo "${description}" |jq -aRs);agreement=$(echo "${agreement}" | jq ".description = ${description} ");fi
 	if [[ ${isPerpetual} =~ [a-zA-Z] ]];then agreement=$(echo "${agreement}" | jq ".isPerpetual = { \"value\": \"${isPerpetual}\" } ");fi
 	if [[ ${renewalPriority} =~ [a-zA-Z] ]];then agreement=$(echo "${agreement}" | jq ".renewalPriority = { \"value\": \"${renewalPriority}\" } ");fi
 	

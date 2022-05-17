@@ -2,8 +2,8 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-declare -A roles
 rm -f agreement.log
+infile="agreements.tsv"
 
 create_agreement() {
 
@@ -14,7 +14,7 @@ IFS='' read -r -d '' agreement << EndOfAgreement
       "startDate": "${start_date}"
     }
   ],
-  "name": "${name}",
+  "name": ${name},
   "agreementStatus": "active",
   "orgs": [],
   "alternateNames": [],
@@ -34,24 +34,29 @@ while IFS=$'\n' read -r line;do
 	line=$(echo "${line}" |tr "\t" "^")
 
 	# allow population of some default values
-	isPerpetual="yes"
-	renewalPriority="for_review"
+	#isPerpetual="yes"
+	#renewalPriority="for_review"
+	altname=""
 
-	IFS='^' read -r description name code2 form org start_date <<< "${line}"
-	echo "Processing $name"
+	IFS='^' read -r name description altname start_date <<< "${line}"
+	echo "Processing ${name}"
+	name=$(echo ${name} |jq -aRs)
 
 	# agreement uuid -- needs to be global
 	uuid=$(uuidgen)
 
 	#  start_date is required
+	start_date=${start_date:0:10}
 	if [[ ! ${start_date} =~ [12][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] ]];then start_date=$(date -I);fi
 
 	agreement=$(create_agreement)
 
-	if [[ ${description} =~ [a-zA-Z] ]];then description=$(echo "${description}" |jq -aRs);agreement=$(echo "${agreement}" | jq ".description = ${description} ");fi
+	if [[ ${description} =~ [a-zA-Z] ]];then description=$(echo "${description}" |jq -aRs );agreement=$(echo "${agreement}" | jq ".description = ${description} ");fi
 	if [[ ${isPerpetual} =~ [a-zA-Z] ]];then agreement=$(echo "${agreement}" | jq ".isPerpetual = { \"value\": \"${isPerpetual}\" } ");fi
 	if [[ ${renewalPriority} =~ [a-zA-Z] ]];then agreement=$(echo "${agreement}" | jq ".renewalPriority = { \"value\": \"${renewalPriority}\" } ");fi
+	if [[ ${altname,,} =~ [0-9a-z]  ]]; then altname=$(echo ${altname} |jq -aRs .);agreement=$(echo "${agreement}" | jq ".alternateNames += [{ \"_delete\" : false, \"name\" : ${altname} }]");fi
 	
+	echo ${agreement} |jq .
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement}" "${okapi_url}/erm/sas")
 
 echo "${apicall}" >> agreement.log
@@ -59,7 +64,6 @@ echo "${apicall}" >> agreement.log
 
 	echo "${apicall}"
 	counter=$((counter + 1))
-
-done < agreements.tsv
+done < ${infile}
 
 

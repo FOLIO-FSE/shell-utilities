@@ -56,11 +56,9 @@ while IFS=$'\n' read -r line;do
 	if [[ ${renewalPriority} =~ [a-zA-Z] ]];then agreement=$(echo "${agreement}" | jq ".renewalPriority = { \"value\": \"${renewalPriority}\" } ");fi
 	if [[ ${altname,,} =~ [0-9a-z]  ]]; then altname=$(echo ${altname} |jq -aRs .);agreement=$(echo "${agreement}" | jq ".alternateNames += [{ \"_delete\" : false, \"name\" : ${altname} }]");fi
 	
-	echo ${agreement} |jq .
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement}" "${okapi_url}/erm/sas")
 
 echo "${apicall}" >> agreement.log
-
 
 	echo "${apicall}"
 	counter=$((counter + 1))

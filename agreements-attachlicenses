@@ -35,7 +35,7 @@ eval "$(echo ${all_agreements} |jq -r '. | @sh "agreement_dict[\(.name|tostring|
 echo "Normalizing Agreement keys"
 # normalize keys
 for key in "${!agreement_dict[@]}";do
-	newkey=$(tr -dc [a-z0-9] <<< "${key}")
+	newkey=${key//[^a-z0-9]/}
 	agreement_dict[${newkey}]=${agreement_dict["${key}"]}
 done
 
@@ -62,7 +62,7 @@ eval "$(echo ${all_licenses} |jq -r '. | @sh "license_dict[\(.name|tostring|asci
 echo "Normalizing License keys"
 # normalize keys
 for key in "${!license_dict[@]}";do
-	newkey=$(tr -dc [a-z0-9] <<< "${key}")
+	newkey=${key//[^a-z0-9]/}
 	license_dict[${newkey}]=${license_dict["${key}"]}
 done
 

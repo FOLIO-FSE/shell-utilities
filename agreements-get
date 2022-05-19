@@ -9,7 +9,7 @@ offset=0
 recsretrieved=100
 
 while [[ $recsretrieved -eq 100 ]] ;do
-	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/sas?perPage=100&offset=$offset")
+	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/sas?query=cql.allRecords=1&perPage=100&offset=$offset")
 
 	recsretrieved=$(echo ${apicall} |jq '. |length')
 	totalrecs=$(($offset + $recsretrieved))

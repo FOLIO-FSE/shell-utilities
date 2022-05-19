@@ -11,13 +11,14 @@ infile="agreement-organization.tsv"
 
 all_agreements=""
 all_organizations=""
+rm -f notfound
 
 offset=0
 recsretrieved=100
 
 # retrieve all agreements and add to array
 while [[ $recsretrieved -eq 100 ]] ;do
-	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/sas?perPage=100&offset=$offset")
+	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/sas?query=cql.allRecords=1&perPage=100&offset=$offset")
 
 	recsretrieved=$(echo ${apicall} |jq '. |length')
 	totalrecs=$(($offset + $recsretrieved))
@@ -83,15 +84,15 @@ while IFS=$'\t' read -r agreement organization;do
 			organization_uuid=$(echo ${organization_record} |jq -r .id)
 			organization_name=$(echo ${organization_record} |jq -r .name)
 			# fix json and PUT
-			record=$(echo "${agreement_record}" | jq ".orgs += [ { \"_delete\": false, \"org\": {\"name\": \"${organization_name}\", \"orgsUuid\": \"${organization_uuid}\", \"primaryOrg\": false, \"roles\": [ {  \"value\": \"content_provider\" } ] }} ]")
+			record=$(echo "${agreement_record}" | jq ".orgs += [ { \"_delete\": false, \"org\": {\"name\": \"${organization_name}\", \"orgsUuid\": \"${organization_uuid}\", \"primaryOrg\": false }, \"roles\":  [ { \"_delete\": false, \"role\": { \"id\": \"2c9180907dbb50ae017e70b8d43b002f\" } }] }]")
 	
 			curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/erm/sas/${agreement_uuid}"
 		else
 			echo "${organization} Organization not found"
 		fi
 	else 
-		echo "${agreement} Agreement not found"
+		echo "${agreement} Agreement not found -- $compareagreementkey"
+		echo "${agreement}" >> notfound
 	fi
-	
 done < ${infile}
 

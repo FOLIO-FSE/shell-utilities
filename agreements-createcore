@@ -43,7 +43,8 @@ while IFS=$'\n' read -r line;do
 	name=$(echo ${name} |jq -aRs)
 
 	# agreement uuid -- needs to be global
-	uuid=$(uuidgen)
+        namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
+        uuid=$(uuidgen --sha1 -n ${namespace} -N ${okapi_url}:agreements:${keyname})
 
 	#  start_date is required
 	start_date=${start_date:0:10}

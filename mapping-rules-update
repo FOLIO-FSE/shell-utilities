@@ -15,7 +15,7 @@ apicall=$(curl --http1.1 -s -w '\n' -X PUT \
 -H "X-Okapi-Tenant: ${tenant}" \
 -H "x-okapi-token: ${okapi_token}" \
 -d @mapping-rules.json \
-"${okapi_url}/mapping-rules")
+"${okapi_url}/mapping-rules/marc-bib")
 
 
 mapping_rules=$(echo $apicall)

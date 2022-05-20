@@ -69,6 +69,10 @@ for key in "${!organization_dict[@]}";do
 	organization_dict[${newkey}]=${organization_dict["${key}"]}
 done
 
+# get roles
+apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/refdata/SubscriptionAgreementOrg/role")
+org_role_uuid=$(echo "${apicall}" |jq -r '.[] | select(.value=="content_provider") | .id')
+
 # attach organization 
 
 while IFS=$'\t' read -r agreement organization;do
@@ -84,7 +88,7 @@ while IFS=$'\t' read -r agreement organization;do
 			organization_uuid=$(echo ${organization_record} |jq -r .id)
 			organization_name=$(echo ${organization_record} |jq -r .name)
 			# fix json and PUT
-			record=$(echo "${agreement_record}" | jq ".orgs += [ { \"_delete\": false, \"org\": {\"name\": \"${organization_name}\", \"orgsUuid\": \"${organization_uuid}\", \"primaryOrg\": false }, \"roles\":  [ { \"_delete\": false, \"role\": { \"id\": \"2c9180907dbb50ae017e70b8d43b002f\" } }] }]")
+			record=$(echo "${agreement_record}" | jq ".orgs += [ { \"_delete\": false, \"org\": {\"name\": \"${organization_name}\", \"orgsUuid\": \"${organization_uuid}\", \"primaryOrg\": false }, \"roles\":  [ { \"_delete\": false, \"role\": { \"id\": \"${org_role_uuid}\" } }] }]")
 	
 			curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/erm/sas/${agreement_uuid}"
 		else

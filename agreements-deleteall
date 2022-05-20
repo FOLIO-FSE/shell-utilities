@@ -24,9 +24,24 @@ counter=1
 totalrecs=${#agreement_arr[@]}
 
 for agreement_uuid in ${agreement_arr[@]};do
-	apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/sas/${agreement_uuid}")
+	## must GET each agreement, unlink orgs and licenses, before deleting
 
-	echo "Processing ${agreement_uuid} : Record $counter of $totalrecs"
+	agreement=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/sas/${agreement_uuid}")	
+	deleteId=$(echo ${agreement} |jq  '.linkedLicenses[0].id')
+	name=$(echo ${agreement} |jq  '.name')
+	echo "Processing ${name} -- ${agreement_uuid} : Record $counter of $totalrecs"
+
+	if [[ ${deleteId} =~ [0-9] ]];then
+		agreement=$(echo ${agreement} |jq ". | .linkedLicenses = [{\"id\":${deleteId},\"_delete\":true}]")
+		apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement}" "${okapi_url}/erm/sas/${agreement_uuid}")
+	fi
+
+
+	echo "Removing license for ${name}"
+
+
+	curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/sas/${agreement_uuid}"
+
 
 	counter=$(($counter + 1))
 done

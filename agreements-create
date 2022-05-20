@@ -3,6 +3,9 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 declare -A roles
+declare -A organization_dict
+declare -A license_dict
+
 rm -f agreement.log
 
 roles["Content Provider"]="content_provider"
@@ -20,7 +23,7 @@ IFS='' read -r -d '' agreement << EndOfAgreement
       "note": "${period_note}"
     }
   ],
- "name" : "${name}",
+ "name" : ${name},
  "agreementStatus" : "active",
  "orgs" : [ ],
  "alternateNames" : [ ],
@@ -35,55 +38,160 @@ echo "${agreement}"
 }
 
 
-add_organization() {
-	apicall=$(curl -G -s -w '\n' -X GET \
-	  -H "Accept: application/json" \
-	  -H "X-Okapi-Tenant: ${tenant}" \
-	  -H "x-okapi-token: ${okapi_token}" \
-	  --data-urlencode "query=code=${org}" \
-	  "${okapi_url}/organizations/organizations")
+########################################### retrieve organizations
+get_orgs() {
+	offset=0
+	recsretrieved=100
+	
+	while [[ $recsretrieved -eq 100 ]] ;do
+		apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/organizations?query=%28status%3D%3D%22Active%22%29+sortby+name%2Fsort.ascending&limit=100&offset=$offset" |jq .organizations)
+	
+		recsretrieved=$(echo ${apicall} |jq '. |length')
+		totalrecs=$(($offset + $recsretrieved))
+		printf "%s Organizations retrieved\r" $totalrecs
+	
+		all_organizations="${all_organizations}$(echo ${apicall} |jq .[])"
+		offset=$(($offset + 100))
+		done
+	
+	echo "$totalrecs Organizations retrieved"
+	
+	# load organizations into scalar array keyed by downcased name or code
+	eval "$(echo ${all_organizations} |jq -r '. | @sh "organization_dict[\(.code|tostring|ascii_downcase)]=\(.|tostring)"')"
+	
+	echo "Normalizing Organization keys"
+	# normalize keys
+	for key in "${!organization_dict[@]}";do
+		newkey=${key//[^a-z0-9]/}
+		organization_dict[${newkey}]=${organization_dict["${key}"]}
+	done
+}
 
-	org_uuid=$(echo ${apicall}  |jq -r .organizations[0].id)
-	org_name=$(echo ${apicall}  |jq -r .organizations[0].name)
+########################################### retrieve licenses
+get_licenses() {
+	offset=0
+	recsretrieved=100
+	
+	# retrieve all records
+	while [[ $recsretrieved -eq 100 ]] ;do
+		apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/licenses/licenses?sort=name%3Bdesc&perPage=100&offset=$offset")
+	
+		recsretrieved=$(echo ${apicall} |jq '. |length')
+		totalrecs=$(($offset + $recsretrieved))
+		printf "%s Licenses retrieved\r" $totalrecs
+	
+		all_licenses="${all_licenses}$(echo ${apicall} |jq .[])"
+		offset=$(($offset + 100))
+		done
+	
+	echo "$totalrecs Licenses retrieved"
+	
+	# load licenses into scalar array keyed by downcased name
+	eval "$(echo ${all_licenses} |jq -r '. | @sh "license_dict[\(.name|tostring|ascii_downcase)]=\(.|tostring)"')"
+	
+	echo "Normalizing License keys"
+	# normalize keys
+	for key in "${!license_dict[@]}";do
+		newkey=${key//[^a-z0-9]/}
+		license_dict[${newkey}]=${license_dict["${key}"]}
+	done
+}
 
-	if [[ ${#org_uuid} == "36" ]];then
-		agreement=$(echo "${agreement}" | jq ".orgs += [{ \"_delete\" : false, \"role\" : \"${role}\", \"org\" : { \"name\" : \"${org_name}\", \"orgsUuid\" : \"${org_uuid}\"} }]")
+########################################### alt names
+
+add_alt_name() {
+	altname=$(echo -n ${altname} |jq -aRs)
+	echo "${agreement}" | jq ".alternateNames += [{ \"_delete\" : false, \"name\" : ${altname} }]"
+}
+
+########################################### add org
+
+add_org() {
+	org_key=${org//[^a-z0-9]/}
+
+	org_record="${organization_dict[$org_key]}"
+	
+	if [[ ${org_record} =~ [a-z0-9A-Z] ]];then	
+		org_uuid=$(echo ${org_record} |jq -r .id)
+		org_name=$(echo ${org_record} |jq -r .name)
+		agreement=$(echo "${agreement}" | jq ".orgs += [ { \"_delete\": false, \"org\": {\"name\": \"${org_name}\", \"orgsUuid\": \"${org_uuid}\", \"primaryOrg\": false }, \"roles\":  [ { \"_delete\": false, \"role\": { \"id\": \"${org_role_uuid}\" } }] }]")
+	fi
+
+	echo "${agreement}" 
+}
+
+########################################### add license
+
+add_license() {
+	license_key=${license//[^a-z0-9]/}
+
+	license_record="${license_dict[$license_key]}"
+
+	if [[ ${license_record,,} =~ [a-z0-9] ]];then
+		license_uuid=$(echo ${license_record} |jq -r .id)
+		agreement=$(echo "${agreement}" | jq ".linkedLicenses += [{\"_delete\": false, \"amendments\": [], \"remoteId\": \"${license_uuid}\", \"status\": \"historical\" }]")
 	fi
 
 	echo "${agreement}"
+
 }
 
+########################################### get roles
+
+get_roles() {
+	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/refdata/SubscriptionAgreementOrg/role") 
+	org_role_uuid=$(echo "${apicall}" |jq -r '.[] | select(.value=="content_provider") | .id')
+}
+
+########################################### main routine
+
+get_orgs
+get_licenses
+get_roles
 
 
 while IFS=$'\n' read -r line;do 
-	line=$(echo "${line}" |tr "\t" "^")
+	line=${line//$'\t'/^}
 
-	IFS='^' read -r name altname org1 org1role org2 org2role start_date end_date period_note<<< "${line}"
-	# agreement uuid -- needs to be global
+	IFS='^' read -r name description altname1 altname2 altname3 altname4 altname5 altname6 altname7 start_date end_date license1 license2 license3 org1 period_note<<< "${line}"
+
+	# agreement uuid -- needs to be global, make it deterministic
+	keyname=$(tr -dc [a-z0-9] <<< ${name,,})
+
+	namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
+	uuid=$(uuidgen --sha1 -n ${namespace} -N ${okapi_url}:agreements:${keyname})
+
+	name=$(echo -n ${name} |jq -aRs)
+
+	#  start_date is required
+	start_date=${start_date:0:10}
+	if [[ ! ${start_date} =~ [12][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] ]];then start_date=$(date -I);fi
+
+	end_date=${end_date:0:10}
+	if [[ ! ${end_date} =~ [12][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] ]];then end_date="";fi
 
 	echo "Processing $name"
-	uuid=$(uuidgen)
 	agreement=$(create_agreement)
 
-	if [[ ${altname} != "" ]]; then
-		agreement=$(echo "${agreement}" | jq ".alternateNames += [{ \"_delete\" : false, \"name\" : \"${altname}\" }]")
-	fi
+	if [[ ${altname1,,} =~ [0-9a-z] ]]; then altname=${altname1};agreement=$(add_alt_name);fi
+	if [[ ${altname2,,} =~ [0-9a-z] ]]; then altname=${altname2};agreement=$(add_alt_name);fi
+	if [[ ${altname3,,} =~ [0-9a-z] ]]; then altname=${altname3};agreement=$(add_alt_name);fi
+	if [[ ${altname4,,} =~ [0-9a-z] ]]; then altname=${altname4};agreement=$(add_alt_name);fi
+	if [[ ${altname5,,} =~ [0-9a-z] ]]; then altname=${altname5};agreement=$(add_alt_name);fi
+	if [[ ${altname6,,} =~ [0-9a-z] ]]; then altname=${altname6};agreement=$(add_alt_name);fi
+	if [[ ${altname7,,} =~ [0-9a-z] ]]; then altname=${altname7};agreement=$(add_alt_name);fi
 
-	org=""
-	role=""
-	org1role="Subscription Agent"
+	if [[ ${description,,} =~ [a-z0-9] ]];then description=$(echo -n "${description}" |jq -aRs );agreement=$(echo "${agreement}" | jq ".description = ${description} ");fi
+	if [[ ${isPerpetual,,} =~ [a-z0-9] ]];then agreement=$(echo -n "${agreement}" | jq ".isPerpetual = { \"value\": \"${isPerpetual}\" } ");fi
+	if [[ ${renewalPriority,,} =~ [a-z0-9] ]];then agreement=$(echo -n "${agreement}" | jq ".renewalPriority = { \"value\": \"${renewalPriority}\" } ");fi
 
-	if [[ ${org1} != "" ]]; then
-		org="${org1}"
-		role="${roles[${org1role}]}"
-		agreement=$(add_organization)
-	fi
-	if [[ ${org2} != "" ]]; then
-		org="${org2}"
-		role="${roles[${org2role}]}"
-		agreement=$(add_organization)
-	fi
+	org1="ebsco"
+	if [[ ${org1,,} =~ [0-9a-z] ]];then org=${org1,,};agreement=$(add_org);fi
 
+	license1="l1000166"
+	if [[ ${license1,,} =~ [0-9a-z] ]];then license=${license1,,};agreement=$(add_license);fi
+
+	########## send it in!
 	
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement}" "${okapi_url}/erm/sas")
 

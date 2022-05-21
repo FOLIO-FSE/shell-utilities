@@ -140,7 +140,7 @@ add_license() {
 ########################################### post agreement
 
 post_agreement() {
-	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement}" "${okapi_url}/erm/sas"
+	agreement=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement}" "${okapi_url}/erm/sas")
 }
 
 ########################################### get roles
@@ -202,6 +202,8 @@ while IFS=$'\n' read -r line;do
 	if [[ ${license1,,} =~ [0-9a-z] ]];then license=${license1,,};agreement=$(add_license);post_agreement;fi
 	if [[ ${license2,,} =~ [0-9a-z] ]];then license=${license2,,};agreement=$(add_license);post_agreement;fi
 	if [[ ${license3,,} =~ [0-9a-z] ]];then license=${license3,,};agreement=$(add_license);post_agreement;fi
+	
+	echo ${agreement}
 
 
 echo "${apicall}" >> agreement.log

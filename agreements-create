@@ -125,7 +125,7 @@ add_org() {
 add_license() {
 	license_key=${license//[^a-z0-9]/}
 
-	license_record="${license_dict[$license_key]}"
+	license_record="${license_dict[${license_key}]}"
 
 	if [[ ${license_record,,} =~ [a-z0-9] ]];then
 		license_uuid=$(echo ${license_record} |jq -r .id)
@@ -188,6 +188,9 @@ while IFS=$'\n' read -r line;do
 	if [[ ${org1,,} =~ [0-9a-z] ]];then org=${org1,,};agreement=$(add_org);fi
 
 	if [[ ${license1,,} =~ [0-9a-z] ]];then license=${license1,,};agreement=$(add_license);fi
+	if [[ ${license2,,} =~ [0-9a-z] ]];then license=${license2,,};agreement=$(add_license);fi
+	if [[ ${license3,,} =~ [0-9a-z] ]];then license=${license3,,};agreement=$(add_license);fi
+
 
 	########## send it in!
 	
@@ -196,7 +199,7 @@ while IFS=$'\n' read -r line;do
 echo "${apicall}" >> agreement.log
 
 
-	#echo "Processing $name -- record $counter"
+	echo "Processing $name -- record $counter"
 	echo "${apicall}"
 	counter=$((counter + 1))
 done < agreements.tsv

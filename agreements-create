@@ -136,6 +136,13 @@ add_license() {
 
 }
 
+
+########################################### post agreement
+
+post_agreement() {
+	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement}" "${okapi_url}/erm/sas"
+}
+
 ########################################### get roles
 
 get_roles() {
@@ -185,14 +192,17 @@ while IFS=$'\n' read -r line;do
 
 	if [[ ${org,,} =~ [0-9a-z] ]];then org=${org,,};agreement=$(add_org);fi
 
-	if [[ ${license1,,} =~ [0-9a-z] ]];then license=${license1,,};agreement=$(add_license);fi
-	if [[ ${license2,,} =~ [0-9a-z] ]];then license=${license2,,};agreement=$(add_license);fi
-	if [[ ${license3,,} =~ [0-9a-z] ]];then license=${license3,,};agreement=$(add_license);fi
-
 
 	########## send it in!
+
+	post_agreement
 	
-	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement}" "${okapi_url}/erm/sas")
+	########## licenses sent in a separate operation because otherwise they don't stick
+
+	if [[ ${license1,,} =~ [0-9a-z] ]];then license=${license1,,};agreement=$(add_license);post_agreement;fi
+	if [[ ${license2,,} =~ [0-9a-z] ]];then license=${license2,,};agreement=$(add_license);post_agreement;fi
+	if [[ ${license3,,} =~ [0-9a-z] ]];then license=${license3,,};agreement=$(add_license);post_agreement;fi
+
 
 echo "${apicall}" >> agreement.log
 

@@ -114,7 +114,7 @@ add_org() {
 	if [[ ${org_record} =~ [a-z0-9A-Z] ]];then	
 		org_uuid=$(echo ${org_record} |jq .id)
 		org_name=$(echo ${org_record} |jq -r .name)
-		agreement=$(echo "${agreement}" | jq ".orgs += [ { \"_delete\": false, \"org\": {\"name\": \"${org_name}\", \"orgsUuid\": ${org_uuid}, \"primaryOrg\": false }, \"roles\":  [ { \"_delete\": false, \"role\": { \"id\": \"${org_role_uuid}\" } }] }]")
+		agreement=$(echo "${agreement}" | jq ".orgs += [ { \"_delete\": false, \"org\": {\"name\": \"${org_name}\", \"orgsUuid\": ${org_uuid}, \"primaryOrg\": true }, \"roles\":  [ { \"_delete\": false, \"role\": { \"id\": \"${org_role_uuid}\" } }] }]")
 	fi
 
 	echo "${agreement}" 
@@ -149,11 +149,10 @@ get_orgs
 get_licenses
 get_roles
 
-
 while IFS=$'\n' read -r line;do 
 	line=${line//$'\t'/^}
 
-	IFS='^' read -r name description altname1 altname2 altname3 altname4 altname5 altname6 altname7 start_date end_date license1 license2 license3 org1 period_note<<< "${line}"
+	IFS='^' read -r name description altname1 altname2 altname3 altname4 altname5 altname6 altname7 start_date end_date license1 license2 license3 org period_note<<< "${line}"
 
 	# agreement uuid -- needs to be global, make it deterministic
 	keyname=$(tr -dc [a-z0-9] <<< ${name,,})
@@ -184,7 +183,7 @@ while IFS=$'\n' read -r line;do
 	if [[ ${isPerpetual,,} =~ [a-z0-9] ]];then agreement=$(echo -n "${agreement}" | jq ".isPerpetual = { \"value\": \"${isPerpetual}\" } ");fi
 	if [[ ${renewalPriority,,} =~ [a-z0-9] ]];then agreement=$(echo -n "${agreement}" | jq ".renewalPriority = { \"value\": \"${renewalPriority}\" } ");fi
 
-	if [[ ${org1,,} =~ [0-9a-z] ]];then org=${org1,,};agreement=$(add_org);fi
+	if [[ ${org,,} =~ [0-9a-z] ]];then org=${org,,};agreement=$(add_org);fi
 
 	if [[ ${license1,,} =~ [0-9a-z] ]];then license=${license1,,};agreement=$(add_license);fi
 	if [[ ${license2,,} =~ [0-9a-z] ]];then license=${license2,,};agreement=$(add_license);fi

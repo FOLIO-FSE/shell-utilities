@@ -32,13 +32,14 @@ eval "$(echo ${all_agreements} |jq -r '. | @sh "agreement_dict[\(.name|tostring|
 counter=1
 
 for agreement in "${agreement_dict[@]}";do
-	org_name=$(echo ${agreement} |jq  'select(.orgs[0].org.name != null) |.primaryOrg = true')
+	org_name=$(echo ${agreement} |jq  'select(.orgs[0].org.name != null) | .orgs[0].org.name')
 	agreement_uuid=$(echo ${agreement} |jq -r '.id')
 	agreement_name=$(echo ${agreement} |jq -r '.name')
 
 	echo "Processing ${agreement_name} -- record $counter of $totalrecs"
 	
 	if [[ ${org_name,,} =~ [0-9a-z] ]];then
+		agreement=$(echo ${agreement} |jq  '.orgs[0].primaryOrg = true')
 		curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement}" "${okapi_url}/erm/sas/${agreement_uuid}"
 	else
 		echo "Record not updated, match criteria not met"

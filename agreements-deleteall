@@ -34,14 +34,11 @@ for agreement_uuid in ${agreement_arr[@]};do
 	if [[ ${deleteId} =~ [0-9] ]];then
 		agreement=$(echo ${agreement} |jq ". | .linkedLicenses = [{\"id\":${deleteId},\"_delete\":true}]")
 		apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement}" "${okapi_url}/erm/sas/${agreement_uuid}")
+		echo "Removing license for ${name}"
 	fi
 
 
-	echo "Removing license for ${name}"
-
-
 	curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/sas/${agreement_uuid}"
-
 
 	counter=$(($counter + 1))
 done

@@ -112,9 +112,9 @@ add_org() {
 	org_record="${organization_dict[$org_key]}"
 	
 	if [[ ${org_record} =~ [a-z0-9A-Z] ]];then	
-		org_uuid=$(echo ${org_record} |jq -r .id)
+		org_uuid=$(echo ${org_record} |jq .id)
 		org_name=$(echo ${org_record} |jq -r .name)
-		agreement=$(echo "${agreement}" | jq ".orgs += [ { \"_delete\": false, \"org\": {\"name\": \"${org_name}\", \"orgsUuid\": \"${org_uuid}\", \"primaryOrg\": false }, \"roles\":  [ { \"_delete\": false, \"role\": { \"id\": \"${org_role_uuid}\" } }] }]")
+		agreement=$(echo "${agreement}" | jq ".orgs += [ { \"_delete\": false, \"org\": {\"name\": \"${org_name}\", \"orgsUuid\": ${org_uuid}, \"primaryOrg\": false }, \"roles\":  [ { \"_delete\": false, \"role\": { \"id\": \"${org_role_uuid}\" } }] }]")
 	fi
 
 	echo "${agreement}" 
@@ -128,8 +128,8 @@ add_license() {
 	license_record="${license_dict[${license_key}]}"
 
 	if [[ ${license_record,,} =~ [a-z0-9] ]];then
-		license_uuid=$(echo ${license_record} |jq -r .id)
-		agreement=$(echo "${agreement}" | jq ".linkedLicenses += [{\"_delete\": false, \"amendments\": [], \"remoteId\": \"${license_uuid}\", \"status\": \"historical\" }]")
+		license_uuid=$(echo ${license_record} |jq .id)
+		agreement=$(echo "${agreement}" | jq ".linkedLicenses += [{\"_delete\": false, \"amendments\": [], \"remoteId\": ${license_uuid}, \"status\": \"historical\" }]")
 	fi
 
 	echo "${agreement}"
@@ -170,7 +170,6 @@ while IFS=$'\n' read -r line;do
 	end_date=${end_date:0:10}
 	if [[ ! ${end_date} =~ [12][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] ]];then end_date="";fi
 
-	echo "Processing $name"
 	agreement=$(create_agreement)
 
 	if [[ ${altname1,,} =~ [0-9a-z] ]]; then altname=${altname1};agreement=$(add_alt_name);fi

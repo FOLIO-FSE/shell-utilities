@@ -7,7 +7,7 @@ apicall=$(curl -s -w '\n' -X GET -D \
   -H "Accept: application/json" \
   -H "X-Okapi-Tenant: ${tenant}" \
   -H "x-okapi-token: ${okapi_token}" \
-  ${okapi_url}/groups?query=cql.allRecords=1%20sortby%20group&limit=2000)
+  "${okapi_url}/groups?query=cql.allRecords=1%20sortby%20group&limit=2000")
 
 echo $apicall  |jq .
 

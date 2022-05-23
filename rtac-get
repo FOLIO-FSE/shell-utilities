@@ -1,7 +1,7 @@
 edge_url=$(cat okapi.url |sed 's/okapi/edge/')
 edge_key=$(cat edge.key)
 
-instance_uuid="$1"
+instance_uuid=$(echo ${1} |tr "." "-" |tr -dc [^a-f0-9\-])
 
 apicall=$(curl -s -X GET "${edge_url}/rtac?InstanceIds=${instance_uuid}&apikey=${edge_key}")
 

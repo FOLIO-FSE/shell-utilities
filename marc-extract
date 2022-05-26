@@ -4,6 +4,7 @@ BEGIN{
 
 outfile="outfile"
 idfield="001"
+idsubfield=""
 
 	print "id\tfield" > outfile 
 	RS=ORS="\n\n";FS="\n"
@@ -15,11 +16,21 @@ function extract_data(){
 	id=value1=""
 
 	for(i=1; i<=NF; i++) {
-		if(substr($i, 2, 3) == idfield) {
+		if(substr($i, 2, 3) == idfield && idsubfield == "") {
 			id = substr($i, 7)
 		}
+		if(substr($i, 2, 3) == idfield && idsubfield != "") {
+			split($i, subfields, "$")
 
-		if(substr($i, 2, 3) == "994") {
+			for (j in subfields) {
+				if (substr(subfields[j], 1, 1) == idsubfield) {
+					id = substr(subfields[j], 2)
+				}
+			}
+
+		}
+
+		if(substr($i, 2, 3) == "852") {
 			split($i, subfields, "$")
 
 			for (j in subfields) {

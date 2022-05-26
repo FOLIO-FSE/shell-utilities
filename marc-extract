@@ -15,19 +15,20 @@ function extract_data(){
 
 	id=value1=""
 
+	#extract field depending if in control or variable field
 	for(i=1; i<=NF; i++) {
-		if(substr($i, 2, 3) == idfield && idsubfield == "") {
-			id = substr($i, 7)
-		}
-		if(substr($i, 2, 3) == idfield && idsubfield != "") {
-			split($i, subfields, "$")
+		if(substr($i, 2, 3) == idfield) {
+			if (idsubfield == ""){
+				id = substr($i, 7)
+			} else {
+				split($i, subfields, "$")
 
-			for (j in subfields) {
-				if (substr(subfields[j], 1, 1) == idsubfield) {
-					id = substr(subfields[j], 2)
+				for (j in subfields) {
+					if (substr(subfields[j], 1, 1) == idsubfield) {
+						id = substr(subfields[j], 2)
+					}
 				}
 			}
-
 		}
 
 		if(substr($i, 2, 3) == "852") {

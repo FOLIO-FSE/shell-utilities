@@ -36,13 +36,13 @@ function extract_data(){
 			for (j in subfields) {
 				if (substr(subfields[j], 1, 1) == "b") {
 					value1 = substr(subfields[j], 2)
-					print id"\t"value1"\n" >> outfile 
 				}
 			}
 
 		}
 
 	}
+	print id"\t"value1"\n" >> outfile 
 	
 }
 

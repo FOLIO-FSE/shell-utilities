@@ -1,11 +1,11 @@
 #!/usr/bin/awk -f
 
-# retains only the last recurrence of a field -- doesn't handle repeats
-# to handle repeats, an output line needs to be added after each occurrence
+# for multivalued fields that need separate lines, the print routine needs to be moved or refactored
 
 BEGIN{
 
 	outfile="outfile"
+	delimiter=";"
 	
 	idfield="001"
 	idsubfield=""
@@ -27,7 +27,11 @@ function extract_subfield() {
 
 	for (j in subfields) {
 		if (substr(subfields[j], 1, 1) == subfield[k]) {
-			value[k] = substr(subfields[j], 2)
+			if (value[k] == "") {
+				value[k] = substr(subfields[j], 2)
+			} else { 
+				value[k] = value[k]""delimiter""substr(subfields[j], 2)
+			}
 		}
 	}
 }
@@ -61,7 +65,10 @@ function extract_data(){
 
 	}
 	lineout=""
-	for (k in field) { lineout=lineout"\t"value[k] }
+	for (k in field) { 
+		lineout=lineout"\t"value[k]
+		value[k]="" 
+	}
 
 	print id""lineout"\n" >> outfile 
 	

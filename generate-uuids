@@ -1,0 +1,32 @@
+#!/usr/bin/python
+import csv
+import uuid
+
+namespace=uuid.UUID(b'8405ae4d-b315-42e1-918a-d1919900cf3f')
+
+infile = open('infile', 'r')
+entries = csv.reader(infile, delimiter = '\t')
+
+base='https://okapi-xxxx.folio.ebsco.com:items:'
+
+outfile = open('outfile', 'w')
+
+counter = 0
+
+for entry in entries:
+    bibid = entry[0]
+    stat1 = entry[1]
+    stat2 = entry[2]
+
+    #take first and last characters from id for Sierra systems
+    #bibid = base + bibid[1:-1]
+    
+
+    bibuuid = str(uuid.uuid5(namespace, bibid))
+
+    outfile.write(bibuuid + "\t" + stat1 + "\t" + stat2 + "\n")
+
+    if counter % 10000 == 0:
+        print("Number of records processed: %s \r" % counter)
+
+    counter = counter + 1

@@ -39,7 +39,7 @@ function extract_subfield() {
 function extract_data(){
 	ORS=""
 
-	id=value1=""
+	id=""
 
 	#extract field depending if in control or variable field
 	for(i=1; i<=NF; i++) {

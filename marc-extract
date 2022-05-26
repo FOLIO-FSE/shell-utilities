@@ -3,11 +3,25 @@
 BEGIN{
 
 outfile="outfile"
+
 idfield="001"
 idsubfield=""
 
+field[0]="852"
+subfield[0]="i"
+
 	print "id\tfield" > outfile 
 	RS=ORS="\n\n";FS="\n"
+}
+
+function extract_subfield() {
+	split($i, subfields, "$")
+
+	for (j in subfields) {
+		if (substr(subfields[j], 1, 1) == subfield[k]) {
+			value[k] = substr(subfields[j], 2)
+		}
+	}
 }
 
 function extract_data(){
@@ -31,19 +45,19 @@ function extract_data(){
 			}
 		}
 
-		if(substr($i, 2, 3) == "852") {
-			split($i, subfields, "$")
-
-			for (j in subfields) {
-				if (substr(subfields[j], 1, 1) == "b") {
-					value1 = substr(subfields[j], 2)
-				}
-			}
-
+		for (k in field) {
+			if(substr($i, 2, 3) == field[k]) {
+				extract_subfield()
+			}	
 		}
 
 	}
-	print id"\t"value1"\n" >> outfile 
+	lineout=""
+	for (k in field) {
+		lineout=lineout"\t"value[k]
+	}
+
+	print id""lineout"\n" >> outfile 
 	
 }
 

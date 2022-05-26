@@ -2,15 +2,17 @@
 
 BEGIN{
 
-outfile="outfile"
-
-idfield="001"
-idsubfield=""
-
-field[0]="852"
-subfield[0]="i"
-
-	print "id\tfield" > outfile 
+	outfile="outfile"
+	
+	idfield="001"
+	idsubfield=""
+	
+	field[0]="852"
+	subfield[0]="i"
+	
+	header=""
+	for (k in field) { header=header"\tfield"k }
+	print "id"header > outfile 
 	RS=ORS="\n\n";FS="\n"
 }
 
@@ -53,9 +55,7 @@ function extract_data(){
 
 	}
 	lineout=""
-	for (k in field) {
-		lineout=lineout"\t"value[k]
-	}
+	for (k in field) { lineout=lineout"\t"value[k] }
 
 	print id""lineout"\n" >> outfile 
 	

@@ -1,5 +1,8 @@
 #!/usr/bin/awk -f
 
+# retains only the last recurrence of a field -- doesn't handle repeats
+# to handle repeats, an output line needs to be added after each occurrence
+
 BEGIN{
 
 	outfile="outfile"
@@ -9,6 +12,9 @@ BEGIN{
 	
 	field[0]="852"
 	subfield[0]="i"
+	
+	field[1]="852"
+	subfield[1]="h"
 	
 	header=""
 	for (k in field) { header=header"\tfield"k }

@@ -75,6 +75,5 @@ ORS="\n\n"
 
 extract_data()
 
-if(NR % 10000 == 0 ) {printf ("Processed %d records\r", NR)}
 }
 

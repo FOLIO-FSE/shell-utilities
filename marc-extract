@@ -4,21 +4,20 @@
 
 BEGIN{
 
-	outfile="outfile"
 	delimiter=";"
 	
-	idfield="001"
-	idsubfield=""
-	
-	field[0]="852"
-	subfield[0]="i"
-	
-	field[1]="852"
-	subfield[1]="h"
+	# load command line arguments into fields/subfields, expects 110a, 245c, etc
+	numfields=ARGC - 1
+
+	for(i = 1; i < numfields; i++) {
+                field[i]=substr(ARGV[i],1,3)
+		subfield[i]=substr(ARGV[i],4,1)
+		delete ARGV[i]
+	}
 	
 	header=""
-	for (k in field) { header=header"\tfield"k }
-	print "id"header > outfile 
+	for (k = 1;k <= numfields; k++) { header=header"\t"field[k]""subfield[k] }
+	print "id"header 
 	RS=ORS="\n\n";FS="\n"
 }
 
@@ -41,23 +40,19 @@ function extract_data(){
 
 	id=""
 
-	#extract field depending if in control or variable field
+	#extact 001 as ID, use 907a if found
 	for(i=1; i<=NF; i++) {
-		if(substr($i, 2, 3) == idfield) {
-			if (idsubfield == ""){
-				id = substr($i, 7)
-			} else {
-				split($i, subfields, "$")
+		if(substr($i, 2, 3) == "001") { id = substr($i, 7) } 
+			
+		if(substr($i, 2, 3) == "907") {
+			split($i, subfields, "$")
 
-				for (j in subfields) {
-					if (substr(subfields[j], 1, 1) == idsubfield) {
-						id = substr(subfields[j], 2)
-					}
-				}
+			for (j in subfields) {
+				if (substr(subfields[j], 1, 1) == "a") { id = substr(subfields[j], 2) }
 			}
 		}
 
-		for (k in field) {
+		for (k = 1;k <= numfields; k++) {
 			if(substr($i, 2, 3) == field[k]) {
 				extract_subfield()
 			}	
@@ -70,7 +65,7 @@ function extract_data(){
 		value[k]="" 
 	}
 
-	print id""lineout"\n" >> outfile 
+	print id""lineout"\n" 
 	
 }
 

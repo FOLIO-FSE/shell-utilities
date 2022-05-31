@@ -15,7 +15,7 @@ IFS='' read -r -d '' contact << EndOfContact
 {
   "firstName": "${fname}",
   "lastName": "${lname}",
-  "notes": "${notes}",
+  "notes": ${notes},
   "phoneNumbers": [${phones}], 
   "emails": [${emails}], 
   "categories": [${categories}],
@@ -46,12 +46,15 @@ get_organization() {
 
 while IFS=$'\n' read -r line;do
 	line=$(tr "\t" "^" <<< ${line})
-	IFS='^' read -r code lname fname cat email phone <<< ${line}
+	IFS='^' read -r code lname fname note email phone phone2 phone3 <<< ${line}
 
 	if [[ ${code} == "" ]];then continue; fi
+	notes=$(echo -n "${note}" |jq -aRs)
 
 	contact_uuid=$(uuidgen)
-	emails=categories=phones=""
+	emails=""
+	categories=""
+	phones=""
 	goodrecord=0
 
 	# makes sure first and last name are populated
@@ -76,7 +79,7 @@ while IFS=$'\n' read -r line;do
 	
 	fi
 
-	if [[ ${phone} =~ [0-9] ]]; then phones="{ \"phoneNumber\" : \"${phone}\", \"isPrimary\" : true, \"categories\" : [] }";fi
+	if [[ ${phone} =~ [A-Z0-9] ]]; then phones="{ \"phoneNumber\" : \"${phone}\", \"isPrimary\" : true, \"categories\" : [] }";fi
 	
 	if [[ "$email" =~ "@" ]];then emails="{ \"value\" : \"${email}\", \"isPrimary\" : true, \"categories\" : [] }";fi
 
@@ -88,6 +91,9 @@ while IFS=$'\n' read -r line;do
 	fi
 
 	contact=$(build_contact)
+
+	if [[ ${phone2} =~ [0-9] ]]; then contact=$(echo "${contact}" | jq ".phones += [ { \"phoneNumber\" : \"${phone2}\", \"isPrimary\" : false, \"categories\" : [] } ]");fi
+	if [[ ${phone3} =~ [0-9] ]]; then contact=$(echo "${contact}" | jq ".phones += [ { \"phoneNumber\" : \"${phone3}\", \"isPrimary\" : false, \"categories\" : [] } ]");fi
 
 	# get organization by code
 	organization=$(curl -G -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" --data-urlencode "query=code=${code}" "${okapi_url}/organizations/organizations" |jq .organizations[])
@@ -114,6 +120,5 @@ while IFS=$'\n' read -r line;do
 	echo ${apicall}
 
 	counter=$((counter + 1))
-
 done < contacts.tsv
 

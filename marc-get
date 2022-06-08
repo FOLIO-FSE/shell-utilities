@@ -4,10 +4,12 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-uuid=$(sed 's/[^0-9a-z\-]//g' <<< $1)
+uuid=${1//[^0-9a-z\-]//}
+
+relatedRecordVersion=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${uuid}" |jq -r '._version')
 
 apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/records-editor/records?externalId=${uuid}")
 
-echo "${apicall}" |jq . > marc.json
+echo "${apicall}" |jq ".| .relatedRecordVersion=\"${relatedRecordVersion}\"" > marc.json
 echo "Record has been saved to marc.json"
 

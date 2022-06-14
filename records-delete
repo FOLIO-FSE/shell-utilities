@@ -4,9 +4,9 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-recordtype=$1
+deletetype=$1
 
-case recordtype in
+case $deletetype in
 "campuses")
 	recordtype="location-units/campuses"
 	;;
@@ -50,7 +50,8 @@ case recordtype in
 	recordtype="tags"
 	;;
 *)
-	echo "Record type not found. Supported types are campuses, groups, holdings, instances, instance-types, items, libraries, locations, organizations, requests, servicepoints, users, tags. Objects with attached records will need specialized delete routines"
+	echo "Record type '${deletetype}' not found. Supported types are campuses, groups, holdings, instances, instance-types, items, libraries, locations, notices, organizations, requests, servicepoints, users, tags. Objects with attached records will need specialized delete routines"
+	exit
 	;;
 esac
 

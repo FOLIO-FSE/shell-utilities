@@ -31,6 +31,9 @@ case recordtype in
 "locations")
 	recordtype="locations"
 	;;
+"notices")
+	recordtype="scheduled-notice-storage/scheduled-notices"
+	;;
 "organizations")
 	recordtype="organizations/organizations"
 	;;

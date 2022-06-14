@@ -63,7 +63,7 @@ while read -r uuid; do
 	uuid=${uuid//[^0-9a-z\-]/}
 	echo "${okapi_url}/${recordtype}/${uuid}"
 	apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}")
-	echo "Processing record $counter of $numrecs")
+	echo "Processing record $counter of $numrecs"
 	counter=$(($counter + 1))
 	echo ${apicall}
 done < ${deletefile}

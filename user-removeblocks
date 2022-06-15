@@ -20,7 +20,7 @@ apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" 
 echo $apicall
 }
 
-search_for=$(tr -dc "[a-f0-9\-]" <<< "$1")
+search_for="$1"
 
 barcodefound=0
 

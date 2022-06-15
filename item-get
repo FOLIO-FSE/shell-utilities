@@ -2,7 +2,7 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-search=$(sed 's/[^a-f0-9\-]//gi' <<< $1)
+search="$1"
 
 
 if [[ ${search} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then

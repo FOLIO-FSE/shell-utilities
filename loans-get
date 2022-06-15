@@ -8,7 +8,6 @@ search_for=$1
 
 if [[ ${search_for} != "" ]];then
 	if [[ ${search_for} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
-        	endpoint="${okapi_url}/users/${search_for}"
 		curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/loans?query=userId=${search_for}"
 		exit
 	else

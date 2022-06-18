@@ -7,9 +7,11 @@ okapi_token=$(cat okapi.token)
 fines_file="fines.tsv"
 fine_owner="1842eee1-d409-45c2-ae9c-beb73e241da6"
 
-while IFS=$'\n' read -r line; do
-	line=$(tr "\t" "^" <<< "${line}")
-	IFS=$'^' read -r item_barcode patron_barcode item_charge processing_fee billing_fee fineamount fee_assess_date <<< "${line}"
+rm -rf users_notfound
+
+declare -A userid_dict 
+
+create_fine() {
 
 patron_barcode=${patron_barcode//[^0-9A-Za-z\-]/}
 fineamount=${fineamount//[^0-9\.]/}
@@ -17,19 +19,9 @@ item_charge=${item_charge//[^0-9\.]/}
 processing_fee=${processing_fee//[^0-9\.]/}
 billing_fee=${billing_fee//[^0-9\.]/}
 
-
 feeFineId=$(uuid)
 fineId=$(uuid)
 actionId=$(uuid)
-
-#### get user id from barcode
-apicall=$(curl -s -w '\n' -X GET -D \
-    -H "Accept: application/json" \
-    -H "X-Okapi-Tenant: ${tenant}" \
-    -H "x-okapi-token: ${okapi_token}" \
-    "${okapi_url}/users?query=barcode=${patron_barcode}")
-
-userid=$(echo $apicall | jq -r .users[].id)
 
 IFS='' read -r -d '' fine << EndOfJSON
 {
@@ -58,18 +50,44 @@ IFS='' read -r -d '' action << EndOfJSON
   "userId": "${userid}"
 }
 EndOfJSON
+}
 
-echo "${fine}"
-echo "${action}"
-exit
 
-apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${fine}" "${okapi_url}/accounts")
+all_users=""
 
-echo -e "${apicall}" 
+for (( offset=0; offset<=$num_users; offset = offset + 1000 ));do
+        all_users=${all_users}$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?query=cql.allRecords=1&limit=1000&offset=$offset" |jq .users[])
+        if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset $num_users;fi
+        done
 
-apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${action}" "${okapi_url}/feefineactions")
+all_users=$(cat users)
 
-echo -e "${apicall}" 
+# load user uuids into scalar array keyed by barcode 
+echo "Loading ids. Please be patient"
+eval "$(echo ${all_users} |jq -r 'select(.barcode != null) | @sh "userid_dict[\(.barcode|tostring)]=\(.id|tostring)"')"
+echo "Done loading ids"
+
+counter=1
+numloans=$(cat ${fines_file} |wc -l)
+
+while IFS=$'\n' read -r line; do
+	line=$(tr "\t" "^" <<< "${line}")
+	IFS=$'^' read -r item_barcode patron_barcode item_charge processing_fee billing_fee fineamount fee_assess_date <<< "${line}"
+
+	echo "Processing record $counter of ${numloans}"
+
+
+if [[ ! -z ${userid_dict[${patron_barcode}]} ]];then
+	echo ${userid_dict[${patron_barcode}]}
+	create_fine
+	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${fine}" "${okapi_url}/accounts"
+	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${action}" "${okapi_url}/feefineactions"
+else
+	echo "No uuid found for ${patron_barcode}"
+	echo "Barcode not found\t${barcode}" >> notfound
+fi
+
+counter=$(($counter + 1))
 
 done < ${fines_file}
 

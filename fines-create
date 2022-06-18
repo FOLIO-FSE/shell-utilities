@@ -60,8 +60,6 @@ for (( offset=0; offset<=$num_users; offset = offset + 1000 ));do
         if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset $num_users;fi
         done
 
-all_users=$(cat users)
-
 # load user uuids into scalar array keyed by barcode 
 echo "Loading ids. Please be patient"
 eval "$(echo ${all_users} |jq -r 'select(.barcode != null) | @sh "userid_dict[\(.barcode|tostring)]=\(.id|tostring)"')"

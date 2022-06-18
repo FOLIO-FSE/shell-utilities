@@ -82,7 +82,7 @@ if [[ ! -z ${userid_dict[${patron_barcode}]} ]];then
 	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${action}" "${okapi_url}/feefineactions"
 else
 	echo "No uuid found for ${patron_barcode}"
-	echo "Barcode not found\t${barcode}" >> notfound
+	echo -e "Barcode not found\t${barcode}" >> notfound
 fi
 
 counter=$(($counter + 1))

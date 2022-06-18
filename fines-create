@@ -5,15 +5,18 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 fines_file="fines.tsv"
-fine_owner="be3e978d-ff04-4fe4-85f9-7c0557b4e4e4"
+fine_owner="1842eee1-d409-45c2-ae9c-beb73e241da6"
 
 while IFS=$'\n' read -r line; do
-	line=$(tr "\t" "^" <<< ${line})
-	IFS=$'^' read -r item_barcode patron_barcode item_charge processing_fee fineamount fee_assess_date <<< "${line}"
+	line=$(tr "\t" "^" <<< "${line}")
+	IFS=$'^' read -r item_barcode patron_barcode item_charge processing_fee billing_fee fineamount fee_assess_date <<< "${line}"
 
-patron_barcode=$(sed 's/[^0-9A-Z\-]//ig' <<< $patron_barcode)
-fineamount=$(sed 's/[^0-9\.]//g' <<< $fineamount)
-item_charge=$(sed 's/[^0-9\.]//g' <<< $item_charge)
+patron_barcode=${patron_barcode//[^0-9A-Za-z\-]/}
+fineamount=${fineamount//[^0-9\.]/}
+item_charge=${item_charge//[^0-9\.]/}
+processing_fee=${processing_fee//[^0-9\.]/}
+billing_fee=${billing_fee//[^0-9\.]/}
+
 
 feeFineId=$(uuid)
 fineId=$(uuid)
@@ -49,12 +52,16 @@ IFS='' read -r -d '' action << EndOfJSON
   "amountAction": "${fineamount}",
   "balance":"${fineamount}",
   "transactionInformation":"",
-  "comments": "Item charge: ${item_charge}, Processing fee: ${processing_fee} for item ${item_barcode} assessed ${fee_assess_date} migrated from Sierra",
+  "comments": "Item charge: ${item_charge}, Processing fee: ${processing_fee}, Billing fee: ${billing_fee} for item ${item_barcode} assessed ${fee_assess_date} migrated from Sierra",
   "notify":false,
   "id": "${actionId}",
   "userId": "${userid}"
 }
 EndOfJSON
+
+echo "${fine}"
+echo "${action}"
+exit
 
 apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${fine}" "${okapi_url}/accounts")
 

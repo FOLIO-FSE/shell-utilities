@@ -1,0 +1,23 @@
+# Creates statcodes based on contents of tab delimited file
+#
+# Code is expected in column 1 of a file named "locations"
+# Display name is set in column 2
+# Set statcode type ID before using
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+counter=1
+
+while IFS=$'\n' read -r missing_uuid
+do
+
+echo "Processing record ${counter}"
+
+	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{}" "${okapi_url}/inventory/items/${missing_uuid}/mark-long-missing"
+
+	counter=$(($counter + 1))
+done < longmissing
+
+

@@ -1,23 +1,30 @@
-# Creates statcodes based on contents of tab delimited file
-#
-# Code is expected in column 1 of a file named "locations"
-# Display name is set in column 2
-# Set statcode type ID before using
-
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 counter=1
 
-while IFS=$'\n' read -r restricted_uuid
-do
+while IFS=$'\n' read -r itemId; do
 
-echo "Processing record ${counter}"
+	if [[ ${itemId} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+		itemUuid=itemId
+	else
+        	endpoint="${okapi_url}/item-storage/items?query=barcode==${itemId}"
+		apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-storage/items?query=barcode==${itemId}")
+        	itemUuid=$(echo $apicall |jq -r '.items[0].id')
+	fi
 
-	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{}" "${okapi_url}/inventory/items/${restricted_uuid}/mark-restricted"
+	if [[ ${itemId} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+		itemUuid=itemId
+	else
 
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{}" "${okapi_url}/inventory/items/${uuid}/mark-restricted")
+	
+	echo "${apicall}
+	echo "Processing record ${counter} : ${itemId}"
 	counter=$(($counter + 1))
-done < restricted
+	
+done < markrestricted
+
 
 

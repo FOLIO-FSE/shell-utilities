@@ -6,5 +6,7 @@ instance_uuid=$(echo ${1} |tr "." "-" |tr -dc [^a-f0-9\-])
 apicall=$(curl -s -X GET "${edge_url}/rtac?InstanceIds=${instance_uuid}&apikey=${edge_key}")
 
 echo $apicall |xmlstarlet fo 
+echo
+echo "${edge_url}/rtac?InstanceIds=${instance_uuid}&apikey=${edge_key}"
 
 

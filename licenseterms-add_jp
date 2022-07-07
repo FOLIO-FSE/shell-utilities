@@ -1,0 +1,483 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+declare -a lt
+
+# FOLIO doesn't respect UUIDs for the picklists, so must create ones that will be reused first and capture
+# the ids
+add_yesno() {
+    data="$(</dev/stdin)"
+    YesNo=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/licenses/refdata" |jq -r .id)
+}
+add_permpro() {
+    data="$(</dev/stdin)"
+    PermPro=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/licenses/refdata" |jq -r .id)
+}
+lt_add() {
+    lt+=("$(</dev/stdin)")
+}
+add_yesno data << END
+{
+    "id": "2c91808b768637530177d0d8d6c5024d",
+    "desc": "Yes/No/Other",
+    "internal": "false",
+    "values": [
+        {
+            "id": "2c91808f725c72b30172718dc7f6005d",
+            "value": "yes",
+            "label": "Yes"
+        },
+        {
+            "id": "2c91808f725c72b30172718dc7fd005e",
+            "value": "no",
+            "label": "No"
+        },
+        {
+            "id": "2c91808f725c72b30172718dc802005f",
+            "value": "other",
+            "label": "Other"
+        }
+    ]
+}
+END
+add_permpro data << END
+{
+    "id": "2c91808b768637530177d0d8d9e80251",
+    "desc": "Permitted/Prohibited",
+    "internal": "false",
+    "values": [
+        {
+            "id": "2c9180857445294501764e04ba0b0060",
+            "value": "permitted",
+            "label": "Permitted"
+        },
+        {
+            "id": "2c91808b7445501601764d8e5fa00032",
+            "value": "limited",
+            "label": "Limited - See Notes"
+        },
+        {
+            "id": "2c91808b7445501601764e04ea730037",
+            "value": "prohibited",
+            "label": "Prohibited"
+        },
+        {
+            "id": "2c91808f725c72b30172718dc8340066",
+            "value": "unmentioned",
+            "label": "Unmentioned"
+        }
+    ]
+}
+END
+lt_add data << END
+{
+    "id": "2c91808b7445501601764d85094f0027",
+    "name": "AllRightsReserved",
+    "primary": "false",
+    "category": "${YesNo}",
+    "defaultInternal": "true",
+    "label": "All Rights Reserved",
+    "description": "All Rights Reserved",
+    "weight": "0",
+    "type": "Refdata"
+}
+END
+lt_add data << END
+{
+    "id": "2c9180857445294501764d80dc110048",
+    "name": "同窓生のアクセス/AlumniAccess",
+    "primary": "false",
+    "category": "${PermPro}",
+    "defaultInternal": "true",
+    "label": "Alumni Access",
+    "description": "ライセンスされたリソースに同窓生がアクセス出来るかどうかを定める/Specifies whether alumni have access to the licensed resource",
+    "weight": "0",
+    "type": "Refdata"
+}
+END
+lt_add data << END
+{
+    "id": "2c91808b7445501601764d8cc248002f",
+    "name": "アーカイブの許可/ArchivingAllowed",
+    "primary": "false",
+    "category": "${YesNo}",
+    "defaultInternal": "true",
+    "label": "Archiving Allowed",
+    "description": "ライセンスアグリーメントが該当リソースのアーカイブを許可しているかどうかを示す/Specifies whether the license agreement allows archiving of the licensed resource",
+    "weight": "0",
+    "type": "Refdata"
+}
+END
+lt_add data << END
+{
+    "id": "2c9180857445294501764d8d88550059",
+    "name": "承認ユーザー/AuthorizedUser",
+    "primary": "false",
+    "defaultInternal": "true",
+    "label": "承認されたユーザーの定義/Authorized User Definition",
+    "description": "ライセンスされたリソースの承認ユーザーの定義/Defines what constitutes an authorized user for the licensed resource.",
+    "weight": "0",
+    "type": "Text"
+}
+END
+lt_add data << END
+{
+    "id": "2c91808b7445501601764d7fff640021",
+    "name": "同時アクセス/ConcurrentUsers",
+    "primary": "false",
+    "defaultInternal": "true",
+    "label": "同時アクセス/Concurrent Users",
+    "description": "同時アクセス数を定義する/Specifies the number of allowed concurrent users.",
+    "weight": "0",
+    "type": "Integer"
+}
+END
+lt_add data << END
+{
+    "id": "2c9180857445294501764d81e8180049",
+    "name": "機密保持契約/AgreementConfidentiality",
+    "primary": "false",
+    "category": "${YesNo}",
+    "defaultInternal": "true",
+    "label": "機密保持に関する契約が必要かどうか/Confidentiality of Agreement Required",
+    "description": "ライセンサーとライセンシーの間で機密保持に合意しているかどうか/Specifies whether the agreemet is bound by confidentiality between licenser and licensee.",
+    "weight": "0",
+    "type": "Refdata"
+}
+END
+lt_add data << END
+{
+    "id": "2c9180857445294501764d82e8c2004b",
+    "name": "ユーザー情報の保護/UserConfidentiality",
+    "primary": "false",
+    "category": "${YesNo}",
+    "defaultInternal": "true",
+    "label": "ユーザー情報の保護/Confidentiality of User Information Protected",
+    "description": "ライセンス契約がユーザー情報の保護を確約しているかどうか/Specifies whether a license agreement ensures onfidentiality of user information",
+    "weight": "0",
+    "type": "Refdata"
+}
+END
+lt_add data << END
+{
+    "id": "2c91808b7445501601764d8bf829002e",
+    "name": "デジタルコピー/CopyDigital",
+    "primary": "false",
+    "category": "${PermPro}",
+    "defaultInternal": "true",
+    "label": "コピー - デジタル/Copy - Digital",
+    "description": "ライセンスされたリソースのデジタルコピーが許可されているかどうかを示す/Specifies whether the agreement allows for digital copies of the licensed resource",
+    "weight": "0",
+    "type": "Refdata"
+}
+END
+lt_add data << END
+{
+    "id": "2c91808b7445501601764d81922e0023",
+    "name": "プリントコピー/CopyPrint",
+    "primary": "false",
+    "category": "${PermPro}",
+    "defaultInternal": "true",
+    "label": "コピー - プリント/Copy - Print",
+    "description": "ライセンスされたリソースのコピーが許可されているかどうかを示す/Specifies whether the agreement allows for physical copies of the licensed resource",
+    "weight": "0",
+    "type": "Refdata"
+}
+END
+lt_add data << END
+{
+    "id": "2c91808b7445501601764d8b3534002c",
+    "name": "電子コースパック/CoursePackElectronic",
+    "primary": "false",
+    "category": "${PermPro}",
+    "defaultInternal": "true",
+    "label": "コースパック - 電子/Course Pack - Electronic",
+    "description": "契約がライセンスされたリソースが電子コースパックに含まれることを許可しているかどうかを示す/Specifies whether the agreement allows for inclusion of the licensed resource in electronic course packs",
+    "weight": "0",
+    "type": "Refdata"
+}
+END
+lt_add data << END
+{
+    "id": "2c91808b7445501601764d8ba1d3002d",
+    "name": "プリントコースパック/CoursePackPrint",
+    "primary": "false",
+    "category": "${PermPro}",
+    "defaultInternal": "true",
+    "label": "コースパック - プリント/Course Pack - Print",
+    "description": "契約がライセンスされたリソースが印刷物のコースパックに含まれることを許可しているかどうかを示す/Specifies whether the agreement allows for inclusion of the licensed resource in print course packs",
+    "weight": "0",
+    "type": "Refdata"
+}
+END
+lt_add data << END
+{
+    "id": "2c9180857445294501764d8ad72c0057",
+    "name": "通信教育/DistanceEducation",
+    "primary": "false",
+    "category": "${PermPro}",
+    "defaultInternal": "true",
+    "label": "通信教育/Distance Education",
+    "description": "契約がライセンスされたリソースが通信教育で使用できるかどうかを示す/Specifies whether the licensed resource can be used in distance education",
+    "weight": "0",
+    "type": "Refdata"
+}
+END
+lt_add data << END
+#{
+#    "id": "2c9180857445294501764d8a84450056",
+#    "name": "FairUseClause",
+#    "primary": "false",
+#    "category": "${YesNo}",
+#    "defaultInternal": "true",
+#    "label": "Fair Use Clause",
+#    "description": "Specifies whether the agreement contains a fair use clause",
+#    "weight": "0",
+#    "type": "Refdata"
+#}
+#END
+lt_add data << END
+{
+    "id": "2c91808b7445501601764d84517b0026",
+    "name": "管轄区域/GovJurisdiction",
+    "primary": "false",
+    "defaultInternal": "true",
+    "label": "管轄区域/Governing Jurisdiction",
+    "description": "ライセンス契約の管轄区域の詳細/Details the governing jurisdiction of the license agreement",
+    "weight": "0",
+    "type": "Text"
+}
+END
+lt_add data << END
+{
+    "id": "2c91808b7445501601764d8402a90025",
+    "name": "準拠法/GovLaw",
+    "primary": "false",
+    "defaultInternal": "true",
+    "label": "準拠法/Governing Law",
+    "description": "ライセンス契約の準拠法の詳細/Details the governing law of the license agreement",
+    "weight": "0",
+    "type": "Text"
+}
+END
+lt_add data << END
+{
+    "id": "2c9180857445294501764d8a251b0055",
+    "name": "電子書籍インターライブラリローン/ILLElectronic",
+    "primary": "false",
+    "category": "${PermPro}",
+    "defaultInternal": "true",
+    "label": "インターライブラリローン - 電子/ILL - Electronic",
+    "description": "該当リソースが電子書籍インターライブラリローンを許可されているかどうか/Specifies whether the resource is licensed for electronic ILL",
+    "weight": "0",
+    "type": "Refdata"
+}
+END
+lt_add data << END
+{
+    "id": "2c91808b7445501601764d896591002b",
+    "name": "安全な電子書籍インターライブラリローン/ILLElectronicSecure",
+    "primary": "false",
+    "category": "${PermPro}",
+    "defaultInternal": "true",
+    "label": "インターライブラリローン - 電子（安全）/ILL - Electronic (Secure)",
+    "description": "該当リソースが安全な電子書籍インターライブラリローンを許可されているかどうか/Specifies whether the resource is licensed for secure electronic ILL",
+    "weight": "0",
+    "type": "Refdata"
+}
+END
+lt_add data << END
+{
+    "id": "2c9180857445294501764d89d1640054",
+    "name": "プリントインターライブラリローン/ILLPrint",
+    "primary": "false",
+    "category": "${PermPro}",
+    "defaultInternal": "true",
+    "label": "インターライブラリローン = プリント/ILL - Print",
+    "description": "該当リソースがプリントインターライブラリローンを許可されているかどうか/Specifies whether the resource is licensed for print ILL",
+    "weight": "0",
+    "type": "Refdata"
+}
+END
+lt_add data << END
+{
+    "id": "2c9180857445294501764d83b3e9004c",
+    "name": "ライセンシーによる補償/IndemLicensee",
+    "primary": "false",
+    "defaultInternal": "true",
+    "label": "ライセンシーによる補償/Indemnification by Licensee",
+    "description": "ライセンシーによる補償/Indemnification by Licensee",
+    "weight": "0",
+    "type": "Text"
+}
+END
+lt_add data << END
+{
+    "id": "2c91808b7445501601764d834a780024",
+    "name": "ライセンサーによる補償/IndemLicensor",
+    "primary": "false",
+    "defaultInternal": "true",
+    "label": "ライセンサーによる補償/Indemnification by Licensor",
+    "description": "ライセンサーによる補償/Indemnification by Licensor",
+    "weight": "0",
+    "type": "Text"
+}
+END
+lt_add data << END
+{
+    "id": "2c9180857445294501764d868c77004e",
+    "name": "LMS",
+    "primary": "false",
+    "category": "${PermPro}",
+    "defaultInternal": "true",
+    "label": "Learning Management System",
+    "description": "該当リソースへのアクセスがライセンシーの LMS から提供されるかどうか/Specifies whether access to the licensed resource can be provided via the licensee's LMS",
+    "weight": "0",
+    "type": "Refdata"
+}
+END
+lt_add data << END
+{
+    "id": "2c9180857445294501764d8906e10053",
+    "name": "電子リンク/LinkElectronic",
+    "primary": "false",
+    "category": "${PermPro}",
+    "defaultInternal": "true",
+    "label": "電子リンク/Link Electronic",
+    "description": "該当リソースのコースでの電子的にリンクされてよいかどうか/Specifies whether the licensed resource can be linked electronically for use in courses",
+    "weight": "0",
+    "type": "Refdata"
+}
+END
+lt_add data << END
+{
+    "id": "2c9180857445294501764d8282c8004a",
+    "name": "他の制限/OtherRestrictions",
+    "primary": "false",
+    "defaultInternal": "true",
+    "label": "他の制限/Other Restrictions",
+    "description": "既に存在する条件でカバーされていないライセンスされたリソースの制限を記載するための包括的な用語/A blanket term to capture restrictions on a licensed resource not covered by established terms",
+    "weight": "0",
+    "type": "Text"
+}
+END
+lt_add data << END
+{
+    "id": "2c9180857445294501764d8c5a100058",
+    "name": "永久的なアクセス/PerpetualAccess",
+    "primary": "false",
+    "category": "${YesNo}",
+    "defaultInternal": "true",
+    "label": "永久的なアクセス/Perpetual Access",
+    "description": "ライセンスされたリソースが契約により永久的なアクセスが与えられているかどうか/Specifies whether the agreement provides perpetual access to the licensed resource",
+    "weight": "0",
+    "type": "Refdata"
+}
+END
+lt_add data << END
+{
+    "id": "2c9180857445294501764d874d52004f",
+    "name": "視覚障害者/PersonsPerceptualDisabilities",
+    "primary": "false",
+    "category": "${PermPro}",
+    "defaultInternal": "true",
+    "label": "視覚障害者/Persons with Perceptual Disabilities",
+    "description": "視覚障害者の使用ガイドラインの指定/Specifies usage guidelines for persons with perceptual disabilities",
+    "weight": "0",
+    "type": "Refdata"
+}
+END
+lt_add data << END
+{
+    "id": "2c9180857445294501764d8072020047",
+    "name": "共有電子リソース/SERU",
+    "primary": "false",
+    "category": "${YesNo}",
+    "defaultInternal": "true",
+    "label": "出版社の SERU 認可/Publisher Accepts SERU",
+    "description": "出版社は SERU を許可しているかどうか/Publisher Accepts SERU",
+    "weight": "0",
+    "type": "Refdata"
+}
+END
+lt_add data << END
+{
+    "id": "2c9180857445294501764d88a8390052",
+    "name": "電子リザーブ/ReservesElectronic",
+    "primary": "false",
+    "category": "${PermPro}",
+    "defaultInternal": "true",
+    "label": "リザーブ - 電子/Reserves - Electronic",
+    "description": "ライセンスされたコンテントは電子リザーブが出来るかとその方法/Specifies whether and how the licensed content can be used in electronic reserves",
+    "weight": "0",
+    "type": "Refdata"
+}
+END
+lt_add data << END
+{
+    "id": "2c9180857445294501764d8807a80051",
+    "name": "プリントリザーブ/ReservesPrint",
+    "primary": "false",
+    "category": "${PermPro}",
+    "defaultInternal": "true",
+    "label": "リザーブ - プリント/Reserves - Print",
+    "description": "ライセンスされたコンテントはプリントリザーブできるかとその方法/Specifies whether and how the licensed content can be used in print reserves",
+    "weight": "0",
+    "type": "Refdata"
+}
+END
+lt_add data << END
+{
+    "id": "2c91808b7445501601764d85c8030029",
+    "name": "デポジットする権利/DepositRights",
+    "primary": "false",
+    "category": "${YesNo}",
+    "defaultInternal": "true",
+    "label": "デポジットする権利/Right to Deposit",
+    "description": "ライセンスされたリソースをデポジットする権利の保持者の特定/Specifies who retains the right to deposit the licensed resource",
+    "weight": "0",
+    "type": "Refdata"
+}
+END
+lt_add data << END
+{
+    "id": "2c91808b7445501601764d8138210022",
+    "name": "学術的共有/ScholarlySharing",
+    "primary": "false",
+    "category": "${PermPro}",
+    "defaultInternal": "true",
+    "label": "学術的共有/Scholarly Sharing",
+    "description": "ライセンスされたリソースが学術的共有を許可しているかどうか/Specifies whether a licensed resource permits scholarly sharing",
+    "weight": "0",
+    "type": "Refdata"
+}
+END
+lt_add data << END
+{
+    "id": "2c91808b7445501601764d8563350028",
+    "name": "テキストデータマイニング",
+    "primary": "false",
+    "category": "${YesNo}",
+    "defaultInternal": "true",
+    "label": "テキスト/データマイニング/Text / Data Mining",
+    "description": "ライセンスされたリソースのテキストやデータマイニングに関する情報/Provides specification around text and data mining of the licensed resource",
+    "weight": "0",
+    "type": "Refdata"
+}
+END
+lt_add data << END
+{
+    "id": "2c9180857445294501764d87ab1e0050",
+    "name": "ウォークイン",
+    "primary": "false",
+    "category": "${YesNo}",
+    "defaultInternal": "true",
+    "label": "ウォークイン",
+    "description": "ライセンスされたリソースがウォークインユーザーに使用許可されているかどうか",
+    "weight": "0",
+    "type": "Refdata"
+}
+END
+for term in "${lt[@]}";do
+    curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${term}" "${okapi_url}/licenses/custprops"
+done

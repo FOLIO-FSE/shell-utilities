@@ -3,18 +3,18 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 
-while IFS=$'\t' read -r userid externalid; do
+while IFS=$'\n' read -r userid; do
 
-	userid=${userid//[^0-9a-z\-]/}' <<< $userid
+	userid=${userid//[^0-9a-z\-]/} <<< $userid
 
 	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users/${userid}")
 
-       updated_user=$(echo ${apicall}  |jq --arg EXTERNALID ${externalid} ' (.externalSystemId = $EXTERNALID)')
+       updated_user=$(echo ${apicall}  |jq --arg EXTERNALID ${userid} ' (.externalSystemId = $EXTERNALID)')
 
         apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_user}" ${okapi_url}/users/${userid})
 
 	echo ${apicall}
-done < users
+done < ids
 
 
 

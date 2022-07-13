@@ -73,7 +73,7 @@ echo "Normalizing Organization keys"
 # normalize keys
 counter=0
 for key in "${!organization_dict[@]}";do
-	newkey=$(tr -dc [a-z0-9] <<< "${key}")
+	newkey=${key//[^a-z0-9]/}
 	organization_dict[${newkey}]=${organization_dict["${key}"]}
 
         if (( $counter % 10 == 0 ));then

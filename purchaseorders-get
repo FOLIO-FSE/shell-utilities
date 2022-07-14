@@ -1,0 +1,20 @@
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+rm -rf purchase_orders
+
+num_orders=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/orders/composite-orders?limit=0" |jq -r .totalRecords)
+
+for (( offset=0; offset<=$num_orders; offset = offset + 1000 ));do
+	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/orders/composite-orders?limit=1000&offset=$offset" |jq -c '.purchaseOrders[]' >> purchase_orders
+	if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset, $num_orders;fi
+	done
+
+echo -e "$num_orders records retrieved          \r"
+
+echo 'Organizations have been exported to "purchase_orders"'
+
+
+

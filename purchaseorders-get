@@ -14,7 +14,7 @@ for (( offset=0; offset<=$num_orders; offset = offset + 1000 ));do
 
 echo -e "$num_orders records retrieved          \r"
 
-echo 'Organizations have been exported to "purchase_orders"'
+echo 'Purchase orders have been exported to "purchase_orders"'
 
 
 

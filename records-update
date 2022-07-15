@@ -51,6 +51,12 @@ case $recordtype in
 "libraries")
 	recordtype="location-units/libraries"
 	;;
+"licenses")
+	recordtype="licenses/licenses"
+	;;
+"loans")
+	recordtype="loan-storage/loans"
+	;;
 "locations")
 	recordtype="locations"
 	;;
@@ -73,7 +79,7 @@ case $recordtype in
 	recordtype="tags"
 	;;
 *)
-	echo "Record type '${deletetype}' not found. Supported types are campuses, groups, holdings, instances, instance-types, items, libraries, locations, notices, organizations, requests, servicepoints, users, tags. Objects with attached records will need specialized delete routines"
+	echo "Record type '${recordtype}' not found. Supported types are campuses, groups, holdings, instances, instance-types, interfaces, items, libraries, licenses, loans, locations, notices, organizations, requests, servicepoints, users, tags. Objects with attached records will need specialized delete routines"
 	exit
 	;;
 esac

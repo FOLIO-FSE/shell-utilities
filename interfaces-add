@@ -36,10 +36,10 @@ while IFS=$'\n' read -r line;do
 	
 	IFS=$'^' read -r org uri user password notes <<< ${line}
 
-	uri=$(echo ${uri} | jq -aRs . |sed 's/\\n//')
-	user=$(echo ${user} | jq -aRs . |sed 's/\\n//')
-	password=$(echo ${password} | jq -aRs . |sed 's/\\n//')
-	notes=$(echo ${notes} | jq -aRs . |sed 's/\\n//')
+	uri=$(echo -n ${uri} | jq -aRs . )
+	user=$(echo -n ${user} | jq -aRs . )
+	password=$(echo -n ${password} | jq -aRs . )
+	notes=$(echo -n ${notes} | jq -aRs . )
 
 	interface_id=$(uuidgen)
 	

@@ -1,0 +1,30 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+counter=1
+infile=update
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+while IFS=$'\n' read instance_uuid;do
+
+	quickmarc_record=$(curl -s -w '\n' -X GET -D \
+		-H "Accept: application/json" \
+		-H "X-Okapi-Tenant: ${tenant}" \
+		-H "x-okapi-token: ${okapi_token}" \
+		"${okapi_url}/records-editor/records?externalId=${instance_uuid}")
+		
+	parsedRecordId=$(echo ${quickmarc_record} |jq -r .parsedRecordId)
+
+	apicall=$(curl --http1.1 -s -X PUT \
+		-H "Content-type: application/json" \
+		-H "X-Okapi-Tenant: ${tenant}" \
+		-H "x-okapi-token: ${okapi_token}" \
+		-d "${quickmarc_record}" \
+		"${okapi_url}/records-editor/records/${parsedRecordId}")
+
+	printf "Processing record %s of %s\r" $counter, $numrecs
+	counter=$(($counter + 1))
+
+done < ${infile}

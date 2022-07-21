@@ -14,7 +14,7 @@ if [[ ${instance_uuid} != "" ]];then
 	  -H "X-Okapi-Tenant: ${tenant}" \
 	  -H "x-okapi-token: ${okapi_token}" \
 	  "${okapi_url}/instance-storage/instances/${instance_uuid}")
-#	echo $apicall 
+	echo $apicall 
 	
 	apicall=$(curl -s -w '\n' -X GET -D \
 	  -H "Accept: application/json" \
@@ -29,7 +29,7 @@ if [[ ${instance_uuid} != "" ]];then
 	  -H "x-okapi-token: ${okapi_token}" \
 	  "${okapi_url}/inventory/items?limit=10000&query=instance.id==${instance_uuid}")
 	
-	echo $apicall 
+#	echo $apicall 
 
 else
 	apicall=$(curl -s -w '\n' -X GET -D \

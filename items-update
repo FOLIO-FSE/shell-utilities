@@ -2,7 +2,10 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
+infile=fix
+
 counter=1
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 while IFS=$'\n' read -r search; do
 	barcode=0
@@ -28,8 +31,11 @@ while IFS=$'\n' read -r search; do
 	barcode=$(sed 's/ //g' <<< $barcode)
 	uuid=$(echo ${apicall} |jq -r '.id')
 
+#		(.status.name = "Available")
+#		(.discoverySuppress = true)
+
 	updated_item=$(echo ${apicall}  |jq  '
-		(.status.name = "Available")
+		(.discoverySuppress = true)
 ')
 
 	apicall=$(curl --http1.1 -s -w '\n' -X PUT \
@@ -40,11 +46,11 @@ while IFS=$'\n' read -r search; do
 	  -d "${updated_item}" \
 	  ${okapi_url}/item-storage/items/${uuid})
 
-	echo "Processing record $counter -- ${uuid}"
+	echo "Processing record $counter of $numrecs -- ${uuid}"
 echo "${apicall}"
 	counter=$(($counter + 1))
 	
-done < fix
+done < ${infile}
 
 
 

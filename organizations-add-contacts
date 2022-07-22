@@ -3,7 +3,11 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 declare -A category_dict
-counter=0
+counter=1
+
+infile="org_contact.tsv"
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 # load categories into dictionary
 
@@ -41,15 +45,30 @@ get_organization() {
 	echo "${organization}"
 }
 
+parse_contact() {
+	lname=" "
+	fname=" "
+	names=$(echo ${contact} |sed 's/\$.*//')
+	lname=$(echo ${names} |sed 's/.* //')
+	fname=$(echo ${names} |sed "s/ ${lname}//")
+	email=$(echo ${contact} |grep -o '[a-zA-Z0-9._-]\+@[a-zA-Z0-9._-]\+\.[a-zA-Z0-9_-]\+')
+	phone=$(echo ${contact} |grep -o '\(([0-9]\{3\})\|[0-9]\{3\}\)[ -]\?[0-9]\{3\}[ -]\?[0-9]\{4\}\(.*ext.*\)\?')
+	notes=$(echo ${contact} |sed 's/^[^\$]*\$//' |sed 's/\$/\n/g' |jq -aRs)
+
+}
+
 
 #########################################################################
 
 while IFS=$'\n' read -r line;do
-	line=$(tr "\t" "^" <<< ${line})
-	IFS='^' read -r code lname fname note email phone phone2 phone3 <<< ${line}
+	line=$(tr "\t" "^" <<< ${line} |tr -d '"')
+	#IFS='^' read -r code lname fname note email phone phone2 phone3 <<< ${line}
+	IFS='^' read -r code contact <<< ${line}
 
 	if [[ ${code} == "" ]];then continue; fi
 	notes=$(echo -n "${note}" |jq -aRs)
+
+	parse_contact
 
 	contact_uuid=$(uuidgen)
 	emails=""
@@ -98,7 +117,6 @@ while IFS=$'\n' read -r line;do
 	# get organization by code
 	organization=$(curl -G -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" --data-urlencode "query=code=${code}" "${okapi_url}/organizations/organizations" |jq .organizations[])
 
-
 	updated_organization=$(jq ".contacts += [\"${contact_uuid}\"]" <<< ${organization})
 	org_uuid=$(jq -r .id <<< ${updated_organization})
 
@@ -107,7 +125,7 @@ while IFS=$'\n' read -r line;do
 		continue
 	fi
 
-	echo "Processing $code -- record $counter"
+	echo "Processing $code -- record $counter of $numrecs"
 
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${contact}" "${okapi_url}/organizations-storage/contacts")
 
@@ -120,5 +138,5 @@ while IFS=$'\n' read -r line;do
 	echo ${apicall}
 
 	counter=$((counter + 1))
-done < contacts.tsv
+done < ${infile}
 

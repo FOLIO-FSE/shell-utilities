@@ -135,7 +135,7 @@ while IFS=$'\n' read line;do
 	IFS='^' read -r code name alias addr phone fax email url <<< ${line}
 
 	# uuid needs to be global, not deterministic since repair/addition tools can't assume deterministic uuids
-	uuid=$(uuidgen)
+	uuid=$(uuidgen --sha1 -n 8405ae4d-b315-42e1-918a-d1919900cf3f -N i"${okapi_url}:organizations:${code})
 
 	if [[ ${alias} != "" ]]; then alias="{\"value\":\"${alias}\"}";fi
 	if [[ ${phone} != "" ]]; then phone="{ \"phoneNumber\" : \"${phone}\", \"type\":\"Office\", \"isPrimary\" : true, \"categories\" : [] }";fi
@@ -150,8 +150,9 @@ while IFS=$'\n' read line;do
 		fi
 	fi
 
-	url=$(sed 's/ .*//' <<< ${url})
-	url=$(sed 's/^[^h].*//' <<< ${url})
+	url=${url/ .*/}
+	url=${url/^[^h].*/}
+
 	if [[ ${url} =~ ^http ]]; then url="{ \"language\" : \"en\", \"isPrimary\" : true, \"value\" : \"${url}\" }";fi
 
 	if (( ${#addr} > 5 ));then build_sierra_address;fi

@@ -5,7 +5,11 @@ okapi_token=$(cat okapi.token)
 declare -A organization_dict
 
 filename="org_email.tsv"
+use_deterministic_uuids="yes"
+
 dos2unix ${filename}
+
+numrecs=$(wc -l ${filename} |cut -d " " -f1)
 
 get_orgs() {
 
@@ -15,7 +19,7 @@ all_organizations=""
 
 # retrieve all records
 while [[ $recsretrieved -eq 100 ]] ;do
-        apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/organizations?query=%28status%3D%3D%22Active%22%29+sortby+name%2Fsort.ascending&limit=100&offset=$offset" |jq .organizations)
+        apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/organizations?query=%28status<>%22nothing%22%29+sortby+name%2Fsort.ascending&limit=100&offset=$offset" |jq .organizations)
 
         recsretrieved=$(echo ${apicall} |jq '. |length')
         totalrecs=$(($offset + $recsretrieved))
@@ -27,16 +31,21 @@ while [[ $recsretrieved -eq 100 ]] ;do
 
 echo "$totalrecs Organizations retrieved"
 
+if [[ ${use_deterministic_uuids} == "yes" ]];then
+        eval "$(echo ${all_organizations} |jq -r '. | @sh "organization_dict[\(.id|tostring)]=\(.|tostring)"')"
+else
 # load organizations into scalar array keyed by downcased name
-eval "$(echo ${all_organizations} |jq -r '. | @sh "organization_dict[\(.code|tostring|ascii_downcase)]=\(.|tostring)"')"
+        eval "$(echo ${all_organizations} |jq -r '. | @sh "organization_dict[\(.code|tostring|ascii_downcase)]=\(.|tostring)"')"
 
-echo "Normalizing Organization keys"
+        echo "Normalizing Organization keys"
 
-# normalize keys
-for key in "${!organization_dict[@]}";do
-        newkey=${key//[^a-z0-9]/}
-        organization_dict[${newkey}]=${organization_dict["${key}"]}
-done
+        # normalize keys
+        for key in "${!organization_dict[@]}";do
+                newkey=${key//[^a-z0-9]/}
+                organization_dict[${newkey}]=${organization_dict["${key}"]}
+        done
+
+fi
 }
 
 #####################################
@@ -48,19 +57,27 @@ counter=0
 while IFS=$'\n' read line;do
 	line=$(echo "${line}" | tr -d '"' | tr "\t" "^")
 	IFS='^' read -r code email <<< ${line}
-	code=$(tr -dc [0-9a-z] <<< ${code,,})
-	organization="${organization_dict[$code]}"
-	uuid=$(echo ${organization} |jq -r .id)
+        if [[ ${use_deterministic_uuids} == "yes" ]];then
+                uuid=$(uuidgen --sha1 -n 8405ae4d-b315-42e1-918a-d1919900cf3f -N "${okapi_url}:organizations:${code}")
+                organization="${organization_dict[$uuid]}"
+        else
+                code=$(tr -dc [0-9a-z] <<< ${code,,})
+                organization="${organization_dict[$code]}"
+                uuid=$(echo ${organization} |jq -r .id)
+        fi
+	
+	description=${email}
+	email=$(echo ${email} |grep -o '[a-zA-Z0-9._-]\+@[a-zA-Z0-9._-]\+\.[a-zA-Z0-9_-]\+')
+	description=$(echo ${description} |sed "s/${email}//" |jq -aRs)
 
-	email="{ \"value\" : \"${email}\", \"isPrimary\" : false, \"categories\" : [] }"
+	email="{ \"value\" : \"${email}\", \"isPrimary\" : false, \"description\": ${description}, \"categories\" : [] }"
 
 	updated_org=$(echo ${organization} | jq ".emails += [ ${email} ]")
 
 	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_org}" ${okapi_url}/organizations-storage/organizations/${uuid})
 
 	counter=$((counter + 1))
-	echo "Processing $code -- record $counter"
+	echo "Processing $code -- record $counter of $numrecs"
 	echo "${apicall}"
-exit
 done < ${filename}
 

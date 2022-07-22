@@ -5,6 +5,8 @@ okapi_token=$(cat okapi.token)
 filename="orgs.tsv"
 dos2unix ${filename}
 
+numrecs=$(wc -l ${filename} |cut -d " " -f1)
+
 #####################################
 
 build_sierra_address() {
@@ -96,7 +98,7 @@ IFS='' read -r -d '' org << EndOfOrg
  "code" : "${code}",
  "description" : "",
  "exportToAccounting" : false,
- "status" : "Active",
+ "status" : "${status}",
  "aliases" : [${alias}],
  "addresses" : [${address}],
  "phoneNumbers" : [${phone} ${fax}],
@@ -132,10 +134,11 @@ counter=0
 while IFS=$'\n' read line;do
 	line=$(echo "${line}" |tr "\t" "^" |tr -d '"')
 	#IFS='^' read -r code name alias addr phone fax email url accountnum <<< ${line}
-	IFS='^' read -r code name alias addr phone fax email url <<< ${line}
+	IFS='^' read -r name code status <<< ${line}
+	# status="Active"
 
 	# uuid needs to be global, not deterministic since repair/addition tools can't assume deterministic uuids
-	uuid=$(uuidgen --sha1 -n 8405ae4d-b315-42e1-918a-d1919900cf3f -N i"${okapi_url}:organizations:${code})
+	uuid=$(uuidgen --sha1 -n 8405ae4d-b315-42e1-918a-d1919900cf3f -N "${okapi_url}:organizations:${code}")
 
 	if [[ ${alias} != "" ]]; then alias="{\"value\":\"${alias}\"}";fi
 	if [[ ${phone} != "" ]]; then phone="{ \"phoneNumber\" : \"${phone}\", \"type\":\"Office\", \"isPrimary\" : true, \"categories\" : [] }";fi
@@ -163,6 +166,7 @@ while IFS=$'\n' read line;do
 	echo ${apicall}
 
 	counter=$((counter + 1))
-	echo "Processing $code -- record $counter"
+	echo "Processing $code -- record $counter of $numrecs"
+
 done < ${filename}
 

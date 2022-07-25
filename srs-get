@@ -2,10 +2,14 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-uuid=$(tr -dc "[0-9a-f\-]" <<< $1)
+uuid=${1//[^0-9a-f\-]}
 
 if [[ ${uuid} =~ [a-z] ]];then
-	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${uuid}/formatted?idType=INSTANCE")
+	if [[ $2 != "srs" ]];then
+		apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${uuid}/formatted?idType=INSTANCE")
+	else
+		apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${uuid}")
+	fi
 
 else
 	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records?limit=0")

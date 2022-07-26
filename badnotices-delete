@@ -1,0 +1,12 @@
+# this script assumes the presence of the other shell utilities in the path
+
+notices-get
+cat notices |jq -r '[.loanId, .id] |@tsv' |sort > outgoing_notices
+
+loans-get
+cat loans |jq -r 'select(.status.name=="Closed") |.id ' |sort > closedloans
+
+join closedloans outgoing_notices > delete
+
+echo "$(cat delete |wc -l) notices to delete were detected. Now deleting"
+records-delete notices

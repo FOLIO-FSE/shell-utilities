@@ -1,5 +1,7 @@
 
-oai_server='https://edge-xxxxxx.folio.ebsco.com/oai/your_edge_key?verb=ListRecords'
+oai_server="$(cat edge.url)/oai/$(cat edge.key)?verb=ListRecords"
+
+from='&from=2099-07-25'
 
 resumption_token=''
 counter=0
@@ -9,7 +11,7 @@ if [[ ${resumption_token} == '' ]]; then
         rm -rf oaiharvest
         mkdir oaiharvest
 
-        oai_data=$(curl -s --retry 9 --retry-delay 60 "${oai_server}&metadataPrefix=marc21_withholdings")
+        oai_data=$(curl -s --retry 9 --retry-delay 60 "${oai_server}&metadataPrefix=marc21_withholdings${from}")
         echo -e "${oai_data}" > "oaiharvest/${counter}.xml"
 
 

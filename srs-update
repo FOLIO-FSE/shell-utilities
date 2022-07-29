@@ -1,0 +1,35 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+counter=1
+infile="fix"
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+while IFS=$'\n' read -r uuid; do
+
+	apicall=$(curl -s -w '\n' -X GET -D \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  ${okapi_url}/source-storage/records/${uuid})
+
+	updated_srs=$(echo ${apicall}  |jq '
+		(.parsedRecord.content.leader |= "\(.[0:5])d\(.[6:])")
+')
+
+	apicall=$(curl --http1.1 -s -w '\n' -X PUT \
+	  -H "Content-type: application/json" \
+	  -H "Accept: text/plain" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  -d "${updated_srs}" \
+	  ${okapi_url}/source-storage/records/${uuid})
+
+	echo "Processing record $counter of $numrecs -- $uuid"
+	counter=$(($counter + 1))
+	
+done < ${infile}
+
+

@@ -4,8 +4,7 @@ okapi_token=$(cat okapi.token)
 
 counter=1
 infile="fix"
-instanceTypeId="30fffe0e-e985-4144-b2e2-1e8179bdb41f",
-updated=$(date -u --rfc-3339=seconds |tr " " "Z" |sed 's/+.*/.000+0000/')
+instanceTypeId="30fffe0e-e985-4144-b2e2-1e8179bdb41f"
 
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
@@ -59,7 +58,6 @@ IFS='' read -r -d '' instance << EndOfInstance
   "staffSuppress": false,
   "discoverySuppress": false,
   "statisticalCodeIds": [],
-  "statusUpdatedDate": "${updated}",
   "tags": {
     "tagList": []
   },
@@ -76,6 +74,8 @@ curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: $
 
 	echo "Processing record $counter of $numrecs -- $uuid"
 	counter=$(($counter + 1))
+exit
+
 	
 done < ${infile}
 

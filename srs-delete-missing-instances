@@ -1,0 +1,82 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+counter=1
+infile="fix"
+instanceTypeId="30fffe0e-e985-4144-b2e2-1e8179bdb41f",
+updated=$(date -u --rfc-3339=seconds |tr " " "Z" |sed 's/+.*/.000+0000/')
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+while IFS=$'\n' read -r uuid; do
+
+	apicall=$(curl -s -w '\n' -X GET -D \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  ${okapi_url}/source-storage/records/${uuid})
+
+	updated_srs=$(echo ${apicall}  |jq '
+		(.parsedRecord.content.leader |= "\(.[0:5])d\(.[6:])")
+')
+
+	apicall=$(curl --http1.1 -s -w '\n' -X PUT \
+	  -H "Content-type: application/json" \
+	  -H "Accept: text/plain" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  -d "${updated_srs}" \
+	  ${okapi_url}/source-storage/records/${uuid})
+
+	instance_uuid=$(echo ${apicall} |jq -r .externalIdsHolder.instanceId)
+	instance_hrid=$(echo ${apicall} |jq -r .externalIdsHolder.instanceHrid)
+
+IFS='' read -r -d '' instance << EndOfInstance
+{
+  "id": "${instance_uuid}",
+  "hrid": "${instance_hrid}",
+  "source": "MARC",
+  "title": "delete",
+  "alternativeTitles": [],
+  "editions": [],
+  "series": [],
+  "identifiers": [],
+  "contributors": [],
+  "subjects": [],
+  "classifications": [],
+  "publication": [],
+  "publicationFrequency": [],
+  "publicationRange": [],
+  "electronicAccess": [],
+  "instanceTypeId": "${instanceTypeId}",
+  "instanceFormatIds": [],
+  "instanceFormats": [],
+  "physicalDescriptions": [],
+  "languages": [],
+  "notes": [],
+  "previouslyHeld": false,
+  "staffSuppress": false,
+  "discoverySuppress": false,
+  "statisticalCodeIds": [],
+  "statusUpdatedDate": "${updated}",
+  "tags": {
+    "tagList": []
+  },
+  "holdingsRecords2": [],
+  "natureOfContentTermIds": []
+}
+EndOfInstance
+
+curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${instance}" "${okapi_url}/instance-storage/instances"
+
+apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${srs_uuid}")
+curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${instance_uuid}"
+
+
+	echo "Processing record $counter of $numrecs -- $uuid"
+	counter=$(($counter + 1))
+	
+done < ${infile}
+
+

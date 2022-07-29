@@ -66,10 +66,10 @@ IFS='' read -r -d '' instance << EndOfInstance
 }
 EndOfInstance
 
-curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${instance}" "${okapi_url}/instance-storage/instances"
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${instance}" "${okapi_url}/instance-storage/instances")
 
 apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${srs_uuid}")
-curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${instance_uuid}"
+apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${instance_uuid}")
 
 
 	echo "Processing record $counter of $numrecs -- $uuid"

@@ -24,6 +24,9 @@ case $deletetype in
 "instance-types")
 	recordtype="instance-types"
 	;;
+"interfaces")
+	recordtype="organizations-storage/interfaces"
+	;;
 "invoices")
 	recordtype="invoice/invoices"
 	;;

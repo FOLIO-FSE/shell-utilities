@@ -8,7 +8,7 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-field_name="AuthorizedUser"
+field_name="ConcurrentUsers"
 infile="${field_name}"
 
 

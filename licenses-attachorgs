@@ -5,12 +5,49 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 declare -A license_dict
-declare -A organization_dict
+declare -A org_dict
 
-infile="license-organization.tsv"
+infile="license-org.tsv"
+role="licensor" # make sure this is defined in the system
+# this script will force a primary organization
 
 all_licenses=""
 all_organizations=""
+
+offset=0
+recsretrieved=100
+
+# retrieve all records
+while [[ $recsretrieved -eq 100 ]] ;do
+	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/organizations?query=%28status%3D%3D%22Active%22%29+sortby+name%2Fsort.ascending&limit=100&offset=$offset" |jq .organizations)
+
+	recsretrieved=$(echo ${apicall} |jq '. |length')
+	totalrecs=$(($offset + $recsretrieved))
+	printf "%s Organizations retrieved\r" $totalrecs
+
+	all_organizations="${all_organizations}$(echo ${apicall} |jq .[])"
+	offset=$(($offset + 100))
+	done
+
+echo "$totalrecs Organizations retrieved"
+echo "${all_organizations}" > orgs
+
+# load organizations into scalar array keyed by downcased name
+eval "$(echo ${all_organizations} |jq -r '. | select(.name |test("[a-zA-Z]"))| @sh "org_dict[\(.name|tostring|ascii_downcase)]=\(.|tostring)"')"
+
+echo "Normalizing Organization keys"
+# normalize keys
+counter=0
+for key in "${!org_dict[@]}";do
+	newkey=${key//[^a-z0-9]/}
+	org_dict[${newkey}]=${org_dict["${key}"]}
+
+        if (( $counter % 10 == 0 ));then
+                printf "%s keys normalized\r" $counter
+        fi
+        counter=$(($counter + 1))
+done
+echo "$counter keys normalized"
 
 offset=0
 recsretrieved=100
@@ -48,40 +85,6 @@ for key in "${!license_dict[@]}";do
 done
 echo "$counter keys normalized"
 
-offset=0
-recsretrieved=100
-
-# retrieve all records
-while [[ $recsretrieved -eq 100 ]] ;do
-	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/organizations?query=%28status%3D%3D%22Active%22%29+sortby+name%2Fsort.ascending&limit=100&offset=$offset" |jq .organizations)
-
-	recsretrieved=$(echo ${apicall} |jq '. |length')
-	totalrecs=$(($offset + $recsretrieved))
-	printf "%s Organizations retrieved\r" $totalrecs
-
-	all_organizations="${all_organizations}$(echo ${apicall} |jq .[])"
-	offset=$(($offset + 100))
-	done
-
-echo "$totalrecs Organizations retrieved"
-echo "${all_organizations}" > orgs
-
-# load organizations into scalar array keyed by downcased name
-eval "$(echo ${all_organizations} |jq -r '. | @sh "organization_dict[\(.name|tostring|ascii_downcase)]=\(.|tostring)"')"
-
-echo "Normalizing Organization keys"
-# normalize keys
-counter=0
-for key in "${!organization_dict[@]}";do
-	newkey=${key//[^a-z0-9]/}
-	organization_dict[${newkey}]=${organization_dict["${key}"]}
-
-        if (( $counter % 10 == 0 ));then
-                printf "%s keys normalized\r" $counter
-        fi
-        counter=$(($counter + 1))
-done
-echo "$counter keys normalized"
 
 # attach organization 
 
@@ -90,16 +93,18 @@ while IFS=$'\t' read -r license organization;do
 	license_record="${license_dict[$comparelicensekey]}"
 
 	compareorganizationkey=$(tr -dc "[0-9a-z]" <<< "${organization,,}")
-	organization_record="${organization_dict[$compareorganizationkey]}"
+	organization_record="${org_dict[$compareorganizationkey]}"
 
 	if [[ ${license_record} =~ [a-z0-9A-Z] ]];then
 		license_uuid=$(echo ${license_record} |jq -r .id)
 		 if [[ ${organization_record} =~ [a-z0-9A-Z] ]];then
 			organization_uuid=$(echo ${organization_record} |jq -r .id)
-			# fix json and PUT
-			record=$(echo "${license_record}" | jq ".orgs += [ { \"_delete\": false, \"org\": {\"orgsUuid\": \"${organization_uuid}\", \"primaryOrg\": false, \"roles\": [ {  \"value\": \"content_provider\" } ] }} ]")
-	
-			curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/licenses/licenses/${license_uuid}"
+			organization_name=$(echo ${organization_record} |jq -r .name)
+			id_owner=$(uuidgen)
+
+			record=$(echo "${license_record}" | jq ".orgs = [ { \"id\": \"${id_owner}\", \"primaryOrg\": true, \"org\": {\"orgsUuid\": \"${organization_uuid}\", \"name\": \"${organization_name}\" }, \"roles\": [{\"owner\": { \"id\": \"${id_owner}\"}, \"role\":  \"${role}\" } ]}] ")
+			curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/licenses/licenses/${license_uuid}" 
+
 		else
 			echo "${organization} Organization not found"
 		fi
@@ -108,4 +113,5 @@ while IFS=$'\t' read -r license organization;do
 	fi
 	
 done < ${infile}
+
 

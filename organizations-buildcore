@@ -137,7 +137,7 @@ while IFS=$'\n' read line;do
 	IFS='^' read -r name code status <<< ${line}
 	# status="Active"
 
-	# uuid needs to be global, not deterministic since repair/addition tools can't assume deterministic uuids
+	# uuid needs to be global. Note that repair/addition tools can't assume deterministic uuids
 	uuid=$(uuidgen --sha1 -n 8405ae4d-b315-42e1-918a-d1919900cf3f -N "${okapi_url}:organizations:${code}")
 
 	if [[ ${alias} != "" ]]; then alias="{\"value\":\"${alias}\"}";fi

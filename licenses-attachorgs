@@ -69,6 +69,28 @@ echo "$totalrecs Licenses retrieved"
 # load licenses into scalar array keyed by downcased name
 eval "$(echo ${all_licenses} |jq -r '. | @sh "license_dict[\(.name|tostring|ascii_downcase)]=\(.|tostring)"')"
 
+#################################################### routine blow replaces the old file
+for org_key in "${!org_dict[@]}";do
+	for license_key in "${!license_dict[@]}";do
+		if [[ ${license_key} =~ ${org_key} ]];then
+			license_record="${license_dict[${license_key}]}"
+			organization_record="${org_dict[${org_key}]}"
+
+			license_uuid=$(echo ${license_record} |jq -r .id)
+
+			organization_uuid=$(echo ${organization_record} |jq -r .id)
+			organization_name=$(echo ${organization_record} |jq -r .name)
+
+			echo "${org_key} is being linked to ${license_key}"
+
+			record=$(echo "${license_record}" | jq ".orgs = [ { \"id\": \"${id_owner}\", \"primaryOrg\": true, \"org\": {\"orgsUuid\": \"${organization_uuid}\", \"name\": \"${organization_name}\" }, \"roles\": [{\"owner\": { \"id\": \"${id_owner}\"}, \"role\":  \"${role}\" } ]}] ")
+			curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/licenses/licenses/${license_uuid}" 
+		fi
+	done
+done
+exit
+##################################################### retaining old match for now, but ignores file
+
 echo "Normalizing License keys"
 # normalize keys
 

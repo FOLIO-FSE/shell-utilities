@@ -29,7 +29,6 @@ while IFS=$'\t' read -r search duedate; do
   	${okapi_url}/loan-storage/loans?query=itemId=%22${item_uuid}%22)
 
         loan_uuid=$(echo "${apicall}" |jq -r .loans[0].id)
-	echo ${apicall}
 
 IFS='' read -r -d '' data << EndOfJSON
 {
@@ -42,5 +41,4 @@ EndOfJSON
 
 	echo "Processing ${search} -- record $counter of $numrecs"
 	counter=$((counter + 1))
-exit
 done < ${infile}

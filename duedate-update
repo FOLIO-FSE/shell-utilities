@@ -3,15 +3,24 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-while IFS=$'\t' read -r barcode duedate; do
+infile="update"
+counter=1
 
-        apicall=$(curl -s -w '\n' -X GET -D \
-          -H "Accept: application/json" \
-          -H "X-Okapi-Tenant: ${tenant}" \
-          -H "x-okapi-token: ${okapi_token}" \
-          "${okapi_url}/inventory/items?query=barcode=${barcode}")
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
-        item_uuid=$(echo "${apicall}" |jq -r .items[0].id)
+while IFS=$'\t' read -r search duedate; do
+
+	if [[ ${search} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+		item_uuid=${search}
+	else
+        	apicall=$(curl -s -w '\n' -X GET -D \
+          		-H "Accept: application/json" \
+          		-H "X-Okapi-Tenant: ${tenant}" \
+          		-H "x-okapi-token: ${okapi_token}" \
+          		"${okapi_url}/inventory/items?query=barcode=${barcode}")
+
+        	item_uuid=$(echo "${apicall}" |jq -r .items[0].id)
+	fi
 
 	apicall=$(curl -s -w '\n' -X GET -D \
 	  -H "Accept: application/json" \
@@ -20,6 +29,7 @@ while IFS=$'\t' read -r barcode duedate; do
   	${okapi_url}/loan-storage/loans?query=itemId=%22${item_uuid}%22)
 
         loan_uuid=$(echo "${apicall}" |jq -r .loans[0].id)
+	echo ${apicall}
 
 IFS='' read -r -d '' data << EndOfJSON
 {
@@ -30,5 +40,7 @@ EndOfJSON
 
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/circulation/loans/${loan_uuid}/change-due-date")
 
-	echo $barcode
-done < update
+	echo "Processing ${search} -- record $counter of $numrecs"
+	counter=$((counter + 1))
+exit
+done < ${infile}

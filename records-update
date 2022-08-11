@@ -14,7 +14,7 @@ numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 fixrecord() {
 	updated_record=$(echo ${apicall}  |jq  '
-                (.uri = "test")
+                (.state = "ACTUAL")
 ')
 
 }
@@ -72,14 +72,17 @@ case $recordtype in
 "servicepoints")
 	recordtype="service-points"
 	;;
-"users")
-	recordtype="users"
-	;;
+"srs")
+        recordtype="source-storage/records"
+        ;;
 "tags")
 	recordtype="tags"
 	;;
+"users")
+	recordtype="users"
+	;;
 *)
-	echo "Record type '${recordtype}' not found. Supported types are campuses, groups, holdings, instances, instance-types, interfaces, items, libraries, licenses, loans, locations, notices, organizations, requests, servicepoints, users, tags. Objects with attached records will need specialized delete routines"
+	echo "Record type '${recordtype}' not found. Supported types are campuses, groups, holdings, instances, instance-types, interfaces, items, libraries, licenses, loans, locations, notices, organizations, requests, servicepoints, srs, tags, users. Objects with attached records will need specialized delete routines"
 	exit
 	;;
 esac
@@ -98,15 +101,14 @@ while read -r uuid; do
 
 
 	fixrecord
-	echo ${updated_record}
 
-#	apicall=$(curl --http1.1 -s -w '\n' -X PUT \
-#	  -H "Content-type: application/json" \
-#	  -H "Accept: text/plain" \
-#	  -H "X-Okapi-Tenant: ${tenant}" \
-#	  -H "x-okapi-token: ${okapi_token}" \
-#	  -d "${updated_record}" \
-#	  "${okapi_url}/${recordtype}/${uuid}")
+	apicall=$(curl --http1.1 -s -w '\n' -X PUT \
+	  -H "Content-type: application/json" \
+	  -H "Accept: text/plain" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  -d "${updated_record}" \
+	  "${okapi_url}/${recordtype}/${uuid}")
 
 
 	echo "Processing record $counter of $numrecs"

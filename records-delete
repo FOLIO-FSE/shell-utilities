@@ -54,14 +54,17 @@ case $deletetype in
 "servicepoints")
 	recordtype="service-points"
 	;;
-"users")
-	recordtype="users"
+"srs")
+	recordtype="source-storage/records"
 	;;
 "tags")
 	recordtype="tags"
 	;;
+"users")
+	recordtype="users"
+	;;
 *)
-	echo "Record type '${deletetype}' not found. Supported types are campuses, groups, holdings, instances, instance-types, items, libraries, locations, notices, organizations, requests, servicepoints, users, tags. Objects with attached records will need specialized delete routines"
+	echo "Record type '${deletetype}' not found. Supported types are campuses, groups, holdings, instances, instance-types, items, libraries, locations, notices, organizations, requests, servicepoints, srs, tags, users. Objects with attached records will need specialized delete routines"
 	exit
 	;;
 esac

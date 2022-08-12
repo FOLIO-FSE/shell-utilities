@@ -14,7 +14,7 @@ numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 fixrecord() {
 	updated_record=$(echo ${apicall}  |jq  '
-                (.state = "ACTUAL")
+                (.permanentLoanTypeId = "3c1edad0-882b-415d-b622-f8fc5e5b5da2")
 ')
 
 }

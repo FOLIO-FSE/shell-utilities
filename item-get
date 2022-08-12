@@ -7,6 +7,10 @@ search="$1"
 
 if [[ ${search} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
 	endpoint="${okapi_url}/item-storage/items/${search}"
+
+elif [[ ${search} =~ ^it[0-9a]*$ ]];then
+	endpoint="${okapi_url}/item-storage/items?query=hrid==${search}"
+	barcode=1
 else
 	endpoint="${okapi_url}/item-storage/items?query=barcode==${search}"
 	barcode=1

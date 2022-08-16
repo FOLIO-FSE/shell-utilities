@@ -11,10 +11,6 @@ fi
 from='&from='${from}
 
 
-echo "${oai_server}&metadataPrefix=marc21_withholdings${from}"
-exit
-		
-
 resumption_token=''
 counter=0
 SECONDS=0

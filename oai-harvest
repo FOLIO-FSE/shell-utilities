@@ -1,7 +1,19 @@
 
-oai_server="$(cat edge.url)/oai/$(cat edge.key)?verb=ListRecords"
+edge_url=$(cat okapi.url) |sed 's/okapi-/edge-/'
+oai_server="${edge_url}/oai/$(cat edge.key)?verb=ListRecords"
 
-from='&from=2099-07-25'
+if [[ ${1} =~ ^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$ ]];then
+	from=${1}
+else
+	from=$(date -I)
+fi
+
+from='&from='${from}
+
+
+echo "${oai_server}&metadataPrefix=marc21_withholdings${from}"
+exit
+		
 
 resumption_token=''
 counter=0

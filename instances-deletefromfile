@@ -12,7 +12,7 @@ declare -a holdings_ids
 
 while read -r deletethis; do
 
-	instance_uuid=$(sed 's/[^0-9a-z\-]//g' <<< $deletethis)
+	instance_uuid=${deletethis//[^0-9a-z\-]/}
 
 	apicall=$(curl -s -w '\n' -X GET -D \
 	  -H "Accept: application/json" \

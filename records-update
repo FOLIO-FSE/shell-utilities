@@ -13,8 +13,8 @@ if [[ $# -eq 0 ]]; then echo "You must enter a record type";exit;fi
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 fixrecord() {
-	updated_record=$(echo ${apicall}  |jq  '
-                (.permanentLoanTypeId = "3c1edad0-882b-415d-b622-f8fc5e5b5da2")
+	updated_record=$(echo ${apicall}  |jq  --arg VALUE "${callnum}" '
+                (.callNumber = $VALUE)
 ')
 
 }
@@ -89,7 +89,8 @@ esac
 
 counter=1
 
-while read -r uuid; do
+#while IFS=$'\t' read -r uuid callnum; do
+while IFS=$'\n' read -r uuid; do
 	uuid=${uuid//[^0-9a-z\-]/}
 	echo "${okapi_url}/${recordtype}/${uuid}"
 

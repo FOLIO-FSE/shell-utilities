@@ -3,7 +3,9 @@ edge_key=$(cat edge.key)
 
 instance_uuid=$(echo ${1} |tr "." "-" |tr -dc [^a-f0-9\-])
 
-apicall=$(curl -s -X GET "${edge_url}/rtac?InstanceIds=${instance_uuid}&apikey=${edge_key}")
+if [[ ${2} == "full" ]];then full='&fullPeriodicals=true';fi
+
+apicall=$(curl -s -X GET "${edge_url}/rtac?InstanceIds=${instance_uuid}&apikey=${edge_key}${full}")
 
 echo $apicall |xmlstarlet fo 
 echo

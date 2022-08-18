@@ -21,7 +21,7 @@ fi
 num_requests=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/requests?limit=0" |jq -r .totalRecords)
 
 for (( offset=0; offset<=$num_requests; offset = offset + 1000 ));do
-	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/requests?query=cql.allRecords=1&limit=1000&offset=$offset" |jq .requests[] >> requests 
+	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/requests?query=cql.allRecords=1&limit=1000&offset=$offset" |jq -c .requests[] >> requests 
 	if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset $num_requests;fi
 	done
 

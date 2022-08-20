@@ -21,7 +21,7 @@ eval "$(jq -r '.locations[] | @sh "locations_dict[\(.id)]=\(.name|tostring)"' <<
 for location in "${!locations_dict[@]}";do
 	name="${locations_dict[${location}]}"
 	echo "Mapping ${location} to ${name}"
-	allrecs=$(replace "${location}" "${name}" <<< ${allrecs})
+	allrecs=${allrecs/"${location}"/"${name}"}
 done
 
 echo -e "${allrecs}" > ${outfile}

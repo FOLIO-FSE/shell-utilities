@@ -7,9 +7,8 @@ okapi_token=$(cat okapi.token)
 declare -A locations_dict
 
 infile=${1}
-outfile="${1}.fixed"
 
-if [[ ! ${infile} =~ [a-zA-Z] ]];then echo "You must supply a tab delimited input file";exit;fi
+if [[ ! ${infile} =~ [a-zA-Z] ]];then echo "You must supply an input file";exit;fi
 
 allrecs=$(cat ${infile})
 counter=0
@@ -24,10 +23,10 @@ for location in "${!locations_dict[@]}";do
 	counter=$(($counter + 1))
 	name="${locations_dict[${location}]}"
 	printf "Scanning/mapping %s values of %s\r" $counter, $numvals
-	allrecs=${allrecs/"${location}"/"${name}"}
+	allrecs=${allrecs//"${location}"/"${name}"}
 done
 
-echo -e "${allrecs}" > ${outfile}
+echo -e "${allrecs}" > ${infile}
 
-echo "All records are processed and written to ${outfile}"
+echo "All records are processed and written to ${infile}"
 

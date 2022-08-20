@@ -19,11 +19,11 @@ locations=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-
 eval "$(jq -r '.locations[] | @sh "locations_dict[\(.id)]=\(.name|tostring)"' <<< ${locations})"
 numvals=${#locations_dict[@]}
 
-for location in "${!locations_dict[@]}";do
+for uuid in "${!locations_dict[@]}";do
 	counter=$(($counter + 1))
-	name="${locations_dict[${location}]}"
+	name="${locations_dict[${uuid}]}"
 	printf "Scanning/mapping %s values of %s\r" $counter, $numvals
-	allrecs=${allrecs//"${location}"/"${name}"}
+	allrecs=${allrecs//"${uuid}"/"${name}"}
 done
 
 echo -e "${allrecs}" > ${infile}

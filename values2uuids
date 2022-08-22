@@ -11,32 +11,26 @@ if [[ ${search} == "" ]];then echo "You must supply some input";exit;fi
 function showmatches() {
 
 	matchtype="${1}"
-	filter="select(.name |ascii_downcase |contains(\"${search}\"))"
+	jq=".${matchtype}[] | select(.name |ascii_downcase |contains(\"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
 
 	case $matchtype in
 	"callNumberTypes")
 		endpoint="call-number-types"
-		jq=".${matchtype}[] | select(.name |ascii_downcase |contains(\"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
         ;;
 	"identifierTypes")
 		endpoint="identifier-types"
-		jq=".${matchtype}[] | select(.name |ascii_downcase |contains(\"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
         ;;
 	"instanceNoteTypes")
 		endpoint="instance-note-types"
-		jq=".${matchtype}[] | select(.name |ascii_downcase |contains(\"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
         ;;
 	"holdingsNoteTypes")
 		endpoint="holdings-note-types"
-		jq=".${matchtype}[] | select(.name |ascii_downcase |contains(\"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
         ;;
 	"itemNoteTypes")
 		endpoint="item-note-types"
-		jq=".${matchtype}[] | select(.name |ascii_downcase |contains(\"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
         ;;
 	"loantypes")
 		endpoint="loan-types"
-		jq=".${matchtype}[] | select(.name |ascii_downcase |contains(\"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
         ;;
 	"locations")
 		endpoint="locations"
@@ -44,7 +38,6 @@ function showmatches() {
         ;;
 	"mtypes")
 		endpoint="material-types"
-		jq=".${matchtype}[] | select(.name |ascii_downcase |contains(\"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
         ;;
 	"usergroups")
 		endpoint="groups"

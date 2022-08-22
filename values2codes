@@ -16,19 +16,27 @@ function showmatches() {
 }
 
 
-echo "Downloading data for locations, loan types, material types, and identifier types. Please be patient"
+echo "Downloading data for call nmber types, identifier types, item note types, instance note types, item material types, loan types, and locations. Please be patient"
 
 locations=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/locations?limit=5000" & ) 
 loantypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/loan-types?limit=5000" & ) 
 materialTypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/material-types?limit=5000" &) 
 identifierTypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/identifier-types?limit=5000" &) 
+instanceNoteTypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-note-types?limit=5000" &) 
+itemNoteTypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-note-types?limit=5000" &) 
+holdingsNoteTypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-note-types?limit=5000" &) 
+callNumberTypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/call-number-types?limit=5000" &) 
+
 
 wait
 
-showmatches "locations"
-showmatches "loantypes"
-showmatches "mtypes"
 showmatches "identifierTypes"
+showmatches "callNumberTypes"
+showmatches "instanceNoteTypes"
+showmatches "itemNoteTypes"
+showmatches "locations"
+showmatches "mtypes"
+showmatches "loantypes"
 
 
 

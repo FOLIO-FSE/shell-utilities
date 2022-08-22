@@ -4,51 +4,51 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-search="${1}"
+search="${1,,}"
 
 if [[ ${search} == "" ]];then echo "You must supply some input";exit;fi
 
 function showmatches() {
 
 	matchtype="${1}"
-	filter="select(.name |contains(\"${search}\"))"
+	filter="select(.name |ascii_downcase |contains(\"${search}\"))"
 
 	case $matchtype in
 	"callNumberTypes")
 		endpoint="call-number-types"
-		jq=".${matchtype}[] | select(.name |contains(\"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
+		jq=".${matchtype}[] | select(.name |ascii_downcase |contains(\"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
         ;;
 	"identifierTypes")
 		endpoint="identifier-types"
-		jq=".${matchtype}[] | select(.name |contains(\"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
+		jq=".${matchtype}[] | select(.name |ascii_downcase |contains(\"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
         ;;
 	"instanceNoteTypes")
 		endpoint="instance-note-types"
-		jq=".${matchtype}[] | select(.name |contains(\"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
+		jq=".${matchtype}[] | select(.name |ascii_downcase |contains(\"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
         ;;
 	"holdingsNoteTypes")
 		endpoint="holdings-note-types"
-		jq=".${matchtype}[] | select(.name |contains(\"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
+		jq=".${matchtype}[] | select(.name |ascii_downcase |contains(\"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
         ;;
 	"itemNoteTypes")
 		endpoint="item-note-types"
-		jq=".${matchtype}[] | select(.name |contains(\"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
+		jq=".${matchtype}[] | select(.name |ascii_downcase |contains(\"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
         ;;
 	"loantypes")
 		endpoint="loan-types"
-		jq=".${matchtype}[] | select(.name |contains(\"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
+		jq=".${matchtype}[] | select(.name |ascii_downcase |contains(\"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
         ;;
 	"locations")
 		endpoint="locations"
-		jq=".${matchtype}[] | select((.name |contains(\"${search}\")) or (.code |contains(\"${search}\"))) | [\"${matchtype}\", .id, .code, .name] |@tsv"
+		jq=".${matchtype}[] | select((.name |ascii_downcase |contains(\"${search}\")) or (.code | ascii_downcase |contains(\"${search}\"))) | [\"${matchtype}\", .id, .code, .name] |@tsv"
         ;;
 	"mtypes")
 		endpoint="material-types"
-		jq=".${matchtype}[] | select(.name |contains(\"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
+		jq=".${matchtype}[] | select(.name |ascii_downcase |contains(\"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
         ;;
 	"usergroups")
 		endpoint="groups"
-		jq=".${matchtype}[] | select(.group |contains(\"${search}\")) | [\"${matchtype}\", .id, .group] |@tsv"
+		jq=".${matchtype}[] | select(.group  |ascii_downcase |contains(\"${search}\")) | [\"${matchtype}\", .id, .group] |@tsv"
         ;;
 	*)
 		echo "No matching endpoint could be found. Quitting"

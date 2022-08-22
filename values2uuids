@@ -12,44 +12,42 @@ function showmatches() {
 
 	matchtype="${1}"
 
-echo $matchtype
-	
 	case $matchtype in
 	"callNumberTypes")
 		endpoint="call-number-types"
-		jq=".${matchtype}[] | [.id, .name] |@tsv"
+		jq=".${matchtype}[] | [\"${matchtype}\", .id, .name] |@tsv"
         ;;
 	"identifierTypes")
 		endpoint="identifier-types"
-		jq=".${matchtype}[] | [.id, .name] |@tsv"
+		jq=".${matchtype}[] | [\"${matchtype}\", .id, .name] |@tsv"
         ;;
 	"instanceNoteTypes")
 		endpoint="instance-note-types"
-		jq=".${matchtype}[] | [.id, .name] |@tsv"
+		jq=".${matchtype}[] | [\"${matchtype}\", .id, .name] |@tsv"
         ;;
 	"holdingsNoteTypes")
 		endpoint="holdings-note-types"
-		jq=".${matchtype}[] | [.id, .name] |@tsv"
+		jq=".${matchtype}[] | [\"${matchtype}\", .id, .name] |@tsv"
         ;;
 	"itemNoteTypes")
 		endpoint="item-note-types"
-		jq=".${matchtype}[] | [.id, .name] |@tsv"
+		jq=".${matchtype}[] | [\"${matchtype}\", .id, .name] |@tsv"
         ;;
 	"loantypes")
 		endpoint="loan-types"
-		jq=".${matchtype}[] | [.id, .name] |@tsv"
+		jq=".${matchtype}[] | [\"${matchtype}\", .id, .name] |@tsv"
         ;;
 	"locations")
 		endpoint="locations"
-		jq=".${matchtype}[] | [.id, .code, .name] |@tsv"
+		jq=".${matchtype}[] | [\"${matchtype}\", .id, .code, .name] |@tsv"
         ;;
 	"mtypes")
 		endpoint="material-types"
-		jq=".${matchtype}[] | [.id, .name] |@tsv"
+		jq=".${matchtype}[] | [\"${matchtype}\", .id, .name] |@tsv"
         ;;
 	"usergroups")
 		endpoint="groups"
-		jq=".${matchtype}[] | [.id, .group] |@tsv"
+		jq=".${matchtype}[] | [\"${matchtype}\", .id, .group] |@tsv"
         ;;
 	*)
 		echo "No matching endpoint could be found. Quitting"
@@ -60,9 +58,8 @@ echo $matchtype
 	output=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?limit=5000" \
 		|jq -r "${jq}" |fgrep "${search}")
 
-	echo "Matching ${matchtype} from FOLIO"
 	echo -e "${output}" 
-	echo
+	echo 
 }
 
 

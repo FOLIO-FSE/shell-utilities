@@ -9,34 +9,72 @@ search="${1}"
 if [[ ${search} == "" ]];then echo "You must supply some input";exit;fi
 
 function showmatches() {
+
 	matchtype="${1}"
+
+echo $matchtype
+	
+	case $matchtype in
+	"callNumberTypes")
+		endpoint="call-number-types"
+		jq=".${matchtype}[] | [.id, .name] |@tsv"
+        ;;
+	"identifierTypes")
+		endpoint="identifier-types"
+		jq=".${matchtype}[] | [.id, .name] |@tsv"
+        ;;
+	"instanceNoteTypes")
+		endpoint="instance-note-types"
+		jq=".${matchtype}[] | [.id, .name] |@tsv"
+        ;;
+	"holdingsNoteTypes")
+		endpoint="holdings-note-types"
+		jq=".${matchtype}[] | [.id, .name] |@tsv"
+        ;;
+	"itemNoteTypes")
+		endpoint="item-note-types"
+		jq=".${matchtype}[] | [.id, .name] |@tsv"
+        ;;
+	"loantypes")
+		endpoint="loan-types"
+		jq=".${matchtype}[] | [.id, .name] |@tsv"
+        ;;
+	"locations")
+		endpoint="locations"
+		jq=".${matchtype}[] | [.id, .code, .name] |@tsv"
+        ;;
+	"mtypes")
+		endpoint="material-types"
+		jq=".${matchtype}[] | [.id, .name] |@tsv"
+        ;;
+	"usergroups")
+		endpoint="groups"
+		jq=".${matchtype}[] | [.id, .group] |@tsv"
+        ;;
+	*)
+		echo "No matching endpoint could be found. Quitting"
+		exit	
+        ;;
+	esac
+
+	output=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?limit=5000" \
+		|jq -r "${jq}" |fgrep "${search}")
+
 	echo "Matching ${matchtype} from FOLIO"
-	echo "${!matchtype}" |jq -r ".${matchtype}[] | [.id, .name, .code?] |@tsv" |fgrep "${search}"
-	echo 
+	echo -e "${output}" 
+	echo
 }
 
 
-echo "Downloading data for call nmber types, identifier types, item note types, instance note types, item material types, loan types, and locations. Please be patient"
+echo "Downloading data for call number types, identifier types, item note types, instance note types, item material types, loan types, and locations. Please be patient"
 
-locations=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/locations?limit=5000" & ) 
-loantypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/loan-types?limit=5000" & ) 
-materialTypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/material-types?limit=5000" &) 
-identifierTypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/identifier-types?limit=5000" &) 
-instanceNoteTypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-note-types?limit=5000" &) 
-itemNoteTypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-note-types?limit=5000" &) 
-holdingsNoteTypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-note-types?limit=5000" &) 
-callNumberTypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/call-number-types?limit=5000" &) 
-
-
-wait
-
-showmatches "identifierTypes"
-showmatches "callNumberTypes"
-showmatches "instanceNoteTypes"
-showmatches "itemNoteTypes"
-showmatches "locations"
-showmatches "mtypes"
-showmatches "loantypes"
-
+showmatches "callNumberTypes" 
+showmatches "locations" 
+showmatches "loantypes" 
+showmatches "identifierTypes" 
+showmatches "instanceNoteTypes" 
+showmatches "holdingsNoteTypes" 
+showmatches "itemNoteTypes" 
+showmatches "mtypes" 
 
 

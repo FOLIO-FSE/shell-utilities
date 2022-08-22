@@ -1,0 +1,34 @@
+# Script expects a delimited file with name of license in first column and name of organization in second colum
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+search="${1}"
+
+if [[ ${search} == "" ]];then echo "You must supply some input";exit;fi
+
+function showmatches() {
+	matchtype="${1}"
+	echo "Matching ${matchtype} from FOLIO"
+	echo "${!matchtype}" |jq -r ".${matchtype}[] | [.id, .name, .code?] |@tsv" |fgrep "${search}"
+	echo 
+}
+
+
+echo "Downloading data for locations, loan types, material types, and identifier types. Please be patient"
+
+locations=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/locations?limit=5000" & ) 
+loantypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/loan-types?limit=5000" & ) 
+materialTypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/material-types?limit=5000" &) 
+identifierTypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/identifier-types?limit=5000" &) 
+
+wait
+
+showmatches "locations"
+showmatches "loantypes"
+showmatches "mtypes"
+showmatches "identifierTypes"
+
+
+

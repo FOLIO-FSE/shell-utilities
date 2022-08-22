@@ -56,7 +56,7 @@ function showmatches() {
 	esac
 
 	output=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?limit=5000" \
-		|jq -r "${jq}" |fgrep "${search}")
+		|jq -r "${jq}" |grep "^[^\t]*\t[^\t]*\t.*${search}")
 
 	echo -e "${output}" 
 	echo 

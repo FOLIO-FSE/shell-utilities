@@ -1,0 +1,108 @@
+# replaces UUIDs with values if file is given, otherwise looks up matching UUIDs for string
+#
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+search="${1,,}"
+
+declare -A values_dict
+
+
+if [[ ${search} == "" ]];then echo "You must supply some input";exit;fi
+
+if [[ -f "$1" ]];then infile=${1};allrecs=$(cat ${infile});fi
+
+function showmatches() {
+
+	matchtype="${1}"
+
+	if [[ ${infile} != '' ]];then
+		jq="jq -r '.${matchtype}[] | @sh \"values_dict[\(.id)]=\(.name|tostring)\"'"
+	else
+		jq=".${matchtype}[] | select(.name |ascii_downcase |contains(\"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
+	fi
+
+	case $matchtype in
+	"callNumberTypes")
+		endpoint="call-number-types"
+        ;;
+	"identifierTypes")
+		endpoint="identifier-types"
+        ;;
+	"instanceNoteTypes")
+		endpoint="instance-note-types"
+        ;;
+	"holdingsNoteTypes")
+		endpoint="holdings-note-types"
+        ;;
+	"itemNoteTypes")
+		endpoint="item-note-types"
+        ;;
+	"loantypes")
+		endpoint="loan-types"
+        ;;
+	"locations")
+		endpoint="locations"
+		if [[ ${infile} == '' ]];then
+			jq=".${matchtype}[] | select((.name |ascii_downcase |contains(\"${search}\")) or (.code | ascii_downcase |contains(\"${search}\"))) | [\"${matchtype}\", .id, .code, .name] |@tsv"
+		fi
+        ;;
+	"mtypes")
+		endpoint="material-types"
+        ;;
+	"usergroups")
+		endpoint="groups"
+
+		if [[ ${infile} != '' ]];then
+			jq="jq -r '.${matchtype}[] | @sh \"values_dict[\(.id)]=\(.group|tostring)\"'"
+		else
+			jq=".${matchtype}[] | select(.group  |ascii_downcase |contains(\"${search}\")) | [\"${matchtype}\", .id, .group] |@tsv"
+		fi
+        ;;
+	*)
+		echo "No matching endpoint could be found. Quitting"
+		exit	
+        ;;
+	esac
+
+	output=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?query=cql.allRecords=1&limit=5000")
+
+	if [[ ${infile} != '' ]];then
+		echo "Collecting values for ${matchtype}"
+		dict_builder=$(eval $"(${jq})" <<< "${output}")
+		eval "$(echo ${dict_builder})"
+	else
+		echo "${output}" |jq -r "${jq}" |grep [a-z] && echo
+	fi
+
+
+}
+
+
+echo "Downloading data for call number types, identifier types, item note types, instance note types, item material types, loan types, and locations. Please be patient"
+
+showmatches "callNumberTypes" 
+showmatches "locations" 
+showmatches "loantypes" 
+showmatches "identifierTypes" 
+showmatches "instanceNoteTypes" 
+showmatches "holdingsNoteTypes" 
+showmatches "itemNoteTypes" 
+showmatches "mtypes" 
+showmatches "usergroups" 
+
+
+if [[ ${infile} != '' ]];then
+	for uuid in "${!values_dict[@]}";do
+		counter=$(($counter + 1))
+		name="${values_dict[${uuid}]}"
+		printf "Scanning/mapping %s values of %s\r" $counter, $numvals
+		allrecs=${allrecs//"${uuid}"/"${name}"}
+	done
+
+	echo -e "${allrecs}" > ${infile}
+
+	echo "All records are processed and written to ${infile}"
+
+fi

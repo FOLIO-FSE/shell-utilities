@@ -101,7 +101,7 @@ if [[ ${infile} != '' ]];then
 		printf "Scanning/mapping %s values of %s\r" $counter $numvals
 		allrecs=${allrecs//"${uuid}"/"${name}"}
 	done
-	printf "Scanning/mapping %s values of %s\n" $counter, $numvals
+	printf "Scanning/mapping %s values of %s\n" $counter $numvals
 
 	echo -e "${allrecs}" > ${infile}
 

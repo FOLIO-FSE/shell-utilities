@@ -92,14 +92,16 @@ showmatches "itemNoteTypes"
 showmatches "mtypes" 
 showmatches "usergroups" 
 
+numvals=${#values_dict[@]}
 
 if [[ ${infile} != '' ]];then
 	for uuid in "${!values_dict[@]}";do
 		counter=$(($counter + 1))
 		name="${values_dict[${uuid}]}"
-		printf "Scanning/mapping %s values of %s\r" $counter, $numvals
+		printf "Scanning/mapping %s values of %s\r" $counter $numvals
 		allrecs=${allrecs//"${uuid}"/"${name}"}
 	done
+	printf "Scanning/mapping %s values of %s\n" $counter, $numvals
 
 	echo -e "${allrecs}" > ${infile}
 

@@ -1,0 +1,8 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+module_id=$(curl -s --http1.1 -L -X GET -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/_/proxy/tenants/${tenant}/interfaces/custom-fields" |jq -r '.[].id')
+
+curl -s --http1.1 -L -X GET -H "x-okapi-tenant: ${tenant}" -H "x-okapi-module-id: ${module_id}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/custom-fields?limit=1000"
+

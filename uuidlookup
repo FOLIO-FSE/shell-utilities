@@ -7,7 +7,7 @@ okapi_token=$(cat okapi.token)
 search="${1,,}"
 
 declare -A values_dict
-
+rectype_arr=("callNumberTypes" "locations" "loantypes" "identifierTypes" "instanceNoteTypes" "holdingsNoteTypes" "itemNoteTypes" "mtypes" "usergroups")
 
 if [[ ${search} == "" ]];then echo "You must supply some input";exit;fi
 
@@ -25,32 +25,24 @@ function showmatches() {
 
 	case $matchtype in
 	"callNumberTypes")
-		endpoint="call-number-types"
-        ;;
+		endpoint="call-number-types";;
 	"identifierTypes")
-		endpoint="identifier-types"
-        ;;
+		endpoint="identifier-types";;
 	"instanceNoteTypes")
-		endpoint="instance-note-types"
-        ;;
+		endpoint="instance-note-types";;
 	"holdingsNoteTypes")
-		endpoint="holdings-note-types"
-        ;;
+		endpoint="holdings-note-types";;
 	"itemNoteTypes")
-		endpoint="item-note-types"
-        ;;
+		endpoint="item-note-types";;
 	"loantypes")
-		endpoint="loan-types"
-        ;;
+		endpoint="loan-types";;
 	"locations")
 		endpoint="locations"
 		if [[ ${infile} == '' ]];then
 			jq=".${matchtype}[] | select((.name |ascii_downcase |contains(\"${search}\")) or (.code | ascii_downcase |contains(\"${search}\"))) | [\"${matchtype}\", .id, .code, .name] |@tsv"
-		fi
-        ;;
+		fi;;
 	"mtypes")
-		endpoint="material-types"
-        ;;
+		endpoint="material-types";;
 	"usergroups")
 		endpoint="groups"
 
@@ -58,12 +50,10 @@ function showmatches() {
 			jq="jq -r '.${matchtype}[] | @sh \"values_dict[\(.id)]=\(.group|tostring)\"'"
 		else
 			jq=".${matchtype}[] | select(.group  |ascii_downcase |contains(\"${search}\")) | [\"${matchtype}\", .id, .group] |@tsv"
-		fi
-        ;;
+		fi;;
 	*)
 		echo "No matching endpoint could be found. Quitting"
-		exit	
-        ;;
+		exit	;;
 	esac
 
 	output=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?query=cql.allRecords=1&limit=5000")
@@ -82,15 +72,10 @@ function showmatches() {
 
 echo "Downloading data for call number types, identifier types, item note types, instance note types, item material types, loan types, and locations. Please be patient"
 
-showmatches "callNumberTypes" 
-showmatches "locations" 
-showmatches "loantypes" 
-showmatches "identifierTypes" 
-showmatches "instanceNoteTypes" 
-showmatches "holdingsNoteTypes" 
-showmatches "itemNoteTypes" 
-showmatches "mtypes" 
-showmatches "usergroups" 
+
+for rectype in ${rectype_arr[@]};do
+	showmatches ${rectype}
+done
 
 numvals=${#values_dict[@]}
 

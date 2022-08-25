@@ -7,17 +7,17 @@ all_licenses=""
 
 offset=0
 recsretrieved=100
+rm -f boundwiths
 
 num_boundwiths=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/inventory-storage/bound-with-parts?limit=0" |jq .totalRecords)
 
 all_boundwiths=""
 
 for (( offset=0; offset<=$num_boundwiths; offset = offset + 1000 ));do
-        all_boundwiths=${all_users}$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/inventory-storage/bound-with-parts?query=cql.allRecords=1&limit=1000&offset=$offset" |jq .boundWithParts[])
+       curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/inventory-storage/bound-with-parts?query=cql.allRecords=1&limit=1000&offset=$offset" |jq .boundWithParts[] >> boundwiths
         if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset $num_boundwiths;fi
         done
 
 echo -e "$num_boundwiths records retrieved          \r"
 
-echo "${all_boundwiths}" > boundwiths
 echo 'Boundwiths have been exported to "boundwiths"'

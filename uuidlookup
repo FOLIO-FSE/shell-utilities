@@ -81,10 +81,12 @@ done
 
 wait
 
-for rectype in ${rectype_arr[@]};do
-	eval $(cat ${rectype}.tmp)
-	rm ${rectype}.tmp
-done
+if [[ ${infile} != '' ]];then
+	for rectype in ${rectype_arr[@]};do
+		eval $(cat ${rectype}.tmp)
+		rm ${rectype}.tmp
+	done
+fi
 
 numvals=${#values_dict[@]}
 

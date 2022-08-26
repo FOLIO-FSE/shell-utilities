@@ -61,7 +61,6 @@ function showmatches() {
 	output=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?query=cql.allRecords=1&limit=5000")
 
 	if [[ ${infile} != '' ]];then
-		echo "Collecting values for ${matchtype}"
 		dict_builder=$(eval $"(${jq})" <<< "${output}")
 		echo -e "${dict_builder}" > ${matchtype}.tmp
 		#eval "$(echo ${dict_builder})"
@@ -72,7 +71,7 @@ function showmatches() {
 }
 
 
-echo -n "Downloading data for ${rectype_arr[@]}. Please be patient."
+echo "Downloading data for ${rectype_arr[@]}. Please be patient."
 
 for rectype in ${rectype_arr[@]};do
 	showmatches ${rectype} & 

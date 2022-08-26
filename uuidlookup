@@ -72,8 +72,7 @@ function showmatches() {
 }
 
 
-echo "Downloading data for call number types, identifier types, item note types, instance note types, item material types, loan types, and locations. Please be patient"
-
+echo -n "Downloading data for ${rectype_arr[@]}. Please be patient."
 
 for rectype in ${rectype_arr[@]};do
 	showmatches ${rectype} & 

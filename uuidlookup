@@ -14,7 +14,10 @@ rectype_arr=("callNumberTypes" "locations" "loantypes" "identifierTypes" "instan
 
 function showmatches() {
 
-	matchtype="${1}"
+	local matchtype="${1}"
+	local jq
+	local endpoint
+	local output
 
 	if [[ ${infile} != '' ]];then
 		jq="jq -r '.${matchtype}[] | @sh \"values_dict[\(.id)]=\(.name|tostring)\"'"
@@ -60,11 +63,11 @@ function showmatches() {
 	if [[ ${infile} != '' ]];then
 		echo "Collecting values for ${matchtype}"
 		dict_builder=$(eval $"(${jq})" <<< "${output}")
-		eval "$(echo ${dict_builder})"
+		echo -e "${dict_builder}" > ${matchtype}.tmp
+		#eval "$(echo ${dict_builder})"
 	else
 		echo "${output}" |jq -r "${jq}" |grep [a-z] && echo
 	fi
-
 
 }
 
@@ -73,7 +76,14 @@ echo "Downloading data for call number types, identifier types, item note types,
 
 
 for rectype in ${rectype_arr[@]};do
-	showmatches ${rectype}
+	showmatches ${rectype} & 
+done
+
+wait
+
+for rectype in ${rectype_arr[@]};do
+	eval $(cat ${rectype}.tmp)
+	rm ${rectype}.tmp
 done
 
 numvals=${#values_dict[@]}

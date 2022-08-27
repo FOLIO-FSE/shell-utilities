@@ -1,0 +1,73 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+
+rec_type=$1
+search_for=$2
+num_retrieved=1000
+
+rm -f ${rec_type}
+
+function single_record() {
+	curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}"
+	exit
+}
+
+function fetch_batch() {
+	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?query=cql.allRecords=1&limit=${num_retrieved}&offset=${offset}" |jq -c ".${rec_type}[]"
+}
+
+case $rec_type in
+"loans")
+	endpoint="circulation/loans";;
+*)
+	echo "Record type not found.";exit;;
+esac
+
+	if [[ ${search_for} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+		case $rec_type in
+		"loans")
+			endpoint="${endpoint}?query=userId=${search_for}"
+			single_record;;
+		esac
+		exit
+	else
+		num_records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?limit=0" |jq -r .totalRecords)
+
+	for (( offset=0; offset<=$num_records;  ));do
+		t1=""
+		t2=""
+		t3=""
+		t4=""
+
+		t1=$(fetch_batch) &
+		offset=$(($offset + $num_retrieved))
+		
+		if [[ $offset -lt $num_records ]];then 
+			t2=$(fetch_batch) &
+			offset=$(($offset + $num_retrieved))
+		fi
+
+		if [[ $offset -lt $num_records ]];then 
+			t3=$(fetch_batch) &
+			offset=$(($offset + $num_retrieved))
+		fi
+
+		if [[ $offset -lt $num_records ]];then 
+			t4=$(fetch_batch)
+			offset=$(($offset + $num_retrieved))
+		fi
+
+		wait
+		
+		echo "${t1}${t2}${t3}" >> ${rec_type}
+
+		if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset $num_records;fi
+		done
+	fi
+
+
+echo 'Data was exported to "${rec_type}"'
+
+

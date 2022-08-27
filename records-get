@@ -18,16 +18,26 @@ function fetch_batch() {
 }
 
 case $rec_type in
+"accounts")
+	endpoint="accounts";;
+"agreements")
+	endpoint="erm/sas"
+	query="query=cql.allRecords=1&perPage=100"
+	;;
 "feefines")
 	endpoint="feefines";;
 "feefineactions")
 	endpoint="feefineactions";;
 "holdings")
 	endpoint="holdings-storage/holdings";;
+"interfaces")
+	endpoint="organizations-storage/interfaces";;
 "instances")
 	endpoint="instance-storage/instances";;
 "items")
 	endpoint="item-storage/items";;
+"locations")
+	endpoint="locations";;
 "loans")
 	endpoint="circulation/loans";;
 "notes")
@@ -56,7 +66,7 @@ esac
 
 	for (( offset=0; offset<=$num_records; ));do
 		for ((t=0; t<=3; t=$(($t + 1)) )); do
-			if [[ $offset -lt $num_records ]];then 
+			if [[ $offset -le $num_records ]];then 
 				fetch_batch $offset &
 				offset=$(($offset + $num_retrieved))
 			fi

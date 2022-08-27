@@ -18,8 +18,27 @@ function fetch_batch() {
 }
 
 case $rec_type in
+"feefines")
+	endpoint="feefines";;
+"feefineactions")
+	endpoint="feefineactions";;
+"holdings")
+	endpoint="holdings-storage/holdings";;
+"instances")
+	endpoint="instance-storage/instances";;
+"items")
+	endpoint="item-storage/items";;
 "loans")
 	endpoint="circulation/loans";;
+"notes")
+	endpoint="notes";;
+"organizations")
+	endpoint="organizations-storage/organizations"
+	query="query=%28status%3D%3D%22Active%22%29+sortby+name%2Fsort.ascending"
+	num_retrieved=100
+	;;
+"schedulednotices")
+	endpoint="scheduled-notice-storage/scheduled-notices";;
 "users")
 	endpoint="users";;
 *)
@@ -29,10 +48,9 @@ esac
 	if [[ ${search_for} =~ ^.*=.*$ ]];then
 		query="query=(${search_for})"
 		single_record
-echo  "${okapi_url}/${endpoint}?${query}" 
 		exit
 	else
-		query="query=cql.allRecords=1"
+		if [[ query == "" ]];then query="query=cql.allRecords=1";fi
 
 		num_records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?limit=0" |jq -r .totalRecords)
 

@@ -9,27 +9,27 @@ num_retrieved=1000
 rm -f ${rec_type}
 
 function single_record() {
-	curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?query=${query}" 
+	curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}" 
 }
 
 function fetch_batch() {
 	local offset=$1
-	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?query=${query}&limit=${num_retrieved}&offset=${offset}" |jq -c ".${rec_type}[]"  > "tmp_${rec_type}.${t}"
+	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&limit=${num_retrieved}&offset=${offset}" |jq -c ".${rec_type}[]"  > "tmp_${rec_type}.${t}"
 }
 
 case $rec_type in
 "loans")
 	endpoint="circulation/loans";;
+"users")
+	endpoint="users";;
 *)
 	echo "Record type not found.";exit;;
 esac
 
-	if [[ ${search_for} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
-		case $rec_type in
-		"loans")
-			query="userId=${search_for}"
-			single_record;;
-		esac
+	if [[ ${search_for} =~ ^.*=.*$ ]];then
+		query="query=(${search_for})"
+		single_record
+echo  "${okapi_url}/${endpoint}?${query}" 
 		exit
 	else
 		query="query=cql.allRecords=1"

@@ -56,7 +56,7 @@ case $rec_type in
 	echo "Record type not found.";exit;;
 esac
 
-	if [[ ${search_for} =~ [=\<\>] ]];then
+	if [[ ${search_for} =~ [=\<\>\%] ]];then
 		query="query=(${search_for})"
 	else
 		if [[ query == "" ]];then query="query=cql.allRecords=1";fi

@@ -29,6 +29,7 @@ case $rec_type in
 "feefineactions")
 	endpoint="feefineactions";;
 "holdings")
+	rec_type="holdingsRecords"
 	endpoint="holdings-storage/holdings";;
 "interfaces")
 	endpoint="organizations-storage/interfaces";;
@@ -55,14 +56,13 @@ case $rec_type in
 	echo "Record type not found.";exit;;
 esac
 
-	if [[ ${search_for} =~ ^.*=.*$ ]];then
+	if [[ ${search_for} =~ [=\<\>] ]];then
 		query="query=(${search_for})"
-		single_record
-		exit
 	else
 		if [[ query == "" ]];then query="query=cql.allRecords=1";fi
+	fi
 
-		num_records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?limit=0" |jq -r .totalRecords)
+		num_records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&limit=0" |jq -r .totalRecords)
 
 	for (( offset=0; offset<=$num_records; ));do
 		for ((t=0; t<=3; t=$(($t + 1)) )); do

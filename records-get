@@ -5,6 +5,7 @@ okapi_token=$(cat okapi.token)
 rec_type=$1
 search_for=$2
 
+
 num_retrieved=1000
 
 rm -f ${rec_type}
@@ -15,7 +16,7 @@ function single_record() {
 
 function fetch_batch() {
 	local offset=$1
-	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?limit=${num_retrieved}&offset=${offset}&${query}" |jq -c ".${rec_type}[]"  > "tmp_${rec_type}.${t}"
+	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?limit=${num_retrieved}&offset=${offset}&${query}${sortby}" |jq -c ".${rec_type}[]"  > "tmp_${rec_type}.${t}"
 }
 
 case $rec_type in
@@ -36,7 +37,7 @@ case $rec_type in
 	endpoint="organizations-storage/interfaces";;
 "instances")
 	num_retrieved=500
-	query="query=(${search_for})20sortby%20title"
+	query="query=(${search_for})%20sortby%20title"
 	endpoint="search/instances";;
 "items")
 	endpoint="item-storage/items";;

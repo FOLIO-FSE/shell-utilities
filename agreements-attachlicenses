@@ -7,6 +7,7 @@ okapi_token=$(cat okapi.token)
 declare -A agreement_dict
 declare -A license_dict
 
+automatic_match="no"
 infile="agreement-license.tsv"
 
 all_agreements=""
@@ -14,6 +15,10 @@ all_licenses=""
 
 offset=0
 recsretrieved=100
+
+if [[ ${automatic_match} == "yes" ]];then 
+	echo "Automatch enabled. Ignoring input files"
+fi
 
 # retrieve all agreements and add to array
 while [[ $recsretrieved -eq 100 ]] ;do
@@ -34,8 +39,10 @@ eval "$(echo ${all_agreements} |jq -r '. | @sh "agreement_dict[\(.name|tostring|
 
 echo "Normalizing Agreement keys"
 # normalize keys
+regex="[\'\"\\/\\\| ]"
+
 for key in "${!agreement_dict[@]}";do
-	newkey=${key//[^a-z0-9]/}
+	newkey=${key//${regex}/}
 	agreement_dict[${newkey}]=${agreement_dict["${key}"]}
 done
 
@@ -62,17 +69,39 @@ eval "$(echo ${all_licenses} |jq -r '. | @sh "license_dict[\(.name|tostring|asci
 echo "Normalizing License keys"
 # normalize keys
 for key in "${!license_dict[@]}";do
-	newkey=${key//[^a-z0-9]/}
+	newkey=${key//${regex}/}
 	license_dict[${newkey}]=${license_dict["${key}"]}
+
+	if [[ ${automatic_match} == "yes" ]];then 
+		agreement_record="${agreement_dict[${newkey}]}"
+
+		# check to see if license exists with same name. If so, link the Agreement
+		if [[ ${agreement_record} =~ [a-z0-9A-Z] ]];then
+			agreement_uuid=$(echo ${agreement_record} |jq -r .id)
+			license_uuid=$(echo ${license_dict["${key}"]} |jq -r .id)
+
+			record=$(echo "${agreement_record}" | jq ".linkedLicenses += [{\"_delete\": false, \"amendments\": [], \"remoteId\": \"${license_uuid}\", \"status\": \"controlling\" }]")
+			curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/erm/sas/${agreement_uuid}"
+		fi
+	fi
 done
+
+if [[ ${automatic_match} == "yes" ]];then 
+	echo "Exiting without processing file due to automatch"
+	exit
+fi
 
 # attach license 
 
-while IFS=$'\t' read -r agreement license;do
-	compareagreementkey=$(tr -dc "[0-9a-z]" <<< "${agreement,,}")
+while IFS=$'\t' read -r agreement license status;do
+	echo "Processing ${license}"
+	status=${status,,}
+	compareagreementkey=${agreement//${regex}/}
+	compareagreementkey="${compareagreementkey,,}"
 	agreement_record="${agreement_dict[$compareagreementkey]}"
 
-	comparelicensekey=$(tr -dc "[0-9a-z]" <<< "${license,,}")
+	comparelicensekey=${license//${regex}/}
+	comparelicensekey=${license,,}
 	license_record="${license_dict[$comparelicensekey]}"
 
 	if [[ ${agreement_record} =~ [a-z0-9A-Z] ]];then
@@ -80,7 +109,7 @@ while IFS=$'\t' read -r agreement license;do
 		 if [[ ${license_record} =~ [a-z0-9A-Z] ]];then
 			license_uuid=$(echo ${license_record} |jq -r .id)
 			# fix json and PUT
-			record=$(echo "${agreement_record}" | jq ".linkedLicenses += [{\"_delete\": false, \"amendments\": [], \"remoteId\": \"${license_uuid}\", \"status\": \"historical\" }]")
+			record=$(echo "${agreement_record}" | jq ".linkedLicenses += [{\"_delete\": false, \"amendments\": [], \"remoteId\": \"${license_uuid}\", \"status\": \"${status}\" }]")
 	
 			curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/erm/sas/${agreement_uuid}"
 		else

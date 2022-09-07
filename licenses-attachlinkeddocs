@@ -7,6 +7,7 @@ okapi_token=$(cat okapi.token)
 declare -A license_dict
 
 all_licenses=""
+infile="docs.tsv"
 
 offset=0
 recsretrieved=100
@@ -28,40 +29,27 @@ echo "$totalrecs records retrieved"
 # load licenses into scalar array keyed by downcased name
 eval "$(echo ${all_licenses} |jq -r '. | @sh "license_dict[\(.name|tostring|ascii_downcase)]=\(.|tostring)"')"
 
-echo "Normalizing keys"
-# normalize keys
-
 counter=0
-# normalize keys
-for key in "${!license_dict[@]}";do
-        newkey=${key//[^a-z0-9]/}
-        license_dict[${newkey}]=${license_dict["${key}"]}
 
-        if (( $counter % 10 == 0 ));then
-                printf "%s keys normalized\r" $counter
-        fi
-        counter=$(($counter + 1))
-done
-echo "$counter keys normalized"
-# attach docs
-
-while IFS=$'\t' read -r license docname location notes;do
-        notes=$(echo ${notes} |jq -aRs |sed "s/|/\\\n/g" )
+while IFS=$'\t' read -r license docname location;do
+        notes='""'
         location=$(echo ${location} |tr -d "\n" |jq -aRs)
-	comparekey=$(tr -dc "[0-9a-z]" <<< "${license,,}")
+	regex="[\'\"\\/\\\|]"
+	comparekey=${license//${regex}/}
+	comparekey=${license,,}
 	record="${license_dict[$comparekey]}"
 
 	if [[ ${record} =~ [a-z0-9A-Z] ]];then
 		record_uuid=$(echo ${record} |jq -r .id)
-		docid=$(echo ${record} |jq -r .docs[0].id)
+		docid=$(echo ${record} |jq -r .id)
 
 		# fix json and PUT
-		record=$(echo "${record}" | jq ".docs = [{ \"id\": \"${docid}\", \"location\": ${location},\"note\": ${notes}, \"name\": \"${docname}\" }]")
+		record=$(echo "${record}" | jq ".docs = [{ \"id\": \"${docid}\", \"url\": ${location}, \"name\": \"${docname}\" }]")
 
 		curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/licenses/licenses/${record_uuid}"
 	else
 		echo "${license} not found"
 	fi
-	
-done < docs.tsv
+exit
+done < ${infile}
 

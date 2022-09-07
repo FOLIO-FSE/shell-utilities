@@ -29,12 +29,25 @@ echo "$totalrecs records retrieved"
 # load licenses into scalar array keyed by downcased name
 eval "$(echo ${all_licenses} |jq -r '. | @sh "license_dict[\(.name|tostring|ascii_downcase)]=\(.|tostring)"')"
 
+echo "Normalizing keys"
+
 counter=0
+
+regex="[\'\"\\/\\\| ]"
+
+for key in "${!license_dict[@]}";do
+        newkey=${key//${regex}/}
+        license_dict[${newkey}]=${license_dict["${key}"]}
+
+        if (( $counter % 10 == 0 ));then
+                printf "%s keys normalized\r" $counter
+        fi
+        counter=$(($counter + 1))
+done
 
 while IFS=$'\t' read -r license docname location;do
         notes='""'
-        location=$(echo ${location} |tr -d "\n" |jq -aRs)
-	regex="[\'\"\\/\\\|]"
+        location=$(echo -n ${location} |jq -aRs)
 	comparekey=${license//${regex}/}
 	comparekey=${license,,}
 	record="${license_dict[$comparekey]}"
@@ -44,7 +57,12 @@ while IFS=$'\t' read -r license docname location;do
 		docid=$(echo ${record} |jq -r .id)
 
 		# fix json and PUT
-		record=$(echo "${record}" | jq ".docs = [{ \"id\": \"${docid}\", \"url\": ${location}, \"name\": \"${docname}\" }]")
+
+		# use for urls
+		#record=$(echo "${record}" | jq ".docs = [{ \"id\": \"${docid}\", \"url\": ${location}, \"name\": \"${docname}\" }]")
+		
+		# use for physical locations
+		record=$(echo "${record}" | jq ".docs = [{ \"id\": \"${docid}\", \"location\": ${location}, \"name\": \"${docname}\" }]")
 
 		curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/licenses/licenses/${record_uuid}"
 	else

@@ -34,7 +34,8 @@ echo "Normalizing keys"
 counter=0
 # normalize keys
 for key in "${!license_dict[@]}";do
-        newkey=${key//[^a-z0-9]/}
+	regex="[\'\"\\/\\\| ]"
+        newkey=${key//${regex}/}
         license_dict[${newkey}]=${license_dict["${key}"]}
 
         if (( $counter % 10 == 0 ));then
@@ -46,7 +47,9 @@ echo "$counter keys normalized"
 # attach docs
 
 while IFS=$'\t' read -r license file;do
-	comparekey=$(tr -dc "[0-9a-z]" <<< "${license,,}")
+        regex="[\'\"\\/\\\| ]"
+        comparekey=${license//${regex}/}
+        comparekey=${license,,}
 	record="${license_dict[$comparekey]}"
 
 	if [[ ${record} =~ [a-z0-9A-Z] ]];then

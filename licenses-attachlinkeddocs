@@ -50,6 +50,5 @@ while IFS=$'\t' read -r license docname location;do
 	else
 		echo "${license} not found"
 	fi
-exit
 done < ${infile}
 

@@ -8,9 +8,9 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-field_name="Archiving"
-#which_picklist=${field_name}
+field_name="PerpetualAccess"
 which_picklist="PermittedProhibited"
+#which_picklist="YesNoAllbutwalk-ins"
 infile=${field_name}
 
 declare -A dict_picklist_uuid
@@ -90,7 +90,7 @@ while IFS=$'\t' read license_name term_value internal_note;do
 	
 	term_value=$(echo ${term_value,,} |tr " " "_")
 
-	term_value=${dict_picklist_values["${term_value}"]}
+	#term_value=${dict_picklist_values["${term_value}"]}
 
 
 	if [[ ! -z ${term_value} ]];then
@@ -104,9 +104,8 @@ while IFS=$'\t' read license_name term_value internal_note;do
 			.customProperties.undefined[0]._delete = true")
 
 		apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${license}" "${okapi_url}/licenses/licenses/${license_id}")
-		echo ${apicall}
+		echo ${apicall} |jq .
 	fi
-
 termcounter=$((${termcounter} + 1))
 
 done < ${infile}

@@ -8,28 +8,32 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-field_name="ConcurrentUsers"
+field_name="AuthorizedUser"
 infile="${field_name}"
 
 
-while IFS=$'\t' read license_name term_value public_note;do
+#while IFS=$'\t' read license_name term_value public_note;do
+while IFS=$'\t' read license_name term_value;do
 	echo -e "Processing term ${termcounter}"
 
 	license=$(curl  --data-urlencode "term=${license_name}" --data-urlencode "match=name" -G -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/licenses/licenses" |jq -r '.[0]')
 
 
 	public_note=$(jq . -Rs <<< ${public_note})
+	public_note=${public_note//\\n/}
 
 	license_id=$(echo ${license} |jq -r '.id')
 	term_value==$(jq . -Rs <<< ${term_value})
+	term_value=${term_value//\\n/}
 
 
 	if [[ ! -z ${term_value} ]];then
 		license=$(echo ${license} |jq "
 			del(.customProperties.${field_name}) |
 			.customProperties.${field_name}.value ${term_value} |
-			.customProperties.${field_name}.publicNote = ${public_note} |
+#			.customProperties.${field_name}.publicNote = ${public_note} |
 			.customProperties.undefined._delete = true")
+
 
 		apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${license}" "${okapi_url}/licenses/licenses/${license_id}")
 		echo $apicall 

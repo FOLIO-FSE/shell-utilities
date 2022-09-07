@@ -2,6 +2,9 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
+infile="licenses.txt"
+dos2unix ${infile}
+
 
 create_license() {
 
@@ -21,16 +24,36 @@ echo "${license}"
 }
 
 
-while IFS=$'\n' read -r name;do 
-	echo "Processing $name"
+#while IFS=$'\n' read -r name;do 
+while IFS=$'\n' read -r line;do 
+	line=$(echo "${line}" |tr "\t" "^" |tr -d '"')
+	IFS='^' read -r name description startdate enddate <<< ${line}
+	description=$(echo -n ${description} |jq -Rs )
 
 	# license uuid -- needs to be global
 	uuid=$(uuidgen)
 
 	license=$(create_license)
+
+	if [[ ${startdate} =~ ^[12][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$ ]];then
+		license=$(echo "${license}" | jq ".startDate = \"${startdate}\"")
+		if [[ ! ${enddate} =~ ^[12][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$ ]];then 
+			license=$(echo "${license}" | jq ".openEnded = true")
+		fi
+			
+	fi
+	if [[ ${enddate} =~ ^[12][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$ ]];then
+		license=$(echo "${license}" | jq ".endDate = \"${enddate}\"")
+			
+	fi
+
+	if [[ ${description} != '""' ]];then
+		license=$(echo "${license}" | jq ".description = ${description}")
+	fi
 	
+
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${license}" "${okapi_url}/licenses/licenses")
 
 	echo "${apicall}"
-done < names
+done < ${infile}
 

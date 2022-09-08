@@ -8,6 +8,11 @@ deletetype=$1
 deletefile="delete"
 numrecs=$(wc -l ${deletefile} |cut -d " " -f1)
 
+delete_record() {
+	local uuid=${1//[^0-9a-z\-]/}
+	local apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}")
+}
+
 case $deletetype in
 "campuses")
 	recordtype="location-units/campuses"
@@ -71,12 +76,12 @@ esac
 
 counter=1
 
-while read -r uuid; do
-	uuid=${uuid//[^0-9a-z\-]/}
-	echo "${okapi_url}/${recordtype}/${uuid}"
-	apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}")
-	echo "Processing record $counter of $numrecs"
-	counter=$(($counter + 1))
-	echo ${apicall}
+while mapfile -t -n 10 uuids && ((${#uuids[@]})); do
+	for uuid in ${uuids[@]};do
+		delete_record ${uuid} &
+		counter=$(($counter + 1))
+		printf "Processing %s -- record %s of %s\r" $uuid $counter $numrecs
+	done
+	wait
 done < ${deletefile}
 

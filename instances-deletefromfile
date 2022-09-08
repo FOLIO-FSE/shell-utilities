@@ -6,6 +6,7 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 counter=1
+infile="delete"
 
 declare -a item_ids
 declare -a holdings_ids
@@ -13,6 +14,10 @@ declare -a holdings_ids
 while read -r deletethis; do
 
 	instance_uuid=${deletethis//[^0-9a-z\-]/}
+
+	if [[ ${instance_uuid} =~ ^in[0-9a]*$ ]];then
+		instance_uuid=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances?query=hrid==${instance_uuid}" |jq -r '.instances[].id')
+	fi
 
 	apicall=$(curl -s -w '\n' -X GET -D \
 	  -H "Accept: application/json" \
@@ -25,9 +30,9 @@ while read -r deletethis; do
 	
 	if [[ $item_arr_size == 0 ]]
 	then
-		echo "No items were detected"
+		echo "No items were detected for ${instance_uuid}"
 	else
-		echo "$item_arr_size items were detected: Deleting items"
+		echo "$item_arr_size items were detected for ${instance_uuid}: Deleting items"
 	
 		for item in ${item_ids[*]};do
 	  		echo $item
@@ -72,4 +77,4 @@ while read -r deletethis; do
 	echo "Deleting record $counter -- ${instance_uuid}"
 	counter=$(($counter + 1))
 
-done < delete
+done < ${infile}

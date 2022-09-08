@@ -35,7 +35,6 @@ while read -r deletethis; do
 		echo "$item_arr_size items were detected for ${instance_uuid}: Deleting items"
 	
 		for item in ${item_ids[*]};do
-	  		echo $item
 			apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-storage/items/${item}")
 			echo $apicall
 		done
@@ -52,12 +51,11 @@ while read -r deletethis; do
 	
 	if [[ $holdings_arr_size == 0 ]]
 	then
-		echo "No holdings were detected"
+		echo "No holdings were detected for ${instance_uuid}"
 	else
-		echo "$holdings_arr_size items were detected. Deleting holdings:"
+		echo "$holdings_arr_size items were detected for ${instance_uuid}. Deleting holdings:"
 	
 		for holding in ${holdings_ids[*]};do
-	  		echo $holding
 			apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-storage/holdings/${holding}")
 			echo $apicall
 		done

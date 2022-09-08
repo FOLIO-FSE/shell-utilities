@@ -1,0 +1,33 @@
+#!/usr/bin/python
+import csv
+import uuid
+
+namespace=uuid.UUID(b'8405ae4d-b315-42e1-918a-d1919900cf3f')
+
+infile = open('infile.tsv', 'r')
+entries = csv.reader(infile, delimiter = '\t')
+outfile = open('outfile.tsv', 'w')
+
+base='https://okapi-xxxxx.folio.ebsco.com:'
+
+id_base = base + 'items:'
+
+
+
+counter = 0
+
+for entry in entries:
+    recordid = entry[0]
+
+    value = entry[1]
+    uuid_name = id_base + recordid
+    
+    recorduuid = str(uuid.uuid5(namespace, uuid_name))
+
+    record = recorduuid + "\t" + value + "\t" + recordid + "\n" 
+    outfile.write(record)
+
+    counter = counter + 1
+
+print("Number of records processed: %s \n" % counter)    
+

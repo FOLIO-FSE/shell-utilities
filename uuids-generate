@@ -7,7 +7,7 @@ okapi_url=$(cat okapi.url)
 namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
 object_type=$1
 
-infile="f1"
+infile="infile"
 outfile="outfile"
 
 numrecs=$(wc -l ${infile} |cut -d " " -f1)

@@ -73,10 +73,10 @@ done
 
 termcounter=1
 
-while IFS=$'\t' read license_name term_value internal_note;do
+while IFS=$'\t' read license_name term_value note;do
 	
-	#public_note=$(jq . -Rs <<< ${public_note})
-	internal_note=$(jq . -Rs <<< ${internal_note})
+	#public_note=$(jq . -Rs <<< ${note})
+	internal_note=$(jq . -Rs <<< ${note})
 
 	echo -e "Processing term ${termcounter}"
 
@@ -94,13 +94,13 @@ while IFS=$'\t' read license_name term_value internal_note;do
 
 
 	if [[ ! -z ${term_value} ]];then
-			#.customProperties.${field_name}[0].publicNote = ${public_note} |
-			#.customProperties.${field_name}[0].note = ${internal_note} | 
+			#.customProperties.${field_name}[0].publicNote = ${note} |
+			#.customProperties.${field_name}[0].note = ${note} | 
 
 		license=$(echo ${license} |jq "
 			del(.customProperties.${field_name}) |
 			.customProperties.${field_name}[0].value = \"${term_value}\" |
-			.customProperties.${field_name}[0].note = ${internal_note} | 
+			.customProperties.${field_name}[0].note = ${note} | 
 			.customProperties.undefined[0]._delete = true")
 
 		apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${license}" "${okapi_url}/licenses/licenses/${license_id}")

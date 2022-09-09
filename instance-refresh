@@ -17,7 +17,7 @@ update_record() {
 	  -H "Accept: application/json" \
 	  -H "X-Okapi-Tenant: ${tenant}" \
 	  -H "x-okapi-token: ${okapi_token}" \
-	  "${okapi_url}/instance-storage/instances/${uuid}")
+	  "${okapi_url}/inventory/instances/${uuid}")
 
 	apicall=$(curl --http1.1 -s -w '\n' -X PUT \
 	  -H "Content-type: application/json" \
@@ -25,7 +25,7 @@ update_record() {
 	  -H "X-Okapi-Tenant: ${tenant}" \
 	  -H "x-okapi-token: ${okapi_token}" \
 	  -d "${instance_record}" \
-	  "${okapi_url}/instance-storage/instances/${uuid}")
+	  "${okapi_url}/inventory/instances/${uuid}")
 
 }
 
@@ -38,7 +38,7 @@ numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 counter=1
 
-while mapfile -t -n 4 uuids && ((${#uuids[@]})); do
+while mapfile -t -n 6 uuids && ((${#uuids[@]})); do
 	for uuid in ${uuids[@]};do	
 		uuid=${uuid//[^0-9a-f\-]/}
 		update_record "${uuid}" &

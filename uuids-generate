@@ -6,6 +6,7 @@
 okapi_url=$(cat okapi.url)
 namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
 object_type=$1
+strip=$2
 
 infile="infile"
 outfile="outfile"
@@ -16,9 +17,16 @@ rm -f ${outfile}
 uuid_generate() {
 	local identifier=${1}
 	local fileno=${2}
+	
+	if [[ ${strip} == "strip" ]];then
+		identifier="${identifier/./}"
+		identifier="${identifier:0:-1}"
+	fi
+
 	fileno=$(printf "%03d" $fileno)
 	uuidgen --sha1 -n ${namespace} -N ${okapi_url}:${object_type}:${identifier} > "tmp_uuid.${fileno}"
 }
+
 
 while mapfile -t -n 100 ids && ((${#ids[@]})); do
 	seq=0

@@ -7,5 +7,11 @@ okapi_url=$(cat okapi.url)
 namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
 object_type=$1
 identifier=$2
+strip=${3}
+
+if [[ ${strip} == "strip" ]];then
+	identifier="${identifier/./}"
+	identifier="${identifier:0:-1}"
+fi
 
 uuidgen --sha1 -n ${namespace} -N ${okapi_url}:${object_type}:${identifier}

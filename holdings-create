@@ -1,0 +1,65 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+declare -A location_dict
+infile="holdings_source"
+strip="yes"
+
+namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
+permanentLocationId="53e77e04-49eb-468c-9061-446ae4051c46"
+callNumberTypeId="6caca63e-5651-4db6-9247-3205156e9699",
+sourceId="f32d531e-df79-46b3-8932-cdd35f7a2264"
+
+locations=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/locations?limit=5000")
+
+eval "$(jq -r '.locations[] | @sh "location_dict[\(.code)]=\(.id)"' <<< ${locations})"
+
+create_holding() {
+
+	local formerId="${1}"
+	local permanentLocationId="${2}"
+	local callNumber="${3}"
+	local instanceId
+	local holdId
+
+	if [[ ${strip} == "yes" ]];then
+		holdId="${formerId/./}"
+		holdId="${holdId:0:-1}"
+	else
+		holdId=${formerId}
+	fi
+
+	# sequencing is important since holdId itself is modified
+	instanceId=$(uuidgen --sha1 -n ${namespace} -N ${okapi_url}:instances:${holdId})
+	holdId=$(uuidgen --sha1 -n ${namespace} -N ${okapi_url}:holdings:${holdId})
+
+	permanentLocationId=${location_dict["${permanentLocationId}"]}
+
+IFS='' read -r -d '' holding << EndOfJSON
+{
+  "instanceId": "${instanceId}",
+  "sourceId": "${sourceId}",
+  "formerIds": ["${formerId}"],
+  "permanentLocationId": "${permanentLocationId}",
+  "callNumberTypeId": "${permanentLocationId}",
+  "callNumber": "${callNumber}",
+  "id": "${holdId}"
+}
+EndOfJSON
+echo "${holding}" |jq
+}
+
+
+while IFS=$'\n' read -r line; do
+	regex="[\^\'\"\|]"
+	line=${line/${regex}/}
+	line=${line//$'\t'/^}
+
+	IFS=$'^' read -r location recNo callNo <<< "${line}"
+
+	create_holding "${recNo}" "${location}" "${callNo}"
+
+counter=$(($counter + 1))
+done < ${infile}
+

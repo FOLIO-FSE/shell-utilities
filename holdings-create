@@ -15,8 +15,6 @@ callNumberType="Other scheme"
 rm -f "holdings.log"
 
 namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
-permanentLocationId="53e77e04-49eb-468c-9061-446ae4051c46"
-callNumberTypeId="6caca63e-5651-4db6-9247-3205156e9699",
 
 echo "Loading reference data. Please be patient."
 

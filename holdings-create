@@ -38,6 +38,7 @@ create_holding() {
 	local instanceId
 	local holdId
 	local apicall
+	local holding
 
 	if [[ ${strip} == "yes" ]];then
 		holdId="${formerId/./}"

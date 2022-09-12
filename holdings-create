@@ -12,14 +12,19 @@ strip="yes"
 source="FOLIO"
 callNumberType="Other scheme"
 
+rm -f "holdings.log"
+
 namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
 permanentLocationId="53e77e04-49eb-468c-9061-446ae4051c46"
 callNumberTypeId="6caca63e-5651-4db6-9247-3205156e9699",
+
+echo "Loading reference data. Please be patient."
 
 locations=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/locations?limit=5000")
 sources=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-sources?limit=1000")
 calltypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/call-number-types?limit=1000")
 
+echo "Structuring reference data"
 eval "$(jq -r '.locations[] | @sh "location_dict[\(.code)]=\(.id)"' <<< ${locations})"
 eval "$(jq -r '.holdingsRecordsSources[] | @sh "source_dict[\(.name)]=\(.id)"' <<< ${sources})"
 eval "$(jq -r '.callNumberTypes[] | @sh "calltype_dict[\(.name)]=\(.id)"' <<< ${calltypes})"
@@ -34,6 +39,7 @@ create_holding() {
 	local callNumber="${3}"
 	local instanceId
 	local holdId
+	local apicall
 
 	if [[ ${strip} == "yes" ]];then
 		holdId="${formerId/./}"
@@ -54,12 +60,16 @@ IFS='' read -r -d '' holding << EndOfJSON
   "sourceId": "${sourceId}",
   "formerIds": ["${formerId}"],
   "permanentLocationId": "${permanentLocationId}",
-  "callNumberTypeId": "${permanentLocationId}",
+  "callNumberTypeId": "${callNumberTypeId}",
   "callNumber": "${callNumber}",
   "id": "${holdId}"
 }
+
 EndOfJSON
-echo "${holding}" |jq
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${holding}" "${okapi_url}/holdings-storage/holdings")
+echo ${apicall}
+echo -e "${formerId} -- ${apicall}" >> holdings.log
+echo ${holding} |jq
 }
 
 

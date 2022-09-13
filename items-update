@@ -2,13 +2,24 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-infile=fix
+infile=infile
+outfile=item_update.log
+
+rm -f ${outfile}
 
 counter=1
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
-while IFS=$'\n' read -r search; do
-	barcode=0
+item_update() {
+	local search=${1}
+	local fileno=${2}
+
+	local barcode=0
+	local endpoint
+	local apicall
+	local uuid
+	local item
+	local updated_item
 
 	if [[ ${search} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
         	endpoint="${okapi_url}/item-storage/items/${search}"
@@ -17,11 +28,7 @@ while IFS=$'\n' read -r search; do
 		barcode=1
 	fi
 
-	apicall=$(curl -s -w '\n' -X GET -D \
-	  -H "Accept: application/json" \
-	  -H "X-Okapi-Tenant: ${tenant}" \
-	  -H "x-okapi-token: ${okapi_token}" \
-	  "${endpoint}")
+	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}")
 
 	if [[ "${barcode}" -eq "1" ]];then
         	apicall=$(echo $apicall |jq '.items[0]')
@@ -38,19 +45,28 @@ while IFS=$'\n' read -r search; do
 		(.discoverySuppress = true)
 ')
 
-	apicall=$(curl --http1.1 -s -w '\n' -X PUT \
-	  -H "Content-type: application/json" \
-	  -H "Accept: text/plain" \
-	  -H "X-Okapi-Tenant: ${tenant}" \
-	  -H "x-okapi-token: ${okapi_token}" \
-	  -d "${updated_item}" \
-	  ${okapi_url}/item-storage/items/${uuid})
+	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_item}" ${okapi_url}/item-storage/items/${uuid})
 
-	echo "Processing record $counter of $numrecs -- ${uuid}"
-echo "${apicall}"
-	counter=$(($counter + 1))
-	
+	echo ${apicall} |jq -c |grep -i [a-z] > "tmp_items.${fileno}"
+
+}
+
+while mapfile -t -n 5 ids && ((${#ids[@]})); do
+	for id in ${ids[@]};do
+		seq=0
+		item_update ${id} ${seq} &
+		counter=$(($counter + 1))
+		seq=$(($seq + 1))
+		printf "Processing %s -- record %s of %s\r" $id $counter $numrecs
+
+	wait
+
+	cat tmp_items.* >> ${outfile}
+	rm tmp_items.*
+
 done < ${infile}
+
+echo "Processed ${numrecs} records. Output was written to ${outfile}"
 
 
 

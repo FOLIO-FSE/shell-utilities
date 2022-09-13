@@ -73,7 +73,7 @@ esac
 	num_records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&limit=0" |jq -r .totalRecords)
 
 	for (( offset=0; offset<=$num_records; ));do
-		for ((t=0; t<=3; t=$(($t + 1)) )); do
+		for ((t=0; t<=4; t=$(($t + 1)) )); do
 			if [[ $offset -le $num_records ]];then 
 				fetch_batch $offset &
 				offset=$(($offset + $num_retrieved))

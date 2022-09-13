@@ -7,7 +7,7 @@ outfile=item_update.log
 
 rm -f ${outfile}
 
-counter=1
+counter=0
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 item_update() {

@@ -35,7 +35,7 @@ item_update() {
 	fi	
 
 	barcode=$(echo ${apicall} |jq -r '.barcode')
-	barcode=$(sed 's/ //g' <<< $barcode)
+	barcode=${barcode// /}
 	uuid=$(echo ${apicall} |jq -r '.id')
 
 #		(.status.name = "Available")

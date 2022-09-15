@@ -1,0 +1,45 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+infile=fast_records
+outfile=delete.log
+
+rm -f ${outfile}
+
+counter=0
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+delete_authority() {
+	local authority_uuid=${1//[^0-9a-f\-]/}
+	local srs_uuid=${2//[^0-9a-f\-]/}
+	local fileno=${3}
+	local api
+
+	apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/authority-storage/authorities/${authority_uuid}")
+	echo "${apicall}" |jq -c |grep -i [a-z] > "tmp_authorities.${fileno}"
+
+	apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${srs_uuid}")
+	echo "${apicall}" |jq -c |grep -i [a-z] >> "tmp_authorities.${fileno}"
+
+}
+
+while mapfile -t -n 6 ids && ((${#ids[@]})); do
+	for line in "${ids[@]}";do
+		line=${line//$'\t'/^}
+		IFS='^' read -r lc_id authority srs <<< "${line}"	
+		seq=0
+		delete_authority ${authority} ${srs} ${seq} &
+		counter=$(($counter + 1))
+		seq=$(($seq + 1))
+		printf "Processing record %s of %s\r" $counter $numrecs
+	done
+	wait
+
+	cat tmp_authorities.* >> ${outfile}
+	rm tmp_authorities.*
+
+done < ${infile}
+
+echo "Processed $numrecs records. Output was written to ${outfile}"
+

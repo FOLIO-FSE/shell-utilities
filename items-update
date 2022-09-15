@@ -60,6 +60,7 @@ while mapfile -t -n 5 ids && ((${#ids[@]})); do
 		printf "Processing %s -- record %s of %s\r" $counter $numrecs
 
 	wait
+	done
 
 	cat tmp_items.* >> ${outfile}
 	rm tmp_items.*

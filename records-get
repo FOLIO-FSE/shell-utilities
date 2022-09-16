@@ -40,9 +40,7 @@ case $rec_type in
 "interfaces")
 	endpoint="organizations-storage/interfaces";;
 "instances")
-	num_retrieved=500
-	query="query=(${search_for})%20sortby%20title"
-	endpoint="search/instances";;
+	endpoint="instance-storage/instances";;
 "items")
 	endpoint="item-storage/items";;
 "locations")

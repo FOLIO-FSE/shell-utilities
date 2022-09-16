@@ -8,7 +8,6 @@ search_for=$2
 
 num_retrieved=1000
 
-rm -f ${rec_type}
 
 function single_record() {
 	curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}" 
@@ -54,6 +53,9 @@ case $rec_type in
 	query="query=%28status%3D%3D%22Active%22%29+sortby+name%2Fsort.ascending"
 	num_retrieved=100
 	;;
+"polines")
+	rec_type="poLines"
+	endpoint="orders-storage/po-lines";;
 "schedulednotices")
 	endpoint="scheduled-notice-storage/scheduled-notices";;
 "users")
@@ -62,28 +64,30 @@ case $rec_type in
 	echo "Record type not found.";exit;;
 esac
 
-	if [[ ${search_for} =~ [=\<\>\%] ]];then
-		query="query=(${search_for})"
-	else
-		if [[ query == "" ]];then query="query=cql.allRecords=1";fi
-	fi
+rm -f ${rec_type}
 
-	num_records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&limit=1" |jq -r .totalRecords)
+if [[ ${search_for} =~ [=\<\>\%] ]];then
+	query="query=(${search_for})"
+else
+	if [[ query == "" ]];then query="query=cql.allRecords=1";fi
+fi
 
-	for (( offset=0; offset<=$num_records; ));do
-		for ((t=0; t<=4; t=$(($t + 1)) )); do
-			if [[ $offset -le $num_records ]];then 
-				fetch_batch $offset &
-				offset=$(($offset + $num_retrieved))
-			fi
-		done
-		wait
-		
-		cat tmp_${rec_type}.* >> ${rec_type}
-		rm tmp_${rec_type}.*
+num_records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&limit=1" |jq -r .totalRecords)
 
-		if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset $num_records;fi
+for (( offset=0; offset<=$num_records; ));do
+	for ((t=0; t<=4; t=$(($t + 1)) )); do
+		if [[ $offset -le $num_records ]];then 
+			fetch_batch $offset &
+			offset=$(($offset + $num_retrieved))
+		fi
 	done
+	wait
+		
+	cat tmp_${rec_type}.* >> ${rec_type}
+	rm tmp_${rec_type}.*
+
+	if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset $num_records;fi
+done
 
 echo "$num_records records have been exported to \"${rec_type}\""
 

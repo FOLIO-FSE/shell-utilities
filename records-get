@@ -5,13 +5,7 @@ okapi_token=$(cat okapi.token)
 rec_type=$1
 search_for=$2
 
-
 num_retrieved=1000
-
-
-function single_record() {
-	curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}" 
-}
 
 function fetch_batch() {
 	local offset=$1

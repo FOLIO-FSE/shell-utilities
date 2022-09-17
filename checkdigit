@@ -1,0 +1,20 @@
+# creates a sierra checkdigit
+
+num=${1//[^0-9]}
+
+m=2
+x=0
+i=$num
+
+while [[ $i -gt 0 ]];do
+	a=$(($i % 10))
+	i=$(($i/10))
+	i=${i/\..*/}
+	x=$(($x + $a * $m))
+	m=$(($m + 1))
+done
+
+r=$(($x % 11))
+if [[ $r -eq 10 ]];then r="x";fi
+
+echo ${num}${r}

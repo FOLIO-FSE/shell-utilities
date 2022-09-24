@@ -1,0 +1,126 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+declare -A calltype_dict
+declare -A location_dict
+declare -A loantype_dict
+declare -A mattype_dict
+
+infile="missing"
+
+strip="yes"
+source="FOLIO"
+callNumberType="Other scheme"
+itemNoteTypeId="8d0a5eca-25de-4391-81a9-236eeefdd20b"
+
+rm -f "item.log"
+
+namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
+
+echo "Loading reference data. Please be patient."
+
+calltypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/call-number-types?limit=1000")
+loantypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/loan-types?limit=1000")
+locations=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/locations?limit=5000")
+mattypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/material-types?limit=5000")
+
+echo "Structuring reference data"
+eval "$(jq -r '.locations[] | @sh "location_dict[\(.code)]=\(.id)"' <<< ${locations})"
+eval "$(jq -r '.callNumberTypes[] | @sh "calltype_dict[\(.name)]=\(.id)"' <<< ${calltypes})"
+eval "$(jq -r '.loantypes[] | @sh "loantype_dict[\(.name)]=\(.id)"' <<< ${loantypes})"
+eval "$(jq -r '.mtypes[] | @sh "mattype_dict[\(.name)]=\(.id)"' <<< ${mattypes})"
+
+loantype_default="Circulating"
+mattype_default="CRL"
+now=$(date -u -d 'now' +"%Y-%m-%dT%H:%M:%SZ")
+copyNumber="1"
+
+itemLevelCallNumberTypeId=${calltype_dict[${callNumberType}]}
+
+create_item() {
+
+	local formerId="${1}"
+	local holdingsRecordId="${2}"
+	local permanentLocationId="${3}"
+	local materialTypeId="${4}"
+	local permanentLoanTypeId="${loantype_dict[${3}]}"
+	local barcode="${5}"
+	local itemLevelCallNumber="${6}"
+	local note="${7}"
+	local itemId
+	local apicall
+	local item
+
+	if [[ ${note,,} =~ [a-z] ]];then
+		note="{\"itemNoteTypeId\": \"${itemNoteTypeId}\", \"note\": \"${note}\", \"staffOnly\": true}"
+	else
+		note=""
+	fi	
+
+	materialTypeId=${mattyp_dict[${materialTypeId^^}]}
+
+	
+	if [[ ${permanentLoanTypeId} == "" ]];then permanentLoanTypeId=${loantype_dict[${loantype_default}]}; fi
+	if [[ ${materialTypeId} == "" ]];then materialTypeId=${mattype_dict[${mattype_default}]}; fi
+
+	if [[ ${barcode} == "" ]];then barcode=${formerId}; fi
+
+	if [[ ${strip} == "yes" ]];then
+		itemId="${formerId/./}"
+		itemId="${itemId:0:-1}"
+		holdingsRecordId="${holdingsRecordId/./}"
+		holdingsRecordId="${holdingsRecordId:0:-1}"
+	else
+		itemId=${formerId}
+	fi
+
+	# sequencing is important since itemId itself is modified
+	holdingsRecordId=$(uuidgen --sha1 -n ${namespace} -N ${okapi_url}:holdings:${holdingsRecordId})
+	itemId=$(uuidgen --sha1 -n ${namespace} -N ${okapi_url}:items:${itemId})
+
+	permanentLocationId=${location_dict["${permanentLocationId}"]}
+
+IFS='' read -r -d '' item << EndOfJSON
+{
+  "holdingsRecordId": "${holdingsRecordId}",
+  "formerIds": ["${formerId}"],
+  "barcode": "${barcode}",
+  "permanentLocationId": "${permanentLocationId}",
+  "effectiveLocationId": "${permanentLocationId}",
+  "materialTypeId": "${materialTypeId}",
+  "permanentLoanTypeId": "${permanentLoanTypeId}",
+  "itemLevelCallNumberTypeId": "${itemLevelCallNumberTypeId}",
+  "itemLevelCallNumber": "${itemLevelCallNumber}",
+  "copyNumber": "${copyNumber}",
+  "notes": [${note}],
+  "circulationNotes": [],
+  "administrativeNotes": [],
+  "yearCaption": [],
+  "status": {
+	"name": "Available"
+  },
+  "id": "${itemId}"
+}
+
+EndOfJSON
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${item}" "${okapi_url}/item-storage/items")
+echo ${apicall}
+echo -e "${formerId} -- ${apicall}" >> items.log
+}
+
+
+while IFS=$'\n' read -r line; do
+	regex="[\^\'\"\|]"
+	line=${line/${regex}/}
+	line=${line//$'\t'/^}
+
+	IFS=$'^' read -r location holdId mattype itemId callNum barcode note<<< "${line}"
+
+	note=$(jq -rRs <<< "${note}")
+	create_item "${itemId}" "${holdId}" "${location}" "${mattype}" "${barcode}-${counter}" "${callNum}" "${note}"
+
+counter=$(($counter + 1))
+done < ${infile}
+

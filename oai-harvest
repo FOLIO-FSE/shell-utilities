@@ -2,7 +2,12 @@
 edge_url=$(cat okapi.url |sed 's/okapi-/edge-/')
 oai_server="${edge_url}/oai/$(cat edge.key)?verb=ListRecords"
 
-from=$(date -u -d '1 hour ago' +"%Y-%m-%dT%H:%M:%SZ")
+if [[ ${1} =~ ^[12][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$ ]];then
+	from=$(date -u -d "${1}" +"%Y-%m-%dT%H:%M:%SZ")
+else
+	from=$(date -u -d '1 hour ago' +"%Y-%m-%dT%H:%M:%SZ")
+fi
+
 from='&from='${from}
 
 echo "${oai_server}&metadataPrefix=marc21_withholdings${from}"

@@ -1,0 +1,109 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+declare -A location_dict
+declare -A source_dict
+declare -A calltype_dict
+declare -A loantype_dict
+declare -A mattype_dict
+
+infile="instance_ids"
+
+strip="yes"
+source="FOLIO"
+callNumberType="Other scheme"
+permanentLocationId="94ec28a6-6896-4adb-8f67-879fb0bb494c"
+matType="book"
+loanType="Can circulate"
+
+rm -f "holdings.log"
+
+namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
+
+echo "Loading reference data. Please be patient."
+
+locations=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/locations?limit=5000")
+sources=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-sources?limit=1000")
+calltypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/call-number-types?limit=1000")
+loantypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/loan-types?limit=1000")
+mattypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/material-types?limit=5000")
+
+echo "Structuring reference data"
+eval "$(jq -r '.locations[] | @sh "location_dict[\(.code)]=\(.id)"' <<< ${locations})"
+eval "$(jq -r '.holdingsRecordsSources[] | @sh "source_dict[\(.name)]=\(.id)"' <<< ${sources})"
+eval "$(jq -r '.callNumberTypes[] | @sh "calltype_dict[\(.name)]=\(.id)"' <<< ${calltypes})"
+eval "$(jq -r '.loantypes[] | @sh "loantype_dict[\(.name)]=\(.id)"' <<< ${loantypes})"
+eval "$(jq -r '.mtypes[] | @sh "mattype_dict[\(.name)]=\(.id)"' <<< ${mattypes})"
+
+sourceId=${source_dict[${source}]}
+callNumberTypeId=${calltype_dict[${callNumberType}]}
+materialTypeId=${mattype_dict[${matType}]}
+permanentLoanTypeId=${loantype_dict[${loanType}]}
+
+create_holding() {
+
+	local instanceId=${1}
+	local callNumber=${instanceId:0:3}
+	callNumber=${callNumber^^}
+	local holdId
+	local itemId
+	local apicall
+	local holding
+	local itemId
+
+	# sequencing is important since holdId itself is modified
+	holdId=$(uuidgen --sha1 -n ${namespace} -N ${okapi_url}:holdings:${instanceId})
+	itemId=$(uuidgen --sha1 -n ${namespace} -N ${okapi_url}:items:${instanceId})
+
+IFS='' read -r -d '' holding << EndOfHolding
+{
+  "instanceId": "${instanceId}",
+  "sourceId": "${sourceId}",
+  "permanentLocationId": "${permanentLocationId}",
+  "callNumberTypeId": "${callNumberTypeId}",
+  "callNumber": "${callNumber}",
+  "id": "${holdId}"
+}
+
+EndOfHolding
+
+IFS='' read -r -d '' item << EndOfItem
+{
+  "holdingsRecordId": "${holdId}",
+  "barcode": "${itemId}",
+  "permanentLocationId": "${permanentLocationId}",
+  "effectiveLocationId": "${permanentLocationId}",
+  "materialTypeId": "${materialTypeId}",
+  "permanentLoanTypeId": "${permanentLoanTypeId}",
+  "itemLevelCallNumberTypeId": "${itemLevelCallNumberTypeId}",
+  "itemLevelCallNumber": "${itemLevelCallNumber}",
+  "copyNumber": "${copyNumber}",
+  "notes": [${note}],
+  "circulationNotes": [],
+  "administrativeNotes": [],
+  "yearCaption": [],
+  "status": {
+        "name": "Available"
+  },
+  "id": "${itemId}"
+}
+EndOfItem
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${holding}" "${okapi_url}/holdings-storage/holdings")
+echo ${apicall}
+echo -e "${formerId} -- ${apicall}" >> holdings.log
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${item}" "${okapi_url}/item-storage/items")
+echo ${apicall}
+echo -e "${formerId} -- ${apicall}" >> items.log
+}
+
+
+while IFS=$'\n' read -r instanceId; do
+	instanceId=${instanceId//[^0-9a-f\-]/}
+
+	create_holding ${instanceId}
+
+counter=$(($counter + 1))
+done < ${infile}
+

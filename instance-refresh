@@ -13,6 +13,10 @@ update_record() {
 	local apicall=""
 	local instance_record=""
 
+	if [[ ${uuid} =~ ^in[0-9a]*$ ]];then
+		uuid=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances?query=hrid==${uuid}" |jq -r '.instances[].id')
+	fi
+
 	instance_record=$(curl -s -w '\n' -X GET -D \
 	  -H "Accept: application/json" \
 	  -H "X-Okapi-Tenant: ${tenant}" \
@@ -29,6 +33,10 @@ update_record() {
 
 }
 
+if [[ ${uuid} =~ ^in[0-9a]*$ ]];then
+	uuid=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances?query=hrid==${uuid}" |jq -r '.instances[].id')
+fi
+
 if [[ ${uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
 	echo ${uuid} > ${infile}
 fi
@@ -40,7 +48,7 @@ counter=1
 
 while mapfile -t -n 6 uuids && ((${#uuids[@]})); do
 	for uuid in ${uuids[@]};do	
-		uuid=${uuid//[^0-9a-f\-]/}
+		uuid=${uuid//[^0-9a-fin\-]/}
 		update_record "${uuid}" &
 		printf "Processing %s -- record %s of %s\r" $uuid $counter $numrecs
 		counter=$(($counter + 1))

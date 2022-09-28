@@ -1,0 +1,108 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+jobexecution_id=${1//[^0-9]/}
+num_retrieved=10
+offset=0
+
+rm -f delete.log
+
+if [[ ${jobexecution_id} == "" ]];then
+	echo "You must enter a job execution id"
+	exit
+fi
+
+function delete_items() {
+	local instance_id=${1}
+	local item_ids=()
+	local apicall
+	local item
+
+	item_ids=($(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-storage/items?limit=10000&query=instance.id==${instance_id}" | jq -r .items[].id)) 
+
+	for item in ${item_ids[@]};do
+		apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-storage/items/${item}")
+	done	
+}
+
+function delete_holdings() {
+	local instance_id=${1}
+	local holdings_ids=()
+	local apicall
+	local holding
+
+	holdings_ids=($(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-storage/holdings?limit=10000&query=instanceId==${instance_id}" | jq -r .holdingsRecords[].id)) 
+
+	for holding in ${holdings_ids[@]};do
+		apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-storage/holdings/${holding}")
+	done	
+}
+
+function delete_batch() {
+	local offset=$1
+
+	local endpoint
+	local apicall
+	local instance_id
+	local srs_id
+	local srs_ids=()
+	
+	endpoint="metadata-provider/jobLogEntries/${id}?limit=${num_retrieved}&offset=${offset}&order=asc&sortBy=source_record_order"
+
+	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}"  )
+	apicall=$(echo ${apicall} |jq -r '.entries[] |select(.sourceRecordActionStatus=="CREATED")')
+
+	srs_ids=($(echo ${apicall} |jq -r .sourceRecordId))
+
+	for srs_id in "${srs_ids[@]}";do
+		instance_id=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${srs_id}" |jq -r .externalIdsHolder.instanceId)
+
+		apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-storage/items?limit=1&query=instance.id==${instance_id}") 
+
+		if [[ ${apicall} =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} ]];then
+			delete_items ${instance_id}
+		fi
+
+		apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-storage/holdings?limit=1&query=instanceId==${instance_id}") 
+
+		if [[ ${apicall} =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} ]];then
+			delete_holdings ${instance_id}
+		fi
+
+		apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${srs_id}")
+		echo "${srs_id} -- ${apicall}" |grep -i [a-z] >> delete.log
+
+		apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${instance_id}")
+		echo "${instance_id} -- ${apicall}" |grep -i [a-z] >> delete.log
+	done
+
+}
+
+echo "Locating job information"
+
+apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/metadata-provider/jobExecutions?hrId=${jobexecution_id}" |jq -r ".jobExecutions[]")
+
+id=$(echo ${apicall} |jq -r ".id")
+num_recs=$(echo ${apicall} |jq -r ".progress.current")
+
+echo "$num_recs records identified for deletion"
+
+for (( offset=0; offset<=$num_recs; ));do
+
+	for ((t=0; t<=9; t=$(($t + 1)) )); do
+		if [[ $offset -le $num_recs ]];then 
+			delete_batch $offset &
+			offset=$(($offset + $num_retrieved))
+			echo $offset
+		fi
+	done
+	wait
+		
+	if [[ $offset -ne 0 ]];then printf "%s records deleted of %s for job ID ${jobexecution_id}\r" $offset $num_recs;fi
+done
+
+echo "$num_records records deleted for job ID ${jobexecution_id}                    "
+
+
+

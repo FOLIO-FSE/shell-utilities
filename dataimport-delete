@@ -101,7 +101,7 @@ for (( offset=0; offset<=$num_recs; ));do
 	if [[ $offset -ne 0 ]];then printf "%s records deleted of %s for job ID ${jobexecution_id}\r" $offset $num_recs;fi
 done
 
-echo "$num_records records deleted for job ID ${jobexecution_id}                    "
+echo "$num_recs records deleted for job ID ${jobexecution_id}                    "
 
 
 

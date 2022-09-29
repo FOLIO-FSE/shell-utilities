@@ -85,3 +85,4 @@ while mapfile -t -n 10 uuids && ((${#uuids[@]})); do
 	wait
 done < ${deletefile}
 
+echo "Done processing $counter $recordtype records             "

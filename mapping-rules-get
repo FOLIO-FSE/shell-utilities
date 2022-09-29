@@ -7,6 +7,9 @@ case ${1} in
 "bib"|"holdings"|"authority")
 	rules=${1}
 	;;
+"bibs")
+	rules="bib"
+	;;
 *)
 	echo "You must indicate bib, holdings, or authority"
 	exit

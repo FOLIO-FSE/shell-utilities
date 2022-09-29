@@ -85,6 +85,8 @@ function delete_instance() {
 while mapfile -t -n 10 instances && ((${#instances[@]})); do
 
 	for instance in ${instances{@]};do
+		instance=${instance//[^0-9a-f\-]/}
+
 		if [[ ${instance} =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} ]];then	
 			delete_instance ${instance} &
 			counter=$(($counter + 1))

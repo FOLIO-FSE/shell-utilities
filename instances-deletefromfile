@@ -42,7 +42,7 @@ function delete_connectedtitles() {
 
 	connectedtitle_ids=($(apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}?query=precedingInstanceId==${instance_id}") |jq -r .precedingSucceedingTitles[].id)) 
 
-	for connectedtitle in ${[@]};do
+	for connectedtitle in ${connectedtitle_ids[@]};do
 		apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/preceding-succeeding-titles/${connectedtitle}")
 	done	
 }

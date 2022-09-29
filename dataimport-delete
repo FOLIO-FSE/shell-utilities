@@ -6,7 +6,9 @@ jobexecution_id=${1//[^0-9]/}
 num_retrieved=10
 offset=0
 
-rm -f delete.log
+logfile="dataimport_srs_delete"
+
+rm -f ${logfile}
 
 if [[ ${jobexecution_id} == "" ]];then
 	echo "You must enter a job execution id"
@@ -47,7 +49,7 @@ function delete_connectedtitles() {
 
 	connectedtitle_ids=($(apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}?query=precedingInstanceId==${instance_id}") |jq -r .precedingSucceedingTitles[].id)) 
 
-	for connectedtitle in ${[@]};do
+	for connectedtitle in ${connectedtitle_ids[@]};do
 		apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/preceding-succeeding-titles/${connectedtitle}")
 	done	
 }
@@ -88,10 +90,10 @@ function delete_batch() {
 		fi
 
 		apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${srs_id}")
-		echo "${srs_id} -- ${apicall}" |grep -i [a-z] >> delete.log
+		echo "${srs_id} -- ${apicall}" |grep -i [a-z] >> logfile
 
 		apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${instance_id}")
-		echo "${instance_id} -- ${apicall}" |grep -i [a-z] >> delete.log
+		echo "${instance_id} -- ${apicall}" |grep -i [a-z] >> logfile
 	done
 
 }
@@ -118,7 +120,8 @@ for (( offset=0; offset<=$num_recs; ));do
 	if [[ $offset -ne 0 ]];then printf "%s records deleted of %s for job ID ${jobexecution_id}\r" $offset $num_recs;fi
 done
 
-echo "$num_recs records deleted for job ID ${jobexecution_id}                    "
+echo "$num_recs records deleted for job ID ${jobexecution_id} and results were written to ${logfile}:w
+"
 
 
 

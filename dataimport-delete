@@ -39,6 +39,19 @@ function delete_holdings() {
 	done	
 }
 
+function delete_connectedtitles() {
+	local instance_id=${1}
+	local connectedtitle_ids=()
+	local apicall
+	local connectedtitle 
+
+	connectedtitle_ids=($(apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}?query=precedingInstanceId==${instance_id}") |jq -r .precedingSucceedingTitles[].id)) 
+
+	for connectedtitle in ${[@]};do
+		apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/preceding-succeeding-titles/${connectedtitle}")
+	done	
+}
+
 function delete_batch() {
 	local offset=$1
 
@@ -47,6 +60,7 @@ function delete_batch() {
 	local instance_id
 	local srs_id
 	local srs_ids=()
+	local connectedtitle_ids=()
 	
 	endpoint="metadata-provider/jobLogEntries/${id}?limit=${num_retrieved}&offset=${offset}&order=asc&sortBy=source_record_order"
 
@@ -59,15 +73,18 @@ function delete_batch() {
 		instance_id=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${srs_id}" |jq -r .externalIdsHolder.instanceId)
 
 		apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-storage/items?limit=1&query=instance.id==${instance_id}") 
-
 		if [[ ${apicall} =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} ]];then
 			delete_items ${instance_id}
 		fi
 
 		apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-storage/holdings?limit=1&query=instanceId==${instance_id}") 
-
 		if [[ ${apicall} =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} ]];then
 			delete_holdings ${instance_id}
+		fi
+
+		apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}?query=precedingInstanceId==${instance_id}?limit=1")
+		if [[ ${apicall} =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} ]];then
+			delete_connectedtitles ${instance_id}
 		fi
 
 		apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${srs_id}")

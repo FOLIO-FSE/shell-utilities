@@ -23,6 +23,10 @@ case $rec_type in
 	endpoint="audit-data/circulation/logs"
 	rec_type="logRecords"
 	;;
+"courses")
+	endpoint="coursereserves/courses"
+	rec_type="courses"
+	;;
 "feefines")
 	endpoint="feefines";;
 "feefineactions")

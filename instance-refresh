@@ -5,6 +5,7 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 infile=uuids
+SECONDS=1
 
 uuid=${1//[^0-9a-z\-]/}
 
@@ -50,7 +51,8 @@ while mapfile -t -n 6 uuids && ((${#uuids[@]})); do
 	for uuid in ${uuids[@]};do	
 		uuid=${uuid//[^0-9a-z\-]/}
 		update_record "${uuid}" &
-		printf "Processing %s -- record %s of %s\r" $uuid $counter $numrecs
+		recsPerSec=$(($counter/$SECONDS))
+		printf "Processed %s records of %s at %s records/sec\r" $counter $numrecs $recsPerSec
 		counter=$(($counter + 1))
 	done
 	wait

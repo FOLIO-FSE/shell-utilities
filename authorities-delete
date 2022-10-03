@@ -17,10 +17,10 @@ delete_authority() {
 	local api
 
 	apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/authority-storage/authorities/${authority_uuid}")
-	echo "${apicall}" |jq -c |grep -i [a-z] > "tmp_authorities.${fileno}"
+	echo "${apicall}" |jq -c . |grep -i [a-z] > "tmp_authorities.${fileno}"
 
 	apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${srs_uuid}")
-	echo "${apicall}" |jq -c |grep -i [a-z] >> "tmp_authorities.${fileno}"
+	echo "${apicall}" |jq -c . |grep -i [a-z] >> "tmp_authorities.${fileno}"
 
 }
 

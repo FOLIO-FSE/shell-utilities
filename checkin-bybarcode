@@ -3,13 +3,15 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
+date=$(date +"%Y-%m-%dT%H:%M:%S%:z")
+
 while read -r barcode;do 
 
 IFS='' read -r -d '' data << EndOfJSON
 {
     "itemBarcode" : "${barcode}",
-    "checkInDate" : "$(date -Is)",
-    "servicePointId" : "3a40852d-49fd-4df2-a1f9-6e2641a6e91f"
+    "checkInDate" : "${date}",
+    "servicePointId" : "892f3568-ff0b-4c30-ba67-03801f5679b6"
   }
 EndOfJSON
 

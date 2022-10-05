@@ -22,7 +22,7 @@ function showmatches() {
 	if [[ ${infile} != '' ]];then
 		jq="jq -r '.${matchtype}[] | @sh \"values_dict[\(.id)]=\(.name|tostring)\"'"
 	else
-		jq=".${matchtype}[] | select(.name |ascii_downcase |contains(\"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
+		jq=".${matchtype}[] | select((.name |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
 	fi
 
 	case $matchtype in

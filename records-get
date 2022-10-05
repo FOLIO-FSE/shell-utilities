@@ -20,7 +20,7 @@ case $rec_type in
 	query="query=cql.allRecords=1&perPage=100"
 	;;
 "boundwiths")
-	endpoint="/inventory-storage/bound-with-parts"
+	endpoint="inventory-storage/bound-with-parts"
 	rec_type="boundWithParts";;
 "circlog")
 	endpoint="audit-data/circulation/logs"

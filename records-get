@@ -19,14 +19,15 @@ case $rec_type in
 	endpoint="erm/sas"
 	query="query=cql.allRecords=1&perPage=100"
 	;;
+"boundwiths")
+	endpoint="/inventory-storage/bound-with-parts"
+	rec_type="boundWithParts";;
 "circlog")
 	endpoint="audit-data/circulation/logs"
 	rec_type="logRecords"
 	;;
 "courses")
-	endpoint="coursereserves/courses"
-	rec_type="courses"
-	;;
+	endpoint="coursereserves/courses";;
 "feefines")
 	endpoint="feefines";;
 "feefineactions")

@@ -3,12 +3,29 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-field="$1"
-subfield="$2"
-operator="$3"
-value="'"${4}"'"
+if [[ -z $4 ]];then
+	echo "search syntax: marc-query [field] [subfield] [operator] [value] OR marc-query [field] [operator] [value] leader (to specify leader search)"
+	echo
+	echo "marc-query 260 a ^= 'Paris'"
+	echo "marc-query p_06 = 'a' (leader search)"
+	echo "Boolean queries require script modification"
+	exit
+fi
 
-searchtype="fieldsearch"
+
+field="$1"
+
+if [[ ${4} == "leader" ]];then
+	searchtype="leadersearch"
+	operator="${2}"
+	value="'"${3}"'"	
+else
+	searchtype="fieldsearch"
+	subfield="${2}"
+	operator="${3}"
+	value="'"${4}"'"
+fi
+
 
 IFS='' read -r -d '' fieldsearch << EndOfJSON
 {
@@ -19,7 +36,7 @@ EndOfJSON
 
 IFS='' read -r -d '' leadersearch << EndOfJSON
 {
-	"leaderSearchExpression": "${search}"
+	"leaderSearchExpression": "${field} ${operator} ${value}"
 }
 EndOfJSON
 

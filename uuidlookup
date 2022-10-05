@@ -41,7 +41,7 @@ function showmatches() {
 	"locations")
 		endpoint="locations"
 		if [[ ${infile} == '' ]];then
-			jq=".${matchtype}[] | select((.name |ascii_downcase |contains(\"${search}\")) or (.code | ascii_downcase |contains(\"${search}\"))) | [\"${matchtype}\", .id, .code, .name] |@tsv"
+			jq=".${matchtype}[] | select((.name |ascii_downcase |contains(\"${search}\")) or (.code | ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"${matchtype}\", .id, .code, .name] |@tsv"
 		fi;;
 	"mtypes")
 		endpoint="material-types";;

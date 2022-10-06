@@ -1,0 +1,63 @@
+# Supply without a uuid to delete all of many record types
+# 
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+infile=uuids
+SECONDS=1
+
+uuid=${1//[^0-9a-z\-]/}
+
+update_record() {
+	local uuid="${1}"
+	local apicall=""
+	local item_record=""
+
+	if [[ ${uuid} =~ ^[a-z]*[0-9]*$ ]];then
+		uuid=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-storage/items?query=hrid==${uuid}" |jq -r '.items[].id')
+	fi
+
+	item_record=$(curl -s -w '\n' -X GET -D \
+	  -H "Accept: application/json" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  "${okapi_url}/inventory/items/${uuid}")
+
+	apicall=$(curl --http1.1 -s -w '\n' -X PUT \
+	  -H "Content-type: application/json" \
+	  -H "Accept: text/plain" \
+	  -H "X-Okapi-Tenant: ${tenant}" \
+	  -H "x-okapi-token: ${okapi_token}" \
+	  -d "${item_record}" \
+	  "${okapi_url}/inventory/items/${uuid}")
+
+}
+
+if [[ ${uuid} =~ ^it[0-9a]*$ ]];then
+	uuid=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-storage/items?query=hrid==${uuid}" |jq -r '.items[].id')
+fi
+
+if [[ ${uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+	echo ${uuid} > ${infile}
+fi
+
+if [[ ! -f ${infile} ]]; then echo "This script cannot find input file ${infile}";exit;fi
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+counter=1
+
+while mapfile -t -n 4 uuids && ((${#uuids[@]})); do
+	for uuid in ${uuids[@]};do	
+		uuid=${uuid//[^0-9a-z\-]/}
+		update_record "${uuid}" &
+		recsPerSec=$(($counter/$SECONDS))
+		printf "Processed %s records of %s at %s records/sec\r" $counter $numrecs $recsPerSec
+		counter=$(($counter + 1))
+	done
+	wait
+done < ${infile} 
+
+echo "Processed $counter records                      "
+
+

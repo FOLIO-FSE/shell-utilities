@@ -17,15 +17,15 @@ case $rec_type in
 	endpoint="accounts";;
 "agreements")
 	endpoint="erm/sas"
-	query="query=cql.allRecords=1&perPage=100"
-	;;
+	query="query=cql.allRecords=1&perPage=100" ;;
+"authorities")
+	endpoint="authority-storage/authorities";;
 "boundwiths")
 	endpoint="inventory-storage/bound-with-parts"
 	rec_type="boundWithParts";;
 "circlog")
 	endpoint="audit-data/circulation/logs"
-	rec_type="logRecords"
-	;;
+	rec_type="logRecords" ;;
 "courses")
 	endpoint="coursereserves/courses";;
 "feefines")

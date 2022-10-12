@@ -22,7 +22,7 @@ update_record() {
 	  -H "Accept: application/json" \
 	  -H "X-Okapi-Tenant: ${tenant}" \
 	  -H "x-okapi-token: ${okapi_token}" \
-	  "${okapi_url}/inventory/instances/${uuid}")
+	  "${okapi_url}/instance-storage/instances/${uuid}")
 
 	apicall=$(curl --http1.1 -s -w '\n' -X PUT \
 	  -H "Content-type: application/json" \

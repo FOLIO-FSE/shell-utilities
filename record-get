@@ -1,0 +1,54 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+rec_type=$1
+uuid=${2//[^0-9a-f\-]}
+
+case $rec_type in
+"accounts")
+	endpoint="accounts";;
+"agreements")
+	endpoint="erm/sas";;
+"authorities")
+	endpoint="authority-storage/authorities";;
+"boundwiths")
+	endpoint="inventory-storage/bound-with-parts";;
+"circlog")
+	endpoint="audit-data/circulation/logs";;
+"courses")
+	endpoint="coursereserves/courses";;
+"feefines")
+	endpoint="feefines";;
+"feefineactions")
+	endpoint="feefineactions";;
+"holdings")
+	endpoint="holdings-storage/holdings";;
+"interfaces")
+	endpoint="organizations-storage/interfaces";;
+"instances")
+	endpoint="instance-storage/instances";;
+"items")
+	endpoint="item-storage/items";;
+"locations")
+	endpoint="locations";;
+"loans")
+	endpoint="circulation/loans";;
+"notes")
+	endpoint="notes";;
+"organizations")
+	endpoint="organizations-storage/organizations" ;;
+"polines")
+	endpoint="orders-storage/po-lines";;
+"schedulednotices")
+	endpoint="scheduled-notice-storage/scheduled-notices";;
+"srs")
+        endpoint="source-storage/records";;
+"users")
+	endpoint="users";;
+*)
+	echo "Record type not found.";exit;;
+esac
+
+curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}/${uuid}"
+

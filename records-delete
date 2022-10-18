@@ -74,7 +74,13 @@ case $deletetype in
 	;;
 esac
 
-counter=1
+counter=0
+
+uuid=${2//[^0-9a-f\-]}
+
+if [[ ${uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+	echo ${uuid} > ${deletefile}
+fi
 
 while mapfile -t -n 10 uuids && ((${#uuids[@]})); do
 	for uuid in ${uuids[@]};do

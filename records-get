@@ -57,6 +57,9 @@ case $rec_type in
 	endpoint="orders-storage/po-lines";;
 "schedulednotices")
 	endpoint="scheduled-notice-storage/scheduled-notices";;
+"srs")
+	rec_type="records"
+	endpoint="source-storage/records";;
 "users")
 	endpoint="users";;
 *)
@@ -64,12 +67,6 @@ case $rec_type in
 esac
 
 rm -f ${rec_type}
-
-if [[ ${search_for} =~ [=\<\>\%] ]];then
-	query="query=(${search_for})"
-else
-	if [[ query == "" ]];then query="query=cql.allRecords=1";fi
-fi
 
 num_records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&limit=1" |jq -r .totalRecords)
 

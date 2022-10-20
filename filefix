@@ -24,6 +24,7 @@ else
 		csvtool -t COMMA -u TAB cat ${infile} > "${outfile}.tsv"
 		infile="${outfile}.tsv"
 		echo "Conversion to tab delimited complete"
+		echo
 	fi
 fi
 
@@ -34,30 +35,30 @@ if [[ ! $filetype ]];then
 	exit
 fi
 
-
-
 read -r fieldnames < ${infile}
 
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 numfields=$(awk 'BEGIN{FS="\t"}{print NF;exit}' ${infile})
 
-echo "\n$numfields fields were detected in the header line and $numrecs lines will be examined\n"
+echo
+echo "$numfields fields were detected in the header line and $numrecs lines will be examined."
+echo "Problematic characters will be removed from fieldnames"
+echo
+fieldnames=$(tr -dc "[[:alnum:]]	" <<< "${fieldnames}")
 
 echo "The following fields were detected in ${infile}"
-
-if [[ $fieldnames =~ [^A-Z] ]];then
-	echo "Removing problematic characters from fieldnames"
-
-	fieldnames=$(tr -dc "[[:alnum:]]	" <<< "${fieldnames}")
-fi
-
+echo
 echo "${fieldnames//	/, }"
+echo
 
 echo "Please enter any fields, comma separated, that you want frequency counts for"
+echo
 
 read fieldcounters
 
+echo
 echo "Stripping double quotes from the edges of fields"
+echo
 sed -i 's/"*\t"*/\t/g; s/^"//; s/"$// ' ${infile}
 
 fieldcounters="${fieldcounters// /}"
@@ -133,6 +134,7 @@ if [[ -f tmp_counters ]];then
 	sort $f |uniq -c |sort -k1nr > ${f}.counter
 	echo "Here are the 10 most common values:"
 	head ${f}.counter
+	rm ${f}
 	echo
 	done
 

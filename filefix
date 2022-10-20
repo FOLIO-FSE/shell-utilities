@@ -2,9 +2,9 @@
 #
 
 if [[ -z $1 ]];then
-	echo "This tool converts csv data to tsv and performs some simple diagnoistics"
+	echo "This tool converts csv data to tsv, performs basic cleaning, and does field frequency counts "
 	echo 
-	echo "Usage: csv2tsv [filename]"
+	echo "Usage: filefix [filename]"
 	echo "You will be prompted for all optional functionality"
 	echo
 	exit

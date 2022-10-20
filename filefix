@@ -5,7 +5,7 @@ if [[ -z $1 ]];then
 	echo "This tool converts csv data to tsv, performs basic cleaning, and does field frequency counts "
 	echo 
 	echo "Usage: filefix [filename]"
-	echo "You will be prompted for all optional functionality"
+	echo "You will be prompted for optional functionality"
 	echo
 	exit
 else
@@ -29,7 +29,7 @@ else
 fi
 
 if [[ ! $filetype ]];then
-	echo "${infile} doesn't appear to appear to be comma or tab delimited."
+	echo "${infile} doesn't appear to be comma or tab delimited."
 	echo "Please supply a different file or correct the first line."
 	echo
 	exit
@@ -41,17 +41,17 @@ numrecs=$(wc -l ${infile} |cut -d " " -f1)
 numfields=$(awk 'BEGIN{FS="\t"}{print NF;exit}' ${infile})
 
 echo
-echo "$numfields fields were detected in the header line and $numrecs lines will be examined."
+echo "$numfields fields $numrecs lines were detected."
 echo "Problematic characters will be removed from fieldnames"
 echo
-fieldnames=$(tr -dc "[[:alnum:]]	" <<< "${fieldnames}")
+fieldnames=$(tr -dc "[[:alnum:]]_\-.	" <<< "${fieldnames}")
 
 echo "The following fields were detected in ${infile}"
 echo
 echo "${fieldnames//	/, }"
 echo
 
-echo "Please enter any fields, comma separated, that you want frequency counts for"
+echo "Please enter a comma separated list for any fields that you want frequency counts for"
 echo
 
 read fieldcounters
@@ -141,4 +141,3 @@ if [[ -f tmp_counters ]];then
 	done
 	rm -f tmp_counters
 fi
-

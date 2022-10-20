@@ -73,6 +73,7 @@ BEGIN {
 }
 
 {
+	# detect counter fields
 	if (NR == 1) {
 		for(i=1;i<=NF;i++) {
 			for(j=1;j<=numcounters;j++) {
@@ -89,13 +90,13 @@ BEGIN {
 		goodrecs++
 		for(i=1;i<=NF;i++) {
 			printf("%s%s",$i,i==NF?RS:OFS) > outfile
-
+			
+			# append to file if counter field detected
 			for (k=1;k<=numcounters;k++) {
 				if (fieldcounter[k] = i) {
 					print $i > fields[k]
 				}	
 			}
-			
 		}
 
 	} else {
@@ -115,7 +116,6 @@ END {
 	for (k=1;k<=numcounters;k++) {
 		print fields[k] > "tmp_counters"
 		}
-
 }
 ENDOFAWK
 
@@ -130,14 +130,15 @@ rm tmp_awk
 
 if [[ -f tmp_counters ]];then
 	for f in $(cat tmp_counters);do
-	echo "Calculating frequency of values for $f and sending to ${f}.counter"
-	sort $f |uniq -c |sort -k1nr > ${f}.counter
-	echo "Here are the 10 most common values:"
-	head ${f}.counter
-	rm ${f}
-	echo
+		echo "Calculating frequency of values for $f"
+		sort $f |uniq -c |sort -k1nr > ${f}.counter
+		echo "Here are the 10 most common values:"
+		head ${f}.counter
+		rm ${f}
+		echo
+		echo "${f}.counter contains the frequency of all values encountered"
+		echo
 	done
-
+	rm -f tmp_counters
 fi
 
-rm -f tmp_counters

@@ -6,10 +6,19 @@ okapi_token=$(cat okapi.token)
 
 search_for="${1}"
 new_perm="${2}"
+set="${3}"
 
 user_uuid=$(echo $1 |tr -dc [a-z0-9\-])
 
 usernamefound=0
+
+if [[ $set == "set" ]];then
+	apicall=$(curl --http1.1 -s -w '\n' -X GET -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/perms/permissions/${search_for}")
+	newperms=$(echo "${apicall}" |jq ".subPermissions += [\"${new_perm}\"] | del(.childOf)| del(.grantedTo) | del(.dummy) | del(.deprecated)")
+
+	curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${newperms}" "${okapi_url}/perms/permissions/${search_for}"
+	exit
+fi
 
 if [[ ${search_for} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
 	user_uuid=${search_for}

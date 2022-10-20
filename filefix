@@ -1,0 +1,141 @@
+#
+#
+
+if [[ -z $1 ]];then
+	echo "This tool converts csv data to tsv and performs some simple diagnoistics"
+	echo 
+	echo "Usage: csv2tsv [filename]"
+	echo "You will be prompted for all optional functionality"
+	echo
+	exit
+else
+	infile=${1}
+fi
+
+# detect file characteristics. First line is assumed to contain either tabs or commas
+
+if awk '{exit !/\t/}' ${infile}; then 
+	filetype="tab"
+else
+	if awk '{exit !/,/}' ${infile}; then filetype="comma"
+		echo "Comma delimited file detected. Converting ${infile} to tab delimited."
+		echo "Please be patient."
+		outfile=$(sed 's/\.....\?$//' <<< ${infile})
+		csvtool -t COMMA -u TAB cat ${infile} > "${outfile}.tsv"
+		infile="${outfile}.tsv"
+		echo "Conversion to tab delimited complete"
+	fi
+fi
+
+if [[ ! $filetype ]];then
+	echo "${infile} doesn't appear to appear to be comma or tab delimited."
+	echo "Please supply a different file or correct the first line."
+	echo
+	exit
+fi
+
+
+
+read -r fieldnames < ${infile}
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+numfields=$(awk 'BEGIN{FS="\t"}{print NF;exit}' ${infile})
+
+echo "\n$numfields fields were detected in the header line and $numrecs lines will be examined\n"
+
+echo "The following fields were detected in ${infile}"
+
+if [[ $fieldnames =~ [^A-Z] ]];then
+	echo "Removing problematic characters from fieldnames"
+
+	fieldnames=$(tr -dc "[[:alnum:]]	" <<< "${fieldnames}")
+fi
+
+echo "${fieldnames//	/, }"
+
+echo "Please enter any fields, comma separated, that you want frequency counts for"
+
+read fieldcounters
+
+echo "Stripping double quotes from the edges of fields"
+sed -i 's/"*\t"*/\t/g; s/^"//; s/"$// ' ${infile}
+
+fieldcounters="${fieldcounters// /}"
+
+read -r -d '' awkscript << "ENDOFAWK"
+#!/usr/bin/awk -f
+
+BEGIN {
+	FS=OFS="\t"
+	goodrecs=badrecs=0
+	numcounters=split(fieldcounters, fields, ",")
+}
+
+{
+	if (NR == 1) {
+		for(i=1;i<=NF;i++) {
+			for(j=1;j<=numcounters;j++) {
+				if ($i == fields[j]) {
+					fieldcounter[j] = i	
+				}
+			}
+
+		}
+
+	}
+
+	if (NF == numfields) {
+		goodrecs++
+		for(i=1;i<=NF;i++) {
+			printf("%s%s",$i,i==NF?RS:OFS) > outfile
+
+			for (k=1;k<=numcounters;k++) {
+				if (fieldcounter[k] = i) {
+					print $i > fields[k]
+				}	
+			}
+			
+		}
+
+	} else {
+		badrecs++
+		print $0 > badfile
+	}
+
+	if(NR % 10000 == 0 ) {printf ("Processed %d items\r", NR)}
+}
+
+END {
+	print "Processed " NR - 1 " items."
+	print goodrecs " good records were output to " outfile " and" 
+	print badrecs " records with the wrong number of fields were output to " badfile
+	print ""
+
+	for (k=1;k<=numcounters;k++) {
+		print fields[k] > "tmp_counters"
+		}
+
+}
+ENDOFAWK
+
+echo -e "${awkscript}" > tmp_awk
+chmod 700 tmp_awk
+
+outfile="${infile}_fixed"
+badfile="${infile}_error"
+
+awk -v numrecs=$numrecs -v numfields=$numfields -v outfile=$outfile -v badfile=$badfile -v fieldcounters=$fieldcounters -f tmp_awk ${infile}
+rm tmp_awk
+
+if [[ -f tmp_counters ]];then
+	for f in $(cat tmp_counters);do
+	echo "Calculating frequency of values for $f and sending to ${f}.counter"
+	sort $f |uniq -c |sort -k1nr > ${f}.counter
+	echo "Here are the 10 most common values:"
+	head ${f}.counter
+	echo
+	done
+
+fi
+
+rm -f tmp_counters

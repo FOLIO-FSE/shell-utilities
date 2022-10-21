@@ -12,6 +12,10 @@ else
 	infile=${1}
 fi
 
+echo "Detecting and removing trailing carriage returns"
+echo
+dos2unix ${infile}
+
 # detect file characteristics. First line is assumed to contain either tabs or commas
 
 if awk '{exit !/\t/}' ${infile}; then 
@@ -44,6 +48,7 @@ echo
 echo "$numfields fields $numrecs lines were detected."
 echo "Problematic characters will be removed from fieldnames"
 echo
+
 fieldnames=$(tr -dc "[[:alnum:]]_\-.	" <<< "${fieldnames}")
 
 echo "The following fields were detected in ${infile}"

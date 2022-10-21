@@ -50,6 +50,9 @@ function check_leader() {
 
 function check_fields() {
 	goodrec=1
+	found001=0
+	found008=0
+	found245=0
 	for(i=1; i<=NF; i++) {
 		if(substr($i, 2, 3) == "LDR") { check_leader() }
 		if(substr($i, 2, 3) == "001") { found001 = 1 }
@@ -58,6 +61,9 @@ function check_fields() {
 
 	}
 	if (goodrec == 1) {goodrecs++;print $0 > FILENAME"_good"}
+	if (found001 == 0) {print $0 > "bad_001.mrk"}
+	if (found008 == 0) {print $0 > "bad_008.mrk"}
+	if (found245 == 0) {print $0 > "bad_245.mrk"}
 }
 
 
@@ -83,6 +89,14 @@ while mapfile -t -n 4 marcfiles && ((${#marcfiles[@]})); do
 	done
 	wait
 done < tmp_marcprocess
+
+if [[ -f bad_leaders.mrk ]];then echo "Records with bad leaders were written to bad_leaders.mrk";fi
+if [[ -f bad_001.mrk ]];then echo "Records lacking 001 were written to bad_001.mrk";fi
+if [[ -f bad_008.mrk ]];then echo "Records lacking 008 were written to bad_008.mrk";fi
+if [[ -f bad_245.mrk ]];then echo "Records lacking 245 were written to bad_245.mrk";fi
+echo
+echo "The following files containing good records were created"
+ls -l *_good
 
 rm tmp_marcprocess
 

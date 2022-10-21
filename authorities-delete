@@ -25,10 +25,11 @@ delete_authority() {
 }
 
 while mapfile -t -n 6 ids && ((${#ids[@]})); do
+	seq=0
+
 	for line in "${ids[@]}";do
 		line=${line//$'\t'/^}
 		IFS='^' read -r lc_id authority srs <<< "${line}"	
-		seq=0
 		delete_authority ${authority} ${srs} ${seq} &
 		counter=$(($counter + 1))
 		seq=$(($seq + 1))

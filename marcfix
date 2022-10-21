@@ -1,0 +1,86 @@
+rm -f bad_leaders.mrk
+
+marcfile_process() {
+	local marcfile="${1}"
+	local infile=$(sed 's/\.....\?$//' <<< "${marcfile}")
+
+	echo "Converting ${marcfile} to text. Please be patient."
+
+	marc2text ${marcfile}
+	echo "Done converting ${marcfile} to text."
+	echo "Analyzing ${infile}.txt"
+	echo
+	awk -f tmp_awk ${infile}.txt
+
+}
+
+if [[ -z $1 ]];then
+	marcfiles=($(ls *.mrc))
+	ls *.mrc > tmp_marcprocess
+	echo "No file arguments detected. Processing all *.mrc files in current directory"
+	echo
+else
+	marcfiles=("${1}")
+fi
+
+
+echo "${#marcfiles[@]} files will be converted and analyzed."
+echo
+
+read -r -d '' awkscript << "ENDOFAWK"
+#!/usr/bin/awk -f
+
+BEGIN {
+	RS=ORS="\\n\\n";FS="\\n"
+	goodrecs=badrecs=0
+}
+
+
+function check_leader() {
+	leader=substr($i,7)
+	
+	if (length(leader)!=24) {print $0 >> "bad_leaders.mrk";badrecs++;goodrec=0 }
+	if (substr(leader,6,1) !~ /[acdnp]/) {print $0 >> "bad_leaders.mrk";badrecs++;goodrec=0 }
+	#printf "%s\\n", leader 
+}
+
+function check_fields() {
+	goodrec=1
+	for(i=1; i<=NF; i++) {
+		if(substr($i, 2, 3) == "LDR") { check_leader() }
+		if(substr($i, 2, 3) == "001") { found001 = 1 }
+		if(substr($i, 2, 3) == "008") { found008 = 1 }
+		if(substr($i, 2, 3) == "245") { found245 = 1 }
+
+	}
+	if (goodrec == 1) {goodrecs++;print $0 > "good_records.mrk"}
+}
+
+
+{
+	check_fields()
+}
+
+END {
+	print goodrecs " good records and "  badrecs " bad records were found in " FILENAME
+	print ""
+
+}
+ENDOFAWK
+
+echo -e "${awkscript}" > tmp_awk
+chmod 700 tmp_awk
+
+while mapfile -t -n 4 marcfiles && ((${#marcfiles[@]})); do
+	seq=0
+	for marcfile in ${marcfiles[@]};do
+		marcfile_process ${marcfile} ${seq} &
+		seq=$(($seq + 1))
+	done
+	wait
+done < tmp_marcprocess
+
+rm tmp_marcprocess
+
+
+

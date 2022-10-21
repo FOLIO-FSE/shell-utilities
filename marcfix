@@ -8,9 +8,8 @@ marcfile_process() {
 	marc2text ${marcfile}
 
 	awk -f tmp_awk ${infile}.txt
-	mv "${infile}.txt" "${infile}_good.txt"
-	text2marc "${infile}_good.txt"
-
+	mv ${infile}.txt "good_${infile}.txt"
+	text2marc "good_${infile}.txt"
 }
 
 if [[ -z $1 ]];then echo "You must specify a MARC file to process";exit;fi
@@ -48,12 +47,11 @@ function check_fields() {
 		if(substr($i, 2, 3) == "245") { found245 = 1 }
 
 	}
-	if (goodrec == 1) {goodrecs++;print $0 > FILENAME"_good"}
+	if (goodrec == 1) {goodrecs++;print $0 >> "good_"FILENAME}
 	if (found001 == 0) {print $0 > "bad_001.mrk"}
 	if (found008 == 0) {print $0 > "bad_008.mrk"}
 	if (found245 == 0) {print $0 > "bad_245.mrk"}
 }
-
 
 {
 	check_fields()
@@ -69,10 +67,8 @@ chmod 700 tmp_awk
 ls *.mrc > tmp_marcprocess
 
 while mapfile -t -n 5 marcfiles && ((${#marcfiles[@]})); do
-	seq=0
 	for marcfile in ${marcfiles[@]};do
-		marcfile_process ${marcfile} ${seq} &
-		seq=$(($seq + 1))
+		marcfile_process ${marcfile} &
 	done
 	wait
 done < tmp_marcprocess
@@ -82,14 +78,14 @@ if [[ -f bad_001.mrk ]];then echo "Records lacking 001 were written to bad_001.m
 if [[ -f bad_008.mrk ]];then echo "Records lacking 008 were written to bad_008.mrk";fi
 if [[ -f bad_245.mrk ]];then echo "Records lacking 245 were written to bad_245.mrk";fi
 
-ls bad_*.mrk > /dev/null 2>/dev/null && mv bad_*.mrk ..
+cd ..
+cat tmp_marc/good_*.mrc > good_records.mrc
+mv -f tmp_marc/bad_*.mrk . 2>/dev/null; true
 echo
 echo "Good records can be found in good_records.mrc"
-cat *_good.mrc > ../good_records.mrc
-cd ..
 
 
-rm tmp_marcprocess
+rm -r tmp_marc
 
 
 

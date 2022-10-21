@@ -11,6 +11,9 @@ marcfile_process() {
 	echo "Analyzing ${infile}.txt"
 	echo
 	awk -f tmp_awk ${infile}.txt
+	mv "${infile}.txt" "${infile}_good.txt"
+	text2marc "${infile}_good.txt"
+	echo "Good records have been written to ${infile}_good.mrc"
 
 }
 
@@ -21,6 +24,7 @@ if [[ -z $1 ]];then
 	echo
 else
 	marcfiles=("${1}")
+	echo "${1}" > tmp_marcprocess
 fi
 
 
@@ -53,7 +57,7 @@ function check_fields() {
 		if(substr($i, 2, 3) == "245") { found245 = 1 }
 
 	}
-	if (goodrec == 1) {goodrecs++;print $0 > "good_records.mrk"}
+	if (goodrec == 1) {goodrecs++;print $0 > FILENAME"_good"}
 }
 
 

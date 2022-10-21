@@ -4,32 +4,20 @@ marcfile_process() {
 	local marcfile="${1}"
 	local infile=$(sed 's/\.....\?$//' <<< "${marcfile}")
 
-	echo "Converting ${marcfile} to text. Please be patient."
-
+	echo "Analyzing ${marcfile}"
 	marc2text ${marcfile}
-	echo "Done converting ${marcfile} to text."
-	echo "Analyzing ${infile}.txt"
-	echo
+
 	awk -f tmp_awk ${infile}.txt
 	mv "${infile}.txt" "${infile}_good.txt"
 	text2marc "${infile}_good.txt"
-	echo "Good records have been written to ${infile}_good.mrc"
 
 }
 
-if [[ -z $1 ]];then
-	marcfiles=($(ls *.mrc))
-	ls *.mrc > tmp_marcprocess
-	echo "No file arguments detected. Processing all *.mrc files in current directory"
-	echo
-else
-	marcfiles=("${1}")
-	echo "${1}" > tmp_marcprocess
-fi
+if [[ -z $1 ]];then echo "You must specify a MARC file to process";exit;fi
+if [[ ! -f "${1}" ]];then echo "No MARC file with that name could be found";exit;fi
 
+marcsplit "${1}" 5000
 
-echo "${#marcfiles[@]} files will be converted and analyzed."
-echo
 
 read -r -d '' awkscript << "ENDOFAWK"
 #!/usr/bin/awk -f
@@ -71,17 +59,16 @@ function check_fields() {
 	check_fields()
 }
 
-END {
-	print goodrecs " good records and "  badrecs " bad records were found in " FILENAME
-	print ""
-
-}
 ENDOFAWK
 
+cd tmp_marc
+echo
 echo -e "${awkscript}" > tmp_awk
 chmod 700 tmp_awk
 
-while mapfile -t -n 4 marcfiles && ((${#marcfiles[@]})); do
+ls *.mrc > tmp_marcprocess
+
+while mapfile -t -n 5 marcfiles && ((${#marcfiles[@]})); do
 	seq=0
 	for marcfile in ${marcfiles[@]};do
 		marcfile_process ${marcfile} ${seq} &
@@ -94,9 +81,13 @@ if [[ -f bad_leaders.mrk ]];then echo "Records with bad leaders were written to 
 if [[ -f bad_001.mrk ]];then echo "Records lacking 001 were written to bad_001.mrk";fi
 if [[ -f bad_008.mrk ]];then echo "Records lacking 008 were written to bad_008.mrk";fi
 if [[ -f bad_245.mrk ]];then echo "Records lacking 245 were written to bad_245.mrk";fi
+
+ls bad_*.mrk > /dev/null 2>/dev/null && mv bad_*.mrk ..
 echo
-echo "The following files containing good records were created"
-ls -l *_good
+echo "Good records can be found in good_records.mrc"
+cat *_good.mrc > ../good_records.mrc
+cd ..
+
 
 rm tmp_marcprocess
 

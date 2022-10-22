@@ -7,7 +7,7 @@ marcfile_process() {
 	echo "Analyzing ${marcfile}"
 	marc2text ${marcfile}
 
-	awk -f tmp_awk ${infile}.txt
+	awk -v FILENAME="${infile}.mrc" -f tmp_awk ${infile}.txt 
 	mv ${infile}.txt "good_${infile}.txt"
 	text2marc "good_${infile}.txt"
 }

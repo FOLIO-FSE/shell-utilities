@@ -50,9 +50,9 @@ function check_fields() {
 
 	}
 	if (goodrec == 1) {goodrecs++;print $0 >> "good_"FILENAME}else{badrecs++}
-	if (found001 == 0) {print $0 >> "bad_001."seq".mrk"}
-	if (found008 == 0) {print $0 >> "bad_008."seq".mrk"}
-	if (found245 == 0) {print $0 >> "bad_245."seq".mrk"}
+	if (found001 == 0) {print $0 >> "no_001."seq".mrk"}
+	if (found008 == 0) {print $0 >> "no_008."seq".mrk"}
+	if (found245 == 0) {print $0 >> "no_245."seq".mrk"}
 }
 
 {
@@ -85,12 +85,12 @@ echo "Records lacking key fields or having invalid data are written to files \"b
 cd ..
 cat tmp_marc/good_*.mrc > good_records.mrc
 find . -name 'bad_leaders.*.mrk' -exec cat {} >> bad_leaders.mrk \;
-find . -name 'bad_001.*.mrk' -exec cat {} >> bad_001.mrk \;
-find . -name 'bad_008.*.mrk' -exec cat {} >> bad_008.mrk \;
-find . -name 'bad_245.*.mrk' -exec cat {} >> bad_245.mrk \;
+find . -name 'no_001.*.mrk' -exec cat {} >> no_001.mrk \;
+find . -name 'no_008.*.mrk' -exec cat {} >> no_008.mrk \;
+find . -name 'no_245.*.mrk' -exec cat {} >> no_245.mrk \;
 echo
 echo "Good records can be found in good_records.mrc"
-
+find . -size 0 -delete
 
 rm -r tmp_marc
 

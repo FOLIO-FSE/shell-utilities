@@ -15,6 +15,7 @@ marcfile_process() {
 if [[ -z $1 ]];then echo "You must specify a MARC file to process";exit;fi
 if [[ ! -f "${1}" ]];then echo "No MARC file with that name could be found";exit;fi
 
+echo "Splitting the MARC file into batches of 5000. Please be patient with large files"
 marcsplit "${1}" 5000
 
 
@@ -47,7 +48,7 @@ function check_fields() {
 		if(substr($i, 2, 3) == "245") { found245 = 1 }
 
 	}
-	if (goodrec == 1) {goodrecs++;print $0 >> "good_"FILENAME}
+	if (goodrec == 1) {goodrecs++;print $0 >> "good_"FILENAME}else{badrecs++}
 	if (found001 == 0) {print $0 > "bad_001.mrk"}
 	if (found008 == 0) {print $0 > "bad_008.mrk"}
 	if (found245 == 0) {print $0 > "bad_245.mrk"}
@@ -55,6 +56,9 @@ function check_fields() {
 
 {
 	check_fields()
+}
+END {
+	print goodrecs " good records and " badrecs " bad records were found in FILENAME"
 }
 
 ENDOFAWK

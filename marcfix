@@ -86,7 +86,9 @@ echo "Records lacking key fields or having invalid data are written to files \"b
 
 cd ..
 cat tmp_marc/good_*.mrc > good_records.mrc
-find . -name 'bad_leaders.*.mrk' -exec cat {} >> bad_leaders.mrk \;
+find . -name 'bad_leaderlength.*.mrk' -exec cat {} >> bad_leaderlength.mrk \;
+find . -name 'bad_leadertype.*.mrk' -exec cat {} >> bad_leadertype.mrk \;
+find . -name 'bad_leaderbiblvl.*.mrk' -exec cat {} >> bad_leaderbiblvl.mrk \;
 find . -name 'no_001.*.mrk' -exec cat {} >> no_001.mrk \;
 find . -name 'no_008.*.mrk' -exec cat {} >> no_008.mrk \;
 find . -name 'no_245.*.mrk' -exec cat {} >> no_245.mrk \;

@@ -1,13 +1,14 @@
-rm -f bad_leaders.mrk
+rm -f bad_*.mrk
 
 marcfile_process() {
 	local marcfile="${1}"
+	local seq="${2}"
 	local infile=$(sed 's/\.....\?$//' <<< "${marcfile}")
 
 	echo "Analyzing ${marcfile}"
 	marc2text ${marcfile}
 
-	awk -v FILENAME="${infile}.mrc" -f tmp_awk ${infile}.txt 
+	awk -v seq=${seq} -f tmp_awk ${infile}.txt 
 	mv ${infile}.txt "good_${infile}.txt"
 	text2marc "good_${infile}.txt"
 }
@@ -32,7 +33,7 @@ function check_leader() {
 	leader=substr($i,7)
 	
 	if (length(leader)!=24) {print $0 >> "bad_leaders.mrk";badrecs++;goodrec=0 }
-	if (substr(leader,6,1) !~ /[acdnp]/) {print $0 >> "bad_leaders.mrk";badrecs++;goodrec=0 }
+	if (substr(leader,6,1) !~ /[acdnp]/) {print $0 >> "bad_leaders."seq".mrk";badrecs++;goodrec=0 }
 	#printf "%s\\n", leader 
 }
 
@@ -49,9 +50,9 @@ function check_fields() {
 
 	}
 	if (goodrec == 1) {goodrecs++;print $0 >> "good_"FILENAME}else{badrecs++}
-	if (found001 == 0) {print $0 > "bad_001.mrk"}
-	if (found008 == 0) {print $0 > "bad_008.mrk"}
-	if (found245 == 0) {print $0 > "bad_245.mrk"}
+	if (found001 == 0) {print $0 >> "bad_001."seq".mrk"}
+	if (found008 == 0) {print $0 >> "bad_008."seq".mrk"}
+	if (found245 == 0) {print $0 >> "bad_245."seq".mrk"}
 }
 
 {
@@ -71,20 +72,22 @@ chmod 700 tmp_awk
 ls *.mrc > tmp_marcprocess
 
 while mapfile -t -n 5 marcfiles && ((${#marcfiles[@]})); do
+	seq=0
 	for marcfile in ${marcfiles[@]};do
-		marcfile_process ${marcfile} &
+		marcfile_process ${marcfile} ${seq} &
+		seq=$(($seq + 1))
 	done
 	wait
 done < tmp_marcprocess
 
-if [[ -f bad_leaders.mrk ]];then echo "Records with bad leaders were written to bad_leaders.mrk";fi
-if [[ -f bad_001.mrk ]];then echo "Records lacking 001 were written to bad_001.mrk";fi
-if [[ -f bad_008.mrk ]];then echo "Records lacking 008 were written to bad_008.mrk";fi
-if [[ -f bad_245.mrk ]];then echo "Records lacking 245 were written to bad_245.mrk";fi
+echo "Records lacking key fields or having invalid data are written to files \"bad_*.mrk\""
 
 cd ..
 cat tmp_marc/good_*.mrc > good_records.mrc
-mv -f tmp_marc/bad_*.mrk . 2>/dev/null; true
+find . -name 'bad_leaders.*.mrk' -exec cat {} >> bad_leaders.mrk \;
+find . -name 'bad_001.*.mrk' -exec cat {} >> bad_001.mrk \;
+find . -name 'bad_008.*.mrk' -exec cat {} >> bad_008.mrk \;
+find . -name 'bad_245.*.mrk' -exec cat {} >> bad_245.mrk \;
 echo
 echo "Good records can be found in good_records.mrc"
 

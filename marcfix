@@ -1,4 +1,5 @@
 rm -f bad_*.mrk
+rm -f no_*.mrk
 
 marcfile_process() {
 	local marcfile="${1}"
@@ -32,8 +33,11 @@ BEGIN {
 function check_leader() {
 	leader=substr($i,7)
 	
-	if (length(leader)!=24) {print $0 >> "bad_leaders.mrk";badrecs++;goodrec=0 }
-	if (substr(leader,6,1) !~ /[acdnp]/) {print $0 >> "bad_leaders."seq".mrk";badrecs++;goodrec=0 }
+	if (length(leader)!=24) {print $0 >> "bad_leaderlength."seq".mrk";goodrec=0 }
+	if (substr(leader,6,1) !~ /[acdnp]/) {print $0 >> "bad_leadertype."seq".mrk";goodrec=0 }
+	if (substr(leader,7,1) !~ /[abcdims]/) {print $0 >> "bad_leaderbiblvl."seq".mrk";goodrec=0 }
+	if (substr(leader,18,1) !~ /[\\\acinu]/) {print $0 >> "bad_leaderdesc."seq".mrk";goodrec=0 }
+	if (substr(leader,19,1) !~ /[\\\abc]/) {print $0 >> "bad_leaderdesc."seq".mrk";goodrec=0 }
 	#printf "%s\\n", leader 
 }
 

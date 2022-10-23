@@ -14,11 +14,37 @@ marcfile_process() {
 	text2marc "good_${infile}.txt"
 }
 
-if [[ -z $1 ]];then echo "You must specify a MARC file to process";exit;fi
-if [[ ! -f "${1}" ]];then echo "No MARC file with that name could be found";exit;fi
+sourcefile="${1}"
 
-echo "Splitting the MARC file into batches of 5000. Please be patient with large files"
-marcsplit "${1}" 5000
+if [[ -z $1 ]];then echo "You must specify a MARC file to process";exit;fi
+if [[ ! -f "${sourcefile}" ]];then echo "No MARC file with that name could be found";exit;fi
+
+echo "Counting records in ${sourcefile}. Please be patient"
+numrecs=$(awk -v RS=$'\x1d' 'END{print NR}' "${sourcefile}")
+
+echo "$numrecs records were detected."
+numfiles=$(($numrecs / 5000))
+if [[ $numfiles -eq 0 ]];then numfiles=1;fi
+
+
+echo "Splitting the MARC file into $numfiles batches of 5000. Please be patient"
+marcsplit "${sourcefile}" 5000 &
+sleep 1
+
+SECONDS=1
+
+checkcounter=0
+filecounter=1
+
+while [[ $filecounter -ne $checkcounter ]];do
+	filecounter=$(ls tmp_marc |wc -l)
+	timeremaining=$((($numfiles - $filecounter)/($filecounter/$SECONDS)))
+	echo -en "$filecounter files created in $(($SECONDS - 1)) seconds. $timeremaining seconds estimated until completion.\r"
+	sleep 5
+	checkcounter=$(ls tmp_marc |wc -l)
+done
+
+wait
 
 
 read -r -d '' awkscript << "ENDOFAWK"

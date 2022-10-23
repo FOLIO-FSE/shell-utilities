@@ -39,7 +39,7 @@ filecounter=1
 while [[ $filecounter -ne $checkcounter ]];do
 	filecounter=$(ls tmp_marc |wc -l)
 	timeremaining=$((($numfiles - $filecounter)/($filecounter/$SECONDS)))
-	echo -en "$filecounter files created in $(($SECONDS - 1)) seconds. $timeremaining seconds estimated until completion.\r"
+	echo -en "$filecounter files created in $(($SECONDS - 1)) seconds. $timeremaining seconds estimated file splitting is complete.\r"
 	sleep 5
 	checkcounter=$(ls tmp_marc |wc -l)
 done
@@ -119,7 +119,7 @@ find . -name 'no_001.*.mrk' -exec cat {} >> no_001.mrk \;
 find . -name 'no_008.*.mrk' -exec cat {} >> no_008.mrk \;
 find . -name 'no_245.*.mrk' -exec cat {} >> no_245.mrk \;
 echo
-echo "Good records can be found in good_records.mrc"
+echo "Good records have been converted to UTF-8 and can be found in good_records.mrc."
 find . -size 0 -delete
 
 rm -r tmp_marc

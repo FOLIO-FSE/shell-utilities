@@ -54,7 +54,6 @@ parse_contact() {
 	email=$(echo ${contact} |grep -o '[a-zA-Z0-9._-]\+@[a-zA-Z0-9._-]\+\.[a-zA-Z0-9_-]\+')
 	phone=$(echo ${contact} |grep -o '\(([0-9]\{3\})\|[0-9]\{3\}\)[ -]\?[0-9]\{3\}[ -]\?[0-9]\{4\}\(.*ext.*\)\?')
 	notes=$(echo ${contact} |sed 's/^[^\$]*\$//' |sed 's/\$/\n/g' |jq -aRs)
-
 }
 
 
@@ -62,13 +61,15 @@ parse_contact() {
 
 while IFS=$'\n' read -r line;do
 	line=$(tr "\t" "^" <<< ${line} |tr -d '"')
-	#IFS='^' read -r code lname fname note email phone phone2 phone3 <<< ${line}
-	IFS='^' read -r code contact <<< ${line}
+	IFS='^' read -r code lname fname title note email description category <<< ${line}
+	#IFS='^' read -r code contact <<< ${line}
 
 	if [[ ${code} == "" ]];then continue; fi
+	note=${description}
 	notes=$(echo -n "${note}" |jq -aRs)
 
-	parse_contact
+	# Remove this remark for parsing unstructured info from Sierra systems
+	#parse_contact
 
 	contact_uuid=$(uuidgen)
 	emails=""
@@ -86,6 +87,7 @@ while IFS=$'\n' read -r line;do
 			goodrecord=1
 		fi
 	fi
+
 
 	if [[ $goodrecord == "0" ]];then 
 		echo "No name found for ${code}"

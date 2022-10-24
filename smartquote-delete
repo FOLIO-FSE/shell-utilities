@@ -1,0 +1,3 @@
+SINGLE=$(echo -ne '\u00B4\u2018\u2019')
+DOUBLE=$(echo -ne '\u201C\u201D')
+sed -i "s/[$SINGLE]/'/g; s/[$DOUBLE]/\"/g" "${1}"

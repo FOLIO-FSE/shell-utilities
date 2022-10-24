@@ -87,6 +87,10 @@ fi
 
 address="{\"isPrimary\":true,\"addressLine1\":\"${line1}\",\"addressLine2\":\"${line2}\",\"city\":\"${city}\",\"stateRegion\":\"${state}\",\"zipCode\":\"${zip}\"}"
 }
+
+build_clean_address() {
+address="{\"isPrimary\":true,\"addressLine1\":\"${addr1}\",\"addressLine2\":\"${addr2}\",\"city\":\"${city}\",\"stateRegion\":\"${state}\",\"zipCode\":\"${zip}\"}"
+}
 ##############################
 
 create_org_record() {
@@ -134,8 +138,10 @@ counter=0
 while IFS=$'\n' read line;do
 	line=$(echo "${line}" |tr "\t" "^" |tr -d '"')
 	#IFS='^' read -r code name alias addr phone fax email url accountnum <<< ${line}
-	IFS='^' read -r name code status <<< ${line}
-	# status="Active"
+	IFS='^' read -r code name alias addr1 addr2 city state zip country phone fax email url <<< ${line}
+	#IFS='^' read -r name code status <<< ${line}
+	status="Active"
+	addressprocessing="clean"
 
 	# uuid needs to be global. Note that repair/addition tools can't assume deterministic uuids
 	uuid=$(uuidgen --sha1 -n 8405ae4d-b315-42e1-918a-d1919900cf3f -N "${okapi_url}:organizations:${code}")
@@ -158,7 +164,8 @@ while IFS=$'\n' read line;do
 
 	if [[ ${url} =~ ^http ]]; then url="{ \"language\" : \"en\", \"isPrimary\" : true, \"value\" : \"${url}\" }";fi
 
-	if (( ${#addr} > 5 ));then build_sierra_address;fi
+	if [[ addressprocessing == "clean" ]];then if (( ${#addr1} > 3 ));then build_clean_address;fi;fi
+	if [[ addressprocessing == "sierra" ]];then if (( ${#addr} > 5 ));then build_sierra_address;fi;fi
 
 	org=$(create_org_record)
 	

@@ -62,9 +62,14 @@ echo
 read fieldcounters
 
 echo
-echo "Stripping double quotes from the edges of fields"
+echo "Stripping double quotes from the edges of fields and converting smartquotes"
 echo
-sed -i 's/"*\t"*/\t/g; s/^"//; s/"$// ' ${infile}
+
+SINGLE=$(echo -ne '\u00B4\u2018\u2019')
+DOUBLE=$(echo -ne '\u201C\u201D')
+#sed -i 's/"*\t"*/\t/g; s/^"//; s/"$// ' ${infile}
+sed -i "s/\"*\t\"*/\t/g; s/^\"//; s/\"$//;s/[$SINGLE]/'/g; s/[$DOUBLE]/\"/g" "${infile}"
+
 
 fieldcounters="${fieldcounters// /}"
 

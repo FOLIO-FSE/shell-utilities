@@ -5,7 +5,7 @@ oai_server="${edge_url}/oai/$(cat edge.key)?verb=ListRecords"
 if [[ ${1} =~ ^[12][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$ ]];then
 	from=$(date -u -d "${1}" +"%Y-%m-%dT%H:%M:%SZ")
 else
-	from=$(date -u -d '1 hour ago' +"%Y-%m-%dT%H:%M:%SZ")
+	from=$(date -u -d '1 minute  ago' +"%Y-%m-%dT%H:%M:%SZ")
 fi
 
 from='&from='${from}

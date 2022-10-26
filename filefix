@@ -12,6 +12,8 @@ else
 	infile=${1}
 fi
 
+if [[ ! -f ${infile} ]];then echo "The input file ${infile} could not be found";exit;fi
+
 echo "Detecting and removing trailing carriage returns"
 echo
 dos2unix ${infile}

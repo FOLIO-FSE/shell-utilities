@@ -49,7 +49,7 @@ echo "$numfields fields $numrecs lines were detected."
 echo "Problematic characters will be removed from fieldnames"
 echo
 
-fieldnames=$(tr -dc "[[:alnum:]]_\-.	" <<< "${fieldnames}")
+fieldnames=$(tr -dc "[[:alnum:]]_\-#.	" <<< "${fieldnames}")
 
 echo "The following fields were detected in ${infile}"
 echo
@@ -87,6 +87,9 @@ BEGIN {
 	# detect counter fields
 	if (NR == 1) {
 		for(i=1;i<=NF;i++) {
+			gsub(/ /, "", $i)
+			printf("%s%s",$i,i==NF?RS:OFS) > outfile
+
 			for(j=1;j<=numcounters;j++) {
 				if ($i == fields[j]) {
 					fieldcounter[j] = i	
@@ -94,30 +97,28 @@ BEGIN {
 			}
 
 		}
-
-	}
-
-	if (NF == numfields) {
-		goodrecs++
-		for(i=1;i<=NF;i++) {
-			printf("%s%s",$i,i==NF?RS:OFS) > outfile
-			
-			# append to file if counter field detected
-			for (k=1;k<=numcounters;k++) {
-				if (fieldcounter[k] = i) {
-					print $i > fields[k]
-				}	
-			}
-		}
-
 	} else {
-		badrecs++
-		print $0 > badfile
+		if (NF == numfields) {
+			goodrecs++
+			for(i=1;i<=NF;i++) {
+				printf("%s%s",$i,i==NF?RS:OFS) > outfile
+				
+				# append to file if counter field detected
+				for (k=1;k<=numcounters;k++) {
+					if (fieldcounter[k] = i) {
+						print $i > fields[k]
+					}	
+				}
+			}
+	
+		} else {
+			badrecs++
+			print $0 > badfile
+		}
+	
+		if(NR % 10000 == 0 ) {printf ("Processed %d items\r", NR)}
 	}
-
-	if(NR % 10000 == 0 ) {printf ("Processed %d items\r", NR)}
 }
-
 END {
 	print "Processed " NR - 1 " items."
 	print goodrecs " good records were output to " outfile " and" 

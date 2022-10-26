@@ -151,5 +151,5 @@ if [[ -f tmp_counters ]];then
 		echo "${f}.counter contains the frequency of all values encountered"
 		echo
 	done
-	#rm -f tmp_counters
+	rm -f tmp_counters
 fi

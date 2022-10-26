@@ -146,7 +146,7 @@ if [[ -f tmp_counters ]];then
 		sort ${f} |uniq -c |sort -k1nr > ${f}.counter
 		echo "Here are the 10 most common values:"
 		head ${f}.counter
-		#rm ${f}
+		rm ${f}
 		echo
 		echo "${f}.counter contains the frequency of all values encountered"
 		echo

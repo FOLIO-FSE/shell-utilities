@@ -81,6 +81,7 @@ BEGIN {
 	FS=OFS="\t"
 	goodrecs=badrecs=0
 	numcounters=split(fieldcounters, fields, ",")
+	print fieldcounters > "tmp_counters"
 }
 
 {
@@ -105,7 +106,7 @@ BEGIN {
 				
 				# append to file if counter field detected
 				for (k=1;k<=numcounters;k++) {
-					if (fieldcounter[k] = i) {
+					if (fieldcounter[k] == i) {
 						print $i > fields[k]
 					}	
 				}
@@ -125,9 +126,6 @@ END {
 	print badrecs " records with the wrong number of fields were output to " badfile
 	print ""
 
-	for (k=1;k<=numcounters;k++) {
-		print fields[k] > "tmp_counters"
-		}
 }
 ENDOFAWK
 
@@ -141,15 +139,17 @@ awk -v numrecs=$numrecs -v numfields=$numfields -v outfile=$outfile -v badfile=$
 rm tmp_awk
 
 if [[ -f tmp_counters ]];then
-	for f in $(cat tmp_counters);do
+	IFS=',' read -ra fields < tmp_counters
+
+	for f in ${fields[@]};do
 		echo "Calculating frequency of values for $f"
-		sort $f |uniq -c |sort -k1nr > ${f}.counter
+		sort ${f} |uniq -c |sort -k1nr > ${f}.counter
 		echo "Here are the 10 most common values:"
 		head ${f}.counter
-		rm ${f}
+		#rm ${f}
 		echo
 		echo "${f}.counter contains the frequency of all values encountered"
 		echo
 	done
-	rm -f tmp_counters
+	#rm -f tmp_counters
 fi

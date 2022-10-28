@@ -1,0 +1,104 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+counter=1
+infile="delete"
+logfile="instance_delete.log"
+
+rm -f ${logfile}
+
+function delete_items() {
+	local instance_id=${1}
+	local item_ids=()
+	local apicall
+	local item
+
+	item_ids=($(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-storage/items?limit=10000&query=instance.id==${instance_id}" | jq -r .items[].id)) 
+
+	for item in ${item_ids[@]};do
+		apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-storage/items/${item}")
+	done	
+}
+
+function delete_holdings() {
+	local instance_id=${1}
+	local holdings_ids=()
+	local apicall
+	local holding
+
+	holdings_ids=($(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-storage/holdings?limit=10000&query=instanceId==${instance_id}" | jq -r .holdingsRecords[].id)) 
+
+	for holding in ${holdings_ids[@]};do
+		apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-storage/holdings/${holding}")
+	done	
+}
+
+function delete_connectedtitles() {
+	local instance_id=${1}
+	local connectedtitle_ids=()
+	local apicall
+	local connectedtitle 
+
+	connectedtitle_ids=($(apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}?query=precedingInstanceId==${instance_id}") |jq -r .precedingSucceedingTitles[].id)) 
+
+	for connectedtitle in ${connectedtitle_ids[@]};do
+		apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/preceding-succeeding-titles/${connectedtitle}")
+	done	
+}
+
+function delete_instance() {
+	local apicall
+	local instance_id=${1}
+	local srs_id
+	local srs_ids=()
+	local connectedtitle_ids=()
+
+	srs_id=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${instance_id}/formatted?idType=INSTANCE" |jq -r '.matchedId')
+
+	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-storage/items?limit=1&query=instance.id==${instance_id}") 
+	if [[ ${apicall} =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} ]];then
+		delete_items ${instance_id}
+	fi
+
+	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-storage/holdings?limit=1&query=instanceId==${instance_id}") 
+	if [[ ${apicall} =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} ]];then
+		delete_holdings ${instance_id}
+	fi
+
+	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}?query=precedingInstanceId==${instance_id}?limit=1")
+	if [[ ${apicall} =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} ]];then
+		delete_connectedtitles ${instance_id}
+	fi
+
+	if [[ ${srs_id} =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} ]];then
+		apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${srs_id}")
+	fi
+
+	apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${instance_id}")
+
+	echo "${instance_id} -- ${apicall}" |grep -i [a-z] >> ${logfile}
+
+}
+
+
+while mapfile -t -n 10 instances && ((${#instances[@]})); do
+
+	for instance in ${instances[@]};do
+		instance=${instance//[^0-9a-f\-]/}
+
+		if [[ ${instance} =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} ]];then	
+			delete_instance ${instance} &
+			counter=$(($counter + 1))
+		fi
+	done
+	wait
+		
+	printf "%s records deleted \r" $counter
+
+done < ${infile}
+
+echo "$counter records deleted, results output to ${logfile}"
+
+
+

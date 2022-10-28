@@ -58,6 +58,6 @@ while mapfile -t -n 4 uuids && ((${#uuids[@]})); do
 	wait
 done < ${infile} 
 
-echo "Processed $counter records                      "
+echo "Processed $(($counter - 1)) records                      "
 
 

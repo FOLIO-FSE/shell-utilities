@@ -55,6 +55,8 @@ case $rec_type in
 "polines")
 	rec_type="poLines"
 	endpoint="orders-storage/po-lines";;
+"requests")
+	endpoint="circulation/requests";;
 "schedulednotices")
 	endpoint="scheduled-notice-storage/scheduled-notices";;
 "srs")

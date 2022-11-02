@@ -41,6 +41,10 @@ case $rec_type in
 	endpoint="instance-storage/instances";;
 "items")
 	endpoint="item-storage/items";;
+"licenses")
+	endpoint="licenses/licenses"
+	query="sort=name%3Bdesc&perPage=100"
+	offset=100;;
 "locations")
 	endpoint="locations";;
 "loans")

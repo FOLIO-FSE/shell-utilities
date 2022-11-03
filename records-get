@@ -5,8 +5,13 @@ okapi_token=$(cat okapi.token)
 rec_type=$1
 search_for=$2
 
+# endpoints with different behaviors use different defaults
 num_retrieved=1000
+recsretrieved=100
+
 limit=0
+offset=0
+no_total="no"
 
 function fetch_batch() {
 	local offset=$1
@@ -16,6 +21,10 @@ function fetch_batch() {
 case $rec_type in
 "accounts")
 	endpoint="accounts";;
+"agreements")
+	endpoint="erm/sas"
+	query="query=cql.allRecords=1"
+	no_total="yes";;
 "authorities")
 	endpoint="authority-storage/authorities";;
 "boundwiths")
@@ -39,6 +48,10 @@ case $rec_type in
 	endpoint="instance-storage/instances";;
 "items")
 	endpoint="item-storage/items";;
+"licenses")
+	endpoint="licenses/licenses"
+	query="sort=name%3Bdesc"
+	no_total="yes";;
 "locations")
 	endpoint="locations";;
 "loans")
@@ -69,22 +82,38 @@ esac
 
 rm -f ${rec_type}
 
-num_records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&limit=${limit}" |jq -r .totalRecords)
+if [[ ${no_total} == "no" ]];then
+	num_records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&limit=${limit}" |jq -r .totalRecords)
 
-for (( offset=0; offset<=$num_records; ));do
-	for ((t=0; t<=4; t=$(($t + 1)) )); do
-		if [[ $offset -le $num_records ]];then 
-			fetch_batch $offset &
-			offset=$(($offset + $num_retrieved))
-		fi
+	for (( offset=0; offset<=$num_records; ));do
+		for ((t=0; t<=4; t=$(($t + 1)) )); do
+			if [[ $offset -le $num_records ]];then 
+				fetch_batch $offset &
+				offset=$(($offset + $num_retrieved))
+			fi
+		done
+		wait
+			
+		cat tmp_${rec_type}.* >> ${rec_type}
+		rm tmp_${rec_type}.*
+	
+		if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset $num_records;fi
 	done
-	wait
-		
-	cat tmp_${rec_type}.* >> ${rec_type}
-	rm tmp_${rec_type}.*
-
-	if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset $num_records;fi
-done
+else
+	# Licenses and agreements need totally different handling
+	while [[ $recsretrieved -eq 100 ]] ;do
+	        apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&perPage=100&offset=$offset")
+	
+	        recsretrieved=$(echo ${apicall} |jq '. |length')
+	        num_records=$(($offset + $recsretrieved))
+	        printf "%s records retrieved\r" $num_records
+	
+	        $(echo ${apicall} |jq .[] >> ${rec_type})
+	        offset=$(($offset + 100))
+	        done
+	
+	echo "$num_records records retrieved"
+fi
 
 echo "$num_records records have been exported to \"${rec_type}\""
 

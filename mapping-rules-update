@@ -1,8 +1,3 @@
-#
-# updates existing mapping rule file with
-# mapping-rules.json
-#
-# usage: ./mapping-rules
 
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
@@ -25,12 +20,6 @@ esac
 if [[ ! -f mapping-rules-${rules}.json ]];then echo "Your data file must be named mapping-rules-${rules}.json";exit;fi
 
 
-curl --http1.1 -s -w '\n' -X PUT \
--H "Content-type: application/json" \
--H "Accept: application/json" \
--H "X-Okapi-Tenant: ${tenant}" \
--H "x-okapi-token: ${okapi_token}" \
--d @mapping-rules-${rules}.json \
-"${okapi_url}/mapping-rules/marc-${rules}"
+curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d @mapping-rules-${rules}.json "${okapi_url}/mapping-rules/marc-${rules}"
 
 

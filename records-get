@@ -6,6 +6,7 @@ rec_type=$1
 search_for=$2
 
 num_retrieved=1000
+limit=0
 
 function fetch_batch() {
 	local offset=$1
@@ -15,9 +16,6 @@ function fetch_batch() {
 case $rec_type in
 "accounts")
 	endpoint="accounts";;
-"agreements")
-	endpoint="erm/sas"
-	query="query=cql.allRecords=1&perPage=100" ;;
 "authorities")
 	endpoint="authority-storage/authorities";;
 "boundwiths")
@@ -61,6 +59,7 @@ case $rec_type in
 	endpoint="scheduled-notice-storage/scheduled-notices";;
 "srs")
 	rec_type="records"
+	limit=1
 	endpoint="source-storage/records";;
 "users")
 	endpoint="users";;
@@ -70,7 +69,7 @@ esac
 
 rm -f ${rec_type}
 
-num_records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&limit=1" |jq -r .totalRecords)
+num_records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&limit=${limit}" |jq -r .totalRecords)
 
 for (( offset=0; offset<=$num_records; ));do
 	for ((t=0; t<=4; t=$(($t + 1)) )); do

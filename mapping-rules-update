@@ -11,6 +11,9 @@ case ${1} in
 "bibs")
         rules="bib"
         ;;
+"authorities")
+        rules="authority"
+        ;;
 *)
         echo "You must indicate bib, holdings, or authority"
         exit

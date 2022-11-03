@@ -19,6 +19,8 @@ case ${1} in
         ;;
 esac
 
+if [[ ! -f mapping-rules-${rules}.json ]];then echo "Your data file must be named mapping-rules-${rules}.json";exit;fi
+
 
 curl --http1.1 -s -w '\n' -X PUT \
 -H "Content-type: application/json" \

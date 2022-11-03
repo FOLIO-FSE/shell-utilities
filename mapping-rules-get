@@ -16,8 +16,6 @@ case ${1} in
 	;;
 esac
 
-apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/mapping-rules/marc-${rules}")
+curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/mapping-rules/marc-${rules}" |jq . > "mapping-rules-${rules}.json"
 
-mappingrules=$(echo $apicall)
-
-echo $mappingrules |jq '.'
+echo "Mapping rules have been output to mapping-rules-${rules}.json"

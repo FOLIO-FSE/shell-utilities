@@ -15,14 +15,13 @@ numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 fixrecord() {
 	local uuid=${1}
-	local value=${2}
-	local fileno=${3}
+	local value="b8720882-7cf9-44b5-abc7-390a9856cca6"
 	local updated_record
 	local apicall
 
 	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}")
 	updated_record=$(echo ${apicall}  |jq  --arg VALUE "${value}" '
-                (.instanceId = $VALUE)
+                (.permanentLoanTypeId = $VALUE)
 ')
 	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_record}" "${okapi_url}/${recordtype}/${uuid}")
 
@@ -101,16 +100,16 @@ case $recordtype in
 	;;
 esac
 
-counter=1
+counter=0
 
 while mapfile -t -n 6 ids && ((${#ids[@]})); do
 	for line in "${ids[@]}";do
 		line=${line//$'\t'/^}
 
-		IFS='^' read -r poline bibno instanceId <<< "${line}"
+		IFS='^' read -r uuid <<< "${line}"
 		seq=0
 
-		fixrecord ${poline} ${instanceId} ${seq} &
+		fixrecord ${uuid} ${seq} &
 
 		counter=$(($counter + 1))
 		seq=$(($seq + 1))

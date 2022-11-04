@@ -54,6 +54,8 @@ case $rec_type in
 	no_total="yes";;
 "locations")
 	endpoint="locations";;
+"loantypes")
+	endpoint="loan-types";;
 "loans")
 	endpoint="circulation/loans";;
 "notes")

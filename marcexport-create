@@ -3,7 +3,7 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-uuid=$(tr -dc "[0-9a-f\-]" <<< $1)
+uuid=${1//[^0-9a-f\-]}
 
 IFS='' read -r -d '' data << EndOfJSON
 {

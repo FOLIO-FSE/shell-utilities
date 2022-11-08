@@ -57,7 +57,7 @@ function showmatches() {
 }
 
 
-echo "Downloading data for call number types, identifier types, item note types, instance note types, item material types, loan types, and locations. Please be patient"
+echo "Downloading data for call number types, identifier types, item note types, instance note types, holdings note types, item material types, loan types, usergroups, and locations. Please be patient"
 
 showmatches "callNumberTypes" 
 showmatches "locations" 

@@ -34,14 +34,14 @@ function showmatches() {
         ;;
 	"locations")
 		endpoint="locations"
-		jq=".${matchtype}[] | select((.name |ascii_downcase |contains(\"${search}\")) or (.code | ascii_downcase |contains(\"${search}\"))) | [\"${matchtype}\", .id, .code, .name] |@tsv"
+		jq=".${matchtype}[] | select((.name |ascii_downcase |contains(\"${search}\")) or (.code | ascii_downcase |contains(\"${search}\"))  or (.id == \"${search}\")) | [\"${matchtype}\", .id, .code, .name] |@tsv"
         ;;
 	"mtypes")
 		endpoint="material-types"
         ;;
 	"usergroups")
 		endpoint="groups"
-		jq=".${matchtype}[] | select(.group  |ascii_downcase |contains(\"${search}\")) | [\"${matchtype}\", .id, .group] |@tsv"
+		jq=".${matchtype}[] | select((.group  |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"${matchtype}\", .id, .group] |@tsv"
         ;;
 	*)
 		echo "No matching endpoint could be found. Quitting"

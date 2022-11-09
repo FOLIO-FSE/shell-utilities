@@ -23,8 +23,14 @@ function showmatches() {
 	"instanceNoteTypes")
 		endpoint="instance-note-types"
         ;;
+	"instanceTypes")
+		endpoint="instance-types"
+        ;;
 	"holdingsNoteTypes")
 		endpoint="holdings-note-types"
+        ;;
+	"instanceFormats")
+		endpoint="instance-formats"
         ;;
 	"itemNoteTypes")
 		endpoint="item-note-types"
@@ -57,12 +63,14 @@ function showmatches() {
 }
 
 
-echo "Downloading data for call number types, identifier types, item note types, instance note types, holdings note types, item material types, loan types, usergroups, and locations. Please be patient"
+echo "Downloading data for call number types, identifier types, item note types, instance note types, holdings note types, instance formats, instance types, item material types, loan types, usergroups, and locations. Please be patient"
 
 showmatches "callNumberTypes" 
 showmatches "locations" 
 showmatches "loantypes" 
 showmatches "identifierTypes" 
+showmatches "instanceFormats" 
+showmatches "instanceTypes" 
 showmatches "instanceNoteTypes" 
 showmatches "holdingsNoteTypes" 
 showmatches "itemNoteTypes" 

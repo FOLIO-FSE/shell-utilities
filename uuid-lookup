@@ -10,7 +10,10 @@ if [[ ${search} == "" ]];then echo "You must supply some input";exit;fi
 
 function showmatches() {
 
-	matchtype="${1}"
+	local matchtype="${1}"
+	local endpoint
+	local jq
+
 	jq=".${matchtype}[] | select((.name |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
 
 	case $matchtype in
@@ -47,6 +50,7 @@ function showmatches() {
         ;;
 	"statisticalCodes")
 		endpoint="statistical-codes"
+		jq=".${matchtype}[] | select((.name |ascii_downcase |contains(\"${search}\"))  or (.code | ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"${matchtype}\", .id, .code,.name] |@tsv"
         ;;
 	"usergroups")
 		endpoint="groups"
@@ -66,19 +70,14 @@ function showmatches() {
 }
 
 
-echo "Downloading data for call number types, identifier types, item note types, instance note types, holdings note types, instance formats, instance types, item material types, loan types, usergroups, statcodes, and locations. Please be patient"
+echo "Downloading data for call number types, identifier types, item note types, instance note types, holdings note types, instance formats, instance types, item material types, loan types, usergroups, statcodes, and locations."
 
-showmatches "callNumberTypes" 
-showmatches "locations" 
-showmatches "loantypes" 
-showmatches "identifierTypes" 
-showmatches "instanceFormats" 
-showmatches "instanceTypes" 
-showmatches "instanceNoteTypes" 
-showmatches "holdingsNoteTypes" 
-showmatches "itemNoteTypes" 
-showmatches "mtypes" 
-showmatches "statisticalCodes" 
-showmatches "usergroups" 
+rec_array=("callNumberTypes"  "locations"  "loantypes"  "identifierTypes"  "instanceFormats"  "instanceTypes"  "instanceNoteTypes"  "holdingsNoteTypes"  "itemNoteTypes"  "mtypes"  "statisticalCodes"  "usergroups")
+
+for rec_type in "${rec_array[@]}";do
+	showmatches ${rec_type} &
+done
+wait
+
 
 

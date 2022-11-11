@@ -8,6 +8,8 @@ search_for=$2
 # endpoints with different behaviors use different defaults
 num_retrieved=1000
 recsretrieved=100
+sortby="%20sortby%20id"
+query="query=cql.allRecords=1"
 
 limit=0
 offset=0
@@ -23,7 +25,6 @@ case $rec_type in
 	endpoint="accounts";;
 "agreements")
 	endpoint="erm/sas"
-	query="query=cql.allRecords=1"
 	no_total="yes";;
 "authorities")
 	endpoint="authority-storage/authorities";;
@@ -56,13 +57,17 @@ case $rec_type in
 	endpoint="locations";;
 "loantypes")
 	endpoint="loan-types";;
+"loan-history")
+	endpoint="loan-storage/loan-history"
+	rec_type="loansHistory";;
 "loans")
-	endpoint="circulation/loans";;
+	endpoint="loan-storage/loans";;
 "notes")
 	endpoint="notes";;
 "organizations")
 	endpoint="organizations-storage/organizations"
-	query="query=%28status%3D%3D%22Active%22%29+sortby+name%2Fsort.ascending"
+	query="query=%28status%3D%3D%22Active%22%29"
+	#sortby="+sortby+name%2Fsort.ascending"
 	num_retrieved=100
 	;;
 "polines")

@@ -99,12 +99,10 @@ while mapfile -t -n 10 ids && ((${#ids[@]})); do
 		line=${line//$'\t'/^}
 
 		IFS='^' read -r uuid <<< "${line}"
-		seq=0
 
-		checkrecord ${uuid} ${seq} &
+		checkrecord ${uuid}  &
 
 		counter=$(($counter + 1))
-		seq=$(($seq + 1))
 		printf "%s records checked of %s\r" $counter $numrecs
 	done
 	wait

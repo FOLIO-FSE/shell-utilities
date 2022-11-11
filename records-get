@@ -83,6 +83,9 @@ case $rec_type in
 	rec_type="records"
 	limit=1
 	endpoint="source-storage/records";;
+"statcodes")
+	rec_type="statisticalCodes"
+	endpoint="statistical-codes";;
 "users")
 	endpoint="users";;
 *)

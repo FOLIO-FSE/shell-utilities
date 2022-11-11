@@ -45,6 +45,9 @@ function showmatches() {
 	"mtypes")
 		endpoint="material-types"
         ;;
+	"statisticalCodes")
+		endpoint="statistical-codes"
+        ;;
 	"usergroups")
 		endpoint="groups"
 		jq=".${matchtype}[] | select((.group  |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"${matchtype}\", .id, .group] |@tsv"
@@ -63,7 +66,7 @@ function showmatches() {
 }
 
 
-echo "Downloading data for call number types, identifier types, item note types, instance note types, holdings note types, instance formats, instance types, item material types, loan types, usergroups, and locations. Please be patient"
+echo "Downloading data for call number types, identifier types, item note types, instance note types, holdings note types, instance formats, instance types, item material types, loan types, usergroups, statcodes, and locations. Please be patient"
 
 showmatches "callNumberTypes" 
 showmatches "locations" 
@@ -75,6 +78,7 @@ showmatches "instanceNoteTypes"
 showmatches "holdingsNoteTypes" 
 showmatches "itemNoteTypes" 
 showmatches "mtypes" 
+showmatches "statisticalCodes" 
 showmatches "usergroups" 
 
 

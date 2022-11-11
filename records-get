@@ -77,6 +77,8 @@ case $rec_type in
 	endpoint="circulation/requests";;
 "schedulednotices")
 	endpoint="scheduled-notice-storage/scheduled-notices";;
+"servicepoints")
+	endpoint="service-points";;
 "srs")
 	rec_type="records"
 	limit=1

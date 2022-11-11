@@ -43,14 +43,14 @@ function showmatches() {
         ;;
 	"locations")
 		endpoint="locations"
-		jq=".${matchtype}[] | select((.name |ascii_downcase |contains(\"${search}\")) or (.code | ascii_downcase |contains(\"${search}\"))  or (.id == \"${search}\")) | [\"${matchtype}\", .id, .code, .name] |@tsv"
+		jq="code_name"
         ;;
 	"mtypes")
 		endpoint="material-types"
         ;;
 	"statisticalCodes")
 		endpoint="statistical-codes"
-		jq=".${matchtype}[] | select((.name |ascii_downcase |contains(\"${search}\"))  or (.code | ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"${matchtype}\", .id, .code,.name] |@tsv"
+		jq="code_name"
         ;;
 	"usergroups")
 		endpoint="groups"
@@ -61,6 +61,11 @@ function showmatches() {
 		exit	
         ;;
 	esac
+
+	if [[ ${jq} == "code_name" ]];then 
+		jq=".${matchtype}[] | select((.name |ascii_downcase |contains(\"${search}\"))  or (.code | ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"${matchtype}\", .id, .code,.name] |@tsv"
+	fi
+		
 
 	output=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?query=cql.allRecords=1&limit=5000" \
 		|jq -r "${jq}") 

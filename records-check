@@ -1,0 +1,115 @@
+# Supply without a uuid to delete all of many record types
+# 
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+infile=infile
+recordtype=$1
+
+if [[ ! -f ${infile} ]]; then echo "This script cannot find input file ${infile}";exit;fi
+if [[ $# -eq 0 ]]; then echo "You must enter a record type";exit;fi
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+checkrecord() {
+	local uuid=${1}
+	local apicall
+
+	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}")
+	if [[ ${apicall} == *"Not found"* ]];then echo "${uuid} not found";fi
+
+}
+
+
+case $recordtype in
+"campuses")
+	recordtype="location-units/campuses"
+	;;
+"groups")
+	recordtype="groups"
+	;;
+"holdings")
+	recordtype="holdings-storage/holdings"
+	;;
+"instances")
+	recordtype="instance-storage/instances"
+	;;
+"instance-types")
+	recordtype="instance-types"
+	;;
+"interfaces")
+	recordtype="organizations-storage/interfaces"
+	;;
+"invoices")
+	recordtype="invoice/invoices"
+	;;
+"invoice-lines")
+	recordtype="invoice/invoice-lines"
+	;;
+"items")
+	recordtype="item-storage/items"
+	;;
+"libraries")
+	recordtype="location-units/libraries"
+	;;
+"licenses")
+	recordtype="licenses/licenses"
+	;;
+"loans")
+	recordtype="loan-storage/loans"
+	;;
+"locations")
+	recordtype="locations"
+	;;
+"notices")
+	recordtype="scheduled-notice-storage/scheduled-notices"
+	;;
+"organizations")
+	recordtype="organizations/organizations"
+	;;
+"polines")
+	recordtype="orders-storage/po-lines"
+	;;
+"requests")
+	recordtype="circulation/requests"
+	;;
+"servicepoints")
+	recordtype="service-points"
+	;;
+"srs")
+        recordtype="source-storage/records"
+        ;;
+"tags")
+	recordtype="tags"
+	;;
+"users")
+	recordtype="users"
+	;;
+*)
+	echo "Record type '${recordtype}' not found. Supported types are campuses, groups, holdings, instances, instance-types, interfaces, items, libraries, licenses, loans, locations, notices, organizations, polines, requests, servicepoints, srs, tags, users. Objects with attached records will need specialized delete routines"
+	exit
+	;;
+esac
+
+counter=0
+
+while mapfile -t -n 10 ids && ((${#ids[@]})); do
+	for line in "${ids[@]}";do
+		line=${line//$'\t'/^}
+
+		IFS='^' read -r uuid <<< "${line}"
+		seq=0
+
+		checkrecord ${uuid} ${seq} &
+
+		counter=$(($counter + 1))
+		seq=$(($seq + 1))
+		printf "%s records checked of %s\r" $counter $numrecs
+	done
+	wait
+
+done < ${infile}
+
+echo "Finished checking $numrecs ${recordtype} records"
+

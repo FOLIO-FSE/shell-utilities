@@ -86,7 +86,7 @@ while mapfile -t -n 10 uuids && ((${#uuids[@]})); do
 	for uuid in ${uuids[@]};do
 		delete_record ${uuid} &
 		counter=$(($counter + 1))
-		printf "Processing %s -- record %s of %s\r" $uuid $counter $numrecs
+		printf "Processing record %s of %s\r" $counter $numrecs
 	done
 	wait
 done < ${deletefile}

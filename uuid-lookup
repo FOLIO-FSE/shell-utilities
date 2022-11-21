@@ -38,7 +38,7 @@ function showmatches() {
 	"itemNoteTypes")
 		endpoint="item-note-types"
         ;;
-	"loanpolicies")
+	"loanPolicies")
 		endpoint="loan-policy-storage/loan-policies"
         ;;
 	"loantypes")
@@ -80,7 +80,7 @@ function showmatches() {
 
 echo "Downloading data for call number types, identifier types, item note types, instance note types, holdings note types, instance formats, instance types, item material types, loan policies, loan types, usergroups, statcodes, and locations."
 
-rec_array=("callNumberTypes"  "locations"  "loanpolicies" "loantypes"  "identifierTypes"  "instanceFormats"  "instanceTypes"  "instanceNoteTypes"  "holdingsNoteTypes"  "itemNoteTypes"  "mtypes"  "statisticalCodes"  "usergroups")
+rec_array=("callNumberTypes"  "locations"  "loanPolicies" "loantypes"  "identifierTypes"  "instanceFormats"  "instanceTypes"  "instanceNoteTypes"  "holdingsNoteTypes"  "itemNoteTypes"  "mtypes"  "statisticalCodes"  "usergroups")
 
 for rec_type in "${rec_array[@]}";do
 	showmatches ${rec_type} &

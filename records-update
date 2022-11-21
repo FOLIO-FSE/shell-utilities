@@ -15,15 +15,16 @@ numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 fixrecord() {
 	local uuid=${1}
-	local value="b8720882-7cf9-44b5-abc7-390a9856cca6"
+	local value="f98a99b1-2530-4ba7-825a-5de1e616c4a2"
 	local updated_record
 	local apicall
 
 	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}")
-	updated_record=$(echo ${apicall}  |jq  --arg VALUE "${value}" '
+	updated_record=$(echo "${apicall}"  |jq -cr --arg VALUE "${value}" '
                 (.permanentLoanTypeId = $VALUE)
 ')
 	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_record}" "${okapi_url}/${recordtype}/${uuid}")
+
 
 	echo "${apicall}" |jq -c |grep -i [a-z] >> "tmp_records.${fileno}"
 

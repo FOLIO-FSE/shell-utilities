@@ -63,6 +63,7 @@ case $rec_type in
 "loans")
 	endpoint="loan-storage/loans";;
 "notes")
+	limit=1
 	endpoint="notes";;
 "organizations")
 	endpoint="organizations-storage/organizations"

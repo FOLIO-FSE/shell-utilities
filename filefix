@@ -12,11 +12,14 @@ else
 	infile=${1}
 fi
 
-if [[ ! -f ${infile} ]];then echo "The input file ${infile} could not be found";exit;fi
-
 echo "Detecting and removing trailing carriage returns"
 echo
-dos2unix ${infile}
+
+if [[ ! -f ${infile} ]];then echo "The input file ${infile} could not be found";exit;fi
+
+sed -i 's/\r$//' ${infile}
+iconv -f utf-8 -t utf-8 -c ${infile} -o tmp_infile
+mv tmp_infile ${infile}
 
 # detect file characteristics. First line is assumed to contain either tabs or commas
 
@@ -148,10 +151,10 @@ if [[ -f tmp_counters ]];then
 		sort ${f} |uniq -c |sort -k1nr > ${f}.counter
 		echo "Here are the 10 most common values:"
 		head ${f}.counter
-		rm ${f}
+		#rm ${f}
 		echo
 		echo "${f}.counter contains the frequency of all values encountered"
 		echo
 	done
-	rm -f tmp_counters
+	#rm -f tmp_counters
 fi

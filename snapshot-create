@@ -9,7 +9,7 @@ okapi_token=$(cat okapi.token)
 
 IFS='' read -r -d '' data << EndOfJSON
 {
-    "jobExecutionId" : "67dfac11-1caf-4470-9ad1-d533f6360bdd",
+    "jobExecutionId" : "$(uuidgen)",
     "status" : "PARSING_IN_PROGRESS",
     "metadata" : {
       "createdDate" : "2020-11-19T11:48:49.547+00:00",

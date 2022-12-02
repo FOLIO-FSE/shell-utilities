@@ -19,7 +19,7 @@ postrecord() {
 
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/${recordtype}")
 
-	echo "${apicall}" |jq -c |grep -i [a-z] >> "tmp_records.${fileno}"
+	echo "${apicall}" | tr -d '\n' |sed 's/$/\n/' >> ${outfile}
 
 }
 
@@ -95,20 +95,11 @@ case $recordtype in
 esac
 
 counter=0
-while mapfile -t -n 6 lines && ((${#lines[@]})); do
-	for line in "${lines[@]}";do
-		seq=0
+while IFS=$'\n' read -r line; do
+	postrecord "${line}" ${seq} &
 
-		postrecord "${line}" ${seq} &
-
-		counter=$(($counter + 1))
-		seq=$(($seq + 1))
-		printf "Processing record %s of %s\r" $counter $numrecs
-	done
-	wait
-
-	cat tmp_records.* >> ${outfile}
-	rm tmp_records.*
+	counter=$(($counter + 1))
+	printf "Processing record %s of %s\r" $counter $numrecs
 
 done < ${infile}
 

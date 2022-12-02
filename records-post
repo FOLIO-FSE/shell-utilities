@@ -1,22 +1,116 @@
-# Creates statcodes based on contents of tab delimited file
-#
-# Code is expected in column 1 of a file named "locations"
-# Display name is set in column 2
-# Set statcode type ID before using
-
+# Supply without a uuid to delete all of many record types
+# 
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-endpoint='holdings-storage/holdings'
+infile=infile
+outfile=outfile
+recordtype=$1
+
+if [[ ! -f ${infile} ]]; then echo "This script cannot find input file ${infile}";exit;fi
+if [[ $# -eq 0 ]]; then echo "You must enter a record type";exit;fi
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+postrecord() {
+	local record="${1}"
+	local apicall
+
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/${recordtype}")
+
+	echo "${apicall}" |jq -c |grep -i [a-z] >> "tmp_records.${fileno}"
+
+}
 
 
-while read record
-do
+case $recordtype in
+"campuses")
+	recordtype="location-units/campuses"
+	;;
+"groups")
+	recordtype="groups"
+	;;
+"holdings")
+	recordtype="holdings-storage/holdings"
+	;;
+"instances")
+	recordtype="instance-storage/instances"
+	;;
+"instance-types")
+	recordtype="instance-types"
+	;;
+"interfaces")
+	recordtype="organizations-storage/interfaces"
+	;;
+"invoices")
+	recordtype="invoice/invoices"
+	;;
+"invoice-lines")
+	recordtype="invoice/invoice-lines"
+	;;
+"items")
+	recordtype="item-storage/items"
+	;;
+"libraries")
+	recordtype="location-units/libraries"
+	;;
+"licenses")
+	recordtype="licenses/licenses"
+	;;
+"loans")
+	recordtype="loan-storage/loans"
+	;;
+"locations")
+	recordtype="locations"
+	;;
+"notices")
+	recordtype="scheduled-notice-storage/scheduled-notices"
+	;;
+"organizations")
+	recordtype="organizations/organizations"
+	;;
+"polines")
+	recordtype="orders-storage/po-lines"
+	;;
+"requests")
+	recordtype="circulation/requests"
+	;;
+"servicepoints")
+	recordtype="service-points"
+	;;
+"srs")
+        recordtype="source-storage/records"
+        ;;
+"tags")
+	recordtype="tags"
+	;;
+"users")
+	recordtype="users"
+	;;
+*)
+	echo "Record type '${recordtype}' not found. Supported types are campuses, groups, holdings, instances, instance-types, interfaces, items, libraries, licenses, loans, locations, notices, organizations, polines, requests, servicepoints, srs, tags, users. Objects with attached records will need specialized delete routines"
+	exit
+	;;
+esac
 
-apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/${endpoint}")
+counter=0
+while mapfile -t -n 6 lines && ((${#lines[@]})); do
+	for line in "${lines[@]}";do
+		seq=0
 
-echo -e "${apicall}" |jq .
-done < records
+		postrecord "${line}" ${seq} &
 
+		counter=$(($counter + 1))
+		seq=$(($seq + 1))
+		printf "Processing record %s of %s\r" $counter $numrecs
+	done
+	wait
+
+	cat tmp_records.* >> ${outfile}
+	rm tmp_records.*
+
+done < ${infile}
+
+echo "Finished processing $numrecs ${recordtype} records"
 

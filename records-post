@@ -5,8 +5,8 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 infile=infile
-outfile=outfile
 recordtype=$1
+outfile="${recordtype}_posting.log"
 
 if [[ ! -f ${infile} ]]; then echo "This script cannot find input file ${infile}";exit;fi
 if [[ $# -eq 0 ]]; then echo "You must enter a record type";exit;fi
@@ -96,12 +96,13 @@ esac
 
 counter=0
 while IFS=$'\n' read -r line; do
-	postrecord "${line}" ${seq} &
+	postrecord "${line}" 
 
 	counter=$(($counter + 1))
 	printf "Processing record %s of %s\r" $counter $numrecs
 
 done < ${infile}
 
-echo "Finished processing $numrecs ${recordtype} records"
+echo "Finished processing $numrecs ${recordtype} records."
+echo "API output has been sent to ${outfile}"
 

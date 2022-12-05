@@ -87,6 +87,9 @@ case $rec_type in
 "statcodes")
 	rec_type="statisticalCodes"
 	endpoint="statistical-codes";;
+"tags")
+	endpoint="tags"
+	no_total="yes";;
 "users")
 	endpoint="users";;
 *)

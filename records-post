@@ -1,15 +1,16 @@
-# Supply without a uuid to delete all of many record types
-# 
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 infile=infile
 recordtype=$1
+operation="POST"
+
 outfile="${recordtype}_posting.log"
 
 if [[ ! -f ${infile} ]]; then echo "This script cannot find input file ${infile}";exit;fi
 if [[ $# -eq 0 ]]; then echo "You must enter a record type";exit;fi
+if [[ $operation != "POST" && $operation != "PUT" ]]; then echo "Operation must be POST or PUT";exit;fi
 
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
@@ -18,7 +19,12 @@ postrecord() {
 	local seq="${2}"
 	local apicall
 
-	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/${recordtype}")
+	if [[ ${operation} == "POST" ]];then
+		apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/${recordtype}")
+	else
+		id=$(echo "${record}" |jq -r .id)
+		apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/${recordtype}/${id}")
+	fi
 	
 	echo "${apicall}" | tr -d '\n' |sed 's/$/\n/' > "tmp_records.${seq}"
 

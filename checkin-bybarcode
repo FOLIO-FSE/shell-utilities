@@ -1,9 +1,12 @@
-
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 date=$(date +"%Y-%m-%dT%H:%M:%S%:z")
+infile="barcodes"
+outfile="checkin.log"
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 while read -r barcode;do 
 
@@ -16,11 +19,14 @@ IFS='' read -r -d '' data << EndOfJSON
 EndOfJSON
 
 
-apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/circulation/check-in-by-barcode")
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/circulation/check-in-by-barcode")
 
-echo -e "${apicall}" |jq '.'
+	printf "Checking in %s -- item %s of %s\r" ${barcode} $counter $numrecs
+	echo -e "${barcode}	${apicall}" | tr -d '\n' |sed 's/$/\n/' > ${outfile}
 
-done < barcodes
+done < ${infile}
 
+echo "Finished processing $numrecs ${recordtype} records."
+echo "API output has been sent to ${outfile}"
 
 

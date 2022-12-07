@@ -7,6 +7,7 @@ infile="barcodes"
 outfile="checkin.log"
 
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
+counter=0
 
 while read -r barcode;do 
 
@@ -21,8 +22,10 @@ EndOfJSON
 
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/circulation/check-in-by-barcode")
 
+	counter=$(($counter + 1))
+
 	printf "Checking in %s -- item %s of %s\r" ${barcode} $counter $numrecs
-	echo -e "${barcode}	${apicall}" | tr -d '\n' |sed 's/$/\n/' > ${outfile}
+	echo -e "${barcode}	${apicall}" | tr -d '\n' |sed 's/$/\n/' >> ${outfile}
 
 done < ${infile}
 

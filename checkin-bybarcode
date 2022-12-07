@@ -26,7 +26,7 @@ EndOfJSON
 
 done < ${infile}
 
-echo "Finished processing $numrecs ${recordtype} records."
+echo "Finished checking in $numrecs items."
 echo "API output has been sent to ${outfile}"
 
 

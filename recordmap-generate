@@ -1,0 +1,53 @@
+#!/usr/bin/python
+import csv
+import uuid
+
+namespace=uuid.UUID(b'8405ae4d-b315-42e1-918a-d1919900cf3f')
+
+rectype = 'instance'
+strip = 'yes'
+
+base = 'https://okapi-crl.folio.ebsco.com:'
+infile = 'sierra_bibnos'
+
+#infile = open('sierra_bibnos', 'r')
+with open(infile) as sourcefile:
+    recnos = sourcefile.readlines()
+
+#recnos = csv.reader(infile, delimiter = '\t')
+
+holding_base = base + 'holdings:'
+instance_base = base + 'instances:'
+item_base = base + 'items:'
+bw_base = base + 'boundwiths:'
+
+
+outfile = open(rectype + '_id_map_current.json', 'w')
+
+counter = 0
+
+for recno in recnos:
+    original_recno = recno.strip()    
+    recno = original_recno
+
+    if strip == 'yes': 
+        recno = original_recno[:-1].strip(".")
+
+    if rectype == 'instance':
+        folio_id = str(uuid.uuid5(namespace, instance_base + recno)) 
+    if rectype == 'holdings':
+        folio_id = str(uuid.uuid5(namespace, holding_base + recno)) 
+    if rectype == 'items':
+        folio_id = str(uuid.uuid5(namespace, holding_base + recno)) 
+
+    entry = '{"legacy_id": "' + original_recno + '", "folio_id": "' + folio_id + '"}\n'
+
+    outfile.write(entry)
+    
+    if counter % 10000 == 0:
+        print("Number of records processed: %s \r" % counter)    
+
+    counter = counter + 1
+
+
+print str(counter) + " records have been written to " + outfile.name

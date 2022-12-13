@@ -20,6 +20,9 @@ function showmatches() {
 	"callNumberTypes")
 		endpoint="call-number-types"
         ;;
+	"holdingsRecordsSources")
+		endpoint="holdings-sources"
+        ;;
 	"identifierTypes")
 		endpoint="identifier-types"
         ;;
@@ -78,14 +81,13 @@ function showmatches() {
 }
 
 
-echo "Downloading data for call number types, identifier types, item note types, instance note types, holdings note types, instance formats, instance types, item material types, loan policies, loan types, usergroups, statcodes, and locations."
+echo "Downloading data for call number types, identifier types, item note types, instance note types, holdings record sources, holdings note types, instance formats, instance types, item material types, loan policies, loan types, usergroups, statcodes, and locations."
 
-rec_array=("callNumberTypes"  "locations"  "loanPolicies" "loantypes"  "identifierTypes"  "instanceFormats"  "instanceTypes"  "instanceNoteTypes"  "holdingsNoteTypes"  "itemNoteTypes"  "mtypes"  "statisticalCodes"  "usergroups")
+rec_array=("callNumberTypes"  "locations"  "loanPolicies" "loantypes"  "identifierTypes"  "instanceFormats"  "instanceTypes"  "instanceNoteTypes"  "holdingsRecordsSources" "holdingsNoteTypes"  "itemNoteTypes"  "mtypes"  "statisticalCodes"  "usergroups")
 
 for rec_type in "${rec_array[@]}";do
 	showmatches ${rec_type} &
 done
 wait
-
 
 

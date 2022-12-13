@@ -1,0 +1,23 @@
+# change permission name and add a list of subpermissions 
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+permissionName="read-only"
+
+IFS='' read -r -d '' permissionset << EndOfPermission
+
+{
+  "permissionName" : "${permissionName}",
+  "displayName" : "${permissionName}",
+  "id" : "$(uuidgen)",
+  "tags" : [ ],
+  "subPermissions" : [ ],
+  "mutable" : true,
+  "visible" : true
+
+}
+EndOfPermission
+
+curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "x-okapi-tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${permissionset}" "${okapi_url}/perms/permissions"

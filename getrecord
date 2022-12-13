@@ -16,7 +16,7 @@ oai_prefix=$(curl -s -X GET "${edge_url}/oai/${edge_key}?verb=Identify" | sed 's
 
 apicall=$(curl -s -X GET "${edge_url}/oai/${edge_key}?verb=GetRecord&identifier=oai:${oai_prefix}:${tenant}/${instance_uuid}&metadataPrefix=marc21_withholdings")
 
-echo $apicall |xmlstarlet fo 
+echo "${apicall}" |xmlstarlet fo 
 echo "${edge_url}/oai/${edge_key}?verb=GetRecord&identifier=identifier=oai:${oai_prefix}:${tenant}/${instance_uuid}&metadataPrefix=marc21_withholdings"
 
 

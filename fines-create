@@ -54,6 +54,7 @@ EndOfJSON
 
 
 all_users=""
+num_users=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?limit=0" |jq -r .totalRecords)
 
 for (( offset=0; offset<=$num_users; offset = offset + 1000 ));do
         all_users=${all_users}$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?query=cql.allRecords=1&limit=1000&offset=$offset" |jq .users[])
@@ -76,7 +77,7 @@ while IFS=$'\n' read -r line; do
 
 
 if [[ ! -z ${userid_dict[${patron_barcode}]} ]];then
-	echo ${userid_dict[${patron_barcode}]}
+	userid=${userid_dict[${patron_barcode}]}
 	create_fine
 	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${fine}" "${okapi_url}/accounts"
 	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${action}" "${okapi_url}/feefineactions"

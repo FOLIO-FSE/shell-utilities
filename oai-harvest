@@ -8,6 +8,12 @@ oai_server="${edge_url}/oai/$(cat edge.key)?verb=ListRecords"
 #### look for single record query and exit
 search=$(echo ${1} |tr "." "-" |tr -dc [^a-z0-9\-])
 
+if [[ ${1} =~ ^[12][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$ ]];then
+	from=$(date -u -d "${1}" +"%Y-%m-%dT%H:%M:%SZ")
+else
+	from=$(date -u -d '1 hour ago' +"%Y-%m-%dT%H:%M:%SZ")
+fi
+
 if [[ ${search} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
         instance_uuid=${search}
 elif [[ ${search} =~ ^in[0-9a]*$ ]];then
@@ -21,7 +27,7 @@ if [[ ${instance_uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]]
         apicall=$(curl -s -X GET "${edge_url}/oai/${edge_key}?verb=GetRecord&identifier=oai:${oai_prefix}:${tenant}/${instance_uuid}&metadataPrefix=marc21_withholdings")
 
         echo "${apicall}" |xmlstarlet fo
-        echo "${edge_url}/oai/${edge_key}?verb=GetRecord&identifier=identifier=oai:${oai_prefix}:${tenant}/${instance_uuid}&metadataPrefix=marc21_withholdings"
+        echo "${edge_url}/oai/${edge_key}?verb=GetRecord&identifier=oai:${oai_prefix}:${tenant}/${instance_uuid}&metadataPrefix=marc21_withholdings"
         exit
 fi
 

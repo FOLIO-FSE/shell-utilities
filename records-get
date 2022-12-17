@@ -46,6 +46,7 @@ case $rec_type in
 "holdingsids")
 	endpoint="record-bulk/ids"
 	query="recordType=HOLDING"
+	#query='recordType=HOLDING&query=(metadata.updatedDate>="2022-11-15T22:44:00Z")'
 	rec_type="ids";;
 "interfaces")
 	endpoint="organizations-storage/interfaces";;
@@ -54,6 +55,7 @@ case $rec_type in
 "instanceids")
 	endpoint="record-bulk/ids"
 	query="recordType=INSTANCE"
+	#query='recordType=INSTANCE&query=(metadata.updatedDate>="2022-11-15T22:44:00Z")'
 	rec_type="ids";;
 "items")
 	endpoint="item-storage/items";;

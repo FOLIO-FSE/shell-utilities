@@ -1,0 +1,18 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+search="$1"
+
+if [[ ! ${search} =~ ^HOLDINGS$|^INSTANCES$ ]];then
+	echo 'Specify rectype HOLDINGS or Instances for first argument and a cql query for the second'
+	exit
+fi
+
+query="${2}"
+
+endpoint="${okapi_url}/record-bulk/ids?recordType=${rectype}&query=(${query})"
+
+apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}")
+	
+echo $apicall |jq .

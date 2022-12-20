@@ -2,17 +2,42 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-search="$1"
-
-if [[ ! ${search} =~ ^HOLDINGS$|^INSTANCES$ ]];then
-	echo 'Specify rectype HOLDINGS or Instances for first argument and a cql query for the second'
-	exit
-fi
-
+entity="${1^^}"
 query="${2}"
 
-endpoint="${okapi_url}/record-bulk/ids?recordType=${rectype}&query=(${query})"
+#if [[ ! ${entity} =~ ^(instance|authority|holdings)$ ]];then echo "You must indicate instance, holdings, or authority record type";exit;fi
+if [[ ${entity} == "" ]];then echo "You must enter a cql query";exit;fi
 
-apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}")
+IFS='' read -d '' -r query << EOM
+{
+  "query":"${query}",
+  "entityType": "${entity}"
+}
+EOM
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${query}" "${okapi_url}/search/resources/jobs")
+
+job_id=$(echo ${apicall} |jq -r .id)
 	
-echo $apicall |jq .
+if [[ ! ${job_id} =~ [a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12} ]]; then
+	echo "Query job creation unsuccessful"
+	echo ${apicall}
+	exit
+fi
+	
+
+status=""
+SECONDS=0
+
+while [[ ${status} == "IN_PROGRESS" ]] ;do
+	status=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/search/resources/jobs/${job_id}" |jq -r .status)
+	echo -n "Time elapsed: $SECONDS seconds, status: ${status}\r"
+	
+	if [[ ${status} == "IN_PROGRESS" ]];then sleep 5;fi
+
+done
+
+curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/search/resources/jobs/${job_id}/ids" > ids
+
+echo "Ids have been downloaded to 'ids'"
+

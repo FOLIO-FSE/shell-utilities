@@ -10,4 +10,6 @@ endpoint="${okapi_url}/search/instances/ids?query=(${query})"
 
 apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}")
 	
-echo "${apicall}" |jq -r .ids[].id
+echo "${apicall}" |jq -r .ids[].id > ids
+
+echo "$(wc -l) ids were sent to 'ids'"

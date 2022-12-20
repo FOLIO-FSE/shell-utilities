@@ -2,16 +2,16 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-entity="${1^^}"
+entity="${1}"
 query="${2}"
 
-#if [[ ! ${entity} =~ ^(instance|authority|holdings)$ ]];then echo "You must indicate instance, holdings, or authority record type";exit;fi
+if [[ ! ${entity} =~ ^(instance|authority|holdings)$ ]];then echo "You x${entity}must indicate instance, holdings, or authority record type";exit;fi
 if [[ ${entity} == "" ]];then echo "You must enter a cql query";exit;fi
 
 IFS='' read -d '' -r query << EOM
 {
   "query":"${query}",
-  "entityType": "${entity}"
+  "entityType": "${entity^^}"
 }
 EOM
 

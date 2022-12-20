@@ -12,4 +12,4 @@ apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Te
 	
 echo "${apicall}" |jq -r .ids[].id > ids
 
-echo "$(wc -l) ids were sent to 'ids'"
+echo "$(wc -l ids |cut -f1) were sent to 'ids'"

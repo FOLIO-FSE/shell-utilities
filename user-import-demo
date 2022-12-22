@@ -79,7 +79,8 @@ IFS='' read -r -d '' users << EndOfUsers
               "addressTypeId" : "Home",
               "primaryAddress" : false
             }
-          ]
+          ],
+	"departments": ["dept1"]
         },
         "expirationDate" : null
       }

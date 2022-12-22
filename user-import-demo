@@ -80,7 +80,11 @@ IFS='' read -r -d '' users << EndOfUsers
               "primaryAddress" : false
             }
           ],
-	"departments": ["dept1"]
+	"departments": ["dept1"],
+	"customFields": {
+        "field1lowercase": "value1",
+        "field2lowercase": "value2"
+      }
         },
         "expirationDate" : null
       }

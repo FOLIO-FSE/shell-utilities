@@ -5,7 +5,16 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 fines_file="fines.tsv"
-fine_owner="1842eee1-d409-45c2-ae9c-beb73e241da6"
+legacySystem="Symphony"
+
+# FeeFine owner must be defined in /settings/users/owners
+fine_owner="8e73624e-df3a-43ec-8be9-bef2abd8d311"
+
+id=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/owners/${fine_owner}" |jq -r .id)
+if [[ $id != "${fine_owner}" ]];then echo "Fine owner not located. Exiting program";exit;fi
+
+# FeeFine type should be defined in /settings/users/feefinestable
+feeFineType="Multa migrada"
 
 rm -rf users_notfound
 
@@ -31,7 +40,7 @@ IFS='' read -r -d '' fine << EndOfJSON
   "status":{"name":"Open"},
   "amount": "${fineamount}",
   "remaining": "${fineamount}",
-  "feeFineType": "Migrated Fees/Fines",
+  "feeFineType": "${feeFineType}",
   "id": "${fineId}",
   "userId": "${userid}"
 }
@@ -44,7 +53,7 @@ IFS='' read -r -d '' action << EndOfJSON
   "amountAction": "${fineamount}",
   "balance":"${fineamount}",
   "transactionInformation":"",
-  "comments": "Item charge: ${item_charge}, Processing fee: ${processing_fee}, Billing fee: ${billing_fee} for item ${item_barcode} assessed ${fee_assess_date} migrated from Sierra",
+  "comments": "Multa migrado de ${legacySystem} valorada ${fee_assess_date} en \$${item_charge} por item ${item_barcode}",
   "notify":false,
   "id": "${actionId}",
   "userId": "${userid}"
@@ -71,7 +80,7 @@ numloans=$(cat ${fines_file} |wc -l)
 
 while IFS=$'\n' read -r line; do
 	line=$(tr "\t" "^" <<< "${line}")
-	IFS=$'^' read -r item_barcode patron_barcode item_charge processing_fee billing_fee fineamount fee_assess_date <<< "${line}"
+	IFS=$'^' read -r patron_barcode item_charge item_barcode fee_assess_date fineamount <<< "${line}"
 
 	echo "Processing record $counter of ${numloans}"
 

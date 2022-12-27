@@ -20,7 +20,7 @@ updaterecord() {
 	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/${recordtype}/${uuid}")
 
 
-	echo "${apicall}" |jq -c |grep -i [a-z] >> "tmp_records.${fileno}"
+	echo "${apicall}" |jq -c .  |grep -i [a-z] >> "tmp_records.${fileno}"
 
 }
 

@@ -6,11 +6,19 @@ okapi_token=$(cat okapi.token)
 
 deletetype=$1
 deletefile="delete"
+outfile=delete.log
+rm -rf ${outfile}
+
 numrecs=$(wc -l ${deletefile} |cut -d " " -f1)
+errors=0
 
 delete_record() {
 	local uuid=${1//[^0-9a-z\-]/}
-	local apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}")
+	local seq=$2
+	local apicall=$(curl -sI -w '%{http_code}' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}")
+	apicall=${apicall:(-3)}
+
+	echo "${apicall} ${uuid}" >> "tmp_log.${seq}"
 }
 
 case $deletetype in
@@ -86,12 +94,21 @@ if [[ ${uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
 fi
 
 while mapfile -t -n 10 uuids && ((${#uuids[@]})); do
+	seq=0
 	for uuid in ${uuids[@]};do
-		delete_record ${uuid} &
+		delete_record ${uuid} ${seq} &
+		seq=$(($seq + 1))
 		counter=$(($counter + 1))
-		printf "Processing record %s of %s\r" $counter $numrecs
+		printf "Processing record %s of %s \r" $counter $numrecs 
 	done
 	wait
+	cat tmp_log.* >> ${outfile}
+	rm tmp_log.*
 done < ${deletefile}
 
-echo "Done processing $counter $recordtype records             "
+echo "Done processing $counter $recordtype records. See $outfile for details."
+num_errors=$(grep -v "^204" ${outfile} |wc -l)
+
+if [[ num_errors -ne 0 ]];then grep -v "^204" ${outfile} > error.log;echo "$num_errors errors were output to error.log";fi
+
+

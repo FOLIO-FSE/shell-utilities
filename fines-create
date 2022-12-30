@@ -24,8 +24,6 @@ function fetch_batch() {
 	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?query=cql.allRecords=1&limit=${num_retrieved}&offset=$offset" |jq -c ".users[]"  > "tmp_users.${t}"
 }
 
-rm -rf notfound
-
 declare -A userid_dict 
 
 create_fine() {
@@ -117,7 +115,7 @@ if [[ ! -z ${userid_dict[${patron_barcode}]} ]];then
 	echo -e "${feefine_data}	${feefine_data//$'\n'/ }" >> ${logfile}
 else
 	badbarcodes=$(($badbarcodes + 1))
-	echo -e "Barcode not found\t${patron_barcode}" >> notfound
+	echo -e "Barcode not found\t${patron_barcode}" >> ${logfile}
 fi
 
 counter=$(($counter + 1))
@@ -126,6 +124,4 @@ done < ${fines_file}
 echo 
 echo "Processing completed"
 
-if [[ -f notfound ]];then
-	echo "$(cat notfound) barcodes were not found and output to ${logfile}"
-fi
+echo "$(cat notfound) barcodes were not found. Server responses are output to ${logfile}"

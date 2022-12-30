@@ -7,6 +7,7 @@ okapi_token=$(cat okapi.token)
 fines_file="fines.tsv"
 legacySystem="Symphony"
 logfile="feefine.log"
+num_retrieved=1000
 rm -f ${logfile}
 
 # FeeFine owner must be defined in /settings/users/owners
@@ -18,7 +19,12 @@ if [[ $id != "${fine_owner}" ]];then echo "Fine owner not located. Exiting progr
 # FeeFine type should be defined in /settings/users/feefinestable
 feeFineType="Multa migrada"
 
-rm -rf users_notfound
+function fetch_batch() {
+	local offset=$1
+	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?query=cql.allRecords=1&limit=${num_retrieved}&offset=$offset" |jq -c ".users[]"  > "tmp_users.${t}"
+}
+
+rm -rf notfound
 
 declare -A userid_dict 
 
@@ -65,17 +71,29 @@ EndOfJSON
 
 
 all_users=""
-num_users=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?limit=0" |jq -r .totalRecords)
+num_records=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?limit=0" |jq -r .totalRecords)
 
-for (( offset=0; offset<=$num_users; offset = offset + 1000 ));do
-        all_users=${all_users}$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?query=cql.allRecords=1&limit=1000&offset=$offset" |jq .users[])
-        if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset $num_users;fi
-        done
+for (( offset=0; offset<=$num_records; ));do
+	for ((t=0; t<=4; t=$(($t + 1)) )); do
+		if [[ $offset -le $num_records ]];then 
+			fetch_batch $offset &
+			offset=$(($offset + $num_retrieved))
+		fi
+	done
+	wait
+		
+	cat tmp_users.* >> tmp_users
+	rm tmp_users.*
+
+	if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset $num_records;fi
+done
 
 # load user uuids into scalar array keyed by barcode 
 echo "Loading ids. Please be patient           "
-eval "$(echo ${all_users} |jq -r 'select(.barcode != null) | @sh "userid_dict[\(.barcode|tostring)]=\(.id|tostring)"')"
+
+eval "$(cat tmp_users |jq -r 'select(.barcode != null) | @sh "userid_dict[\(.barcode|tostring)]=\(.id|tostring)"')"
 echo "Done loading ids"
+rm tmp_users
 
 counter=1
 badbarcodes=0

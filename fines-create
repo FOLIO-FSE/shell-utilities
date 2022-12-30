@@ -6,6 +6,8 @@ okapi_token=$(cat okapi.token)
 
 fines_file="fines.tsv"
 legacySystem="Symphony"
+logfile="feefine.log"
+rm -f ${logfile}
 
 # FeeFine owner must be defined in /settings/users/owners
 fine_owner="8e73624e-df3a-43ec-8be9-bef2abd8d311"
@@ -71,31 +73,41 @@ for (( offset=0; offset<=$num_users; offset = offset + 1000 ));do
         done
 
 # load user uuids into scalar array keyed by barcode 
-echo "Loading ids. Please be patient"
+echo "Loading ids. Please be patient           "
 eval "$(echo ${all_users} |jq -r 'select(.barcode != null) | @sh "userid_dict[\(.barcode|tostring)]=\(.id|tostring)"')"
 echo "Done loading ids"
 
 counter=1
+badbarcodes=0
+
 numloans=$(cat ${fines_file} |wc -l)
 
 while IFS=$'\n' read -r line; do
 	line=$(tr "\t" "^" <<< "${line}")
 	IFS=$'^' read -r patron_barcode item_charge item_barcode fee_assess_date fineamount <<< "${line}"
 
-	echo "Processing record $counter of ${numloans}"
+	echo -en "Processing record $counter of ${numloans}. Bad barcodes found: ${badbarcodes}\r"
 
 
 if [[ ! -z ${userid_dict[${patron_barcode}]} ]];then
 	userid=${userid_dict[${patron_barcode}]}
 	create_fine
-	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${fine}" "${okapi_url}/accounts"
-	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${action}" "${okapi_url}/feefineactions"
+	account_data=$(curl --http1.1 -sI -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${fine}" "${okapi_url}/accounts")
+	account_data=${account_data:(-3)}
+	feefine_data=$(curl --http1.1 -sI -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${action}" "${okapi_url}/feefineactions")
+	
+	echo -e "${feefine_data}	${feefine_data//$'\n'/ }" >> ${logfile}
 else
-	echo "No uuid found for ${patron_barcode}"
-	echo -e "Barcode not found\t${barcode}" >> notfound
+	badbarcodes=$(($badbarcodes + 1))
+	echo -e "Barcode not found\t${patron_barcode}" >> notfound
 fi
 
 counter=$(($counter + 1))
 
 done < ${fines_file}
+echo 
+echo "Processing completed"
 
+if [[ -f notfound ]];then
+	echo "$(cat notfound) barcodes were not found and output to ${logfile}"
+fi

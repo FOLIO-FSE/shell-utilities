@@ -59,7 +59,7 @@ IFS='' read -r -d '' action << EndOfJSON
   "amountAction": "${fineamount}",
   "balance":"${fineamount}",
   "transactionInformation":"",
-  "comments": "Multa migrado de ${legacySystem} valorada ${fee_assess_date} en \$${item_charge} por item ${item_barcode}",
+  "comments": "Multa migrado de ${legacySystem} valorada ${fee_assess_date} en ${fineamount} por item ${item_barcode}",
   "notify":false,
   "id": "${actionId}",
   "userId": "${userid}"
@@ -108,11 +108,12 @@ while IFS=$'\n' read -r line; do
 if [[ ! -z ${userid_dict[${patron_barcode}]} ]];then
 	userid=${userid_dict[${patron_barcode}]}
 	create_fine
-	account_data=$(curl --http1.1 -sI -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${fine}" "${okapi_url}/accounts")
-	account_data=${account_data:(-3)}
-	feefine_data=$(curl --http1.1 -sI -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${action}" "${okapi_url}/feefineactions")
+	account_data=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${fine}" "${okapi_url}/accounts")
+	echo -e "${account_data//$'\n'/ }" >> ${logfile}
+
+	feefine_data=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${action}" "${okapi_url}/feefineactions")
 	
-	echo -e "${feefine_data}	${feefine_data//$'\n'/ }" >> ${logfile}
+	echo -e "${feefine_data//$'\n'/ }" >> ${logfile}
 else
 	badbarcodes=$(($badbarcodes + 1))
 	echo -e "Barcode not found\t${patron_barcode}" >> ${logfile}
@@ -124,4 +125,4 @@ done < ${fines_file}
 echo 
 echo "Processing completed"
 
-echo "$(cat notfound) barcodes were not found. Server responses are output to ${logfile}"
+echo "$badbarcodes barcodes were not found. Server responses are output to ${logfile}"

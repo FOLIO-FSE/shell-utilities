@@ -2,11 +2,15 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-echo "Enter the data type of the source file (locations, mattypes)."
+echo "Enter the data type of the source file (loantypes, locations, mattypes)."
 read datatype
 infile="${datatype}.tsv" 
 
 case ${datatype} in
+	"loantypes")
+		endpoint="loan-types"
+		jq='.loantypes[].name'
+		;;
 	"locations")
 		endpoint="locations"
 		jq='.locations[].code'
@@ -29,7 +33,7 @@ head -1 "${infile}" |tr "\t" "\n"
 echo
 read columnName
 
-columnNumber=$(head -1 ${infile} |tr "\t" "\n" |fgrep -in ${columnName}|sed 's/:.*//')
+columnNumber=$(head -1 ${infile} |tr "\t" "\n" |fgrep -in "${columnName}"|sed 's/:.*//')
 
 source_values=$(cut -f${columnNumber} ${infile} |tail -n +2|sort -u)
 

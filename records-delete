@@ -52,6 +52,9 @@ case $deletetype in
 "items")
 	recordtype="item-storage/items"
 	;;
+"mattypes")
+	recordtype="material-types"
+	;;
 "libraries")
 	recordtype="location-units/libraries"
 	;;
@@ -80,7 +83,7 @@ case $deletetype in
 	recordtype="users"
 	;;
 *)
-	echo "Record type '${deletetype}' not found. Supported types are campuses, groups, holdings, instances, instance-types, items, libraries, locations, notices, organizations, requests, servicepoints, srs, tags, users. Objects with attached records will need specialized delete routines"
+	echo "Record type '${deletetype}' not found. Supported types are campuses, groups, holdings, instances, instance-types, items, libraries, locations, mattypes, notices, organizations, requests, servicepoints, srs, tags, users. Objects with attached records will need specialized delete routines"
 	exit
 	;;
 esac

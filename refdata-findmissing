@@ -1,0 +1,43 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+echo "Enter the data type of the source file (locations, mattypes)."
+read datatype
+infile="${datatype}.tsv" 
+
+case ${datatype} in
+	"locations")
+		endpoint="locations"
+		jq='.locations[].code'
+		;;
+	"mattypes")
+		endpoint="material-types"
+		jq='.mtypes[].name'
+		;;
+	*)
+		echo "Data type must be locations or mattypes"
+		exit		
+		;;
+esac
+
+if [[ ! -f "${infile}" ]];then echo "Sourcefile ${infile} not found. Exiting.";exit;fi
+
+echo "The following columns were found. Enter the column header containing location"
+echo
+head -1 "${infile}" |tr "\t" "\n"
+echo
+read columnName
+
+columnNumber=$(head -1 ${infile} |tr "\t" "\n" |fgrep -in ${columnName}|sed 's/:.*//')
+
+source_values=$(cut -f${columnNumber} ${infile} |tail -n +2|sort -u)
+
+IFS=$'\n' read -r -d '' -a loc_array <<< "${source_values}"
+
+folio_refdata=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?limit=10000" |jq -r ${jq} |sort)
+
+echo
+echo "The following ${datatype} were identified in the source file but not in FOLIO"
+comm -13 <(echo -e "${folio_refdata}") <(echo -e "${source_values}")
+

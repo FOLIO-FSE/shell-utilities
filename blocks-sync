@@ -3,11 +3,25 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
+userId=${1}
+
+if [[ ${userId} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+
+IFS='' read -r -d '' data << EndOfJSON
+{
+  "scope": "user",
+  "userId": "${userId}"
+}
+EndOfJSON
+
+else
+
 IFS='' read -r -d '' data << EndOfJSON
 {
   "scope": "full"
 }
 EndOfJSON
+fi
 
 curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/automated-patron-blocks/synchronization/job"
 

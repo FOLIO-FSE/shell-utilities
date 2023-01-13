@@ -1,5 +1,3 @@
-# Script expects a delimited file with name of license in first column and name of organization in second colum
-
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)

@@ -40,14 +40,16 @@ item_update() {
 
 #		(.status.name = "Available")
 #		(.discoverySuppress = true)
+#		(.permanentLocationId = "8c3d59fb-c926-4cc3-aeae-6e3f3e4ed087")
+
 
 	updated_item=$(echo ${apicall}  |jq  '
-		(.discoverySuppress = true)
+		(.permanentLocationId = "8c3d59fb-c926-4cc3-aeae-6e3f3e4ed087")
 ')
 
 	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_item}" ${okapi_url}/item-storage/items/${uuid})
 
-	echo "${apicall} |jq -c |grep -i [a-z] > "tmp_items.${fileno}"
+	echo "${apicall}" |jq -c |grep -i [a-z] > "tmp_items.${fileno}"
 
 }
 

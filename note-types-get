@@ -1,0 +1,17 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+notetype=${1}
+
+if [[ ${notetype} == "authority" ]];then
+	endpoint="authority-note-types"
+else
+	endpoint="note-types"
+fi 
+
+apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?limit=10000")
+
+api=$(echo $apicall)
+
+echo $api |jq '.'

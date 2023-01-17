@@ -28,7 +28,7 @@ case $rec_type in
 	no_total="yes";;
 "authorities")
 	endpoint="authority-storage/authorities";;
-"authority-srs")
+"authorities-srs")
 	rec_type="records"
 	query="recordType=MARC_AUTHORITY"
 	sortby=""

@@ -28,6 +28,11 @@ case $rec_type in
 	no_total="yes";;
 "authorities")
 	endpoint="authority-storage/authorities";;
+"authority-srs")
+	rec_type="records"
+	query="recordType=MARC_AUTHORITY"
+	sortby=""
+	endpoint="source-storage/records";;
 "boundwiths")
 	endpoint="inventory-storage/bound-with-parts"
 	rec_type="boundWithParts";;
@@ -43,20 +48,15 @@ case $rec_type in
 "holdings")
 	rec_type="holdingsRecords"
 	endpoint="holdings-storage/holdings";;
-"holdingsids")
-	endpoint="record-bulk/ids"
-	query="recordType=HOLDING"
-	#query='recordType=HOLDING&query=(metadata.updatedDate>="2022-11-15T22:44:00Z")'
-	rec_type="ids";;
+"holdings-srs")
+	rec_type="records"
+	query="recordType=MARC_HOLDING"
+	sortby=""
+	endpoint="source-storage/records";;
 "interfaces")
 	endpoint="organizations-storage/interfaces";;
 "instances")
 	endpoint="instance-storage/instances";;
-"instanceids")
-	endpoint="record-bulk/ids"
-	query="recordType=INSTANCE"
-	#query='recordType=INSTANCE&query=(metadata.updatedDate>="2022-11-15T22:44:00Z")'
-	rec_type="ids";;
 "items")
 	endpoint="item-storage/items";;
 "licenses")
@@ -92,7 +92,6 @@ case $rec_type in
 	endpoint="service-points";;
 "srs")
 	rec_type="records"
-	limit=1
 	endpoint="source-storage/records";;
 "statcodes")
 	rec_type="statisticalCodes"

@@ -70,6 +70,9 @@ case $deletetype in
 "organizations")
 	recordtype="organizations/organizations"
 	;;
+"precedingsucceeding")
+	recordtype="preceding-suceeding-titles"
+	;;
 "requests")
 	recordtype="circulation/requests"
 	;;

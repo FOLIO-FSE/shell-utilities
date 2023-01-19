@@ -26,11 +26,7 @@ while read -r deletethis; do
 	counter=$(($counter + 1))
 	instance_uuid=${deletethis//[^0-9a-z\-]/}
 
-	apicall=$(curl -s -w '\n' -X GET -D \
-	  -H "Accept: application/json" \
-	  -H "X-Okapi-Tenant: ${tenant}" \
-	  -H "x-okapi-token: ${okapi_token}" \
-	  "${okapi_url}/item-storage/items?limit=10000&query=instance.id==${instance_uuid}")
+	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-storage/items?limit=10000&query=instance.id==${instance_uuid}")
 	
 	item_ids=($(echo $apicall | jq -r .items[].id))
 	item_arr_size=${#item_ids[@]}
@@ -43,8 +39,7 @@ while read -r deletethis; do
 	
 		for item in ${item_ids[*]};do
 	  		echo $item
-			apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-storage/items/${item}")
-			echo $apicall
+			curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-storage/items/${item}"
 		done
 	fi
 	
@@ -65,21 +60,21 @@ while read -r deletethis; do
 	
 		for holding in ${holdings_ids[*]};do
 	  		echo $holding
-			apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-storage/holdings/${holding}")
-			echo $apicall
+			curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-storage/holdings/${holding}"
 		done
 	fi
 	
-	srs_uuid=$(curl -s -w '\n' -X GET -D \
-	  -H "Accept: application/json" \
-	  -H "X-Okapi-Tenant: ${tenant}" \
-	  -H "x-okapi-token: ${okapi_token}" \
-	  "${okapi_url}/source-storage/records/${instance_uuid}/formatted?idType=INSTANCE" |jq -r '.matchedId')
+	srs_uuid=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${instance_uuid}/formatted?idType=INSTANCE" |jq -r '.matchedId')
 	
-	apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${srs_uuid}")
-	echo ${apicall}
-	apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${instance_uuid}")
-	echo ${apicall}
+	curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${srs_uuid}"
+
+        connectedtitle_ids=($(apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}/preceding-succeeding-titles?query=(precedingInstanceId==${instance_uuid}%20or%20succeedingInstanceId==${instance_uuid}") |jq -r .precedingSucceedingTitles[].id))
+
+        for connectedtitle in ${connectedtitle_ids[@]};do
+                curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/preceding-succeeding-titles/${connectedtitle}"
+        done
+
+	curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${instance_uuid}"
 	echo "Processed record $counter of $numrecs"
 done < ${deletefile}
 

@@ -84,6 +84,9 @@ case $rec_type in
 "polines")
 	rec_type="poLines"
 	endpoint="orders-storage/po-lines";;
+"preceedingsucceeding")
+	rec_type="precedingSucceedingTitles"
+	endpoint="preceding-succeeding-titles";;
 "requests")
 	endpoint="circulation/requests";;
 "schedulednotices")

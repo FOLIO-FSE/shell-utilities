@@ -83,6 +83,10 @@ NBSP=$(echo -ne '\uc2a0\u00a0')
 #sed -i 's/"*\t"*/\t/g; s/^"//; s/"$// ' ${infile}
 sed -i "s/\"*\t\"*/\t/g; s/^\"//; s/\";/;/g; s/;\"/;/g; s/\"$//;s/[$SINGLE]/'/g; s/[$DOUBLE]/\"/g; s/[$NBSP]/ /g" "${infile}"
 
+echo "Converting MM-DD-YYYY dates to YYYY-MM-DD"
+echo
+
+sed -i 's/\b\([0-9][0-9]\)-\([0-9][0-9]\)-\([0-9][0-9][0-9][0-9]\)\b/\3-\1-\2/g' "${infile}"
 
 fieldcounters="${fieldcounters// /}"
 

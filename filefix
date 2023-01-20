@@ -25,8 +25,16 @@ mv tmp_infile ${infile}
 
 if awk '{exit !/\t/}' ${infile}; then 
 	filetype="tab"
-else
-	if awk '{exit !/,/}' ${infile}; then filetype="comma"
+elif awk '{exit !/|/}' ${infile}; then filetype="pipe"
+		echo "Pipe delimited file detected. Converting ${infile} to tab delimited."
+		echo "Please be patient."
+		outfile=$(sed 's/\.....\?$//' <<< ${infile})
+		cat ${infile} |sed 's/|/\t/g' > "${outfile}.tsv"
+		infile="${outfile}.tsv"
+		echo "Conversion to tab delimited complete"
+		echo
+
+elif awk '{exit !/,/}' ${infile}; then filetype="comma"
 		echo "Comma delimited file detected. Converting ${infile} to tab delimited."
 		echo "Please be patient."
 		outfile=$(sed 's/\.....\?$//' <<< ${infile})
@@ -34,7 +42,6 @@ else
 		infile="${outfile}.tsv"
 		echo "Conversion to tab delimited complete"
 		echo
-	fi
 fi
 
 if [[ ! $filetype ]];then
@@ -74,7 +81,7 @@ SINGLE=$(echo -ne '\u00B4\u2018\u2019')
 DOUBLE=$(echo -ne '\u201C\u201D')
 NBSP=$(echo -ne '\uc2a0\u00a0')
 #sed -i 's/"*\t"*/\t/g; s/^"//; s/"$// ' ${infile}
-sed -i "s/\"*\t\"*/\t/g; s/^\"//; s/\"$//;s/[$SINGLE]/'/g; s/[$DOUBLE]/\"/g; s/[$NBSP]/ /g" "${infile}"
+sed -i "s/\"*\t\"*/\t/g; s/^\"//; s/\";/;/g; s/;\"/;/g; s/\"$//;s/[$SINGLE]/'/g; s/[$DOUBLE]/\"/g; s/[$NBSP]/ /g" "${infile}"
 
 
 fieldcounters="${fieldcounters// /}"

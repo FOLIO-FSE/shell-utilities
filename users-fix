@@ -1,4 +1,7 @@
 #!/usr/bin/awk -f 
+#
+# If only any field is not used, be sure to disable it in the program
+# 
 
 BEGIN{FS=OFS="\t"
 	outfile="users_fixed.tsv"
@@ -72,7 +75,6 @@ function fixaddr(address)
 				case "ADDRESS":
 					address1 = i
 					break
-	
 				case "ADDRESS2":
 					address2 = i
 					break

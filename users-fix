@@ -83,13 +83,13 @@ function fixaddr(address)
 	}
 	{
 		if (NR == 1) {
-			$patronname = "fname\tmname\tlname"
-			$address1 = "addr1_line1\taddr1_line2\taddr1_city\taddr1_state\taddr1_zip"
-			$address2 = "addr2_line2\taddr2_line2\taddr2_city\taddr2_state\taddr2_zip"
+			if ($patronname > 0){$patronname = "fname\tmname\tlname"}
+			if ($address1 > 0){$address1 = "addr1_line1\taddr1_line2\taddr1_city\taddr1_state\taddr1_zip"}
+			if ($address2 > 0){$address2 = "addr2_line2\taddr2_line2\taddr2_city\taddr2_state\taddr2_zip"}
 		} else {
-			$patronname=fixname($patronname)
-			$address1=fixaddr($address1)
-			$address2=fixaddr($address2)
+			if ($patronname > 0){$patronname=fixname($patronname)}
+			if ($address1 > 0){$address1=fixaddr($address1)}
+			if ($address2 > 0){$address2=fixaddr($address2)}
 		}
 
 		print $0 > outfile

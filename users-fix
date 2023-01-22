@@ -1,7 +1,4 @@
 #!/usr/bin/awk -f 
-#
-# If only any field is not used, be sure to disable it in the program
-# 
 
 BEGIN{FS=OFS="\t"
 	outfile="users_fixed.tsv"

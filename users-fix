@@ -1,47 +1,97 @@
-#!/usr/bin/awk -f
+#!/usr/bin/awk -f 
 
-BEGIN{FS=OFS="\t"; errors=0}
+BEGIN{FS=OFS="\t"
+	outfile="users_fixed.tsv"
+	zipregex = ".*([0-9]{5}(-[0-9]{4})?$)" # US zip codes
+	stateregex = "^ ([A-Z][A-Z]$)" # US states
+
+}
+
+function fixname(name)
+{
+	name=gensub(/, ((II+|[SJ][Rr]\.?))/, " \\1", 1, name)
+	fname=mname=lname=""
+
+	arrlen = split(name,namearr,",")
+	if (arrlen > 0){ lname = namearr[1] }
+
+	if (arrlen > 1){ 
+		arrlen = split(namearr[2],namearr," ")
+		fname = namearr[1]
+
+		if (arrlen > 1){ mname = namearr[2] }
+		if (arrlen > 2){ mname = mname" "namearr[3] }
+	}
+	return $patronname = fname"\t"mname"\t"lname
+
+}
+
+function fixaddr(address)
+{
+	addr1=addr2=city=state=zip=""
+	zipindex=stateindex=cityindex=0
+
+	arrlen=gsub(/\$/, ",", address)
+
+	arrlen = split(address, addrarr, ",")
+	if (arrlen > 0){ addr1 = addrarr[1] }
+
+	for(addfields=1;addfields<=arrlen;addfields++) {
+		if (addrarr[addfields] ~ zipregex) {
+			zip = gensub(zipregex, "\\1", 1, addrarr[addfields])
+			zipindex = addfields
+		}
+		if (addrarr[addfields] ~ stateregex) {
+			state = gensub(stateregex, "\\1", 1, addrarr[addfields])
+			stateindex = addfields
+		}
+	}
+	
+	if (stateindex > 1){ 
+		city = addrarr[stateindex - 1]
+		cityindex = stateindex - 1
+	}
+
+	if (cityindex == 3) {
+		addr2 = addrarr[cityindex - 1]
+	}	
+	if (cityindex == 4) {
+		addr2 = addrarr[cityindex - 2]", "addrarr[cityindex - 1]
+	}	
+	return addr1"\t"addr2"\t"city"\t"state"\t"zip
+
+}
 
 {
-	# remove nulls
-	if (NR == 1) {numfields = NF; print $0 > "patrons_fixed.tsv"; print "" > "patron_errors" } else
-
-	{
-
-	{for (i = 1; i<=NF ; i++) if ($i == "null") $i = "" }
-
-	# any field defined below that gets modified needs an inverse statement before printing
-	id=$1
-	barcode=$2
-	externalid=$3
-	username=$4
-	email=$15
-
-	$15="folio.implementation.testing@mail.com"
-
-	if (barcode == "") {barcode = id}
-	if (externalid == "") {externalid = id}
-	if (username == "") {username = id}
-
-	gsub(";.*", "", username)
-	gsub("[^0-9A-Za-z\-]", "", username)
-	gsub(";.*", "", externalid)
-	gsub("[^0-9A-Za-z\-]", "", externalid)
-
-	$2=barcode
-	$3=externalid
-	$4=username
-
-	if(NR % 10000 == 0 ) {printf ("Processed %d users\r", NR) }
-
-	if (NF == numfields) {
+	if (NR == 1) {
 		for(i=1;i<=NF;i++) {
-		       printf("%s%s",$i,i==NF?RS:OFS) >> "patrons_fixed.tsv"
-	       }
-	} else {
-		print $0 >> "patron_errors"
-		errors++
+			switch($i) {
+				case "PATRNNAME":
+					patronname = i
+					break
+				case "ADDRESS":
+					address1 = i
+					break
+	
+				case "ADDRESS2":
+					address2 = i
+					break
+			}
+		}
 	}
+	{
+		if (NR == 1) {
+			$patronname = "fname\tmname\tlname"
+			$address1 = "addr1_line1\taddr1_line2\taddr1_city\taddr1_state\taddr1_zip"
+			$address2 = "addr2_line2\taddr2_line2\taddr2_city\taddr2_state\taddr2_zip"
+		} else {
+			$patronname=fixname($patronname)
+			$address1=fixaddr($address1)
+			$address2=fixaddr($address2)
+		}
+
+		print $0 > outfile
+
+		if(NR % 1000 == 0 ) {printf ("%d records processed\r", NR) }
 	}
 }
-END {printf ("Processed %d users. %d records contained the wrong number of fields\n", NR, errors) }

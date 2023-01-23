@@ -58,6 +58,9 @@ function showmatches() {
 	"mtypes")
 		endpoint="material-types"
         ;;
+	"noteTypes")
+		endpoint="note-types"
+        ;;
 	"owners")
 		endpoint="owners"
 		jq=".${matchtype}[] | select((.owner  |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"${matchtype}\", .id, .owner] |@tsv"
@@ -89,9 +92,9 @@ function showmatches() {
 }
 
 
-echo "Downloading data for cancellation reasons, call number types, fee/fine owners, identifier types, item note types, instance note types, holdings record sources, holdings note types, holdings types, instance formats, instance types, item material types, loan policies, loan types, usergroups, statcodes, and locations."
+echo "Downloading data for cancellation reasons, call number types, fee/fine owners, identifier types, item note types, instance note types, holdings record sources, holdings note types, holdings types, instance formats, instance types, item material types, loan policies, loan types, note types, usergroups, statcodes, and locations."
 
-rec_array=("cancellationReasons" "callNumberTypes"  "locations"  "loanPolicies" "loantypes"  "identifierTypes"  "instanceFormats"  "instanceTypes"  "instanceNoteTypes"  "holdingsRecordsSources" "holdingsNoteTypes" "holdingsTypes"  "itemNoteTypes"  "mtypes" "owners"  "statisticalCodes"  "usergroups")
+rec_array=("cancellationReasons" "callNumberTypes"  "locations"  "loanPolicies" "loantypes"  "identifierTypes"  "instanceFormats"  "instanceTypes"  "instanceNoteTypes"  "holdingsRecordsSources" "holdingsNoteTypes" "holdingsTypes"  "itemNoteTypes"  "mtypes" "noteTypes" "owners"  "statisticalCodes"  "usergroups")
 
 for rec_type in "${rec_array[@]}";do
 	showmatches ${rec_type} &

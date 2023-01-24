@@ -2,8 +2,8 @@
 
 BEGIN{FS=OFS="\t"
 	nameLabel="PATRNNAME"
-	addr1Label="PATRNNAME"
-	addr2Label="PATRNNAME"
+	addr1Label="ADDRESS"
+	addr2Label="not used"
 
 	outfile="users_fixed.tsv"
 	zipregex = ".*([0-9]{5}(-[0-9]{4})?$)" # US zip codes
@@ -73,17 +73,9 @@ function fixaddr(address)
 {
 	if (NR == 1) {
 		for(i=1;i<=NF;i++) {
-			switch($i) {
-				case nameLabel:
-					patronname = i
-					break
-				case addr1Label:
-					address1 = i
-					break
-				case addr2Label:
-					address2 = i
-					break
-			}
+			if ($i == nameLabel){ patronname = i }
+			if ($i == addr1Label){ address1 = i }
+			if ($i == addr2Label){ address2 = i }
 		}
 	}
 	{

@@ -1,6 +1,10 @@
 #!/usr/bin/awk -f 
 
 BEGIN{FS=OFS="\t"
+	nameLabel="PATRNNAME"
+	addr1Label="PATRNNAME"
+	addr2Label="PATRNNAME"
+
 	outfile="users_fixed.tsv"
 	zipregex = ".*([0-9]{5}(-[0-9]{4})?$)" # US zip codes
 	stateregex = "^ ([A-Z][A-Z]$)" # US states
@@ -70,13 +74,13 @@ function fixaddr(address)
 	if (NR == 1) {
 		for(i=1;i<=NF;i++) {
 			switch($i) {
-				case "PATRNNAME":
+				case nameLabel:
 					patronname = i
 					break
-				case "ADDRESS":
+				case addr1Label:
 					address1 = i
 					break
-				case "ADDRESS2":
+				case addr2Label:
 					address2 = i
 					break
 			}

@@ -18,6 +18,7 @@ SECONDS=0
 
 rm -f ${logfile}
 
+
 get_summary() {
 	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/metadata-provider/jobSummary/${jobExecutionId}") 
 	batcherrors=$(echo "${apicall}" |jq -r .sourceRecordSummary.totalErrors)
@@ -28,15 +29,14 @@ get_summary() {
 	updated=$(($updated + $batchupdated))
 	errors=$(($errors + $batcherrors))
 	echo
-	echo
 	echo "Created: $created"
 	echo "Updated: $updated"
 	echo "Errors: $errors"
+	echo
 
-	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/metadata-provider/jobSummary/${jobExecutionId}" |jq '.entries[]' >> ${logfile}
+	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/metadata-provider/jobLogEntries/${jobExecutionId}?entity=SRS_MARC&errorsOnly=true&limit=10000&order=asc" |jq -d '.entries[]' >> ${logfile}
 
 }
-
 check_upload() {
 	status=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/metadata-provider/jobExecutions?statusNot=DISCARDED&uiStatusAny=PREPARING_FOR_PREVIEW&uiStatusAny=READY_FOR_PREVIEW&uiStatusAny=RUNNING" |jq -r ".jobExecutions[] | select(.id = \"${jobExecutionId}\") |select(.status != null) | .status")
 	

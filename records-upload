@@ -54,10 +54,11 @@ check_upload() {
 
 upload_file() {
 	marcfile="$1"
+	cd ${batchdir}
 
 	apicall=$(curl --http1.1 -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-import-profiles/jobProfiles?limit=1000")
-	jobProfileId=$(echo "${apicall}" |jq -r '.jobProfiles[] | select(.name=="Default - Create instance and SRS MARC Bib") | .id')
-	# jobProfileId=$(echo "${apicall}" |jq -r '.jobProfiles[] | select(.name=="Backstage Reload--Data Import Test") | .id')
+	#jobProfileId=$(echo "${apicall}" |jq -r '.jobProfiles[] | select(.name=="Default - Create instance and SRS MARC Bib") | .id')
+	jobProfileId=$(echo "${apicall}" |jq -r '.jobProfiles[] | select(.name=="Backstage Reload--Data Import Test") | .id')
 
 
 	if ! [[ $jobProfileId =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]]; then
@@ -72,8 +73,6 @@ upload_file() {
 	uploadDefinitionId=$(echo ${apicall} | jq -r '.fileDefinitions[0].uploadDefinitionId')
 
 	echo "${apicall}"
-echo "${marcfile} ${okapi_url}/data-import/uploadDefinitions/${uploadDefinitionId}/files/${fileId}" > fat
-exit
 	
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/octet-stream" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "@${marcfile}" "${okapi_url}/data-import/uploadDefinitions/${uploadDefinitionId}/files/${fileId}")
 	
@@ -87,7 +86,7 @@ exit
 }
 
 process_file() {
-	marcfile="${batchdir}/${1}"
+	marcfile="${1}"
 	upload_file "${marcfile}"
 	status="beginning"
 
@@ -109,4 +108,3 @@ for marcfile in $(ls ${batchdir}); do
 	counter=$(($counter + 1))
 done
 
-cd ..

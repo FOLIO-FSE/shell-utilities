@@ -87,6 +87,9 @@ case $rec_type in
 "preceedingsucceeding")
 	rec_type="precedingSucceedingTitles"
 	endpoint="preceding-succeeding-titles";;
+"requestprefs")
+	rec_type="requestPreferences"
+	endpoint="request-preference-storage/request-preference";;
 "requests")
 	endpoint="circulation/requests";;
 "schedulednotices")

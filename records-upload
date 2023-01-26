@@ -20,7 +20,6 @@ rm -f ${logfile}
 
 
 get_summary() {
-	sleep 10
 	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/metadata-provider/jobSummary/${jobExecutionId}") 
 	batcherrors=$(echo "${apicall}" |jq -r .sourceRecordSummary.totalErrors)
 	batchcreated=$(echo "${apicall}" |jq -r .sourceRecordSummary.totalCreatedEntries)

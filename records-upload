@@ -28,7 +28,11 @@ fi
 
 get_summary() {
 	jobExecutionId=$(cat "${workingdir}/.jobid")
+
 	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/metadata-provider/jobSummary/${jobExecutionId}") 
+	cat "${marcfile}" >> ${summaryfile}
+	cat "${okapi_url}/metadata-provider/jobSummary/${jobExecutionId}" >> ${summaryfile}
+	echo "${apicall}" >> ${summaryfile}
 	batcherrors=$(echo "${apicall}" |jq -r .sourceRecordSummary.totalErrors)
 	batchcreated=$(echo "${apicall}" |jq -r .sourceRecordSummary.totalCreatedEntries)
 	batchupdated=$(echo "${apicall}" |jq -r .sourceRecordSummary.totalUpdatedEntries)
@@ -66,8 +70,8 @@ upload_file() {
 	cd ${batchdir}
 
 	apicall=$(curl --http1.1 -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-import-profiles/jobProfiles?limit=1000")
-	#jobProfileId=$(echo "${apicall}" |jq -r '.jobProfiles[] | select(.name=="Default - Create instance and SRS MARC Bib") | .id')
-	jobProfileId=$(echo "${apicall}" |jq -r '.jobProfiles[] | select(.name=="Backstage Reload--Data Import Test") | .id')
+	jobProfileId=$(echo "${apicall}" |jq -r '.jobProfiles[] | select(.name=="Default - Create instance and SRS MARC Bib") | .id')
+	#jobProfileId=$(echo "${apicall}" |jq -r '.jobProfiles[] | select(.name=="Backstage Reload--Data Import Test") | .id')
 
 
 	if ! [[ $jobProfileId =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]]; then

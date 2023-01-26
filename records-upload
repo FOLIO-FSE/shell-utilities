@@ -3,7 +3,9 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 marcfile="${1}"
-logfile="dataimport_errors.json"
+workingdir=$(pwd)
+logfile="${workingdir}/dataimport_errors.json"
+summaryfile="$(pwd)/summaryfile.log"
 batchdir="batch_upload"
 
 tenant=$(cat tenant)
@@ -25,6 +27,7 @@ fi
 
 
 get_summary() {
+	jobExecutionId=$(cat "${workingdir}/.jobid")
 	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/metadata-provider/jobSummary/${jobExecutionId}") 
 	batcherrors=$(echo "${apicall}" |jq -r .sourceRecordSummary.totalErrors)
 	batchcreated=$(echo "${apicall}" |jq -r .sourceRecordSummary.totalCreatedEntries)
@@ -33,16 +36,22 @@ get_summary() {
 	created=$(($created + $batchcreated))
 	updated=$(($updated + $batchupdated))
 	errors=$(($errors + $batcherrors))
-	echo
-	echo "Created: $created"
-	echo "Updated: $updated"
-	echo "Errors: $errors"
-	echo
+
+read -r -d '' summarymessage << EOM
+	  
+Created: $created
+Updated: $updated
+Errors: $errors
+	
+EOM
+
+	echo "${summarymessage}" >> ${summaryfile}
 
 	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/metadata-provider/jobLogEntries/${jobExecutionId}?entity=SRS_MARC&errorsOnly=true&limit=10000&order=asc" |jq -r '.entries[]' >> ${logfile}
 
 }
 check_upload() {
+	jobExecutionId=$(cat "${workingdir}/.jobid")
 	status=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/metadata-provider/jobExecutions?statusNot=DISCARDED&uiStatusAny=PREPARING_FOR_PREVIEW&uiStatusAny=READY_FOR_PREVIEW&uiStatusAny=RUNNING" |jq -r ".jobExecutions[] | select(.id = \"${jobExecutionId}\") |select(.status != null) | .status")
 	
 	TIME=$SECONDS;msg="$SECONDS seconds"
@@ -72,11 +81,9 @@ upload_file() {
 	jobExecutionId=$(echo ${apicall} | jq -r '.fileDefinitions[0].jobExecutionId')
 	uploadDefinitionId=$(echo ${apicall} | jq -r '.fileDefinitions[0].uploadDefinitionId')
 
-	echo "${apicall}"
-	
+	echo "${jobExecutionId}" > ${workingdir}/.jobid
+
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/octet-stream" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "@${marcfile}" "${okapi_url}/data-import/uploadDefinitions/${uploadDefinitionId}/files/${fileId}")
-	
-	echo "${apicall}"
 	
 	payload="{\"uploadDefinition\":${apicall},\"jobProfileInfo\": {\"id\": \"${jobProfileId}\", \"dataType\": \"MARC\"}}"
 	

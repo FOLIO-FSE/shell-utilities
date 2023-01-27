@@ -2,8 +2,10 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-marcfile="${1}"
 workingdir=$(pwd)
+#profileName="Backstage Reload--Data Import Test"
+profileName="Default - Create instance and SRS MARC Bib"
+
 logfile="${workingdir}/dataimport_errors.json"
 summaryfile="$(pwd)/summaryfile.log"
 batchdir="batch_upload"
@@ -30,8 +32,8 @@ get_summary() {
 	jobExecutionId=$(cat "${workingdir}/.jobid")
 
 	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/metadata-provider/jobSummary/${jobExecutionId}") 
-	cat "${marcfile}" >> ${summaryfile}
-	cat "${okapi_url}/metadata-provider/jobSummary/${jobExecutionId}" >> ${summaryfile}
+	echo "${marcfile}" >> ${summaryfile}
+	echo "${okapi_url}/metadata-provider/jobSummary/${jobExecutionId}" >> ${summaryfile}
 	echo "${apicall}" >> ${summaryfile}
 	batcherrors=$(echo "${apicall}" |jq -r .sourceRecordSummary.totalErrors)
 	batchcreated=$(echo "${apicall}" |jq -r .sourceRecordSummary.totalCreatedEntries)
@@ -70,8 +72,7 @@ upload_file() {
 	cd ${batchdir}
 
 	apicall=$(curl --http1.1 -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-import-profiles/jobProfiles?limit=1000")
-	jobProfileId=$(echo "${apicall}" |jq -r '.jobProfiles[] | select(.name=="Default - Create instance and SRS MARC Bib") | .id')
-	#jobProfileId=$(echo "${apicall}" |jq -r '.jobProfiles[] | select(.name=="Backstage Reload--Data Import Test") | .id')
+	jobProfileId=$(echo "${apicall}" |jq -r ".jobProfiles[] | select(.name==\"Default - Create instance and SRS MARC Bib\") | .id")
 
 
 	if ! [[ $jobProfileId =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]]; then

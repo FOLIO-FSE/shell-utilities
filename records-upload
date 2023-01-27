@@ -5,7 +5,6 @@ okapi_token=$(cat okapi.token)
 workingdir=$(pwd)
 profileName="Backstage Reload--Data Import Test"
 #profileName="Default - Create instance and SRS MARC Bib"
-	echo -en "Processing ${marcfile} -- $counter of $numfiles in $msg\r"
 
 logfile="${workingdir}/dataimport_errors.json"
 summaryfile="$(pwd)/summaryfile.log"

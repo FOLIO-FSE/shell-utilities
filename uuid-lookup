@@ -1,5 +1,3 @@
-# Script expects a delimited file with name of license in first column and name of organization in second colum
-
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
@@ -17,6 +15,13 @@ function showmatches() {
 	jq=".${matchtype}[] | select((.name |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"${matchtype}\", .id, .name] |@tsv"
 
 	case $matchtype in
+	"addressTypes")
+		endpoint="addresstypes"
+		jq=".${matchtype}[] | select((.addressType  |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"${matchtype}\", .id, .addressType ] |@tsv"
+        ;;
+	"cancellationReasons")
+		endpoint="cancellation-reason-storage/cancellation-reasons"
+        ;;
 	"callNumberTypes")
 		endpoint="call-number-types"
         ;;
@@ -54,8 +59,23 @@ function showmatches() {
 		endpoint="locations"
 		jq="code_name"
         ;;
+	"loccamps")
+		endpoint="location-units/campuses"
+		jq="code_name"
+        ;;
+	"locinsts")
+		endpoint="location-units/institutions"
+		jq="code_name"
+        ;;
+	"loclibs")
+		endpoint="location-units/libraries"
+		jq="code_name"
+        ;;
 	"mtypes")
 		endpoint="material-types"
+        ;;
+	"noteTypes")
+		endpoint="note-types"
         ;;
 	"owners")
 		endpoint="owners"
@@ -88,9 +108,9 @@ function showmatches() {
 }
 
 
-echo "Downloading data for call number types, fee/fine owners, identifier types, item note types, instance note types, holdings record sources, holdings note types, holdings types, instance formats, instance types, item material types, loan policies, loan types, usergroups, statcodes, and locations."
+echo "Downloading data for address types, call number types, cancellation reasons, fee/fine owners, holdings note types, holdings record sources, holdings types, identifier types, instance formats, instance note types, instance types, item material types, item note types, loan policies, loan types, locations, location institutions, location campuses, location libraries, note types, statcodes, and usergroups"
 
-rec_array=("callNumberTypes"  "locations"  "loanPolicies" "loantypes"  "identifierTypes"  "instanceFormats"  "instanceTypes"  "instanceNoteTypes"  "holdingsRecordsSources" "holdingsNoteTypes" "holdingsTypes"  "itemNoteTypes"  "mtypes" "owners"  "statisticalCodes"  "usergroups")
+rec_array=("addressTypes" "callNumberTypes" "cancellationReasons" "holdingsNoteTypes" "holdingsRecordsSources" "holdingsTypes" "identifierTypes" "instanceFormats" "instanceNoteTypes" "instanceTypes" "itemNoteTypes" "loanPolicies" "loantypes" "locations" "locinsts" "loccamps" "loclibs" "mtypes" "noteTypes" "owners" "statisticalCodes" "usergroups")
 
 for rec_type in "${rec_array[@]}";do
 	showmatches ${rec_type} &

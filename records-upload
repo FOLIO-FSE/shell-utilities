@@ -3,8 +3,9 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 workingdir=$(pwd)
-#profileName="Backstage Reload--Data Import Test"
-profileName="Default - Create instance and SRS MARC Bib"
+profileName="Backstage Reload--Data Import Test"
+#profileName="Default - Create instance and SRS MARC Bib"
+	echo -en "Processing ${marcfile} -- $counter of $numfiles in $msg\r"
 
 logfile="${workingdir}/dataimport_errors.json"
 summaryfile="$(pwd)/summaryfile.log"
@@ -32,9 +33,6 @@ get_summary() {
 	jobExecutionId=$(cat "${workingdir}/.jobid")
 
 	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/metadata-provider/jobSummary/${jobExecutionId}") 
-	echo "${marcfile}" >> ${summaryfile}
-	echo "${okapi_url}/metadata-provider/jobSummary/${jobExecutionId}" >> ${summaryfile}
-	echo "${apicall}" >> ${summaryfile}
 	batcherrors=$(echo "${apicall}" |jq -r .sourceRecordSummary.totalErrors)
 	batchcreated=$(echo "${apicall}" |jq -r .sourceRecordSummary.totalCreatedEntries)
 	batchupdated=$(echo "${apicall}" |jq -r .sourceRecordSummary.totalUpdatedEntries)
@@ -43,15 +41,9 @@ get_summary() {
 	updated=$(($updated + $batchupdated))
 	errors=$(($errors + $batcherrors))
 
-read -r -d '' summarymessage << EOM
-	  
-Created: $created
-Updated: $updated
-Errors: $errors
-	
-EOM
+	summarymessage="Created: $created	Updated: $updated	Errors: $errors	JobId: $jobExecutionId"
+	echo "${apicall}" >> ${summaryfile}
 
-	echo "${summarymessage}" >> ${summaryfile}
 
 	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/metadata-provider/jobLogEntries/${jobExecutionId}?entity=SRS_MARC&errorsOnly=true&limit=10000&order=asc" |jq -r '.entries[]' >> ${logfile}
 
@@ -60,11 +52,6 @@ check_upload() {
 	jobExecutionId=$(cat "${workingdir}/.jobid")
 	status=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/metadata-provider/jobExecutions?statusNot=DISCARDED&uiStatusAny=PREPARING_FOR_PREVIEW&uiStatusAny=READY_FOR_PREVIEW&uiStatusAny=RUNNING" |jq -r ".jobExecutions[] | select(.id = \"${jobExecutionId}\") |select(.status != null) | .status")
 	
-	TIME=$SECONDS;msg="$SECONDS seconds"
-
-	if [[ $SECONDS -gt 60 ]];then TIME=$(($SECONDS/60));msg="$TIME minutes";fi
-	if [[ $SECONDS -gt 3600 ]];then TIME=$(($SECONDS/3600));msg="$TIME hours";fi
-	echo  -en "Status: ${status} -- $msg elapsed       \r"
 }
 
 upload_file() {
@@ -72,7 +59,7 @@ upload_file() {
 	cd ${batchdir}
 
 	apicall=$(curl --http1.1 -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-import-profiles/jobProfiles?limit=1000")
-	jobProfileId=$(echo "${apicall}" |jq -r ".jobProfiles[] | select(.name==\"Default - Create instance and SRS MARC Bib\") | .id")
+	jobProfileId=$(echo "${apicall}" |jq -r ".jobProfiles[] | select(.name==\"${profileName}\") | .id")
 
 
 	if ! [[ $jobProfileId =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]]; then
@@ -115,7 +102,12 @@ counter=1
 numfiles=$(ls ${batchdir} |wc -l)
 
 for marcfile in $(ls ${batchdir}); do
-	echo "Processing ${marcfile} -- $counter of $numfiles"
+	TIME=$SECONDS;msg="$SECONDS seconds"
+
+	if [[ $SECONDS -gt 60 ]];then TIME=$(($SECONDS/60));msg="$TIME minutes";fi
+	if [[ $SECONDS -gt 3600 ]];then TIME=$(($SECONDS/3600));msg="$TIME hours";fi
+	echo -en "Processing ${marcfile} -- $counter of $numfiles in $msg\r"
+
 	output=$(process_file "${marcfile}")
 	counter=$(($counter + 1))
 done

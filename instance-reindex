@@ -1,0 +1,60 @@
+# Supply without a uuid to delete all of many record types
+# 
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+infile=uuids
+SECONDS=1
+
+uuid=${1//[^0-9a-z\-]/}
+
+update_record() {
+	local uuid="${1}"
+	local apicall=""
+	local change_manager_body=""
+	local version=""
+	local changeid=""
+
+	if [[ ${uuid} =~ ^[a-z]*[0-9]*$ ]];then
+		uuid=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances?query=hrid==${uuid}" |jq -r '.instances[].id')
+	fi
+
+	version=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${uuid}" |jq -r '._version')
+
+	change_manager_body=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/change-manager/parsedRecords?externalId=${uuid}")
+	changeid=$(jq -r '.id' <<< "${change_manager_body}")
+
+	change_manager_body="$(jq --arg version "$version" '. += {"relatedRecordVersion":$version}' <<< $change_manager_body)"
+
+	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${change_manager_body}" "${okapi_url}/change-manager/parsedRecords/${changeid}")
+
+}
+
+if [[ ${uuid} =~ ^in[0-9a]*$ ]];then
+	uuid=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances?query=hrid==${uuid}" |jq -r '.instances[].id')
+fi
+
+if [[ ${uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+	echo ${uuid} > ${infile}
+fi
+
+if [[ ! -f ${infile} ]]; then echo "This script cannot find input file ${infile}";exit;fi
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+counter=0
+
+while mapfile -t -n 4 uuids && ((${#uuids[@]})); do
+	for uuid in ${uuids[@]};do	
+		uuid=${uuid//[^0-9a-z\-]/}
+		update_record "${uuid}" &
+		counter=$(($counter + 1))
+		recsPerSec=$(($counter/$SECONDS))
+		printf "Processed %s records of %s at %s records/sec\r" $counter $numrecs $recsPerSec
+	done
+	wait
+done < ${infile} 
+
+echo "Processed $counter records                      "
+
+

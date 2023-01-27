@@ -1,3 +1,6 @@
+# Use this to resend records through the mapping rules. It will also trigger OAI-PMH but is slower
+# than instance-refresh if all that is needed is triggering OAI
+
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)

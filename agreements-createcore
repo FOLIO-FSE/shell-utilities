@@ -41,6 +41,7 @@ while IFS=$'\n' read -r line;do
 	IFS='^' read -r name description altname start_date <<< "${line}"
 	echo "Processing ${name}"
 	name=$(echo ${name} |jq -aRs)
+	keyname=$(tr -dc [a-z0-9] <<< ${name,,})
 
 	# agreement uuid -- needs to be global
         namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"

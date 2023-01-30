@@ -1,6 +1,8 @@
 # FOLIO utilities
 
-DISCLAIMERS: This collection of lightweight self-contained utilities comes without any warranty or support. Used improperly, they can do enormous damage to FOLIO systems, so don't assume any individual function is safe for your purposes -- it may have been created to meet a different need. They assume you know what you're doing, and won't warn you about  prerequisites, gotchas, etc. to using them. Some scripts allow you to do things FOLIO is not designed to support. Please be prudent and considerate so everyone gets the best experience and the FOLIO API remains as unlimited as possible.
+DISCLAIMERS: This collection of lightweight self-contained utilities comes without any warranty or support. Used improperly, they can do enormous damage to FOLIO systems, so don't assume any individual function is safe for your purposes -- it may have been created to meet a different need. 
+
+They assume you know what you're doing, and won't warn you about  prerequisites, gotchas, etc. to using them. Some scripts allow you to do things FOLIO is not designed to support. Please be prudent and considerate so everyone gets the best experience and the FOLIO API remains as unlimited as possible.
 
 The FOLIO *learning-apis* Slack channel and other forums are great places to ask questions and share insights.
 
@@ -12,7 +14,7 @@ Most scripts here require the jq utility to use and have been tested only on WSL
 - *okapi.url* -- contains the okapi URL for your tenant
 - *okapi.token* -- contains a valid okapi token
 
-To get an okapi token, you will first need to run the *auth* script. The *auth* script requires one additional file called *okapi-login.json* found in this directory which can be modified for your credentials.
+To get an okapi token, you will first need to run the *auth* script. Having said that, this script is provided only to make the token generation process transparent -- it's recommended that you adapt the mechanism to avoid storing credentials.
 
 Any API requiring an edge key will also require a file named *edge.key*
 

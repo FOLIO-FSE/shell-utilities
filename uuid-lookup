@@ -81,6 +81,10 @@ function showmatches() {
 		endpoint="owners"
 		jq=".${matchtype}[] | select((.owner  |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"${matchtype}\", .id, .owner] |@tsv"
         ;;
+	"servicepoints")
+		endpoint="service-points"
+		jq="code_name"
+        ;;
 	"statisticalCodes")
 		endpoint="statistical-codes"
 		jq="code_name"
@@ -108,9 +112,9 @@ function showmatches() {
 }
 
 
-echo "Downloading data for address types, call number types, cancellation reasons, fee/fine owners, holdings note types, holdings record sources, holdings types, identifier types, instance formats, instance note types, instance types, item material types, item note types, loan policies, loan types, locations, location institutions, location campuses, location libraries, note types, statcodes, and usergroups"
+echo "Downloading data for address types, call number types, cancellation reasons, fee/fine owners, holdings note types, holdings record sources, holdings types, identifier types, instance formats, instance note types, instance types, item material types, item note types, loan policies, loan types, locations, location institutions, location campuses, location libraries, note types, service points, statcodes, and usergroups"
 
-rec_array=("addressTypes" "callNumberTypes" "cancellationReasons" "holdingsNoteTypes" "holdingsRecordsSources" "holdingsTypes" "identifierTypes" "instanceFormats" "instanceNoteTypes" "instanceTypes" "itemNoteTypes" "loanPolicies" "loantypes" "locations" "locinsts" "loccamps" "loclibs" "mtypes" "noteTypes" "owners" "statisticalCodes" "usergroups")
+rec_array=("addressTypes" "callNumberTypes" "cancellationReasons" "holdingsNoteTypes" "holdingsRecordsSources" "holdingsTypes" "identifierTypes" "instanceFormats" "instanceNoteTypes" "instanceTypes" "itemNoteTypes" "loanPolicies" "loantypes" "locations" "locinsts" "loccamps" "loclibs" "mtypes" "noteTypes" "owners" "servicepoints" "statisticalCodes" "usergroups")
 
 for rec_type in "${rec_array[@]}";do
 	showmatches ${rec_type} &

@@ -53,6 +53,10 @@ case $rec_type in
 	query="recordType=MARC_HOLDING"
 	sortby=""
 	endpoint="source-storage/records";;
+"inhouse") 
+	rec_type="checkIns"
+	endpoint="check-in-storage/check-ins"
+	query="query=(itemStatusPriorToCheckIn==Available)";;
 "interfaces")
 	endpoint="organizations-storage/interfaces";;
 "instances")

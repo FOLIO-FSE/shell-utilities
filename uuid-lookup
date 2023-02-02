@@ -119,9 +119,13 @@ echo "Downloading data for  acq units, address types, call number types, cancell
 
 rec_array=("acquisitionsUnits" "addressTypes" "callNumberTypes" "cancellationReasons" "holdingsNoteTypes" "holdingsRecordsSources" "holdingsTypes" "identifierTypes" "instanceFormats" "instanceNoteTypes" "instanceTypes" "itemNoteTypes" "loanPolicies" "loantypes" "locations" "locinsts" "loccamps" "loclibs" "mtypes" "noteTypes" "owners" "servicepoints" "statisticalCodes" "usergroups")
 
+counter=1
 for rec_type in "${rec_array[@]}";do
 	showmatches ${rec_type} &
+	if [[ $(($counter % 10)) -eq 0 ]];then wait;fi
+	counter=$(($counter + 1))
 done
+
 wait
 
 

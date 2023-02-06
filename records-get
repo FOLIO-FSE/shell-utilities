@@ -111,6 +111,8 @@ case $rec_type in
 	no_total="yes";;
 "users")
 	endpoint="users";;
+"vouchers")
+	endpoint="voucher/vouchers";;
 *)
 	echo "Record type not found.";exit;;
 esac

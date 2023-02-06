@@ -54,6 +54,7 @@ IFS='' read -r -d '' users << EndOfUsers
         "barcode" : "99999999999",
         "active" : true,
         "patronGroup" : "faculty",
+	"tags": { "tagList": [ "tag1", "tag2"]},
         "personal" : {
           "lastName" : "thelastname",
           "firstName" : "thefirstname",

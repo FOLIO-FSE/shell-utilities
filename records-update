@@ -104,11 +104,11 @@ esac
 counter=0
 
 while mapfile -t -n 6 ids && ((${#ids[@]})); do
+	seq=0
 	for line in "${ids[@]}";do
 		line=${line//$'\t'/^}
 
 		IFS='^' read -r uuid <<< "${line}"
-		seq=0
 
 		fixrecord ${uuid} ${seq} &
 

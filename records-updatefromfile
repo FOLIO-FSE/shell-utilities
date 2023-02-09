@@ -1,0 +1,117 @@
+# This script expect a file of JSON records with one record per line 
+# 
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+infile=infile
+outfile=outfile
+recordtype=$1
+
+if [[ ! -f ${infile} ]]; then echo "This script cannot find input file ${infile}";exit;fi
+if [[ $# -eq 0 ]]; then echo "You must enter a record type";exit;fi
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+fixrecord() {
+	local seq="${1}"
+	local record="${2}"
+	local uuid=$(jq -r .id <<< "${record}")
+	local apicall
+
+	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/${recordtype}/${uuid}")
+
+	echo "${apicall}" |grep -i [a-z] >> "tmp_records.${fileno}"
+}
+
+
+case $recordtype in
+"campuses")
+	recordtype="location-units/campuses"
+	;;
+"groups")
+	recordtype="groups"
+	;;
+"holdings")
+	recordtype="holdings-storage/holdings"
+	;;
+"instances")
+	recordtype="instance-storage/instances"
+	;;
+"instance-types")
+	recordtype="instance-types"
+	;;
+"interfaces")
+	recordtype="organizations-storage/interfaces"
+	;;
+"invoices")
+	recordtype="invoice/invoices"
+	;;
+"invoice-lines")
+	recordtype="invoice/invoice-lines"
+	;;
+"items")
+	recordtype="item-storage/items"
+	;;
+"libraries")
+	recordtype="location-units/libraries"
+	;;
+"licenses")
+	recordtype="licenses/licenses"
+	;;
+"loans")
+	recordtype="loan-storage/loans"
+	;;
+"locations")
+	recordtype="locations"
+	;;
+"notices")
+	recordtype="scheduled-notice-storage/scheduled-notices"
+	;;
+"organizations")
+	recordtype="organizations/organizations"
+	;;
+"polines")
+	recordtype="orders-storage/po-lines"
+	;;
+"requests")
+	recordtype="circulation/requests"
+	;;
+"servicepoints")
+	recordtype="service-points"
+	;;
+"srs")
+        recordtype="source-storage/records"
+        ;;
+"tags")
+	recordtype="tags"
+	;;
+"users")
+	recordtype="users"
+	;;
+*)
+	echo "Record type '${recordtype}' not found. Supported types are campuses, groups, holdings, instances, instance-types, interfaces, items, libraries, licenses, loans, locations, notices, organizations, polines, requests, servicepoints, srs, tags, users. Objects with attached records will need specialized delete routines"
+	exit
+	;;
+esac
+
+counter=0
+
+while mapfile -t -n 10 ids && ((${#ids[@]})); do
+	seq=0
+	for record in "${ids[@]}";do
+		fixrecord "${seq}" "${record}" &
+
+		counter=$(($counter + 1))
+		seq=$(($seq + 1))
+		printf "Processing record %s of %s\r" $counter $numrecs
+	done
+	wait
+
+	cat tmp_records.* >> ${outfile}
+	rm tmp_records.*
+
+done < ${infile}
+
+echo "Finished processing $numrecs ${recordtype} records"
+

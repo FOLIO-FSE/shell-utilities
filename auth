@@ -4,10 +4,28 @@
 # First generate an authentication token. You can use it for
 # as many calls as you like
 
-okapi_url=your_okapi_url
-tenant=your_tenant_id
-username=your_username
-pwd=your_password
+okapi_url=$(cat okapi.url)
+tenant=$(cat tenant)
+
+if [ -z $okapi_url ]
+then
+  echo -n "OKAPI URL: "
+  read -r okapi_url
+  echo "$okapi_url" > okapi.url
+fi
+
+if [ -z $tenant ]
+then
+  echo -n "Tenant ID: "
+  read -r tenant
+  echo "$tenant" > tenant
+fi
+
+echo -n "OKAPI username: "
+read -r username
+
+echo -n "OKAPI password: "
+read -r -s pwd
 
 IFS='' read -r -d '' okapi_login << EndOfAuth
 {

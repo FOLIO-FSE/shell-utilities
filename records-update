@@ -1,4 +1,4 @@
-# Supply without a uuid to delete all of many record types
+# Updates records based on list of UUIDs 
 # 
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
@@ -105,11 +105,7 @@ counter=0
 
 while mapfile -t -n 6 ids && ((${#ids[@]})); do
 	seq=0
-	for line in "${ids[@]}";do
-		line=${line//$'\t'/^}
-
-		IFS='^' read -r uuid <<< "${line}"
-
+	for uuid in "${ids[@]}";do
 		fixrecord ${uuid} ${seq} &
 
 		counter=$(($counter + 1))

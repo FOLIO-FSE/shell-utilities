@@ -2,8 +2,11 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-filename="orgs.tsv"
+filename="vendors.tsv"
 dos2unix ${filename}
+
+acqunit=""
+acq_prefix=""
 
 numrecs=$(wc -l ${filename} |cut -d " " -f1)
 
@@ -125,7 +128,7 @@ IFS='' read -r -d '' org << EndOfOrg
  "accounts" : [${accountnum}],
  "isVendor" : true,
  "changelogs" : [ ],
- "acqUnitIds" : [ ]
+ "acqUnitIds" : ["${acqunit}"]
 } 
 EndOfOrg
 
@@ -138,10 +141,14 @@ counter=0
 while IFS=$'\n' read line;do
 	line=$(echo "${line}" |tr "\t" "^" |tr -d '"')
 	#IFS='^' read -r code name alias addr phone fax email url accountnum <<< ${line}
-	IFS='^' read -r code name alias addr1 addr2 city state zip country phone fax email url <<< ${line}
-	#IFS='^' read -r name code status <<< ${line}
+	#IFS='^' read -r code name alias addr1 addr2 city state zip country phone fax email url <<< ${line}
+	IFS='^' read -r code name <<< ${line}
 	status="Active"
 	addressprocessing="clean"
+
+
+	if [[ ${name} == "" ]]; then name="${code}";fi
+	code="${acq_prefix}${code}"
 
 	# uuid needs to be global. Note that repair/addition tools can't assume deterministic uuids
 	uuid=$(uuidgen --sha1 -n 8405ae4d-b315-42e1-918a-d1919900cf3f -N "${okapi_url}:organizations:${code}")

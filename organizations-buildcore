@@ -6,95 +6,13 @@ filename="vendors.tsv"
 dos2unix ${filename}
 
 acqunit=""
+if [[ ${acqunit} != "" ]];then acqunit="\"${acqunit}\"";fi
 acq_prefix=""
 
 numrecs=$(wc -l ${filename} |cut -d " " -f1)
 
 #####################################
 
-build_sierra_address() {
-IFS='$' read -a addr_arr <<< ${addr}
-
-lenarr=${#addr_arr[@]}
-
-line1=""
-line2=""
-city=""
-state=""
-zip=""
-citystatezip=""
-
-if [[ "$lenarr" -eq "2" ]]; then 
-	citystatezip="${addr_arr[1]}"	
-	line2="${addr_arr[0]}"	
-fi
-if [[ "$lenarr" -eq "3" ]]; then 
-	citystatezip="${addr_arr[2]}"	
-	line2="${addr_arr[1]}"	
-	line1="${addr_arr[0]}"	
-fi
-
-if [[ "$lenarr" -eq "4" ]]; then 
-	citystatezip="${addr_arr[3]}"	
-	line2="${addr_arr[2]}"	
-	line1="${addr_arr[0]}, ${addr_arr[1]}"	
-fi
-
-if [[ "$lenarr" -eq "5" ]]; then 
-	citystatezip="${addr_arr[3]} ${addr_arr[4]}"	
-	line2="${addr_arr[2]}"	
-	line1="${addr_arr[0]}, ${addr_arr[1]}"	
-fi
-
-if [[ ${line2}  =~ ^[A-Z].*,.*[0-9]$ ]];then
-	citystatezip="${line2}"
-	line2=""
-fi
-
-IFS=',' read city statezip <<< ${citystatezip}
-
-IFS=' ' read -r -a statezip <<< "${citystatezip}"
-
-if [[ ${#statezip[@]} > 1 ]]; then
-	if [[ ${statezip[-1]} =~ ^[0-9\-]*$ ]]; then
-
-		zip=${statezip[-1]} 
-		state=${statezip[-2]}
-		citystatezip=""
-	fi
-fi
-
-if [[ ${zip} == "" ]]; then
-	IFS=' ' read -r -a city state zip <<< "${citystatezip}"
-
-	if ! [[ ${zip} =~ ^[0-9A-Z\-]*$ ]]; then
-		city=""
-		state=""
-		zip=""
-	fi
-fi
-
-if [[ ${state} == "" ]]; then
-	state=$(echo ${citystatezip:${#city}} |sed 's/ *$//')
-fi
-
-if [[ ${state} == "" ]]; then
-	state=$(echo ${citystatezip:${#city}} |sed 's/ *$//')
-fi
-
-if [[ ${state} =~ ^[A-Z] ]]; then
-	city=$(echo ${city} |sed 's/ ${state}.*$//')
-	city=$(echo ${city} |sed 's/,.*$//')
-fi
-
-
-address="{\"isPrimary\":true,\"addressLine1\":\"${line1}\",\"addressLine2\":\"${line2}\",\"city\":\"${city}\",\"stateRegion\":\"${state}\",\"zipCode\":\"${zip}\"}"
-}
-
-build_clean_address() {
-address="{\"isPrimary\":true,\"addressLine1\":\"${addr1}\",\"addressLine2\":\"${addr2}\",\"city\":\"${city}\",\"stateRegion\":\"${state}\",\"zipCode\":\"${zip}\"}"
-}
-##############################
 
 create_org_record() {
 
@@ -128,7 +46,7 @@ IFS='' read -r -d '' org << EndOfOrg
  "accounts" : [${accountnum}],
  "isVendor" : true,
  "changelogs" : [ ],
- "acqUnitIds" : ["${acqunit}"]
+ "acqUnitIds" : [${acqunit}]
 } 
 EndOfOrg
 
@@ -141,11 +59,10 @@ counter=0
 while IFS=$'\n' read line;do
 	line=$(echo "${line}" |tr "\t" "^" |tr -d '"')
 	#IFS='^' read -r code name alias addr phone fax email url accountnum <<< ${line}
-	#IFS='^' read -r code name alias addr1 addr2 city state zip country phone fax email url <<< ${line}
-	IFS='^' read -r code name <<< ${line}
+	#IFS='^' read -r code name alias  addr1_line1 addr1_line2 addr1_city addr1_state addr1_zip country phone fax email url <<< ${line}
+	IFS='^' read -r code name accountnum addr1_line1 addr2_line1 phone email note1 note2 note3 <<< ${line}
+	#IFS='^' read -r code name <<< ${line}
 	status="Active"
-	addressprocessing="clean"
-
 
 	if [[ ${name} == "" ]]; then name="${code}";fi
 	code="${acq_prefix}${code}"
@@ -155,8 +72,8 @@ while IFS=$'\n' read line;do
 
 	if [[ ${alias} != "" ]]; then alias="{\"value\":\"${alias}\"}";fi
 	if [[ ${phone} != "" ]]; then phone="{ \"phoneNumber\" : \"${phone}\", \"type\":\"Office\", \"isPrimary\" : true, \"categories\" : [] }";fi
-	if [[ ${email} =~ @ ]]; then email="{ \"value\" : \"${email}\", \"isPrimary\" : true, \"categories\" : [] }";fi
-	if [[ ${accountnum} != "" ]]; then accountnum="{\"name\":\"${name}\",\"accountNo\":\"${fieldL}\",\"paymentMethod\":\"Other\",\"accountStatus\":\"Active\",\"libraryCode\":\"-\",\"libraryEdiCode\":\"-\"}"; fi
+	if [[ ${email} =~ @ ]]; then email="{ \"value\" : \"${email}\", \"isPrimary\" : true, \"categories\" : [] }";else email="";fi
+	if [[ ${accountnum} != "" ]]; then accountnum="{\"name\":\"${name}\",\"accountNo\":\"${accountnum}\",\"paymentMethod\":\"Other\",\"accountStatus\":\"Active\",\"libraryCode\":\"-\",\"libraryEdiCode\":\"-\"}"; fi
 
 	if [[ ${fax} != "" ]]; then
 		if [[ ${phone} != "" ]]; then
@@ -171,8 +88,16 @@ while IFS=$'\n' read line;do
 
 	if [[ ${url} =~ ^http ]]; then url="{ \"language\" : \"en\", \"isPrimary\" : true, \"value\" : \"${url}\" }";fi
 
-	if [[ addressprocessing == "clean" ]];then if (( ${#addr1} > 3 ));then build_clean_address;fi;fi
-	if [[ addressprocessing == "sierra" ]];then if (( ${#addr} > 5 ));then build_sierra_address;fi;fi
+	if [[ ${addr1_line1} != "" ]]; then
+		address="{\"isPrimary\":true,\"addressLine1\":\"${addr1_line1}\",\"addressLine2\":\"${addr1_line2}\",\"city\":\"${addr1_city}\",\"stateRegion\":\"${addr1_state}\",\"zipCode\":\"${addr1_zip}\"}"
+	fi
+	if [[ ${addr2_line1} != "" ]]; then
+		if [[ $address != "" ]];then
+			address="${address}, {\"isPrimary\":false,\"addressLine1\":\"${addr2_line1}\",\"addressLine2\":\"${addr2_line2}\",\"city\":\"${addr2_city}\",\"stateRegion\":\"${addr2_state}\",\"zipCode\":\"${addr2_zip}\"}"
+		else
+			address="{\"isPrimary\":true,\"addressLine1\":\"${addr2_line1}\",\"addressLine2\":\"${addr2_line2}\",\"city\":\"${addr2_city}\",\"stateRegion\":\"${addr2_state}\",\"zipCode\":\"${addr2_zip}\"}"
+		fi
+	fi
 
 	org=$(create_org_record)
 	

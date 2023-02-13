@@ -41,99 +41,18 @@ done
 
 #####################################
 
-build_sierra_address() {
-IFS='$' read -a addr_arr <<< ${addr}
-
-lenarr=${#addr_arr[@]}
-
-line1=""
-line2=""
-city=""
-state=""
-zip=""
-citystatezip=""
-
-if [[ "$lenarr" -eq "2" ]]; then 
-	citystatezip="${addr_arr[1]}"	
-	line2="${addr_arr[0]}"	
-fi
-if [[ "$lenarr" -eq "3" ]]; then 
-	citystatezip="${addr_arr[2]}"	
-	line2="${addr_arr[1]}"	
-	line1="${addr_arr[0]}"	
-fi
-
-if [[ "$lenarr" -eq "4" ]]; then 
-	citystatezip="${addr_arr[3]}"	
-	line2="${addr_arr[2]}"	
-	line1="${addr_arr[0]}, ${addr_arr[1]}"	
-fi
-
-if [[ "$lenarr" -eq "5" ]]; then 
-	citystatezip="${addr_arr[3]} ${addr_arr[4]}"	
-	line2="${addr_arr[2]}"	
-	line1="${addr_arr[0]}, ${addr_arr[1]}"	
-fi
-
-if [[ ${line2}  =~ ^[A-Z].*,.*[0-9]$ ]];then
-	citystatezip="${line2}"
-	line2=""
-fi
-
-IFS=',' read city statezip <<< ${citystatezip}
-
-IFS=' ' read -r -a statezip <<< "${citystatezip}"
-
-if [[ ${#statezip[@]} > 1 ]]; then
-	if [[ ${statezip[-1]} =~ ^[0-9\-]*$ ]]; then
-
-		zip=${statezip[-1]} 
-		state=${statezip[-2]}
-		citystatezip=""
-	fi
-fi
-
-if [[ ${zip} == "" ]]; then
-	IFS=' ' read -r -a city state zip <<< "${citystatezip}"
-
-	if ! [[ ${zip} =~ ^[0-9A-Z\-]*$ ]]; then
-		city=""
-		state=""
-		zip=""
-	fi
-fi
-
-if [[ ${state} == "" ]]; then
-	state=$(echo ${citystatezip:${#city}} |sed 's/ *$//')
-fi
-
-if [[ ${state} == "" ]]; then
-	state=$(echo ${citystatezip:${#city}} |sed 's/ *$//')
-fi
-
-if [[ ${state} =~ ^[A-Z] ]]; then
-	city=$(echo ${city} |sed 's/ ${state}.*$//')
-	city=$(echo ${city} |sed 's/,.*$//')
-fi
-
-
-address="{\"isPrimary\":false,\"addressLine1\":\"${line1}\",\"addressLine2\":\"${line2}\",\"city\":\"${city}\",\"stateRegion\":\"${state}\",\"zipCode\":\"${zip}\"}"
-echo "${address}"
-}
-##############################
-
 get_orgs
 
 counter=0
 
 while IFS=$'\n' read line;do
 	line=$(echo "${line}" | tr -d '"' | tr "\t" "^")
-	IFS='^' read -r code addr <<< ${line}
+	IFS='^' read -r code line1 line2 city state zip <<< ${line}
 	code=$(tr -dc [0-9a-z] <<< ${code,,})
 	organization="${organization_dict[$code]}"
 	uuid=$(echo ${organization} |jq -r .id)
 
-	address=$(build_sierra_address)
+	address="{\"isPrimary\":false,\"addressLine1\":\"${line1}\",\"addressLine2\":\"${line2}\",\"city\":\"${city}\",\"stateRegion\":\"${state}\",\"zipCode\":\"${zip}\"}"
 
 	updated_org=$(echo ${organization} | jq ".addresses += [ ${address} ]")
 

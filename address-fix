@@ -7,7 +7,7 @@ BEGIN{FS=OFS="\t"
 	outfile="outfile_fixed.tsv"
 	zipregex1 = ".*([0-9]{5}(-[0-9]{4})?$)" # US zip codes
 	zipregex2 = ".*([A-Z][0-9][A-Z] [0-9][A-Z][0-9]$)" # Canadian codes
-	stateregex = "^ ([A-Z][A-Z])[ $].*$" # US states
+	stateregex = "^ *([A-Z][A-Z])[ $].*$" # US states
 
 }
 
@@ -36,7 +36,7 @@ function fixaddr(address)
 			stateindex = addfields
 		}
 		if (state == "" && zip != "" && addrarr[addfields] ~ /^ [A-Za-z]+ /  ) {
-			state = gensub("^ ([A-Za-z]*) "zip, "\\1", 1, addrarr[addfields])
+			state = gensub("^ *([A-Za-z]*) "zip, "\\1", 1, addrarr[addfields])
 			stateindex = addfields
 		}
 	}

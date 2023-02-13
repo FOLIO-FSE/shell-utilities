@@ -1,0 +1,46 @@
+#!/usr/bin/awk -f 
+
+BEGIN{FS=OFS="\t"
+	nameLabel="PATRNNAME"
+
+	outfile="users_fixed.tsv"
+}
+
+function fixname(name)
+{
+	name=gensub(/, ((II+|[SJ][Rr]\.?))/, " \\1", 1, name)
+	fname=mname=lname=""
+
+	arrlen = split(name,namearr,",")
+	if (arrlen > 0){ lname = namearr[1] }
+
+	if (arrlen > 1){ 
+		arrlen = split(namearr[2],namearr," ")
+		fname = namearr[1]
+
+		if (arrlen > 1){ mname = namearr[2] }
+		if (arrlen > 2){ mname = mname" "namearr[3] }
+	}
+	return $patronname = fname"\t"mname"\t"lname
+
+}
+
+
+{
+	if (NR == 1) {
+		for(i=1;i<=NF;i++) {
+			if ($i == nameLabel){ patronname = i }
+		}
+	}
+	{
+		if (NR == 1) {
+			if (patronname > 0){$patronname = "fname\tmname\tlname"}
+		} else {
+			if (patronname > 0){$patronname=fixname($patronname)}
+		}
+
+		print $0 > outfile
+
+		if(NR % 1000 == 0 ) {printf ("%d records processed\r", NR) }
+	}
+}

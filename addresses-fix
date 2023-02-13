@@ -56,6 +56,9 @@ function fixaddr(address)
 	if (cityindex == 4) {
 		addr2 = addrarr[cityindex - 2]", "addrarr[cityindex - 1]
 	}	
+	if (cityindex == 5) {
+		addr2 =  addrarr[cityindex - 3]", "addrarr[cityindex - 2]", "addrarr[cityindex - 1]
+	}	
 	return addr1"\t"addr2"\t"city"\t"state"\t"zip
 
 }

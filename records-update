@@ -8,6 +8,9 @@ infile=infile
 outfile=outfile
 recordtype=$1
 
+pattern='"source":{}'
+replace='"source":{"id":"9bed0d46-35d1-45f6-801c-dc54d911fe12","personal":{"lastName":"Data","firstName":"Migration"}}'
+
 if [[ ! -f ${infile} ]]; then echo "This script cannot find input file ${infile}";exit;fi
 if [[ $# -eq 0 ]]; then echo "You must enter a record type";exit;fi
 
@@ -19,10 +22,11 @@ fixrecord() {
 	local updated_record
 	local apicall
 
-	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}")
-	updated_record=$(echo "${apicall}"  |jq -cr --arg VALUE "${value}" '
-                (.permanentLoanTypeId = $VALUE)
-')
+	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}" |jq -c .)
+#	updated_record=$(echo "${apicall}"  |jq -cr --arg VALUE "${value}" '
+#                (.permanentLoanTypeId = $VALUE)
+#')
+	updated_record=${apicall//$pattern/$replace}
 	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_record}" "${okapi_url}/${recordtype}/${uuid}")
 
 

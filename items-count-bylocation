@@ -21,7 +21,7 @@ function fetch_location() {
 
 	IFS=$'\t' read -r seq id code name <<< "${location}"
 
-	totalrecs=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-storage/items?query=(permanentLocationId==${id})&limit=0" |jq -r .totalRecords)
+	totalrecs=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-storage/items?query=(effectiveLocationId==${id})&limit=0" |jq -r .totalRecords)
 	echo -e "${totalrecs}\t${code}\t${name}" >> "tmp_locs.${seq}"
 
 }

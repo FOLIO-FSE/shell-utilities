@@ -1,0 +1,116 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+rec_type=$1
+infile="uuids"
+
+SECONDS=1
+
+if [[ ! -f ${infile} ]]; then echo "This script cannot find input file ${infile}";exit;fi
+if [[ $# -eq 0 ]]; then echo "You must enter a record type";exit;fi
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+function get_record() {
+	local seq=$1
+	local uuid=${2//[^0-9a-f\-]/}
+	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}/${uuid}" |jq -c '.'  > "tmp_records.${seq}"
+}
+
+case $rec_type in
+"accounts")
+	endpoint="accounts";;
+"agreements")
+	endpoint="erm/sas";;
+"authorities")
+	endpoint="authority-storage/authorities";;
+"authorities-srs")
+	endpoint="source-storage/records";;
+"boundwiths")
+	endpoint="inventory-storage/bound-with-parts";;
+"circlog")
+	endpoint="audit-data/circulation/logs";;
+"courses")
+	endpoint="coursereserves/courses";;
+"feefines")
+	endpoint="feefines";;
+"feefineactions")
+	endpoint="feefineactions";;
+"holdings")
+	endpoint="holdings-storage/holdings";;
+"holdings-srs")
+	endpoint="source-storage/records";;
+"inhouse") 
+	endpoint="check-in-storage/check-ins";;
+"interfaces")
+	endpoint="organizations-storage/interfaces";;
+"instances")
+	endpoint="instance-storage/instances";;
+"items")
+	endpoint="item-storage/items";;
+"licenses")
+	endpoint="licenses/licenses";;
+"locations")
+	endpoint="locations";;
+"loantypes")
+	endpoint="loan-types";;
+"loan-history")
+	endpoint="loan-storage/loan-history";;
+"loans")
+	endpoint="loan-storage/loans";;
+"notes")
+	endpoint="notes";;
+"organizations")
+	endpoint="organizations-storage/organizations";;
+"polines")
+	endpoint="orders-storage/po-lines";;
+"preceedingsucceeding")
+	endpoint="preceding-succeeding-titles";;
+"requestprefs")
+	endpoint="request-preference-storage/request-preference";;
+"requests")
+	endpoint="circulation/requests";;
+"schedulednotices")
+	endpoint="scheduled-notice-storage/scheduled-notices";;
+"servicepoints")
+	endpoint="service-points";;
+"srs")
+	endpoint="source-storage/records";;
+"statcodes")
+	endpoint="statistical-codes";;
+"tags")
+	endpoint="tags";;
+"users")
+	endpoint="users";;
+"vouchers")
+	endpoint="voucher/vouchers";;
+*)
+	echo "Record type not found.";exit;;
+esac
+
+rm -f ${rec_type}
+
+while mapfile -t -n 10 ids && ((${#ids[@]})); do
+        seq=0
+        for uuid in "${ids[@]}";do
+                get_record ${seq} ${uuid} &
+                counter=$(($counter + 1))
+                seq=$(($seq + 1))
+        	TIME=$SECONDS;msg="$SECONDS seconds"
+
+        	if [[ $SECONDS -gt 60 ]];then TIME=$(($SECONDS/60));msg="$TIME minutes";fi
+        	if [[ $SECONDS -gt 3600 ]];then TIME=$(($SECONDS/3600));msg="$TIME hours";fi
+        	echo -en "Processing record $counter of $numrecs in $msg in $(($counter/$SECONDS)) recs/sec          \r"
+        done
+        wait
+
+        cat tmp_records.* >> ${rec_type}
+        rm tmp_records.*
+
+done < ${infile}
+
+echo "$num_records records have been exported to \"${rec_type}\""
+
+
+

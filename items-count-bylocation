@@ -7,7 +7,8 @@ declare -A name_dict
 
 locations=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/locations?limit=10000" |jq -r '.locations[] | [.id, .code, .name] |@tsv')
 
-outfile="loc_count"
+outfile="locations_bycount.tsv"
+tempfile="tmp_locations"
 
 
 IFS=$'\n' readarray -t loc_arr <<< "${locations}"
@@ -25,6 +26,7 @@ function fetch_location() {
 }
 
 seq=0
+numlocs=${#loc_arr[@]}
 
 for location in "${loc_arr[@]}";do
 	location="${seq}	${location}"
@@ -35,12 +37,16 @@ for location in "${loc_arr[@]}";do
 
 	if [[ $check -eq 0 ]];then 
 		wait
-		cat tmp_locs.*
+		echo -en "Inventoried $seq of $numlocs locations\r"
 		cat tmp_locs.* >> ${outfile}
 		rm tmp_locs.*
 	fi
 done
-			
-cat ${outfile} |sort -k1nr > ${outfile}
 
+echo -en "Inventoried $seq of $numlocs locations\r"
+			
+cat ${outfile} |sort -k1nr > ${tempfile}
+mv ${tempfile} ${outfile}
+
+echo
 echo "Location counts have been output to ${outfile}"

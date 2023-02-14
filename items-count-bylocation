@@ -1,0 +1,46 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+declare -A code_dict
+declare -A name_dict
+
+locations=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/locations?limit=10000" |jq -r '.locations[] | [.id, .code, .name] |@tsv')
+
+outfile="loc_count"
+
+
+IFS=$'\n' readarray -t loc_arr <<< "${locations}"
+
+function fetch_location() {
+	local line="${1}"
+	local seq=id=code=name=totalrecs""
+	local apicall
+
+	IFS=$'\t' read -r seq id code name <<< "${location}"
+
+	totalrecs=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-storage/items?query=(permanentLocationId==${id})&limit=0" |jq -r .totalRecords)
+	echo -e "${totalrecs}\t${code}\t${name}" >> "tmp_locs.${seq}"
+
+}
+
+seq=0
+
+for location in "${loc_arr[@]}";do
+	location="${seq}	${location}"
+	fetch_location "${location}" &
+
+	seq=$(($seq + 1))
+	check=$((seq%10))
+
+	if [[ $check -eq 0 ]];then 
+		wait
+		cat tmp_locs.*
+		cat tmp_locs.* >> ${outfile}
+		rm tmp_locs.*
+	fi
+done
+			
+cat ${outfile} |sort -k1nr > ${outfile}
+
+echo "Location counts have been output to ${outfile}"

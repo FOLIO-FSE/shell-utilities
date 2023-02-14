@@ -9,6 +9,7 @@ locations=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-
 
 outfile="locations_bycount.tsv"
 tempfile="tmp_locations"
+rm -f ${tempfile}
 
 
 IFS=$'\n' readarray -t loc_arr <<< "${locations}"
@@ -38,15 +39,14 @@ for location in "${loc_arr[@]}";do
 	if [[ $check -eq 0 ]];then 
 		wait
 		echo -en "Inventoried $seq of $numlocs locations\r"
-		cat tmp_locs.* >> ${outfile}
+		cat tmp_locs.* >> ${tempfile}
 		rm tmp_locs.*
 	fi
 done
 
 echo -en "Inventoried $seq of $numlocs locations\r"
 			
-cat ${outfile} |sort -k1nr > ${tempfile}
-mv ${tempfile} ${outfile}
+cat ${tempfile} |sort -k1nr > ${outfile}
 
 echo
 echo "Location counts have been output to ${outfile}"

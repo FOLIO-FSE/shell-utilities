@@ -5,11 +5,13 @@ okapi_token=$(cat okapi.token)
 rec_type=$1
 search_for=$2
 
+if [[ ${search_for} == "" ]]; then search_for="cql.allRecords=1";fi
+query="query=${search_for}"
+
 # endpoints with different behaviors use different defaults
 num_retrieved=1000
 recsretrieved=100
 sortby="%20sortby%20id"
-query="query=cql.allRecords=1"
 
 limit=0
 offset=0

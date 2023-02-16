@@ -75,6 +75,9 @@ case $recordtype in
 "locations")
 	recordtype="locations"
 	;;
+"notes")
+	recordtype="notes"
+	;;
 "notices")
 	recordtype="scheduled-notice-storage/scheduled-notices"
 	;;
@@ -100,7 +103,7 @@ case $recordtype in
 	recordtype="users"
 	;;
 *)
-	echo "Record type '${recordtype}' not found. Supported types are campuses, groups, holdings, instances, instance-types, interfaces, items, libraries, licenses, loans, locations, notices, organizations, polines, requests, servicepoints, srs, tags, users."
+	echo "Record type '${recordtype}' not found. Supported types are campuses, groups, holdings, instances, instance-types, interfaces, items, libraries, licenses, loans, locations, notes, notices, organizations, polines, requests, servicepoints, srs, tags, users."
 	exit
 	;;
 esac

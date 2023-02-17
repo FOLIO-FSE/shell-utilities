@@ -109,6 +109,7 @@ case $recordtype in
 esac
 
 counter=0
+SECONDS=1
 
 while mapfile -t -n 6 ids && ((${#ids[@]})); do
 	seq=0
@@ -117,14 +118,19 @@ while mapfile -t -n 6 ids && ((${#ids[@]})); do
 
 		counter=$(($counter + 1))
 		seq=$(($seq + 1))
-		echo -en "Processing record $counter of $numrecs\r"
 	done
 	wait
+	
+        TIME=$SECONDS;msg="$SECONDS seconds"
+        if [[ $SECONDS -gt 60 ]];then TIME=$(bc <<< "scale=1;$SECONDS/60");msg="$TIME minutes";fi
+        if [[ $SECONDS -gt 3600 ]];then TIME=$(bc <<< "scale=1;$SECONDS/3600");msg="$TIME hours     ";fi
+
+        echo -en "Processing record $counter of $numrecs in $msg\r"
 
 	cat tmp_records.* >> ${outfile}
 	rm tmp_records.*
 
 done < ${infile}
 
-echo "Finished processing $numrecs ${recordtype} records"
+echo "Finished processing $numrecs ${recordtype} records in $msg"
 

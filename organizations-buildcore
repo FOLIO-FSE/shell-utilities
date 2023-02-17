@@ -15,24 +15,31 @@ acq_prefix=""
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 declare -A orgtype_dict
+declare -A category_dict
 
-org_types=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organization-types?query=cql.allRecords=1%20sortby%20name&limit=2000")
+org_types=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/organization-types?query=cql.allRecords=1%20sortby%20name&limit=2000")
 
 eval "$(echo ${org_types} |jq -r '.organizationTypes[] | @sh "orgtype_dict[\(.name|tostring)]=\(.id|tostring)"')"
+
+cat_types=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/categories?query=cql.allRecords=1%20sortby%20value&limit=2000")
+
+eval "$(echo ${cat_types} |jq -r '.categories[] | @sh "category_dict[\(.value|tostring)]=\(.id|tostring)"')"
 
 #####################################
 
 
 create_org_record() {
-	local org=apicall=uuid=name=code=status=alias=address=phone=fax=email=url=currencies=accountnum=orgtype=status=""
+	local org=apicall=uuid=name=code=status=alias=address=addr1_line1=addr1_line2=addr1_city=addr1_state=addr1_zip=country=phone=fax=email=url=currencies=accountnum=orgtype=paymenttype=currency=categories=cat1=cat2=cat3=cat4=""
 	
 	local seq="${1}"
 	local line="${2}"
 
-	line=$(echo "${line}" |tr "\t" "^" |tr -d '"' |jq -aRs)
+	line=$(echo "${line}" |tr "\t" "^" |tr -d '"' |jq -aRs |sed 's/\\n//;s/^"//;s/"$//')
 
-	IFS='^' read -r code name alias addr1_line1 addr1_line2 addr1_city addr1_state addr1_zip country phone fax email url notes orgtype paymenttype accountnum currency category1 category2 category3 <<< ${line}
+	IFS='^' read -r code name alias addr1_line1 addr1_line2 addr1_city addr1_state addr1_zip country phone fax email url notes orgtype isvendor paymenttype accountnum currency cat1 cat2 cat3 cat4 <<< ${line}
+
 	status="Active"
+	code=$(echo "${code}" |xargs)
 	
 	if [[ ${name} == "" ]]; then name="${code}";fi
 	code="${acq_prefix}${code}"
@@ -41,6 +48,30 @@ create_org_record() {
 	uuid=$(uuidgen --sha1 -n 8405ae4d-b315-42e1-918a-d1919900cf3f -N "${okapi_url}:organizations:${code}")
 
 	if [[ ${alias} != "" ]]; then alias="{\"value\":\"${alias}\"}";fi
+
+	if [[ ${cat1} != "" ]]; then 
+		if [[ ${category_dict[${cat1}]} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]]; then
+			categories="\"${category_dict[${cat1}]}\""
+		fi
+	fi
+	if [[ ${cat2} != "" ]]; then 
+		if [[ ${category_dict[${cat2}]} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]]; then
+			categories="${categories}\"${category_dict[${cat2}]}\""
+		fi
+	fi
+	if [[ ${cat3} != "" ]]; then 
+		if [[ ${category_dict[${cat3}]} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]]; then
+			categories="${categories}\"${category_dict[${cat3}]}\""
+		fi
+	fi
+	if [[ ${cat4} != "" ]]; then 
+		if [[ ${category_dict[${cat4}]} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]]; then
+			categories="${categories}\"${category_dict[${cat4}]}\""
+		fi
+	fi
+	categories=$(sed 's/""/","/g' <<< "${categories}")
+
+	if [[ ${currency} =~ ^[A-Z][A-Z][A-Z]$ ]]; then currency="\"${currency}\"";fi
 	if [[ ${phone} != "" ]]; then phone="{ \"phoneNumber\" : \"${phone}\", \"type\":\"Office\", \"isPrimary\" : true, \"categories\" : [] }";fi
 	if [[ ${email} =~ @ ]]; then email="{ \"value\" : \"${email}\", \"isPrimary\" : true, \"categories\" : [] }";else email="";fi
 	if [[ ${accountnum} != "" ]]; then accountnum="{\"name\":\"${name}\",\"accountNo\":\"${accountnum}\",\"paymentMethod\":\"Other\",\"accountStatus\":\"Active\",\"libraryCode\":\"-\",\"libraryEdiCode\":\"-\"}"; fi
@@ -53,20 +84,28 @@ create_org_record() {
 		fi
 	fi
 
+	if [[ ${orgtype} != "" ]]; then 
+		orgtype=$(echo "${orgtype}" |xargs)
+		if [[ ${orgtype_dict[${orgtype}]} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]]; then
+			orgtype="\"${orgtype_dict[${orgtype}]}\""
+		else
+			orgtype=""
+		fi
+	fi
 	url=${url/ .*/}
 	url=${url/^[^h].*/}
 
 	if [[ ${url} =~ ^http ]]; then url="{ \"language\" : \"en\", \"isPrimary\" : true, \"value\" : \"${url}\" }";fi
 
 	if [[ ${addr1_line1} != "" ]]; then
-		address="{\"isPrimary\":true,\"addressLine1\":\"${addr1_line1}\",\"addressLine2\":\"${addr1_line2}\",\"city\":\"${addr1_city}\",\"stateRegion\":\"${addr1_state}\",\"zipCode\":\"${addr1_zip}\", \"categories\"}"
+		address="{\"isPrimary\":true,\"addressLine1\":\"${addr1_line1}\",\"addressLine2\":\"${addr1_line2}\",\"city\":\"${addr1_city}\",\"stateRegion\":\"${addr1_state}\",\"zipCode\":\"${addr1_zip}\", \"country\": \"${country}\", \"categories\" : [${categories}]}"
 	fi
 
 	if [[ ${addr2_line1} != "" ]]; then
 		if [[ $address != "" ]];then
-			address="${address}, {\"isPrimary\":false,\"addressLine1\":\"${addr2_line1}\",\"addressLine2\":\"${addr2_line2}\",\"city\":\"${addr2_city}\",\"stateRegion\":\"${addr2_state}\",\"zipCode\":\"${addr2_zip}\"}"
+			address="${address}, {\"isPrimary\":false,\"addressLine1\":\"${addr2_line1}\",\"addressLine2\":\"${addr2_line2}\",\"city\":\"${addr2_city}\",\"stateRegion\":\"${addr2_state}\",\"zipCode\":\"${addr2_zip}\", \"country\": \"${country}\"}"
 		else
-			address="{\"isPrimary\":true,\"addressLine1\":\"${addr2_line1}\",\"addressLine2\":\"${addr2_line2}\",\"city\":\"${addr2_city}\",\"stateRegion\":\"${addr2_state}\",\"zipCode\":\"${addr2_zip}\"}"
+			address="{\"isPrimary\":true,\"addressLine1\":\"${addr2_line1}\",\"addressLine2\":\"${addr2_line2}\",\"city\":\"${addr2_city}\",\"stateRegion\":\"${addr2_state}\",\"zipCode\":\"${addr2_zip}\", \"country\": \"${country}\"}"
 		fi
 	fi
 
@@ -86,7 +125,8 @@ IFS='' read -r -d '' org << EndOfOrg
  "contacts" : [ ],
  "agreements" : [ ],
  "erpCode" : "",
- "vendorCurrencies" : [ ],
+ "organizationTypes" : [ ${orgtype} ],
+ "vendorCurrencies" : [ ${currency} ],
  "edi" : {
    "vendorEdiType" : "31B/US-SAN",
    "libEdiType" : "31B/US-SAN",
@@ -105,7 +145,6 @@ IFS='' read -r -d '' org << EndOfOrg
 EndOfOrg
 
 	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${org}" "${okapi_url}/organizations/organizations" |tr -d "\n" > tmp_output.${seq}
-
 }
 ###############################
 counter=0
@@ -114,7 +153,7 @@ SECONDS=1
 while mapfile -t -n 10 records && ((${#records[@]})); do
 	seq=0
 	for record in "${records[@]}";do
-		create_org_record "${seq}" "${}"
+		create_org_record "${seq}" "${record}" &
 
         	TIME=$SECONDS;msg="$SECONDS seconds"
 

@@ -154,16 +154,15 @@ while mapfile -t -n 10 records && ((${#records[@]})); do
 	seq=0
 	for record in "${records[@]}";do
 		create_org_record "${seq}" "${record}" &
-
-        	TIME=$SECONDS;msg="$SECONDS seconds"
-
-        	if [[ $SECONDS -gt 60 ]];then TIME=$(($SECONDS/60));msg="$TIME minutes";fi
-        	if [[ $SECONDS -gt 3600 ]];then TIME=$(($SECONDS/3600));msg="$TIME hours";fi
-
 		seq=$(($seq + 1))
 		counter=$((counter + 1))
-		echo -en "Processing record $counter of $numrecs in $msg\r"
 	done
+
+        TIME=$SECONDS;msg="$SECONDS seconds"
+        if [[ $SECONDS -gt 60 ]];then TIME=$(bc <<< "scale=1;$SECONDS/60");msg="$TIME minutes";fi
+        if [[ $SECONDS -gt 3600 ]];then TIME=$(bc <<< "scale=1;$SECONDS/3600");msg="$TIME hours     ";fi
+
+	echo -en "Processing record $counter of $numrecs in $msg\r"
 	wait
 
 	cat tmp_output.* >> ${outfile}

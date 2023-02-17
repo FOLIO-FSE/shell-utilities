@@ -80,8 +80,8 @@ echo
 SINGLE=$(echo -ne '\u00B4\u2018\u2019')
 DOUBLE=$(echo -ne '\u201C\u201D')
 NBSP=$(echo -ne '\uc2a0\u00a0')
-#sed -i 's/"*\t"*/\t/g; s/^"//; s/"$// ' ${infile}
-sed -i "s/\"*\t\"*/\t/g; s/^\"//; s/\";/;/g; s/;\"/;/g; s/\"$//;s/[$SINGLE]/'/g; s/[$DOUBLE]/\"/g; s/[$NBSP]/ /g" "${infile}"
+CONTROL=$(echo -ne '\u001b\u0007\u0001')
+sed -i "s/\"*\t\"*/\t/g; s/^\"//; s/\";/;/g; s/;\"/;/g; s/\"$//;s/[$SINGLE]/'/g; s/[$DOUBLE]/\"/g; s/[$NBSP]/ /g; s/[$CONTROL]/ /g" "${infile}"
 
 echo "Converting MM-DD-YYYY dates to YYYY-MM-DD and stripping blank dates"
 echo

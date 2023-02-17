@@ -34,7 +34,7 @@ create_org_record() {
 	local seq="${1}"
 	local line="${2}"
 
-	line=$(echo "${line}" |tr "\t" "^" |tr -d '"' |jq -aRs |sed 's/\\n//;s/^"//;s/"$//')
+	line=$(echo "${line}" |tr "\t" "^" |tr -d '"' |jq -aRs .|sed 's/\\n//;s/^"//;s/"$//')
 
 	IFS='^' read -r code name alias addr1_line1 addr1_line2 addr1_city addr1_state addr1_zip country phone fax email url notes orgtype isvendor paymenttype accountnum currency cat1 cat2 cat3 cat4 <<< ${line}
 
@@ -149,24 +149,31 @@ EndOfOrg
 ###############################
 counter=0
 SECONDS=1
+seq=0
 
-while mapfile -t 10 records && ((${#records[@]})); do
-	seq=0
-	for record in "${records[@]}";do
-		create_org_record "${seq}" "${record}" &
-		seq=$(($seq + 1))
-		counter=$((counter + 1))
-	done
+while IFS=$'\n' read -r record; do
+	create_org_record "${seq}" "${record}" 
+	seq=$(($seq + 1))
+	counter=$((counter + 1))
 
-        TIME=$SECONDS;msg="$SECONDS seconds"
-        if [[ $SECONDS -gt 60 ]];then TIME=$(bc <<< "scale=1;$SECONDS/60");msg="$TIME minutes";fi
-        if [[ $SECONDS -gt 3600 ]];then TIME=$(bc <<< "scale=1;$SECONDS/3600");msg="$TIME hours     ";fi
+	if [[ $seq -ge 10 ]];then 
+		wait
+		seq=0
+        	TIME=$SECONDS;msg="$SECONDS seconds"
+        	if [[ $SECONDS -gt 60 ]];then TIME=$(bc <<< "scale=1;$SECONDS/60");msg="$TIME minutes";fi
+        	if [[ $SECONDS -gt 3600 ]];then TIME=$(bc <<< "scale=1;$SECONDS/3600");msg="$TIME hours     ";fi
 
-	echo -en "Processing record $counter of $numrecs in $msg\r"
-	wait
-
-	cat tmp_output.* >> ${outfile}
-	rm tmp_output.*
+		echo -en "Processing record $counter of $numrecs in $msg\r"
+		cat tmp_output.* >> ${outfile}
+		rm tmp_output.*
+	fi
 
 done < ${infile}
 
+TIME=$SECONDS;msg="$SECONDS seconds"
+if [[ $SECONDS -gt 60 ]];then TIME=$(bc <<< "scale=1;$SECONDS/60");msg="$TIME minutes";fi
+if [[ $SECONDS -gt 3600 ]];then TIME=$(bc <<< "scale=1;$SECONDS/3600");msg="$TIME hours     ";fi
+
+echo -en "Processed record $counter of $numrecs in $msg          \r"
+cat tmp_output.* >> ${outfile}
+rm -f tmp_output.*

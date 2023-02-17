@@ -45,17 +45,18 @@ fi
 if [[ ! -f ${infile} ]]; then echo "This script cannot find input file ${infile}";exit;fi
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
-counter=0
+counter=1
 
 while mapfile -t -n 4 uuids && ((${#uuids[@]})); do
 	for uuid in ${uuids[@]};do	
 		uuid=${uuid//[^0-9a-z\-]/}
 		update_record "${uuid}" &
 		counter=$(($counter + 1))
-		recsPerSec=$(($counter/$SECONDS))
-		printf "Processed %s records of %s at %s records/sec\r" $counter $numrecs $recsPerSec
 	done
 	wait
+
+	recsPerSec=$(bc <<< "scale=1;$counter/$SECONDS")
+	echo -en "Processed $counter records of $numrecs at $recsPerSec records/sec\r" 
 done < ${infile} 
 
 echo "Processed $counter records                      "

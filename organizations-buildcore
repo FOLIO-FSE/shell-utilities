@@ -2,19 +2,73 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-filename="vendors.tsv"
-dos2unix ${filename}
+infile="vendors.tsv"
+outfile="organization_create.log"
+
+use_deterministic_uuids="yes"
+dos2unix ${infile}
 
 acqunit=""
 if [[ ${acqunit} != "" ]];then acqunit="\"${acqunit}\"";fi
 acq_prefix=""
 
-numrecs=$(wc -l ${filename} |cut -d " " -f1)
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+declare -A orgtype_dict
+
+org_types=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organization-types?query=cql.allRecords=1%20sortby%20name&limit=2000")
+
+eval "$(echo ${org_types} |jq -r '.organizationTypes[] | @sh "orgtype_dict[\(.name|tostring)]=\(.id|tostring)"')"
 
 #####################################
 
 
 create_org_record() {
+	local org=apicall=uuid=name=code=status=alias=address=phone=fax=email=url=currencies=accountnum=orgtype=status=""
+	
+	local seq="${1}"
+	local line="${2}"
+
+	line=$(echo "${line}" |tr "\t" "^" |tr -d '"' |jq -aRs)
+
+	IFS='^' read -r code name alias addr1_line1 addr1_line2 addr1_city addr1_state addr1_zip country phone fax email url notes orgtype paymenttype accountnum currency category1 category2 category3 <<< ${line}
+	status="Active"
+	
+	if [[ ${name} == "" ]]; then name="${code}";fi
+	code="${acq_prefix}${code}"
+
+	# uuid needs to be global. Note that repair/addition tools can't assume deterministic uuids
+	uuid=$(uuidgen --sha1 -n 8405ae4d-b315-42e1-918a-d1919900cf3f -N "${okapi_url}:organizations:${code}")
+
+	if [[ ${alias} != "" ]]; then alias="{\"value\":\"${alias}\"}";fi
+	if [[ ${phone} != "" ]]; then phone="{ \"phoneNumber\" : \"${phone}\", \"type\":\"Office\", \"isPrimary\" : true, \"categories\" : [] }";fi
+	if [[ ${email} =~ @ ]]; then email="{ \"value\" : \"${email}\", \"isPrimary\" : true, \"categories\" : [] }";else email="";fi
+	if [[ ${accountnum} != "" ]]; then accountnum="{\"name\":\"${name}\",\"accountNo\":\"${accountnum}\",\"paymentMethod\":\"Other\",\"accountStatus\":\"Active\",\"libraryCode\":\"-\",\"libraryEdiCode\":\"-\"}"; fi
+
+	if [[ ${fax} != "" ]]; then
+		if [[ ${phone} != "" ]]; then
+			fax=",{\"phoneNumber\":\"${fax}\",\"type\":\"Fax\"}"
+		else
+			fax="{\"phoneNumber\":\"${fax}\",\"type\":\"Fax\"}"
+		fi
+	fi
+
+	url=${url/ .*/}
+	url=${url/^[^h].*/}
+
+	if [[ ${url} =~ ^http ]]; then url="{ \"language\" : \"en\", \"isPrimary\" : true, \"value\" : \"${url}\" }";fi
+
+	if [[ ${addr1_line1} != "" ]]; then
+		address="{\"isPrimary\":true,\"addressLine1\":\"${addr1_line1}\",\"addressLine2\":\"${addr1_line2}\",\"city\":\"${addr1_city}\",\"stateRegion\":\"${addr1_state}\",\"zipCode\":\"${addr1_zip}\", \"categories\"}"
+	fi
+
+	if [[ ${addr2_line1} != "" ]]; then
+		if [[ $address != "" ]];then
+			address="${address}, {\"isPrimary\":false,\"addressLine1\":\"${addr2_line1}\",\"addressLine2\":\"${addr2_line2}\",\"city\":\"${addr2_city}\",\"stateRegion\":\"${addr2_state}\",\"zipCode\":\"${addr2_zip}\"}"
+		else
+			address="{\"isPrimary\":true,\"addressLine1\":\"${addr2_line1}\",\"addressLine2\":\"${addr2_line2}\",\"city\":\"${addr2_city}\",\"stateRegion\":\"${addr2_state}\",\"zipCode\":\"${addr2_zip}\"}"
+		fi
+	fi
 
 IFS='' read -r -d '' org << EndOfOrg
 {
@@ -50,62 +104,31 @@ IFS='' read -r -d '' org << EndOfOrg
 } 
 EndOfOrg
 
-echo "${org}"
+	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${org}" "${okapi_url}/organizations/organizations" |tr -d "\n" > tmp_output.${seq}
 
 }
 ###############################
 counter=0
+SECONDS=1
 
-while IFS=$'\n' read line;do
-	line=$(echo "${line}" |tr "\t" "^" |tr -d '"')
-	#IFS='^' read -r code name alias addr phone fax email url accountnum <<< ${line}
-	#IFS='^' read -r code name alias  addr1_line1 addr1_line2 addr1_city addr1_state addr1_zip country phone fax email url <<< ${line}
-	IFS='^' read -r code name accountnum addr1_line1 addr2_line1 phone email note1 note2 note3 <<< ${line}
-	#IFS='^' read -r code name <<< ${line}
-	status="Active"
+while mapfile -t -n 10 records && ((${#records[@]})); do
+	seq=0
+	for record in "${records[@]}";do
+		create_org_record "${seq}" "${}"
 
-	if [[ ${name} == "" ]]; then name="${code}";fi
-	code="${acq_prefix}${code}"
+        	TIME=$SECONDS;msg="$SECONDS seconds"
 
-	# uuid needs to be global. Note that repair/addition tools can't assume deterministic uuids
-	uuid=$(uuidgen --sha1 -n 8405ae4d-b315-42e1-918a-d1919900cf3f -N "${okapi_url}:organizations:${code}")
+        	if [[ $SECONDS -gt 60 ]];then TIME=$(($SECONDS/60));msg="$TIME minutes";fi
+        	if [[ $SECONDS -gt 3600 ]];then TIME=$(($SECONDS/3600));msg="$TIME hours";fi
 
-	if [[ ${alias} != "" ]]; then alias="{\"value\":\"${alias}\"}";fi
-	if [[ ${phone} != "" ]]; then phone="{ \"phoneNumber\" : \"${phone}\", \"type\":\"Office\", \"isPrimary\" : true, \"categories\" : [] }";fi
-	if [[ ${email} =~ @ ]]; then email="{ \"value\" : \"${email}\", \"isPrimary\" : true, \"categories\" : [] }";else email="";fi
-	if [[ ${accountnum} != "" ]]; then accountnum="{\"name\":\"${name}\",\"accountNo\":\"${accountnum}\",\"paymentMethod\":\"Other\",\"accountStatus\":\"Active\",\"libraryCode\":\"-\",\"libraryEdiCode\":\"-\"}"; fi
+		seq=$(($seq + 1))
+		counter=$((counter + 1))
+		echo -en "Processing record $counter of $numrecs in $msg\r"
+	done
+	wait
 
-	if [[ ${fax} != "" ]]; then
-		if [[ ${phone} != "" ]]; then
-			fax=",{\"phoneNumber\":\"${fax}\",\"type\":\"Fax\"}"
-		else
-			fax="{\"phoneNumber\":\"${fax}\",\"type\":\"Fax\"}"
-		fi
-	fi
+	cat tmp_output.* >> ${outfile}
+	rm tmp_output.*
 
-	url=${url/ .*/}
-	url=${url/^[^h].*/}
-
-	if [[ ${url} =~ ^http ]]; then url="{ \"language\" : \"en\", \"isPrimary\" : true, \"value\" : \"${url}\" }";fi
-
-	if [[ ${addr1_line1} != "" ]]; then
-		address="{\"isPrimary\":true,\"addressLine1\":\"${addr1_line1}\",\"addressLine2\":\"${addr1_line2}\",\"city\":\"${addr1_city}\",\"stateRegion\":\"${addr1_state}\",\"zipCode\":\"${addr1_zip}\"}"
-	fi
-	if [[ ${addr2_line1} != "" ]]; then
-		if [[ $address != "" ]];then
-			address="${address}, {\"isPrimary\":false,\"addressLine1\":\"${addr2_line1}\",\"addressLine2\":\"${addr2_line2}\",\"city\":\"${addr2_city}\",\"stateRegion\":\"${addr2_state}\",\"zipCode\":\"${addr2_zip}\"}"
-		else
-			address="{\"isPrimary\":true,\"addressLine1\":\"${addr2_line1}\",\"addressLine2\":\"${addr2_line2}\",\"city\":\"${addr2_city}\",\"stateRegion\":\"${addr2_state}\",\"zipCode\":\"${addr2_zip}\"}"
-		fi
-	fi
-
-	org=$(create_org_record)
-	
-	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${org}" "${okapi_url}/organizations/organizations")
-	echo ${apicall}
-
-	counter=$((counter + 1))
-	echo "Processing $code -- record $counter of $numrecs"
-
-done < ${filename}
+done < ${infile}
 

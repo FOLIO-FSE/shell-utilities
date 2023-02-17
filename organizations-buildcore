@@ -144,7 +144,7 @@ IFS='' read -r -d '' org << EndOfOrg
 } 
 EndOfOrg
 
-	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${org}" "${okapi_url}/organizations/organizations" |tr -d "\n" > tmp_output.${seq}
+	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${org}" "${okapi_url}/organizations/organizations" |tr -d "\n" |sed 's/$/\n/' > tmp_output.${seq}
 }
 ###############################
 counter=0

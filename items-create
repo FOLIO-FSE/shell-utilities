@@ -76,8 +76,8 @@ create_item() {
 	fi
 
 	# sequencing is important since itemId itself is modified
-	holdingsRecordId=$(uuidgen --sha1 -n ${namespace} -N ${okapi_url}:holdings:${holdingsRecordId})
-	itemId=$(uuidgen --sha1 -n ${namespace} -N ${okapi_url}:items:${itemId})
+	holdingsRecordId=$(uuid -v 5  ${namespace} ${okapi_url}:holdings:${holdingsRecordId})
+	itemId=$(uuid -v 5  ${namespace} ${okapi_url}:items:${itemId})
 
 	permanentLocationId=${location_dict["${permanentLocationId}"]}
 

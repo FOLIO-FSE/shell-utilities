@@ -14,5 +14,5 @@ if [[ ${strip} == "strip" ]];then
 	identifier="${identifier:0:-1}"
 fi
 
-echo "uuidgen --sha1 -n ${namespace} -N ${okapi_url}:${object_type}:${identifier}"
-uuidgen --sha1 -n ${namespace} -N ${okapi_url}:${object_type}:${identifier}
+echo "uuid -v 5  ${namespace} ${okapi_url}:${object_type}:${identifier}"
+uuid -v 5  ${namespace} ${okapi_url}:${object_type}:${identifier}

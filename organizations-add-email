@@ -58,7 +58,7 @@ while IFS=$'\n' read line;do
 	line=$(echo "${line}" | tr -d '"' | tr "\t" "^")
 	IFS='^' read -r code email <<< ${line}
         if [[ ${use_deterministic_uuids} == "yes" ]];then
-                uuid=$(uuidgen --sha1 -n 8405ae4d-b315-42e1-918a-d1919900cf3f -N "${okapi_url}:organizations:${code}")
+                uuid=$(uuid -v 5  8405ae4d-b315-42e1-918a-d1919900cf3f "${okapi_url}:organizations:${code}")
                 organization="${organization_dict[$uuid]}"
         else
                 code=$(tr -dc [0-9a-z] <<< ${code,,})

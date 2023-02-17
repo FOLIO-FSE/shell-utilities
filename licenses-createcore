@@ -27,12 +27,12 @@ echo "${license}"
 while IFS=$'\n' read -r line;do 
 	line=$(echo "${line}" |tr "\t" "^" |tr -d '"')
 	IFS='^' read -r name description startdate enddate <<< ${line}
-	description=$(echo -n ${description} |jq -Rs )
+	description=$(echo ${description} |jq -Rs )
 	keyname=$(tr -dc [a-z0-9] <<< ${name,,})
 
 	# license uuid -- needs to be global
 	namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
-	uuid=$(uuidgen --sha1 -n ${namespace} -N ${okapi_url}:licenses:${keyname})
+	uuid=$(uuid -v 5  ${namespace} ${okapi_url}:licenses:${keyname})
 
 	license=$(create_license)
 

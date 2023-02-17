@@ -100,7 +100,7 @@ get_licenses() {
 ########################################### alt names
 
 add_alt_name() {
-	altname=$(echo -n ${altname} |jq -aRs)
+	altname=$(echo ${altname} |jq -aRs)
 	echo "${agreement}" | jq ".alternateNames += [{ \"_delete\" : false, \"name\" : ${altname} }]"
 }
 
@@ -165,9 +165,9 @@ while IFS=$'\n' read -r line;do
 	keyname=$(tr -dc [a-z0-9] <<< ${name,,})
 
 	namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
-	uuid=$(uuidgen --sha1 -n ${namespace} -N ${okapi_url}:agreements:${keyname})
+	uuid=$(uuid -v 5  ${namespace} ${okapi_url}:agreements:${keyname})
 
-	name=$(echo -n ${name} |jq -aRs)
+	name=$(echo ${name} |jq -aRs)
 
 	#  start_date is required
 	start_date=${start_date:0:10}
@@ -186,9 +186,9 @@ while IFS=$'\n' read -r line;do
 	if [[ ${altname6,,} =~ [0-9a-z] ]]; then altname=${altname6};agreement=$(add_alt_name);fi
 	if [[ ${altname7,,} =~ [0-9a-z] ]]; then altname=${altname7};agreement=$(add_alt_name);fi
 
-	if [[ ${description,,} =~ [a-z0-9] ]];then description=$(echo -n "${description}" |jq -aRs );agreement=$(echo "${agreement}" | jq ".description = ${description} ");fi
-	if [[ ${isPerpetual,,} =~ [a-z0-9] ]];then agreement=$(echo -n "${agreement}" | jq ".isPerpetual = { \"value\": \"${isPerpetual}\" } ");fi
-	if [[ ${renewalPriority,,} =~ [a-z0-9] ]];then agreement=$(echo -n "${agreement}" | jq ".renewalPriority = { \"value\": \"${renewalPriority}\" } ");fi
+	if [[ ${description,,} =~ [a-z0-9] ]];then description=$(echo "${description}" |jq -aRs );agreement=$(echo "${agreement}" | jq ".description = ${description} ");fi
+	if [[ ${isPerpetual,,} =~ [a-z0-9] ]];then agreement=$(echo "${agreement}" | jq ".isPerpetual = { \"value\": \"${isPerpetual}\" } ");fi
+	if [[ ${renewalPriority,,} =~ [a-z0-9] ]];then agreement=$(echo "${agreement}" | jq ".renewalPriority = { \"value\": \"${renewalPriority}\" } ");fi
 
 	if [[ ${org,,} =~ [0-9a-z] ]];then org=${org,,};agreement=$(add_org);fi
 

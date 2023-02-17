@@ -45,7 +45,7 @@ create_org_record() {
 	code="${acq_prefix}${code}"
 
 	# uuid needs to be global. Note that repair/addition tools can't assume deterministic uuids
-	uuid=$(uuidgen --sha1 -n 8405ae4d-b315-42e1-918a-d1919900cf3f -N "${okapi_url}:organizations:${code}")
+	uuid=$(uuid -v 5  8405ae4d-b315-42e1-918a-d1919900cf3f "${okapi_url}:organizations:${code}")
 
 	if [[ ${alias} != "" ]]; then alias="{\"value\":\"${alias}\"}";fi
 
@@ -150,7 +150,7 @@ EndOfOrg
 counter=0
 SECONDS=1
 
-while mapfile -t -n 10 records && ((${#records[@]})); do
+while mapfile -t 10 records && ((${#records[@]})); do
 	seq=0
 	for record in "${records[@]}";do
 		create_org_record "${seq}" "${record}" &

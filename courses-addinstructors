@@ -26,8 +26,8 @@ echo "$counter keys normalized"
 
 while IFS=$'\t' read -r courseNumber instructorName;do
 
-instructorId=$(uuidgen --sha1 -n ${namespace} -N ${okapi_url}:instructors:${instructorName})
-instructorId=$(uuidgen)
+instructorId=$(uuid -v 5  ${namespace} ${okapi_url}:instructors:${instructorName})
+instructorId=$(uuid -v 5 )
 
 courseNumber=$(tr -dc "[0-9a-z]" <<< ${courseNumber,,})
 listingId=${course_dict[${courseNumber}]}

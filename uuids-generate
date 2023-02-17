@@ -24,11 +24,11 @@ uuid_generate() {
 	fi
 
 	fileno=$(printf "%03d" $fileno)
-	uuidgen --sha1 -n ${namespace} -N ${okapi_url}:${object_type}:${identifier} > "tmp_uuid.${fileno}"
+	uuid -v 5  ${namespace} ${okapi_url}:${object_type}:${identifier} > "tmp_uuid.${fileno}"
 }
 
 
-while mapfile -t -n 100 ids && ((${#ids[@]})); do
+while mapfile -t 100 ids && ((${#ids[@]})); do
 	seq=0
 	for id in ${ids[@]};do
 		uuid_generate ${id} ${seq} &

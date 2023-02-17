@@ -48,8 +48,8 @@ create_holding() {
 	fi
 
 	# sequencing is important since holdId itself is modified
-	instanceId=$(uuidgen --sha1 -n ${namespace} -N ${okapi_url}:instances:${holdId})
-	holdId=$(uuidgen --sha1 -n ${namespace} -N ${okapi_url}:holdings:${holdId})
+	instanceId=$(uuid -v 5  ${namespace} ${okapi_url}:instances:${holdId})
+	holdId=$(uuid -v 5  ${namespace} ${okapi_url}:holdings:${holdId})
 
 	permanentLocationId=${location_dict["${permanentLocationId}"]}
 

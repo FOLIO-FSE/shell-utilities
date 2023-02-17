@@ -53,8 +53,8 @@ create_holding() {
 	local itemId
 
 	# sequencing is important since holdId itself is modified
-	holdId=$(uuidgen --sha1 -n ${namespace} -N ${okapi_url}:holdings:${instanceId})
-	itemId=$(uuidgen --sha1 -n ${namespace} -N ${okapi_url}:items:${instanceId})
+	holdId=$(uuid -v 5  ${namespace} ${okapi_url}:holdings:${instanceId})
+	itemId=$(uuid -v 5  ${namespace} ${okapi_url}:items:${instanceId})
 
 IFS='' read -r -d '' holding << EndOfHolding
 {

@@ -3,47 +3,67 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 declare -A organization_dict
+use_deterministic_uuids="yes"
 
-filename="org_note.tsv"
-noteTypeUuid="874a6555-01af-4fc7-b6ea-c1627a7187cf"
+infile="org_note.tsv"
+outfile="org_note.log"
+noteTypeUuid="57bb15bf-9e01-4ba1-91b8-e18936c862e2"
 
-dos2unix ${filename}
+dos2unix ${infile}
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 get_orgs() {
-
-recsretrieved=100
-offset=0
-all_organizations=""
-
-# retrieve all records
-while [[ $recsretrieved -eq 100 ]] ;do
-        apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/organizations?query=%28status%3D%3D%22Active%22%29+sortby+name%2Fsort.ascending&limit=100&offset=$offset" |jq .organizations)
-
-        recsretrieved=$(echo ${apicall} |jq '. |length')
-        totalrecs=$(($offset + $recsretrieved))
-        printf "%s Organizations retrieved\r" $totalrecs
-
-        all_organizations="${all_organizations}$(echo ${apicall} |jq .[])"
-        offset=$(($offset + 100))
-        done
-
-echo "$totalrecs Organizations retrieved"
-
-# load organizations into scalar array keyed by downcased name
-eval "$(echo ${all_organizations} |jq -r '. | @sh "organization_dict[\(.code|tostring|ascii_downcase)]=\(.|tostring)"')"
-
-echo "Normalizing Organization keys"
-
-# normalize keys
-for key in "${!organization_dict[@]}";do
-        newkey=${key//[^a-z0-9]/}
-        organization_dict[${newkey}]=${organization_dict["${key}"]}
-done
+	recsretrieved=100
+	offset=0
+	all_organizations=""
+	
+	# retrieve all records
+	while [[ $recsretrieved -eq 100 ]] ;do
+	        apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/organizations?query=%28status%3D%3D%22Active%22%29+sortby+name%2Fsort.ascending&limit=100&offset=$offset" |jq .organizations)
+	
+	        recsretrieved=$(echo ${apicall} |jq '. |length')
+	        totalrecs=$(($offset + $recsretrieved))
+	        printf "%s Organizations retrieved\r" $totalrecs
+	
+	        all_organizations="${all_organizations}$(echo ${apicall} |jq .[])"
+	        offset=$(($offset + 100))
+	        done
+	
+	echo "$totalrecs Organizations retrieved"
+	
+	# load organizations into scalar array keyed by downcased name
+	eval "$(echo ${all_organizations} |jq -r '. | @sh "organization_dict[\(.code|tostring|ascii_downcase)]=\(.|tostring)"')"
+	
+	echo "Normalizing Organization keys"
+	
+	# normalize keys
+	for key in "${!organization_dict[@]}";do
+	        newkey=${key//[^a-z0-9]/}
+	        organization_dict[${newkey}]=${organization_dict["${key}"]}
+	done
 }
 
 #####################################
 create_note() {
-note_uuid=$(uuidgen)
+	local note=code=organization=organization_uuid=note_uuid=""
+	local seq="${1}"
+	local line="${2}"
+
+	line=$(echo "${line}" |tr -d "\n" | tr "\t" "^")
+	IFS='^' read -r code note <<< ${line}
+
+	note_uuid=$(uuidgen)
+	note=$(echo "${note}" |jq -aRs .)
+
+	if [[ $use_deterministic_uuids == "no" ]];then 
+		code=$(tr -dc [0-9a-z] <<< ${code,,})
+		organization="${organization_dict[$code]}"
+		organization_uuid=$(echo ${organization} |jq -r .id)
+	else
+		organization_uuid=$(uuid -v 5  8405ae4d-b315-42e1-918a-d1919900cf3f "${okapi_url}:organizations:${code}")
+	fi
+
+	note_uuid=$(uuidgen)
 
 IFS='' read -r -d '' data << EndOfJSON
 {
@@ -61,31 +81,39 @@ IFS='' read -r -d '' data << EndOfJSON
 }
 EndOfJSON
 
-echo "${data}"
+curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/notes" |tr -d "\n" |sed 's/$/\n/' > tmp_output.${seq}
 }
 
 #####################################
 
-get_orgs
+if [[ $use_deterministic_uuids == "no" ]];then get_orgs;fi
 
 counter=0
+seq=0
+SECONDS=1
 
 while IFS=$'\n' read line;do
-	line=$(echo "${line}" |tr -d "\n" | tr "\t" "^")
-	IFS='^' read -r code note <<< ${line}
-	code=$(tr -dc [0-9a-z] <<< ${code,,})
-	note=$(echo "${note}" |jq -aRs)
-
-	organization="${organization_dict[$code]}"
-	organization_uuid=$(echo ${organization} |jq -r .id)
-
-	note_uuid=$(uuidgen)
-	data=$(create_note)
-
-        apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/notes")
-
+	create_note $seq "${line}" &
+	seq=$(($seq + 1))
 	counter=$((counter + 1))
-	echo "Processing $code -- record $counter"
-	echo "${apicall}"
-done < ${filename}
 
+	if [[ $seq -ge 10 ]];then 
+		wait
+		seq=0
+        	TIME=$SECONDS;msg="$SECONDS seconds"
+        	if [[ $SECONDS -gt 60 ]];then TIME=$(bc <<< "scale=1;$SECONDS/60");msg="$TIME minutes";fi
+        	if [[ $SECONDS -gt 3600 ]];then TIME=$(bc <<< "scale=1;$SECONDS/3600");msg="$TIME hours     ";fi
+
+		echo -en "Processing record $counter of $numrecs in $msg\r"
+		cat tmp_output.* >> ${outfile}
+		rm tmp_output.*
+	fi
+done < ${infile}
+
+TIME=$SECONDS;msg="$SECONDS seconds"
+if [[ $SECONDS -gt 60 ]];then TIME=$(bc <<< "scale=1;$SECONDS/60");msg="$TIME minutes";fi
+if [[ $SECONDS -gt 3600 ]];then TIME=$(bc <<< "scale=1;$SECONDS/3600");msg="$TIME hours     ";fi
+
+echo -en "Processed record $counter of $numrecs in $msg          \r"
+cat tmp_output.* >> ${outfile}
+rm -f tmp_output.*

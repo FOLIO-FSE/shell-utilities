@@ -174,6 +174,6 @@ TIME=$SECONDS;msg="$SECONDS seconds"
 if [[ $SECONDS -gt 60 ]];then TIME=$(bc <<< "scale=1;$SECONDS/60");msg="$TIME minutes";fi
 if [[ $SECONDS -gt 3600 ]];then TIME=$(bc <<< "scale=1;$SECONDS/3600");msg="$TIME hours     ";fi
 
-echo -en "Processed record $counter of $numrecs in $msg          \r"
+echo "Processed record $counter of $numrecs in $msg          "
 cat tmp_output.* >> ${outfile}
 rm -f tmp_output.*

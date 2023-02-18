@@ -152,7 +152,7 @@ SECONDS=1
 seq=0
 
 while IFS=$'\n' read -r record; do
-	create_org_record "${seq}" "${record}" 
+	create_org_record "${seq}" "${record}" &
 	seq=$(($seq + 1))
 	counter=$((counter + 1))
 

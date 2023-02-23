@@ -7,6 +7,8 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
+infile="groups.tsv"
+
 while IFS=$'\t' read code desc 
 do
 
@@ -19,7 +21,7 @@ IFS='' read -r -d '' group << EndOfGroup
 
 {
 "group": "${code}",
-"desc": "{desc}",
+"desc": "${desc}",
 "id": "${uuid}"
 }
 EndOfGroup
@@ -28,6 +30,6 @@ apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" 
 
 echo -e "${apicall}" |jq '.'
 
-done < groups 
+done < ${infile}
 
 

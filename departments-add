@@ -7,11 +7,15 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
+infile="departments.tsv"
+
 while read line
 do
 
 code=$(cut -f1 <<<$line)
 department=$(cut -f2 <<<$line)
+
+if [[ "${department}" == "" ]];then department="${code}";fi
 
 IFS='' read -r -d '' department << EndOfDepartment
 
@@ -24,6 +28,6 @@ EndOfDepartment
 apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${department}" "${okapi_url}/departments")
 
 echo -e "${apicall}"  |jq '.'
-done < departments
+done < ${infile}
 
 

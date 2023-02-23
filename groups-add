@@ -15,7 +15,7 @@ do
 code=$(echo ${code} |xargs)
 desc=$(echo ${desc} |xargs)
 
-if [[ $desc == "" ]];then desc="${code}";fi
+if [[ "${desc}" == "" ]];then desc="${code}";fi
 
 uuid=$(uuidgen)
 

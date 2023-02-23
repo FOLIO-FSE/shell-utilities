@@ -8,6 +8,7 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 infile="groups.tsv"
+dos2unix ${infile}
 
 while IFS=$'\t' read code desc 
 do

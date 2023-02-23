@@ -8,6 +8,7 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 infile="departments.tsv"
+dos2unix ${infile}
 
 while read line
 do

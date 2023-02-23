@@ -1,0 +1,22 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+IFS='' read -r -d '' damaged << EndOfProfile
+{
+    "id" : "54d1dd76-ea33-4bcb-955b-6b29df4f7930",
+    "name" : "Damaged",
+    "source": "local"
+}
+EndOfProfile
+
+IFS='' read -r -d '' undamaged << EndOfProfile
+{
+    "id" : "516b82eb-1f19-4a63-8c48-8f1a3e9ff311",
+    "name" : "Not Damaged",
+    "source": "local"
+}
+EndOfProfile
+
+curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${damaged}" "${okapi_url}/item-damaged-statuses"
+curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${undamaged}" "${okapi_url}/item-damaged-statuses"

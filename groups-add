@@ -15,6 +15,8 @@ do
 code=$(echo ${code} |xargs)
 desc=$(echo ${desc} |xargs)
 
+if [[ $desc == "" ]];then desc="${code}";fi
+
 uuid=$(uuidgen)
 
 IFS='' read -r -d '' group << EndOfGroup

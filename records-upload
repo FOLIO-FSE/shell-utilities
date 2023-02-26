@@ -3,7 +3,7 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 workingdir=$(pwd)
-profileName="Backstage Reload--Data Import Test"
+profileName="Default - Create SRS MARC Authority"
 #profileName="Default - Create instance and SRS MARC Bib"
 
 logfile="${workingdir}/dataimport_errors.json"

@@ -28,6 +28,10 @@ function showmatches() {
 	"callNumberTypes")
 		endpoint="call-number-types"
         ;;
+	"contributorTypes")
+		endpoint="contributor-types"
+		jq="code_name"
+        ;;
 	"holdingsRecordsSources")
 		endpoint="holdings-sources"
         ;;
@@ -115,9 +119,9 @@ function showmatches() {
 }
 
 
-echo "Downloading data for  acq units, address types, call number types, cancellation reasons, fee/fine owners, holdings note types, holdings record sources, holdings types, identifier types, instance formats, instance note types, instance types, item material types, item note types, loan policies, loan types, locations, location institutions, location campuses, location libraries, note types, service points, statcodes, and usergroups"
+echo "Downloading data for  acq units, address types, call number types, cancellation reasons, contributor types, fee/fine owners, holdings note types, holdings record sources, holdings types, identifier types, instance formats, instance note types, instance types, item material types, item note types, loan policies, loan types, locations, location institutions, location campuses, location libraries, note types, service points, statcodes, and usergroups"
 
-rec_array=("acquisitionsUnits" "addressTypes" "callNumberTypes" "cancellationReasons" "holdingsNoteTypes" "holdingsRecordsSources" "holdingsTypes" "identifierTypes" "instanceFormats" "instanceNoteTypes" "instanceTypes" "itemNoteTypes" "loanPolicies" "loantypes" "locations" "locinsts" "loccamps" "loclibs" "mtypes" "noteTypes" "owners" "servicepoints" "statisticalCodes" "usergroups")
+rec_array=("acquisitionsUnits" "addressTypes" "callNumberTypes" "cancellationReasons" "contributorTypes" "holdingsNoteTypes" "holdingsRecordsSources" "holdingsTypes" "identifierTypes" "instanceFormats" "instanceNoteTypes" "instanceTypes" "itemNoteTypes" "loanPolicies" "loantypes" "locations" "locinsts" "loccamps" "loclibs" "mtypes" "noteTypes" "owners" "servicepoints" "statisticalCodes" "usergroups")
 
 counter=1
 for rec_type in "${rec_array[@]}";do

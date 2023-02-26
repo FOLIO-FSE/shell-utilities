@@ -10,7 +10,7 @@ marcfile_process() {
 	marc2text ${marcfile}
 
 	# replace double locations with a note
-	sed -i 's/^\(^=852.*\$b\)\(.*\$\)b/\1\2x/' ${infile}.txt
+	sed -i '/^=852/ s/\$b/$x/2g' ${infile}.txt
 	awk -v seq=${seq} -f tmp_awk ${infile}.txt 
 	mv ${infile}.txt "good_${infile}.txt"
 	text2marc "good_${infile}.txt"

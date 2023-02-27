@@ -47,6 +47,9 @@ case $rec_type in
 	endpoint="feefines";;
 "feefineactions")
 	endpoint="feefineactions";;
+"fiscalyears")
+	rec_type=fiscalYears
+	endpoint="finance/fiscal-years";;
 "funds")
 	endpoint="finance/funds";;
 "holdings")

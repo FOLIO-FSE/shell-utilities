@@ -1,8 +1,6 @@
-#
-#
-
 if [[ -z $1 ]];then
 	echo "This tool converts csv data to tsv, performs basic cleaning, and does field frequency counts "
+	echo "It detects date formats and converts MM-DD-YYYY and DD-MM-YYYY dates to YYYY-MM-DD. "
 	echo 
 	echo "Usage: filefix [filename]"
 	echo "You will be prompted for optional functionality"
@@ -15,6 +13,12 @@ fi
 echo "Detecting and removing trailing carriage returns"
 echo
 
+head -50 ${infile} |grep -o "\b[0-9][2-3]-[0-9][0-9]-[12][09][0-9][0-9]\b" > /dev/null &&  dateformat="us"
+head -50 ${infile} |grep -o "\b[2-3][0-9]-[0-9][0-9]-[12][09][0-9][0-9]\b" > /dev/null && dateformat="uk"
+
+if [[ ${dateformat} == "uk" ]];then echo "UK dates detected. DD-MM-YYYY dates will be converted to YYYY-MM-DD";fi
+if [[ ${dateformat} == "us" ]];then echo "US dates detected. MM-DD-YYYY dates will be converted to YYYY-MM-DD";fi
+
 if [[ ! -f ${infile} ]];then echo "The input file ${infile} could not be found";exit;fi
 
 sed -i 's/\r$//' ${infile}
@@ -25,7 +29,7 @@ mv tmp_infile ${infile}
 
 if awk '{exit !/\t/}' ${infile}; then 
 	filetype="tab"
-elif awk '{exit !/|/}' ${infile}; then filetype="pipe"
+elif awk '{exit !/\|/}' ${infile}; then filetype="pipe"
 		echo "Pipe delimited file detected. Converting ${infile} to tab delimited."
 		echo "Please be patient."
 		outfile=$(sed 's/\.....\?$//' <<< ${infile})
@@ -83,10 +87,16 @@ NBSP=$(echo -ne '\uc2a0\u00a0')
 CONTROL=$(echo -ne '\u001b\u0007\u0001')
 sed -i "s/\"*\t\"*/\t/g; s/^\"//; s/\";/;/g; s/;\"/;/g; s/\"$//;s/[$SINGLE]/'/g; s/[$DOUBLE]/\"/g; s/[$NBSP]/ /g; s/[$CONTROL]/ /g" "${infile}"
 
-echo "Converting MM-DD-YYYY dates to YYYY-MM-DD and stripping blank dates"
 echo
 
-sed -i 's/\b\([0-9][0-9]\)-\([0-9][0-9]\)-\([0-9][0-9][0-9][0-9]\)\b/\3-\1-\2/g;s/  -  -    //g;s/    -  -  //g;' "${infile}"
+if [[ ${dateformat} == "us" ]]; then
+	echo "No UK formatted dates detected in first 50 lines"
+	echo "Converting MM-DD-YYYY dates to YYYY-MM-DD and stripping blank dates"
+	sed -i 's/\b\([0-9][0-9]\)-\([0-9][0-9]\)-\([0-9][0-9][0-9][0-9]\)\b/\3-\1-\2/g;s/  -  -    //g;s/    -  -  //g;' "${infile}"
+else 
+	echo "Converting DD-MM-YYYY dates to YYYY-MM-DD and stripping blank dates"
+	sed -i 's/\b\([0-9][0-9]\)-\([0-9][0-9]\)-\([0-9][0-9][0-9][0-9]\)\b/\3-\2-\1/g;s/  -  -    //g;s/    -  -  //g;' "${infile}"
+fi
 
 fieldcounters="${fieldcounters// /}"
 

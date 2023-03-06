@@ -1,0 +1,23 @@
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+case ${1} in
+
+"bib"|"holdings")
+        rules=${1}
+        ;;
+"bibs")
+        rules="bib"
+        ;;
+*)
+        echo "You must indicate bib or holdings"
+        exit
+        ;;
+esac
+
+
+curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d @mapping-rules-${rules}.json "${okapi_url}/mapping-rules/marc-${rules}/restore"
+
+

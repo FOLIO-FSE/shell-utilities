@@ -79,10 +79,10 @@ function check_fields() {
 		if(substr($i, 2, 3) == "245") { found245 = 1 }
 
 	}
+	if (found001 == 0) {print $0 >> "no_001."seq".mrk"; goodrec=0}
+	if (found008 == 0) {print $0 >> "no_008."seq".mrk"; goodrec=0}
+	if (found245 == 0) {print $0 >> "no_245."seq".mrk"; goodrec=0}
 	if (goodrec == 1) {goodrecs++;print $0 >> "good_"FILENAME}else{badrecs++}
-	if (found001 == 0) {print $0 >> "no_001."seq".mrk"}
-	if (found008 == 0) {print $0 >> "no_008."seq".mrk"}
-	if (found245 == 0) {print $0 >> "no_245."seq".mrk"}
 }
 
 {

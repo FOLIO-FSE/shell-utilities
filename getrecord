@@ -1,0 +1,22 @@
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+edge_url=$(cat okapi.url |sed 's/okapi/edge/')
+edge_key=$(cat edge.key)
+tenant=$(cat tenant)
+
+search=$(echo ${1} |tr "." "-" |tr -dc [^a-z0-9\-])
+
+if [[ ${search} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+        instance_uuid=${search}
+elif [[ ${search} =~ ^in[0-9a]*$ ]];then
+	instance_uuid=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances?query=hrid==${search}" |jq -r '.instances[].id')
+fi
+
+oai_prefix=$(curl -s -X GET "${edge_url}/oai/${edge_key}?verb=Identify" | sed 's/.*<oai-identifier:repositoryIdentifier>\([^<]*\).*/\1/')
+
+apicall=$(curl -s -X GET "${edge_url}/oai/${edge_key}?verb=GetRecord&identifier=oai:${oai_prefix}:${tenant}/${instance_uuid}&metadataPrefix=marc21_withholdings")
+
+echo "${apicall}" |xmlstarlet fo 
+echo "${edge_url}/oai/${edge_key}?verb=GetRecord&identifier=oai:${oai_prefix}:${tenant}/${instance_uuid}&metadataPrefix=marc21_withholdings"
+
+

@@ -16,6 +16,7 @@ function check_fields() {
 			if (substr(directory, i, 3) == "001") {found001 = 1}
 			if (substr(directory, i, 3) == "008") {found008 = 1}
 			if (substr(directory, i, 3) == "245") {found245 = 1}
+			if (substr(directory, i, 3) ~ /[^0-9a-zA-Z]/) {goodrec = 0}
 			if (bibrec == 0 && substr(directory, i, 3) == "852") {found852 = 1}
 		}
 	}
@@ -45,7 +46,7 @@ recordlength=length($0) + 0
 if (recordlength > 99999){goodrec=0;print $0;exit}
 check_leader()
 check_fields()
-if (NR % 10000 == 0){ printf "Processed %d good records and %d badrecords \r", goodrecs, badrecs }
+if (NR % 10000 == 0){ printf "Processed %d good records and %d bad records \r", goodrecs, badrecs }
 
 if ( goodrec == 1 && good_directory == 1 && good_leader == 1){ goodrecs++;print $0 >> FILENAME"_fixed" }else{ badrecs++}
 }

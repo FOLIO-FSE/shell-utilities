@@ -1,0 +1,117 @@
+sourcefile="${1}"
+fixedfile=$(echo "${sourcefile}" | sed 's/\.....\?$//')
+fixedfile="${fixedfile}.mrc"
+
+if [[ -z ${sourcefile} ]];then echo -e "text2marc converts textual representations of MARC records to binary MARC. It removes and reports on records that can't be loaded into FOLIO\n\nYou must specify a text file to process";exit;fi
+
+if [[ ! -f "${sourcefile}" ]];then echo "No text file with that name could be found";exit;fi
+echo
+
+rm -f bad_*.mrk
+rm -f no_*.mrk
+
+echo "Counting records in ${sourcefile}. Please be patient"
+numrecs=$(awk -v RS="\n=LDR  " 'END{print NR}' "${sourcefile}")
+
+echo "$numrecs records were detected."
+num_per_file=$(($numrecs / 5))
+
+echo "Splitting text file into 5 files in batches of $num_per_file to speed processing. "
+time_to_complete=$(echo "size=1;$numrecs/1400/60" |bc)
+echo "Estimated time to completion is $time_to_complete minutes"
+
+awk -v NUM=$num_per_file 'BEGIN{RS=ORS="\n\n";count=0}{if (NR % NUM == 1) {
+      close(out)
+      count++
+      out = "tmp_mrk_"count".mrk"
+}{print $0 > out }}' "${sourcefile}"
+
+################# set up an awk script to do the real work
+read -r -d '' awkscript << "ENDOFAWK"
+#!/usr/bin/awk -f
+
+BEGIN {
+	RS=ORS="\\n\\n";FS="\\n"
+	goodrecs=badrecs=0
+}
+
+
+function check_leader() {
+	leader=substr($i,7)
+	
+	if (length(leader)!=24) {print $0 >> "bad_leaderlength."seq".mrk";goodrec=0 }
+	if (substr(leader,6,1) !~ /[acdnp]/) {print $0 >> "bad_leadertype."seq".mrk";goodrec=0 }
+	if (substr(leader,8,1) !~ /[abcdims]/) {print $0 >> "bad_leaderbiblvl."seq".mrk";goodrec=0 }
+	#printf "%s\\n", leader 
+}
+
+function check_fields() {
+	goodrec=1
+	found001=0
+	found008=0
+	found245=0
+	for(i=1; i<=NF; i++) {
+		if(substr($i, 2, 3) == "LDR") { check_leader() }
+		if(substr($i, 2, 3) == "001") { found001 = 1 }
+		if(substr($i, 2, 3) == "008") { found008 = 1 }
+		if(substr($i, 2, 3) == "245") { found245 = 1 }
+
+	}
+	if (found001 == 0) {print $0 >> "no_001."seq".mrk"; goodrec=0}
+	if (found008 == 0) {print $0 >> "no_008."seq".mrk"; goodrec=0}
+	if (found245 == 0) {print $0 >> "no_245."seq".mrk"; goodrec=0}
+	if (goodrec == 1) {goodrecs++;print $0 >> "good_"FILENAME}else{badrecs++}
+}
+
+{
+	check_fields()
+}
+END {
+	print goodrecs " good records and " badrecs " bad records were found in " FILENAME
+}
+
+ENDOFAWK
+
+echo
+echo -e "${awkscript}" > tmp_awk
+chmod 700 tmp_awk
+############### end of awk script
+
+textfile_process() {
+	local seq="${1}"
+	local infile="tmp_mrk_${seq}.mrk"
+	local outfile="tmp_mrk_${seq}.mrc"
+
+	# replace double locations with a note
+	sed -i '/^=852/ s/\$b/$x/2g' ${infile}
+	awk -v seq=${seq} -f tmp_awk ${infile} 
+	mono /home/ssm-user/.local/bin/marcedit/cmarcedit.exe -s "${infile}" -d "${outfile}" -make -utf8
+}
+
+checkcounter=0
+filecounter=1
+
+
+for seq in {1..5}
+do
+	textfile_process $seq &
+done
+echo "Building MARC files from cleaned text files. "
+wait
+
+echo "Records lacking key fields or having invalid data are written to files \"bad_*.mrk\""
+
+cat tmp_mrk_*.mrc > "${fixedfile}"
+rm -f tmp_mrk_*.mrc 
+
+find . -name 'bad_leaderlength.*.mrk' -exec cat {} >> bad_leaderlength.mrk \;
+find . -name 'bad_leadertype.*.mrk' -exec cat {} >> bad_leadertype.mrk \;
+find . -name 'bad_leaderbiblvl.*.mrk' -exec cat {} >> bad_leaderbiblvl.mrk \;
+find . -name 'no_001.*.mrk' -exec cat {} >> no_001.mrk \;
+find . -name 'no_008.*.mrk' -exec cat {} >> no_008.mrk \;
+find . -name 'no_245.*.mrk' -exec cat {} >> no_245.mrk \;
+echo
+echo "Good records have been converted to UTF-8 and can be found in ${fixedfile}."
+find . -size 0 -delete
+
+

@@ -1,10 +1,17 @@
 infile="${1}"
-rm -f bad_leader_or_directory.mrc
+rm -f bad_*.mrc
+rm -f "${infile}_fixed"
 read -r -d '' awkscript << "ENDOFAWK"
 #!/usr/bin/awk -f 
 
-BEGIN { goodrecs=badrecs=0
-	badfile="bad_records.mrc"
+BEGIN { goodrecs=badrecs=bad001=badleader=baddirectory=0
+	bad001file="bad_missing001.mrc"
+	bad008file="bad_missing008.mrc"
+	bad245file="bad_missing245.mrc"
+	badencodingfile="bad_encoding.mrc"
+	badleaderfile="bad_leader.mrc"
+	badlengthfile="bad_length.mrc"
+	baddirectoryfile="bad_directory.mrc"
 	goodfile=FILENAME"_fixed"
 }
 function check_fields() {
@@ -22,7 +29,7 @@ function check_fields() {
 	}
 
 	if ( goodrec == 1 && found001 == 1 && found008 == 1 && found245 == 1 && found852 == 1 && directory_check == 0){good_directory=1} else
-		{print $0 >> badfile;goodrec=0;good_directory=0}
+		{goodrec=0;good_directory=0}
 }
 
 function check_leader() {
@@ -36,24 +43,49 @@ function check_leader() {
 	if (substr(leader, 7, 1)  ~ /[uvxy]/){bibrec = 0;found245 = 1}else{found852 = 1}
 	if (substr(leader, 6, 1)  !~ /[acdnp]/){good_leader = 0}
 	if (bibrec == 1 && substr(leader,8,1) !~ /[abcdims]/){good_leader = 0}
+			record_length = substr($0, 1, 5) - 1
 
+	if (substr(leader, 10, 1)  != "a") {
+		if ($0 ~ REGEX){
+			record_length = substr($0, 1, 5) - 1
+			if (record_length == length($0)) {
+				$0 = gensub("(.{9})", "\\1a", 1, $0)
+			} else { good_encoding = 0 }
+		}
+	}
 }
 {
-goodrec=good_directory=good_leader=bibrec=1
+goodrec=good_directory=good_leader=good_encoding=good_length=bibrec=1
 found001=found008=found245=found852=0
 
 recordlength=length($0) + 0
-if (recordlength > 99999){goodrec=0;print $0;exit}
+if (recordlength > 99999){goodrec=0;badlength++}
 check_leader()
 check_fields()
-if (NR % 10000 == 0){ printf "Processed %d good records and %d bad records \r", goodrecs, badrecs }
+if ( goodrec == 1 && good_directory == 1 && good_leader == 1 && good_encoding == 1 && good_length == 1){ goodrecs++;print $0 >> FILENAME"_fixed" }else{ badrecs++}
+if ( found001 == 0){ print $0 >> bad001file;bad001++;bad001text = " (001: "bad001")" }
+if ( found008 == 0){ print $0 >> bad008file;bad008++;bad008text = " (008: "bad008")" }
+if ( found245 == 0){ print $0 >> bad245file;bad245++;bad245text = " (245: "bad245")" }
+if ( good_encoding == 0){ print $0 >> badencodingfile;badencoding++;badencodingtext = " (encoding: "badencoding")" }
+if ( good_directory == 0){ print $0 >> baddirectoryfile;baddirectory++;baddirectorytext = " (directory: "baddirectory")" }
+if ( good_leader == 0){ print $0 >> badleaderfile;badleader++;badleadertext = " (leader: "badleader")" }
+if ( good_length == 0){ print $0 >> badlengthfile;badlength++;badlengthtext = " (length: "badlength")" }
+if ( badrecs > 0 ){ badtext = badleadertext""baddirectorytext""bad001text""bad008text""bad245text""badencodingtext""badlengthtext }
 
-if ( goodrec == 1 && good_directory == 1 && good_leader == 1){ goodrecs++;print $0 >> FILENAME"_fixed" }else{ badrecs++}
+if (NR % 10000 == 0){ printf "Good records: %d Bad records: %d Issues: %s\r", goodrecs, badrecs, badtext }
+
 }
-END { print goodrecs " records were output to " FILENAME"_fixed" " and " badrecs " records were output to bad_records.mrc" }
+END { print "";print goodrecs " records were output to " FILENAME"_fixed" " and " badrecs " records were output to the files listed below and prefixed with bad_" }
 
 ENDOFAWK
 
 echo -e "${awkscript}" > tmp_checkmarc
 chmod 700 tmp_checkmarc
-awk -v RS=$'\x1d' -v FS=$'\x1e' -f tmp_checkmarc "${infile}"
+
+firstnum=$'\x09'
+lastnum=$'\xFF'
+regex="[^${firstnum}-${lastnum}]"
+
+awk -v RS=$'\x1d' -v FS=$'\x1e' -v REGEX="${regex}" -f tmp_checkmarc "${infile}"
+sleep 1
+ls bad_*.mrc

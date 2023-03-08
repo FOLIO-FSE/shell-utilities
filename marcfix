@@ -43,7 +43,6 @@ function check_leader() {
 	if (substr(leader, 7, 1)  ~ /[uvxy]/){bibrec = 0;found245 = 1}else{found852 = 1}
 	if (substr(leader, 6, 1)  !~ /[acdnp]/){good_leader = 0}
 	if (bibrec == 1 && substr(leader,8,1) !~ /[abcdims]/){good_leader = 0}
-			record_length = substr($0, 1, 5) - 1
 
 	if (substr(leader, 10, 1)  != "a") {
 		if ($0 ~ REGEX){

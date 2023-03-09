@@ -1,6 +1,7 @@
 if [[ -z $1 || -z $2 || -z $3 ]];then
 	echo "Usage: marcsearch [filename] [marcfield] '[searchexpression]'
 	echo "Regular expresions are supported for searchexpression
+	exit
 else
 	infile="${1}"
 	marctag=${2}

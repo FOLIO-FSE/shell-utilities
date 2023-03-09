@@ -82,6 +82,6 @@ lastnum=$'\xFF'
 regex="[^${firstnum}-${lastnum}]"
 
 #awk -v RS=$'\x1d' -v FS=$'\x1e' -v REGEX="${regex}" -f tmp_checkmarc "${infile}"
-awk -v RS=$'\x1d' -v FS=$'\x1e' -b -f tmp_checkmarc "${infile}"
+awk -v RS=$'\x1d' -v ORS=$'\x1d' -v FS=$'\x1e' -b -f tmp_checkmarc "${infile}"
 sleep 1
 ls bad_*.mrc

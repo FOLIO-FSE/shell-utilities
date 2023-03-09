@@ -48,3 +48,4 @@ chmod 700 tmp_checkmarc
 awk -v RS=$'\x1d' -v ORS=$'\x1d' -v FS=$'\x1e' -v MARCTAG=${marctag} -v SEARCH="${search}" -b -f tmp_checkmarc "${infile}"
 echo
 echo
+echo "Records have been output to found_records.mrc                     " 

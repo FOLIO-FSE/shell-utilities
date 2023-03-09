@@ -38,27 +38,20 @@ function check_leader() {
 	directory=substr($0,25, baseaddress - 25)
 	directory_length=length(directory) 
 	directory_check=(directory_length % 12)
-
+	record_length = length($0) + 0
+	reported_length = substr($0, 1, 5) - 1
+	
+	if (reported_length != record_length){good_length = 0}
 	if (substr(leader, 21,4) != "4500"){good_leader = 0}
 	if (substr(leader, 7, 1)  ~ /[uvxy]/){bibrec = 0;found245 = 1}else{found852 = 1}
 	if (substr(leader, 6, 1)  !~ /[acdnp]/){good_leader = 0}
 	if (bibrec == 1 && substr(leader,8,1) !~ /[abcdims]/){good_leader = 0}
 
-	if (substr(leader, 10, 1)  != "a") {
-		if ($0 ~ REGEX){
-			record_length = substr($0, 1, 5) - 1
-			if (record_length == length($0)) {
-				$0 = gensub("(.{9})", "\\1a", 1, $0)
-			} else { good_encoding = 0 }
-		}
-	}
 }
 {
 goodrec=good_directory=good_leader=good_encoding=good_length=bibrec=1
 found001=found008=found245=found852=0
 
-recordlength=length($0) + 0
-if (recordlength > 99999){goodrec=0;badlength++}
 check_leader()
 check_fields()
 if ( goodrec == 1 && good_directory == 1 && good_leader == 1 && good_encoding == 1 && good_length == 1){ goodrecs++;print $0 > FILENAME"_fixed" }else{ badrecs++}
@@ -88,6 +81,7 @@ firstnum=$'\x09'
 lastnum=$'\xFF'
 regex="[^${firstnum}-${lastnum}]"
 
-awk -v RS=$'\x1d' -v FS=$'\x1e' -v REGEX="${regex}" -f tmp_checkmarc "${infile}"
+#awk -v RS=$'\x1d' -v FS=$'\x1e' -v REGEX="${regex}" -f tmp_checkmarc "${infile}"
+awk -v RS=$'\x1d' -v FS=$'\x1e' -b -f tmp_checkmarc "${infile}"
 sleep 1
 ls bad_*.mrc

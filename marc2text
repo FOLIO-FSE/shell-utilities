@@ -1,6 +1,6 @@
 sourcefile="${1}"
-outputfile=$(echo "${sourcefile}" | sed 's/\.....\?$//')
-outputfile="${outputfile}.mrk"
+fileroot=$(echo "${sourcefile}" | sed 's/\.....\?$//')
+outputfile="${fileroot}.mrk"
 
 if [[ -z ${sourcefile} ]];then echo -e "marc2text converts binary MARC files to text\n\nYou must specify a text file to process";exit;fi
 
@@ -11,36 +11,41 @@ echo "Counting records in ${sourcefile}. Please be patient"
 numrecs=$(awk -v RS=$'\x1d' 'END{print NR}' "${sourcefile}")
 
 echo "$numrecs records were detected."
-num_per_file=$(($numrecs / 5))
-time_to_complete=$(echo "$numrecs/20000" |bc)
-
-echo "Splitting text file into 5 files in batches of $num_per_file to speed processing. "
-echo "Estimated time to completion is $time_to_complete seconds"
-
-awk -v NUM=$num_per_file -v RS=$'\x1d' -v ORS=$'\x1d' 'BEGIN{count=0}{if (NR % NUM == 1) {
-      close(out)
-      count++
-      out = "tmp_mrc_"count".mrc"
-}{print $0 > out }}' "${sourcefile}"
-
 
 marcfile_process() {
-	local seq="${1}"
-	local infile="tmp_mrc_${seq}.mrc"
-	local outfile="tmp_mrc_${seq}.mrk"
+	local fn="${1}"
+	local infile="${fn}.mrc"
+	local outfile="${fn}.mrk"
 	mono /home/ssm-user/.local/bin/marcedit/cmarcedit.exe -pd -s "$infile" -d "$outfile" -break
 }
 
+if [[ $numrecs -gt 5000 ]];then
+	num_per_file=$(($numrecs / 5))
+	time_to_complete=$(echo "$numrecs/20000" |bc)
+	
+	echo "Splitting text file into 5 files in batches of $num_per_file to speed processing. "
+	echo "Estimated time to completion is $time_to_complete seconds"
+	
+	awk -v NUM=$num_per_file -v RS=$'\x1d' -v ORS=$'\x1d' 'BEGIN{count=0}{if (NR % NUM == 1) {
+	      close(out)
+	      count++
+	      out = "tmp_mrc_"count".mrc"
+	}{print $0 > out }}' "${sourcefile}"
 
-for seq in {1..5}
-do
-	marcfile_process $seq &
-done
-wait
-
-cat tmp_mrc_*.mrk > "${outputfile}"
-rm -f tmp_mrc_*.mrk
-
+	for seq in {1..5}
+	do
+	echo $fileroot
+		marcfile_process "tmp_mrc_${seq}" &
+	done
+	wait
+	
+	cat tmp_mrc_*.mrk > "${outputfile}"
+	rm -f tmp_mrc_*.mrk
+else
+	marcfile_process "${fileroot}"
+	outputfile="${fileroot}.mrk"
+fi
+echo
 echo "Text file output can be found in ${outputfile}"
 
 

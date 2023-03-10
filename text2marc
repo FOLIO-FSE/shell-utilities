@@ -38,10 +38,11 @@ BEGIN {
 
 function check_leader() {
 	leader=substr($i,7)
+	if  (substr(leader,7,1) ~ /[uvxy]/){rectype = "holdings"}else{rectye = "bibs"}
 	
 	if (length(leader)!=24) {print $0 >> "bad_leaderlength."seq".mrk";goodrec=0 }
 	if (substr(leader,6,1) !~ /[acdnp]/) {print $0 >> "bad_leadertype."seq".mrk";goodrec=0 }
-	if (substr(leader,8,1) !~ /[abcdims]/) {print $0 >> "bad_leaderbiblvl."seq".mrk";goodrec=0 }
+	if (substr(leader,8,1) !~ /[abcdims ]/) {print $0 >> "bad_leaderbiblvl."seq".mrk";goodrec=0 }
 	#printf "%s\\n", leader 
 }
 
@@ -54,12 +55,11 @@ function check_fields() {
 		if(substr($i, 2, 3) == "LDR") { check_leader() }
 		if(substr($i, 2, 3) == "001") { found001 = 1 }
 		if(substr($i, 2, 3) == "008") { found008 = 1 }
-		if(substr($i, 2, 3) == "245") { found245 = 1 }
+		if(rectype == "bibs" && substr($i, 2, 3) == "245") { found245 = 1 }
 
 	}
 	if (found001 == 0) {print $0 >> "no_001."seq".mrk"; goodrec=0}
 	if (found008 == 0) {print $0 >> "no_008."seq".mrk"; goodrec=0}
-	if (found245 == 0) {print $0 >> "no_245."seq".mrk"; goodrec=0}
 	if (goodrec == 1) {goodrecs++;print $0 >> "good_"FILENAME}else{badrecs++}
 }
 

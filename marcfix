@@ -1,11 +1,16 @@
-infile="${1}"
+filelist=("$@")
 rm -f "bad_*${infile}.mrc"
 rm -f "${infile}_fixed"
 
+
+infile="${filelist[0]}"
+
 if [[ -z ${infile} ]];then echo "You must supply a directory or file name";fi
 
-if [[ -f ${infile} ]];then processType="file";fi
+if [[ -f "${infile}" ]];then processType="file";fi
 if [[ -d ${infile} ]];then processType="directory";fi
+
+if [[ -z $processType ]];then echo "No files or directory matching the input can be found";fi
 
 read -r -d '' awkscript << "ENDOFAWK"
 #!/usr/bin/awk -f 
@@ -88,14 +93,21 @@ process_file() {
 
 	echo -e "${awkscript}" > tmp_checkmarc
 	chmod 700 tmp_checkmarc
-	
-	awk -v RS=$'\x1d' -v ORS=$'\x1d' -v FS=$'\x1e' -b -f tmp_checkmarc "${infile}"
+
+	echo "Processing ${marcfile}"	
+	awk -v RS=$'\x1d' -v ORS=$'\x1d' -v FS=$'\x1e' -b -f tmp_checkmarc "${marcfile}"
 	sleep 1
 	
-	ls bad_*"${infile}" 2> /dev/null
+	ls bad_*"${marcfile}" 2> /dev/null
+	echo
 }
 
-if [[ $processType == "file" ]];then process_file;rm tmp_checkmarc;fi
+if [[ $processType == "file" ]];then 
+	for marcfile in "${filelist[@]}";do
+		process_file "${marcfile}"
+	done
+	rm tmp_checkmarc
+fi
 
 if [[ $processType == "directory" ]]; then
 	cd "${infile}"

@@ -1,11 +1,13 @@
 if [[ -z $1 || -z $2 || -z $3 ]];then
-	echo "Usage: marcsearch [filename] [marcfield] '[searchexpression]'
-	echo "Regular expresions are supported for searchexpression
+	echo "Usage: marcsearch [filename] [marcfield] '[searchexpression]' [count]
+	echo "Regular expresions are supported for searchexpression. Count is optional and
+	echo "should just be \"count\" if you want a record count only"
 	exit
 else
 	infile="${1}"
 	marctag=${2}
 	search="${3}"
+	count="${4}"
 
 fi
 
@@ -35,7 +37,12 @@ if (directory_check == 0) {
 		}
 	}
 }
-if ( good_record == 1 ) { foundrecs++ ; print $0 > "found_records.mrc" }
+if ( good_record == 1 ) { 
+	foundrecs++
+	if (COUNTONLY != "count") { 
+		print $0 > "found_records.mrc" 
+	}
+}
 if (NR % 10000 == 0){ printf "Records searched: "NR" Records found: %d \r", foundrecs }
 
 }
@@ -45,7 +52,9 @@ ENDOFAWK
 echo -e "${awkscript}" > tmp_checkmarc
 chmod 700 tmp_checkmarc
 
-awk -v RS=$'\x1d' -v ORS=$'\x1d' -v FS=$'\x1e' -v MARCTAG=${marctag} -v SEARCH="${search}" -b -f tmp_checkmarc "${infile}"
+awk -v RS=$'\x1d' -v ORS=$'\x1d' -v FS=$'\x1e' -v MARCTAG=${marctag} -v SEARCH="${search}" -v COUNTONLY="${count}" -b -f tmp_checkmarc "${infile}"
 echo
 echo
-echo "Records have been output to found_records.mrc                     " 
+if [[ $count != "count" ]];then
+	echo "Records have been output to found_records.mrc                     " 
+fi

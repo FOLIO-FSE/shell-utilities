@@ -56,10 +56,10 @@ counter=0
 
 while IFS=$'\n' read line;do
 	line=$(echo "${line}" | tr -d '"' | tr "\t" "^")
-	IFS='^' read -r code email <<< ${line}
+	IFS='^' read -r code email categories <<< ${line}
         if [[ ${use_deterministic_uuids} == "yes" ]];then
                 uuid=$(uuid -v 5  8405ae4d-b315-42e1-918a-d1919900cf3f "${okapi_url}:organizations:${code}")
-                organization="${organization_dict[$uuid]}"
+#                organization="${organization_dict[$uuid]}"
         else
                 code=$(tr -dc [0-9a-z] <<< ${code,,})
                 organization="${organization_dict[$code]}"
@@ -68,11 +68,15 @@ while IFS=$'\n' read line;do
 	
 	description=${email}
 	email=$(echo ${email} |grep -o '[a-zA-Z0-9._-]\+@[a-zA-Z0-9._-]\+\.[a-zA-Z0-9_-]\+')
-	description=$(echo ${description} |sed "s/${email}//" |jq -aRs)
+#	description=$(echo ${description} |sed "s/${email}//" |jq -aRs)
+	if [[ $categories =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f] ]];then
+		categories=$(sed 's/^/"/' <<< $categories)
+		categories=$(sed 's/$/"/' <<< $categories)
+		categories=$(sed 's/,/","/' <<< $categories)
+	fi
 
-	email="{ \"value\" : \"${email}\", \"isPrimary\" : false, \"description\": ${description}, \"categories\" : [] }"
-
-	updated_org=$(echo ${organization} | jq ".emails += [ ${email} ]")
+	email="{ \"value\" : \"${email}\", \"isPrimary\" : false, \"description\": \"${description}\", \"categories\" : [${categories}] }"
+	updated_org=$(echo ${organization} | jq "del(.metadata) | .emails += [ ${email} ]")
 
 	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_org}" ${okapi_url}/organizations-storage/organizations/${uuid})
 

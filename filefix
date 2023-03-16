@@ -65,17 +65,12 @@ echo "$numfields fields $numrecs lines were detected."
 echo "Problematic characters will be removed from fieldnames"
 echo
 
-fieldnames=$(tr -dc "[[:alnum:]]_\-#.	" <<< "${fieldnames}")
+fieldnames=$(tr -dc "[[A-Za-z0-9]]_\-#.	" <<< "${fieldnames}")
 
 echo "The following fields were detected in ${infile}"
 echo
-echo "${fieldnames//	/, }"
+echo "${fieldnames}" |sed 's/\t/\n/g'
 echo
-
-echo "Please enter a comma separated list for any fields that you want frequency counts for"
-echo
-
-read fieldcounters
 
 echo
 echo "Stripping double quotes from the edges of fields and converting smartquotes"
@@ -83,9 +78,9 @@ echo
 
 SINGLE=$(echo -ne '\u00B4\u2018\u2019')
 DOUBLE=$(echo -ne '\u201C\u201D')
-NBSP=$(echo -ne '\uc2a0\u00a0')
+NBSP=$(echo -ne '\uc2a0\u00a0\ufeff')
 CONTROL=$(echo -ne '\u001b\u0007\u0001')
-sed -i "s/\"*\t\"*/\t/g; s/^\"//; s/\";/;/g; s/;\"/;/g; s/\"$//;s/[$SINGLE]/'/g; s/[$DOUBLE]/\"/g; s/[$NBSP]/ /g; s/[$CONTROL]/ /g" "${infile}"
+sed -i "s/['\"]*\t['\"]*/\t/g; s/^['\"]//; s/['\"];/;/g; s/;['\"]/;/g; s/['\"]$//;s/[$SINGLE]/'/g; s/[$DOUBLE]/\"/g; s/[$NBSP]/ /g; s/[$CONTROL]/ /g" "${infile}"
 
 echo
 
@@ -111,40 +106,18 @@ BEGIN {
 }
 
 {
-	# detect counter fields
-	if (NR == 1) {
+	if (NF == numfields) {
+		goodrecs++
 		for(i=1;i<=NF;i++) {
-			gsub(/ /, "", $i)
 			printf("%s%s",$i,i==NF?RS:OFS) > outfile
-
-			for(j=1;j<=numcounters;j++) {
-				if ($i == fields[j]) {
-					fieldcounter[j] = i	
-				}
-			}
-
 		}
+
 	} else {
-		if (NF == numfields) {
-			goodrecs++
-			for(i=1;i<=NF;i++) {
-				printf("%s%s",$i,i==NF?RS:OFS) > outfile
-				
-				# append to file if counter field detected
-				for (k=1;k<=numcounters;k++) {
-					if (fieldcounter[k] == i) {
-						print $i > fields[k]
-					}	
-				}
-			}
-	
-		} else {
-			badrecs++
-			print $0 > badfile
-		}
-	
-		if(NR % 10000 == 0 ) {printf ("Processed %d items\r", NR)}
+		badrecs++
+		print $0 > badfile
 	}
+
+	if(NR % 10000 == 0 ) {printf ("Processed %d items\r", NR)}
 }
 END {
 	print "Processed " NR - 1 " items."
@@ -164,18 +137,3 @@ badfile="${infile}_error"
 awk -v numrecs=$numrecs -v numfields=$numfields -v outfile=$outfile -v badfile=$badfile -v fieldcounters=$fieldcounters -f tmp_awk ${infile}
 rm tmp_awk
 
-if [[ -f tmp_counters ]];then
-	IFS=',' read -ra fields < tmp_counters
-
-	for f in ${fields[@]};do
-		echo "Calculating frequency of values for $f"
-		sort ${f} |uniq -c |sort -k1nr > ${f}.counter
-		echo "Here are the 10 most common values:"
-		head ${f}.counter
-		#rm ${f}
-		echo
-		echo "${f}.counter contains the frequency of all values encountered"
-		echo
-	done
-	#rm -f tmp_counters
-fi

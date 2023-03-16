@@ -1,0 +1,35 @@
+#!/usr/bin/awk -f
+#
+
+BEGIN{FS=OFS="\t" } 
+{
+if (NR == 1) {
+	for(i=1;i<=NF;i++) {
+		switch($i) {
+			case "PermanentCallNumber":
+				callNum = i
+				break
+			case "CallNumber":
+				callNumItem = i
+				break
+			}
+		}
+	}
+
+	if ($callNum == "") {
+		if ($callNumItem != "") {$callNum = $callNumItem} else {$callNum = " "}
+		}
+	$callNum = gensub(/^([A-Z]+) /, "\\1", 1, $callNum)
+	$callNum = gensub(/^([A-Z]+[0-9\\.]+) /, "\\1", 1, $callNum)
+	sub(/ /,"$i",$callNum)
+
+	for(i=1;i<=NF;i++) { printf("%s%s",$i,i==NF?RS:OFS) > FILENAME"_fixed" }
+
+	if(NR % 10000 == 0 ) {printf ("Processed %d items\r", NR) }
+}
+
+END { 
+	print NR " records were processed and copied to "FILENAME"_fixed"
+} 
+
+

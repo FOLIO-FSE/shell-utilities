@@ -69,7 +69,7 @@ fieldnames=$(tr -dc "[[A-Za-z0-9]]_\-#.	" <<< "${fieldnames}")
 
 echo "The following fields were detected in ${infile}"
 echo
-echo "${fieldnames}" |sed 's/\t/\n/g'
+echo "${fieldnames}" |tr "\t" "\n" |grep -n .
 echo
 
 echo

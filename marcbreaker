@@ -8,13 +8,13 @@ read -r -d '' awkscript << "ENDOFAWK"
 #!/usr/bin/awk -f 
 
 BEGIN { goodrecs=badrecs=bad001=badleader=baddirectory=0
-	bad001file="bad_missing001.mrc"
-	bad008file="bad_missing008.mrc"
-	bad245file="bad_missing245.mrc"
-	badencodingfile="bad_encoding.mrc"
-	badleaderfile="bad_leader.mrc"
-	badlengthfile="bad_length.mrc"
-	baddirectoryfile="bad_directory.mrc"
+	bad001file="bad_missing001.mrk"
+	bad008file="bad_missing008.mrk"
+	bad245file="bad_missing245.mrk"
+	badencodingfile="bad_encoding.mrk"
+	badleaderfile="bad_leader.mrk"
+	badlengthfile="bad_length.mrk"
+	baddirectoryfile="bad_directory.mrk"
 }
 
 function build_fields() {
@@ -89,10 +89,10 @@ found001=found008=found245=found852=0
 check_leader()
 check_fields()
 if ( goodrec == 1 && good_directory == 1 && good_leader == 1 && good_encoding == 1 && good_length == 1){ goodrecs++;build_record(); print record > OUTFILE }else{ badrecs++}
-if ( found001 == 0){ print $0 > bad001file;bad001++;bad001text = " (001: "bad001")" }
-if ( found008 == 0){ print $0 > bad008file;bad008++;bad008text = " (008: "bad008")" }
-if ( found245 == 0){ print $0 > bad245file;bad245++;bad245text = " (245: "bad245")" }
-if ( good_encoding == 0){ print $0 > badencodingfile;badencoding++;badencodingtext = " (encoding: "badencoding")" }
+if ( found001 == 0){ build_record(); print record > bad001file;bad001++;bad001text = " (001: "bad001")" }
+if ( found008 == 0){ build_record(); print record > bad008file;bad008++;bad008text = " (008: "bad008")" }
+if ( found245 == 0){ build_record(); print record > bad245file;bad245++;bad245text = " (245: "bad245")" }
+if ( good_encoding == 0){ build_record(); print record > badencodingfile;badencoding++;badencodingtext = " (encoding: "badencoding")" }
 if ( good_directory == 0){ print $0 > baddirectoryfile;baddirectory++;baddirectorytext = " (directory: "baddirectory")" }
 if ( good_leader == 0){ print $0 > badleaderfile;badleader++;badleadertext = " (leader: "badleader")" }
 if ( good_length == 0){ print $0 > badlengthfile;badlength++;badlengthtext = " (length: "badlength")" }

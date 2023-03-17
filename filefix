@@ -66,14 +66,14 @@ echo "Problematic characters will be removed from fieldnames"
 echo
 
 
-fieldnames=$(tr -dc "[[A-Za-z0-9]]_\-#." <<< "${fieldnames}")
+fieldnames=$(tr -dc "[[A-Za-z0-9]]_	\-#." <<< "${fieldnames}")
 echo "The following fields were detected in ${infile}"
 echo
 echo "${fieldnames}" |tr "\t" "\n" |grep -n .
 echo
 
-# modify fieldnames to match what's displayed
-sed -i '1 s/[^0-9A-Za-z_\-#\.	]//g' ${infile}
+# normalize fieldnames in file
+sed -i '1 s/[^0-9A-Za-z_\-#)(\.\t]//g' ${infile}
 
 echo
 echo "Stripping double quotes from the edges of fields and converting smartquotes"

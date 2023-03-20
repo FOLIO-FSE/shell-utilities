@@ -6,6 +6,7 @@ declare -A category_dict
 counter=1
 
 infile="org_contact.tsv"
+dos2unix infile
 
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
@@ -46,14 +47,12 @@ parse_contact() {
 #########################################################################
 
 while IFS=$'\n' read -r line;do
-	line=$(tr "\t" "^" <<< ${line} |tr -d '"')
+	line=$(echo "${line}" |tr "\t" "^" | tr -d '"')
 	#IFS='^' read -r code lname fname title note email description category <<< ${line}
 	#IFS='^' read -r code contact <<< ${line}
 	IFS='^' read -r code lname fname categories <<< ${line}
 
-	if [[ ${code} == "" ]];then continue; fi
-	#note=${description}
-	notes=$(echo -n "${note}" |jq -aRs)
+	notes=$(echo -n "${note}" |jq . -aRs)
 
 	# Remove this remark for parsing unstructured info from Sierra systems
 	#parse_contact

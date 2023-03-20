@@ -31,20 +31,6 @@ echo ${contact}
 
 }
 
-get_organization() {
-
-	# get organization by code
-	apicall=$(curl -G -s -w '\n' -X GET \
-  	  -H "Accept: application/json" \
-  	  -H "X-Okapi-Tenant: ${tenant}" \
-  	  -H "x-okapi-token: ${okapi_token}" \
-  	  --data-urlencode "query=code=${code}" \
-  	  "${okapi_url}/organizations/organizations")
-
-	organization=$(jq .organizations[] <<< ${apicall})
-	echo "${organization}"
-}
-
 parse_contact() {
 	lname=" "
 	fname=" "
@@ -61,11 +47,12 @@ parse_contact() {
 
 while IFS=$'\n' read -r line;do
 	line=$(tr "\t" "^" <<< ${line} |tr -d '"')
-	IFS='^' read -r code lname fname title note email description category <<< ${line}
+	#IFS='^' read -r code lname fname title note email description category <<< ${line}
 	#IFS='^' read -r code contact <<< ${line}
+	IFS='^' read -r code lname fname categories <<< ${line}
 
 	if [[ ${code} == "" ]];then continue; fi
-	note=${description}
+	#note=${description}
 	notes=$(echo -n "${note}" |jq -aRs)
 
 	# Remove this remark for parsing unstructured info from Sierra systems
@@ -73,7 +60,6 @@ while IFS=$'\n' read -r line;do
 
 	contact_uuid=$(uuidgen)
 	emails=""
-	categories=""
 	phones=""
 	goodrecord=0
 
@@ -111,13 +97,19 @@ while IFS=$'\n' read -r line;do
 		if [[ "$cat" =~ [a-f] ]];then categories="\"${cat}\"";fi
 	fi
 
+        if [[ $categories =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f] ]];then
+                categories=$(sed 's/^/"/' <<< $categories)
+                categories=$(sed 's/$/"/' <<< $categories)
+                categories=$(sed 's/,/","/g' <<< $categories)
+        fi
+
 	contact=$(build_contact)
 
 	if [[ ${phone2} =~ [0-9] ]]; then contact=$(echo "${contact}" | jq ".phones += [ { \"phoneNumber\" : \"${phone2}\", \"isPrimary\" : false, \"categories\" : [] } ]");fi
 	if [[ ${phone3} =~ [0-9] ]]; then contact=$(echo "${contact}" | jq ".phones += [ { \"phoneNumber\" : \"${phone3}\", \"isPrimary\" : false, \"categories\" : [] } ]");fi
 
 	# get organization by code
-	organization=$(curl -G -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" --data-urlencode "query=code=${code}" "${okapi_url}/organizations/organizations" |jq .organizations[])
+	organization=$(curl -G -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" --data-urlencode "query=code=${code}" "${okapi_url}/organizations/organizations" |jq '.organizations[] | del(.metadata)')
 
 	updated_organization=$(jq ".contacts += [\"${contact_uuid}\"]" <<< ${organization})
 	org_uuid=$(jq -r .id <<< ${updated_organization})

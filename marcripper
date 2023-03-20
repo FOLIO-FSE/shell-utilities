@@ -1,6 +1,6 @@
 infile="${1}"
 fileroot=$(echo "${infile}" | sed 's/\.....\?$//')
-outfile="${fileroot}.mrk"
+outfile="${fileroot}.txt"
 
 rm -f bad_*.mrc
 
@@ -8,13 +8,13 @@ read -r -d '' awkscript << "ENDOFAWK"
 #!/usr/bin/awk -f 
 
 BEGIN { goodrecs=badrecs=bad001=badleader=baddirectory=0
-	bad001file="bad_missing001.mrk"
-	bad008file="bad_missing008.mrk"
-	bad245file="bad_missing245.mrk"
-	badencodingfile="bad_encoding.mrk"
-	badleaderfile="bad_leader.mrk"
-	badlengthfile="bad_length.mrk"
-	baddirectoryfile="bad_directory.mrk"
+	bad001file="bad_missing001.txt"
+	bad008file="bad_missing008.txt"
+	bad245file="bad_missing245.txt"
+	badencodingfile="bad_encoding.txt"
+	badleaderfile="bad_leader.txt"
+	badlengthfile="bad_length.txt"
+	baddirectoryfile="bad_directory.txt"
 }
 
 function build_fields() {
@@ -24,19 +24,7 @@ function build_fields() {
 
 		field_length = substr(directory, i + 3, 4) - 1 
 		starting_pos = substr(directory, i + 7, 5) + 1
-
-		if (substr(marc_tag, 1, 2) == "00") {
-			field_content = substr(record_content, starting_pos, field_length)
-			gsub(" ", "/", field_content)	
-
-		} else {
-			indicators = substr(record_content, starting_pos, 2)
-			gsub(" ", "/", indicators)	
-
-			field_content = substr(record_content, starting_pos + 2, field_length - 2)
-			field_content = indicators""field_content
-		}
-		gsub(SUBFIELD, "$", field_content)
+		field_content = substr(record_content, starting_pos, field_length)
 		record = record"\\n="marc_tag"  "field_content
 	}
 

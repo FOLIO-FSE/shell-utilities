@@ -11,73 +11,31 @@ dos2unix ${filename}
 
 numrecs=$(wc -l ${filename} |cut -d " " -f1)
 
-get_orgs() {
-
-recsretrieved=100
-offset=0
-all_organizations=""
-
-# retrieve all records
-while [[ $recsretrieved -eq 100 ]] ;do
-        apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/organizations?query=%28status<>%22nothing%22%29+sortby+name%2Fsort.ascending&limit=100&offset=$offset" |jq .organizations)
-
-        recsretrieved=$(echo ${apicall} |jq '. |length')
-        totalrecs=$(($offset + $recsretrieved))
-        printf "%s Organizations retrieved\r" $totalrecs
-
-        all_organizations="${all_organizations}$(echo ${apicall} |jq .[])"
-        offset=$(($offset + 100))
-        done
-
-echo "$totalrecs Organizations retrieved"
-
-if [[ ${use_deterministic_uuids} == "yes" ]];then
-        eval "$(echo ${all_organizations} |jq -r '. | @sh "organization_dict[\(.id|tostring)]=\(.|tostring)"')"
-else
-# load organizations into scalar array keyed by downcased name
-        eval "$(echo ${all_organizations} |jq -r '. | @sh "organization_dict[\(.code|tostring|ascii_downcase)]=\(.|tostring)"')"
-
-        echo "Normalizing Organization keys"
-
-        # normalize keys
-        for key in "${!organization_dict[@]}";do
-                newkey=${key//[^a-z0-9]/}
-                organization_dict[${newkey}]=${organization_dict["${key}"]}
-        done
-
-fi
-}
-
-#####################################
-
-get_orgs
 
 counter=0
 
 while IFS=$'\n' read line;do
 	line=$(echo "${line}" | tr -d '"' | tr "\t" "^")
 	IFS='^' read -r code email categories <<< ${line}
-        if [[ ${use_deterministic_uuids} == "yes" ]];then
-                uuid=$(uuid -v 5  8405ae4d-b315-42e1-918a-d1919900cf3f "${okapi_url}:organizations:${code}")
-#                organization="${organization_dict[$uuid]}"
-        else
-                code=$(tr -dc [0-9a-z] <<< ${code,,})
-                organization="${organization_dict[$code]}"
-                uuid=$(echo ${organization} |jq -r .id)
+
+	organization=$(curl -G -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" --data-urlencode "query=code=${code}" "${okapi_url}/organizations/organizations") 
+
+
+	if [[ "${organization}" =~ [0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]* ]];then
+		description=${email}
+		email=$(echo ${email} |grep -o '[a-zA-Z0-9._-]\+@[a-zA-Z0-9._-]\+\.[a-zA-Z0-9_-]\+')
+		if [[ $categories =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f] ]];then
+			categories=$(sed 's/^/"/' <<< $categories)
+			categories=$(sed 's/$/"/' <<< $categories)
+			categories=$(sed 's/,/","/' <<< $categories)
+		fi
+	
+		email="[{ \"value\" : \"${email}\", \"isPrimary\" : false, \"description\": \"${description}\", \"categories\" : [${categories}] }]"
+
+		updated_org=$(echo "${organization}" |jq --argjson EMAIL "${email}" '.organizations[] | del(.metadata) | .emails += $EMAIL')
+		uuid=$(echo "${updated_org}" |jq -r .id)
         fi
 	
-	description=${email}
-	email=$(echo ${email} |grep -o '[a-zA-Z0-9._-]\+@[a-zA-Z0-9._-]\+\.[a-zA-Z0-9_-]\+')
-#	description=$(echo ${description} |sed "s/${email}//" |jq -aRs)
-	if [[ $categories =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f] ]];then
-		categories=$(sed 's/^/"/' <<< $categories)
-		categories=$(sed 's/$/"/' <<< $categories)
-		categories=$(sed 's/,/","/' <<< $categories)
-	fi
-
-	email="{ \"value\" : \"${email}\", \"isPrimary\" : false, \"description\": \"${description}\", \"categories\" : [${categories}] }"
-	updated_org=$(echo ${organization} | jq "del(.metadata) | .emails += [ ${email} ]")
-
 	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_org}" ${okapi_url}/organizations-storage/organizations/${uuid})
 
 	counter=$((counter + 1))

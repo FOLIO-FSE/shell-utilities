@@ -5,8 +5,12 @@ okapi_token=$(cat okapi.token)
 declare -A organization_dict
 
 filename="org_email.tsv"
+use_deterministic_uuids="yes"
+
+dos2unix ${filename}
 
 numrecs=$(wc -l ${filename} |cut -d " " -f1)
+
 
 counter=0
 
@@ -23,12 +27,12 @@ while IFS=$'\n' read line;do
 		if [[ $categories =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f] ]];then
 			categories=$(sed 's/^/"/' <<< $categories)
 			categories=$(sed 's/$/"/' <<< $categories)
-			categories=$(sed 's/,/","/' <<< $categories)
+			categories=$(sed 's/,/","/g' <<< $categories)
 		fi
 	
-		email="{ \"value\" : \"${email}\", \"isPrimary\" : false, \"description\": \"${description}\", \"categories\" : [${categories}] }"
+		email="[{ \"value\" : \"${email}\", \"isPrimary\" : false, \"description\": \"${description}\", \"categories\" : [${categories}] }]"
 
-		updated_org=$(echo "${organization}" |jq --argjson EMAIL "${email}" '.organizations[] | del(.metadata) | .emails += [ $EMAIL ]')
+		updated_org=$(echo "${organization}" |jq --argjson EMAIL "${email}" '.organizations[] | del(.metadata) | .emails += $EMAIL')
 		uuid=$(echo "${updated_org}" |jq -r .id)
         fi
 	

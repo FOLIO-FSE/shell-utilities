@@ -21,15 +21,14 @@ while IFS=$'\n' read line;do
 		if [[ $categories =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f] ]];then
 			categories=$(sed 's/^/"/' <<< $categories)
 			categories=$(sed 's/$/"/' <<< $categories)
-			categories=$(sed 's/,/","/' <<< $categories)
+			categories=$(sed 's/,/","/g' <<< $categories)
 		fi
 	
-		phone="{ \"phoneNumber\" : \"${phone}\", \"type\": \"${type}\", \"isPrimary\" : false, \"categories\" : [] }"	
+		phone="{ \"phoneNumber\" : \"${phone}\", \"type\": \"${type}\", \"isPrimary\" : false, \"categories\" : [${categories}] }"	
 
 		updated_org=$(echo "${organization}" |jq --argjson PHONE "${phone}" '.organizations[] | del(.metadata) | .phoneNumbers += [ $PHONE ]')
 		uuid=$(echo "${updated_org}" |jq -r .id)
         fi
-	
 	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_org}" ${okapi_url}/organizations-storage/organizations/${uuid})
 
 	counter=$((counter + 1))

@@ -1,0 +1,54 @@
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+if [[ -z $4 ]];then
+	echo "search syntax: marc-query [field] [subfield] [operator] [value] OR marc-query [field] [operator] [value] leader (to specify leader search)"
+	echo
+	echo "marc-query 260 a ^= 'Paris'"
+	echo "marc-query p_06 = 'a' (leader search)"
+	echo "Boolean queries require script modification"
+	exit
+fi
+
+
+field="$1"
+
+if [[ ${4} == "leader" ]];then
+	searchtype="leadersearch"
+	operator="${2}"
+	value="'"${3}"'"	
+else
+	searchtype="fieldsearch"
+	subfield="${2}"
+	operator="${3}"
+	value="'"${4}"'"
+fi
+
+
+IFS='' read -r -d '' fieldsearch << EndOfJSON
+{
+	"fieldsSearchExpression": "${field}.${subfield} ${operator} ${value}"
+}
+EndOfJSON
+
+
+IFS='' read -r -d '' leadersearch << EndOfJSON
+{
+	"leaderSearchExpression": "${field} ${operator} ${value}"
+}
+EndOfJSON
+
+data="${!searchtype}"
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/source-storage/stream/marc-record-identifiers")
+
+echo -e "${apicall}" 
+
+# examples
+# left anchred search: "260.a ^= 'Paris'"
+# search by position: "005.00_04 = '2021'" (startpos_endpos)
+# leader search: specify the position you wish to search. For example to search for 'a' in position 06 and 'm' in position 07, "p_06 = 'a' and p_07 = 'm'"
+
+

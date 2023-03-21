@@ -16,6 +16,11 @@ read -r -d '' awkscript << "ENDOFAWK"
 #!/usr/bin/awk -f 
 
 BEGIN { records_found = 0 }
+        if(length("а") != 2) {
+                badawk = 1
+                printf("Your version of awk does not support text2marc -- you need a version that supports the -b switch\\n")
+                exit
+        }
 {
 good_record=0
 
@@ -58,3 +63,4 @@ echo
 if [[ $count != "count" ]];then
 	echo "Records have been output to found_records.mrc                     " 
 fi
+rm -f tmp_checkmarc

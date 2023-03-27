@@ -35,6 +35,8 @@ apicreds=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json"
 
 while IFS=$'\n' read -r line;do
         line=$(tr "\t" "^" <<< ${line})
+
+	org=interface_name=uri=user=password=notes=category=""
 	
 	IFS=$'^' read -r org interface_name uri user password notes category <<< ${line}
 

@@ -2,6 +2,8 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
+infile="interfaces.tsv"
+
 add_interface() {
 
 IFS='' read -r -d '' credentials << EndOfCredentials
@@ -39,6 +41,7 @@ while IFS=$'\n' read -r line;do
 	uri=$(echo -n ${uri} | jq -aRs .)
 	user=$(echo -n ${user} | jq -aRs .)
 	password=$(echo -n ${password} | jq -aRs .)
+
 	notes=$(echo -n ${notes} | jq -aRs .)
 
 	#category = [Admin, Reports, Other, Orders, Invoices, End user]
@@ -77,4 +80,4 @@ echo $apiinterface
 echo $apicredentials 
 echo $apicall 
 
-done < interfaces
+done < ${infile}

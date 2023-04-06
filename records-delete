@@ -37,6 +37,9 @@ case $deletetype in
 "instances")
 	recordtype="instance-storage/instances"
 	;;
+"instance-relationships")
+	recordtype="instance-storage/instance-relationships"
+	;;
 "instance-types")
 	recordtype="instance-types"
 	;;

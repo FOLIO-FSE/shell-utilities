@@ -15,14 +15,15 @@ rm -f ${logfile}
 
 update_record() {
 	local uuid="${1}"
-	local apicall=""
+	local changeid=""
 	local change_manager_body=""
 	local version=""
-	local changeid=""
+	local apicall=""
 
-	version=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${uuid}" |jq -r '._version')
+	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${uuid}" |jq -r '._version')
+	if [[ "${apicall}" =~ ^.*_version ]];then version=$(echo "${apicall}" |jq -r '._version'); fi
 
-	if [[ $version ~ ^[0-9]$ ]];then
+	if [[ $version =~ ^[0-9]$ ]];then
 		change_manager_body=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/change-manager/parsedRecords?externalId=${uuid}")
 
 		changeid=$(jq -r '.id' <<< "${change_manager_body}")
@@ -53,7 +54,7 @@ EndOfJSON
 
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${boundwith}" "${okapi_url}/instance-storage/instance-relationships")
 
-	echo "${apicall}" | tr "\n" ' ' > "tmp_records.${seq}"
+	echo "${apicall}" | tr "\n" ' ' |sed 's/$/\n/' > "tmp_records.${seq}"
 }
 
 #######################################
@@ -104,8 +105,9 @@ while mapfile -t -n 4 uuids && ((${#uuids[@]})); do
         echo -en "Reindexed $counter records of $numrecs at $recsPerSec records/sec\r"
 
 done < ${infile} 
+rm -f ${infile}
 
-echo "Reindexed $counter records                      "
+echo "Reindexed $counter unique records.                      "
 echo "Done building boundwiths"
 
 

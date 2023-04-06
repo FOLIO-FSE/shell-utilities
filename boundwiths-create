@@ -84,7 +84,6 @@ counter=0
 
 while mapfile -t -n 6 uuids && ((${#uuids[@]})); do
 	for uuid in ${uuids[@]};do	
-		#update_record "${uuid}" &
 		refresh_record "${uuid}" &
 		counter=$(($counter + 1))
 	done

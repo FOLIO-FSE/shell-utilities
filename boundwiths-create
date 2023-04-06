@@ -1,0 +1,111 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+infile="bw_parent_child.tsv"
+logfile="boundwiths.log"
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
+
+instanceRelationshipTypeId=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-relationship-types" |jq -r '.instanceRelationshipTypes[] |select(.name == "bound-with") | .id')
+
+rm -f ${logfile}
+##################################################
+
+update_record() {
+	local uuid="${1}"
+	local apicall=""
+	local change_manager_body=""
+	local version=""
+	local changeid=""
+
+	version=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${uuid}" |jq -r '._version')
+
+	if [[ $version ~ ^[0-9]$ ]];then
+		change_manager_body=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/change-manager/parsedRecords?externalId=${uuid}")
+
+		changeid=$(jq -r '.id' <<< "${change_manager_body}")
+	
+		change_manager_body="$(jq --arg version "$version" '. += {"relatedRecordVersion":$version}' <<< $change_manager_body)"
+	
+		apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${change_manager_body}" "${okapi_url}/change-manager/parsedRecords/${changeid}")
+	fi
+
+}
+############################################
+create_boundwith() {
+
+	local boundwith=""
+	local bw_uuid=$(uuid -v 5  ${namespace} "${okapi_url}:boundwiths:${1}${2}")
+	local parent_uuid=$(uuid -v 5  ${namespace} "${okapi_url}:instances:${1}")
+	local child_uuid=$(uuid -v 5  ${namespace} "${okapi_url}:instances:${2}")
+
+IFS='' read -r -d '' boundwith << EndOfJSON
+{
+  "id": "${bw_uuid}",
+  "superInstanceId": "${parent_uuid}",
+  "subInstanceId": "${child_uuid}",
+  "instanceRelationshipTypeId": "${instanceRelationshipTypeId}"
+
+}
+EndOfJSON
+
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${boundwith}" "${okapi_url}/instance-storage/instance-relationships")
+
+	echo "${apicall}" | tr "\n" ' ' > "tmp_records.${seq}"
+}
+
+#######################################
+
+counter=0
+while mapfile -t -n 6 lines && ((${#lines[@]})); do
+	seq=0 
+
+	echo -en "Processing record $counter of ${numrecs}. \r"
+		for line in "${lines[@]}";do
+
+		IFS=$'\t' read -r parent_id child_id <<< "${line}"
+
+		create_boundwith $parent_id $child_id ${seq} & 
+
+		counter=$(($counter + 1))
+		seq=$(($seq + 1))
+		printf "Processing record %s of %s\r" $counter $numrecs
+	done
+	wait
+
+	cat tmp_records.* >> ${logfile}
+	rm tmp_records.*
+
+done < ${infile}
+
+echo "${numrecs} boundwiths have been created. API output has been directed to ${logfile}"
+echo "Reindexing instances. Please be patient -- this is slow"
+
+cat <(cut -f1 ${infile}) <(cut -f2 ${infile}) |sort -u > tmp_reindex
+
+infile=tmp_reindex
+
+SECONDS=1
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+counter=0
+
+while mapfile -t -n 4 uuids && ((${#uuids[@]})); do
+	for uuid in ${uuids[@]};do	
+		update_record "${uuid}" &
+		counter=$(($counter + 1))
+	done
+	wait
+
+	recsPerSec=$(bc <<< "scale=1;$counter/$SECONDS")
+        echo -en "Reindexed $counter records of $numrecs at $recsPerSec records/sec\r"
+
+done < ${infile} 
+
+echo "Reindexed $counter records                      "
+echo "Done building boundwiths"
+
+

@@ -66,6 +66,9 @@ case $rec_type in
 	query="query=(itemStatusPriorToCheckIn==Available)";;
 "interfaces")
 	endpoint="organizations-storage/interfaces";;
+"instance-relationships")
+	rec_type="instanceRelationships"
+	endpoint="instance-storage/instance-relationships";;
 "instances")
 	endpoint="instance-storage/instances";;
 "items")

@@ -83,7 +83,7 @@ done < ${infile}
 echo "${numrecs} boundwiths have been created. API output has been directed to ${logfile}"
 echo "Reindexing instances. Please be patient -- this is slow"
 
-cat <(cut -f1 ${infile}) <(cut -f2 ${infile}) |sort -u > tmp_reindex
+cut -f1 ${infile} |sort -u > tmp_reindex
 
 infile=tmp_reindex
 

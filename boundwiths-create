@@ -12,28 +12,16 @@ instanceRelationshipTypeId=$(curl -s -w '\n' -X GET -D -H "Accept: application/j
 
 rm -f ${logfile}
 ##################################################
-
-update_record() {
+refresh_record() {
 	local uuid="${1}"
-	local changeid=""
-	local change_manager_body=""
-	local version=""
 	local apicall=""
+	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${uuid}")
 
-	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${uuid}" |jq -r '._version')
-	if [[ "${apicall}" =~ ^.*_version ]];then version=$(echo "${apicall}" |jq -r '._version'); fi
-
-	if [[ $version =~ ^[0-9]$ ]];then
-		change_manager_body=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/change-manager/parsedRecords?externalId=${uuid}")
-
-		changeid=$(jq -r '.id' <<< "${change_manager_body}")
-	
-		change_manager_body="$(jq --arg version "$version" '. += {"relatedRecordVersion":$version}' <<< $change_manager_body)"
-	
-		apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${change_manager_body}" "${okapi_url}/change-manager/parsedRecords/${changeid}")
+	if [[ ${apicall} =~ \"id\": ]];then
+		apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${apicall}" "${okapi_url}/inventory/instances/${uuid}")
 	fi
-
 }
+
 ############################################
 create_boundwith() {
 
@@ -94,9 +82,10 @@ numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 counter=0
 
-while mapfile -t -n 4 uuids && ((${#uuids[@]})); do
+while mapfile -t -n 6 uuids && ((${#uuids[@]})); do
 	for uuid in ${uuids[@]};do	
-		update_record "${uuid}" &
+		#update_record "${uuid}" &
+		refresh_record "${uuid}" &
 		counter=$(($counter + 1))
 	done
 	wait

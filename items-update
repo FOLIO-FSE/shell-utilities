@@ -6,7 +6,7 @@ infile=infile
 outfile=item_update.log
 searchtype="id"
 
-batchsize=30
+batchsize=50
 
 #jq_replace='.items[].effectiveLocationId="b9dc25a2-a7fb-48ad-8da5-8f68e35ba0af" '
 

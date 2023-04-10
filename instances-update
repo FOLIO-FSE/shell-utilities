@@ -1,0 +1,42 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+infile=infile
+outfile=instances_update.log
+searchtype="id"
+
+batchsize=50
+
+jq_replace='.instances[].discoverySuppress=true'
+
+querydelim="%20or%20${searchtype}="
+endpoint="${okapi_url}/instance-storage/instances?query="
+
+rm -f ${outfile}
+
+counter=0
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
+	counter=$(($counter + ${#ids[@]}))
+
+	# break array into space separated string
+	idstring="${ids[@]}"
+	querystring="id=${idstring// /${querydelim}}"
+
+	records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}${querystring}&limit=${batchsize}")
+
+	echo "${records}" |jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo)" > tmp_updated_instances
+
+	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d @tmp_updated_instances "${okapi_url}/instance-storage/batch/synchronous?upsert=true" >> ${outfile}
+
+	printf "Processing record %s of %s\r" $counter $numrecs
+
+done < ${infile}
+
+rm -f tmp_updated_instances
+echo "Processed ${numrecs} records. Output was written to ${outfile}"
+
+
+

@@ -2,39 +2,40 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-infile=uuids
+infile=infile
+outfile=holdings_update.log
+searchtype="id"
 
-counter=1
+batchsize=50
+
+jq_replace='.holdingsRecords[].permanentLocationId="3ca852c2-67a8-4cf1-8b5e-3ce376943c8e" '
+
+querydelim="%20or%20${searchtype}="
+endpoint="${okapi_url}/holdings-storage/holdings?query="
+
+rm -f ${outfile}
+
+counter=0
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
-#while IFS=$'\t' read -r systemId note; do
-while IFS=$'\n' read -r uuid; do
-	#uuid=$(uuid -v 5  8405ae4d-b315-42e1-918a-d1919900cf3f ${okapi_url}:holdings:${systemId})
-	#note=$(echo ${note} |jq -aRs)
-	
-	apicall=$(curl -s -w '\n' -X GET -D \
-	  -H "Accept: application/json" \
-	  -H "X-Okapi-Tenant: ${tenant}" \
-	  -H "x-okapi-token: ${okapi_token}" \
-	  ${okapi_url}/holdings-storage/holdings/${uuid})
+while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
+	counter=$(($counter + ${#ids[@]}))
 
-	updated_holdings=$(echo ${apicall}  |jq  '
-		# .notes += [{\"holdingsNoteTypeId\":\"e19eabab-a85c-4aef-a7b2-33bd9acef24e\",\"staffOnly\":true,\"note\":${note}}]")
-                (.discoverySuppress = true)
-	')
+	# break array into space separated string
+	idstring="${ids[@]}"
+	querystring="id=${idstring// /${querydelim}}"
 
-	apicall=$(curl --http1.1 -s -w '\n' -X PUT \
-	  -H "Content-type: application/json" \
-	  -H "Accept: text/plain" \
-	  -H "X-Okapi-Tenant: ${tenant}" \
-	  -H "x-okapi-token: ${okapi_token}" \
-	  -d "${updated_holdings}" \
-	  ${okapi_url}/holdings-storage/holdings/${uuid})
-	
-	echo "Processing record $counter of $numrecs -- ${uuid}"
-	echo "${apicall}"
-        counter=$(($counter + 1))
+	records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}${querystring}&limit=${batchsize}")
+
+	updated_records=$(echo "${records}" |jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo)")
+
+	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_records}" "${okapi_url}/holdings-storage/batch/synchronous?upsert=true" >> ${outfile}
+
+	printf "Processing record %s of %s\r" $counter $numrecs
+
 done < ${infile}
+
+echo "Processed ${numrecs} records. Output was written to ${outfile}"
 
 
 

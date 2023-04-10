@@ -4,68 +4,34 @@ okapi_token=$(cat okapi.token)
 
 infile=infile
 outfile=item_update.log
+searchtype="id"
+
+batchsize=30
+
+#jq_replace='.items[].effectiveLocationId="b9dc25a2-a7fb-48ad-8da5-8f68e35ba0af" '
+
+querydelim="%20or%20${searchtype}="
+endpoint="${okapi_url}/item-storage/items?query="
 
 rm -f ${outfile}
 
 counter=0
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
-item_update() {
-	local search=${1}
-	local fileno=${2}
+while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
+	counter=$(($counter + ${#ids[@]}))
 
-	local barcode=0
-	local endpoint
-	local apicall
-	local uuid
-	local item
-	local updated_item
+	# break array into space separated string
+	idstring="${ids[@]}"
+	querystring="id=${idstring// /${querydelim}}"
 
-	if [[ ${search} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
-        	endpoint="${okapi_url}/item-storage/items/${search}"
-	else
-        	endpoint="${okapi_url}/item-storage/items?query=barcode==${search}"
-		barcode=1
-	fi
+	records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}${querystring}&limit=${batchsize}")
 
-	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}")
+	updated_records=$(echo "${records}" |jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo)")
 
-	if [[ "${barcode}" -eq "1" ]];then
-        	apicall=$(echo $apicall |jq '.items[0]')
-	fi	
+	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_records}" "${okapi_url}/item-storage/batch/synchronous?upsert=true" >> ${outfile}
 
-	barcode=$(echo ${apicall} |jq -r '.barcode')
-	barcode=${barcode// /}
-	uuid=$(echo ${apicall} |jq -r '.id')
-
-#		(.status.name = "Available")
-#		(.discoverySuppress = true)
-#		(.permanentLocationId = "8c3d59fb-c926-4cc3-aeae-6e3f3e4ed087")
-
-
-	updated_item=$(echo ${apicall}  |jq  '
-		(.permanentLocationId = "8c3d59fb-c926-4cc3-aeae-6e3f3e4ed087")
-')
-
-	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_item}" ${okapi_url}/item-storage/items/${uuid})
-
-	echo "${apicall}" |jq -c |grep -i [a-z] > "tmp_items.${fileno}"
-
-}
-
-while mapfile -t -n 5 ids && ((${#ids[@]})); do
-	for id in ${ids[@]};do
-		seq=0
-		item_update ${id} ${seq} &
-		counter=$(($counter + 1))
-		seq=$(($seq + 1))
-		printf "Processing %s -- record %s of %s\r" $counter $numrecs
-
-	done
-	wait
-
-	cat tmp_items.* >> ${outfile}
-	rm tmp_items.*
+	printf "Processing record %s of %s\r" $counter $numrecs
 
 done < ${infile}
 

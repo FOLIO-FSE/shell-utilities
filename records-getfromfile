@@ -4,6 +4,11 @@ okapi_token=$(cat okapi.token)
 
 rec_type=$1
 infile="uuids"
+batchsize=50
+
+jq_replace=".${rec_type}[]"
+
+querydelim="%20or%20id="
 
 SECONDS=1
 
@@ -11,12 +16,6 @@ if [[ ! -f ${infile} ]]; then echo "This script cannot find input file ${infile}
 if [[ $# -eq 0 ]]; then echo "You must enter a record type";exit;fi
 
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
-
-function get_record() {
-	local seq=$1
-	local uuid=${2//[^0-9a-f\-]/}
-	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}/${uuid}" |jq -c '.'  > "tmp_records.${seq}"
-}
 
 case $rec_type in
 "accounts")
@@ -28,6 +27,7 @@ case $rec_type in
 "authorities-srs")
 	endpoint="source-storage/records";;
 "boundwiths")
+	jq_replace=".boundWithParts[]"
 	endpoint="inventory-storage/bound-with-parts";;
 "circlog")
 	endpoint="audit-data/circulation/logs";;
@@ -38,13 +38,18 @@ case $rec_type in
 "feefineactions")
 	endpoint="feefineactions";;
 "holdings")
+	jq_replace=".holdingsRecords[]"
 	endpoint="holdings-storage/holdings";;
 "holdings-srs")
 	endpoint="source-storage/records";;
 "inhouse") 
+	jq_replace=".checkIns[]"
 	endpoint="check-in-storage/check-ins";;
 "interfaces")
 	endpoint="organizations-storage/interfaces";;
+"instance-relationships")
+	jq_replace=".instanceRelationships[]"
+	endpoint="instance-storage/instance-relationships";;
 "instances")
 	endpoint="instance-storage/instances";;
 "items")
@@ -64,10 +69,13 @@ case $rec_type in
 "organizations")
 	endpoint="organizations-storage/organizations";;
 "polines")
+	jq_replace=".poLines[]"
 	endpoint="orders-storage/po-lines";;
 "preceedingsucceeding")
+	jq_replace=".precedingSucceedingTitles[]"
 	endpoint="preceding-succeeding-titles";;
 "requestprefs")
+	jq_replace=".requestPreferences[]"
 	endpoint="request-preference-storage/request-preference";;
 "requests")
 	endpoint="circulation/requests";;
@@ -91,26 +99,24 @@ esac
 
 rm -f ${rec_type}
 
-while mapfile -t -n 10 ids && ((${#ids[@]})); do
-        seq=0
-        for uuid in "${ids[@]}";do
-                get_record ${seq} ${uuid} &
-                counter=$(($counter + 1))
-                seq=$(($seq + 1))
-        	TIME=$SECONDS;msg="$SECONDS seconds"
+while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
+	counter=$(($counter + ${#ids[@]}))
+	idstring="${ids[@]}"
+	querystring="query=id=${idstring// /${querydelim}}"
 
-        	if [[ $SECONDS -gt 60 ]];then TIME=$(($SECONDS/60));msg="$TIME minutes";fi
-        	if [[ $SECONDS -gt 3600 ]];then TIME=$(($SECONDS/3600));msg="$TIME hours";fi
-        	echo -en "Processing record $counter of $numrecs in $msg in $(($counter/$SECONDS)) recs/sec          \r"
-        done
-        wait
+	records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${querystring}&limit=${batchsize}")
 
-        cat tmp_records.* >> ${rec_type}
-        rm tmp_records.*
+	echo "${records}" |jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo)" >>  ${rec_type}
+
+        TIME=$SECONDS;msg="$SECONDS seconds"
+
+        if [[ $SECONDS -gt 60 ]];then TIME=$(($SECONDS/60));msg="$TIME minutes";fi
+        if [[ $SECONDS -gt 3600 ]];then TIME=$(($SECONDS/3600));msg="$TIME hours";fi
+
+        echo -en "Processing record $counter of $numrecs in $msg in $(($counter/$SECONDS)) recs/sec          \r"
 
 done < ${infile}
 
-echo "$num_records records have been exported to \"${rec_type}\""
-
+echo "$num_records records have been exported to \"${rec_type}\"                      "
 
 

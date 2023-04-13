@@ -42,7 +42,8 @@ elif awk '{exit !/,/}' ${infile}; then filetype="comma"
 		echo "Comma delimited file detected. Converting ${infile} to tab delimited."
 		echo "Please be patient."
 		outfile=$(sed 's/\.....\?$//' <<< ${infile})
-		csvtool -t COMMA -u TAB cat ${infile} > "${outfile}.tsv"
+		#csvtool -t COMMA -u TAB cat ${infile} > "${outfile}.tsv"
+		csvformat -T "${infile}" > "${outfile}"
 		infile="${outfile}.tsv"
 		echo "Conversion to tab delimited complete"
 		echo
@@ -104,30 +105,25 @@ read -r -d '' awkscript << "ENDOFAWK"
 BEGIN {
 	FS=OFS="\t"
 	goodrecs=badrecs=0
-	numcounters=split(fieldcounters, fields, ",")
-	print fieldcounters > "tmp_counters"
 }
 
 {
 	if (NR == 1) {
-		for(i=1;i<=NF;i++) {
-			gsub(/ /, "", $i)
-			printf("%s%s",$i,i==NF?RS:OFS) > outfile
-		}
-	}
-
-	if (NF == numfields) {
-		goodrecs++
-		for(i=1;i<=NF;i++) {
-			printf("%s%s",$i,i==NF?RS:OFS) > outfile
-		}
-
+		print header > outfile
 	} else {
-		badrecs++
-		print $0 > badfile
+		if (NF == numfields) {
+			goodrecs++
+			for(i=1;i<=NF;i++) {
+				printf("%s%s",$i,i==NF?RS:OFS) > outfile
+			}
+	
+		} else {
+			badrecs++
+			print $0 > badfile
+		}
+	
+		if(NR % 10000 == 0 ) {printf ("Processed %d items\r", NR)}
 	}
-
-	if(NR % 10000 == 0 ) {printf ("Processed %d items\r", NR)}
 }
 END {
 	print "Processed " NR - 1 " items."
@@ -144,6 +140,6 @@ chmod 700 tmp_awk
 outfile="${infile}_fixed"
 badfile="${infile}_error"
 
-awk -v numrecs=$numrecs -v numfields=$numfields -v outfile=$outfile -v badfile=$badfile -v fieldcounters=$fieldcounters -f tmp_awk ${infile}
+awk -v numrecs=$numrecs -v numfields=$numfields -v header="${fieldnames}" -v outfile=$outfile -v badfile=$badfile -v fieldcounters=$fieldcounters -f tmp_awk ${infile}
 rm tmp_awk
 

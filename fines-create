@@ -5,26 +5,26 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 fines_file="fines.tsv"
-legacySystem="Symphony"
+legacySystem="Sierra"
 logfile="feefine.log"
 num_retrieved=1000
 rm -f ${logfile}
 
 # FeeFine owner must be defined in /settings/users/owners
-fine_owner="8e73624e-df3a-43ec-8be9-bef2abd8d311"
+fine_owner="8f31d282-4e06-4ed6-b18c-3580087c8358"
 
 id=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/owners/${fine_owner}" |jq -r .id)
 if [[ $id != "${fine_owner}" ]];then echo "Fine owner not located. Exiting program";exit;fi
 
 # FeeFine type should be defined in /settings/users/feefinestable
-feeFineType="Multa migrada"
+feeFineType="Migrated fine"
 
 function fetch_batch() {
 	local offset=$1
 	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?query=cql.allRecords=1&limit=${num_retrieved}&offset=$offset" |jq -c ".users[]"  > "tmp_users.${t}"
 }
 
-declare -A userid_dict 
+declare -A user_dict 
 
 create_fine() {
 
@@ -59,7 +59,7 @@ IFS='' read -r -d '' action << EndOfJSON
   "amountAction": "${fineamount}",
   "balance":"${fineamount}",
   "transactionInformation":"",
-  "comments": "Multa migrado de ${legacySystem} valorada ${fee_assess_date} en ${fineamount} por item ${item_barcode}",
+  "comments": "Fine migrated from ${legacySystem}. ${notes} ",
   "notify":false,
   "id": "${actionId}",
   "userId": "${userid}"
@@ -67,7 +67,7 @@ IFS='' read -r -d '' action << EndOfJSON
 EndOfJSON
 }
 
-
+echo "Retrieving user records"
 all_users=""
 num_records=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?limit=0" |jq -r .totalRecords)
 
@@ -89,9 +89,20 @@ done
 # load user uuids into scalar array keyed by barcode 
 echo "Loading ids. Please be patient           "
 
-eval "$(cat tmp_users |jq -r 'select(.barcode != null) | @sh "userid_dict[\(.barcode|tostring)]=\(.id|tostring)"')"
-echo "Done loading ids"
-rm tmp_users
+cat tmp_users | jq -r .barcode > tmp_barcodes
+cat tmp_users | jq -r .id > tmp_ids
+
+counter=0
+
+while IFS=$'\n' read -r barcode && IFS=$'\n' read -r id <&3; do
+        counter=$(($counter+ 1))
+        if [[ $((counter % 1000)) == 0 ]];then echo -en "Records loaded: $counter                 \r";fi
+        user_dict["${barcode}"]="${id}"
+done < tmp_barcodes 3< tmp_ids
+
+echo "$counter records loaded                          "
+
+#eval "$(cat tmp_users |jq -r 'select(.barcode != null) | @sh "user_dict[\(.barcode|tostring)]=\(.id|tostring)"')"
 
 counter=1
 badbarcodes=0
@@ -100,13 +111,20 @@ numloans=$(cat ${fines_file} |wc -l)
 
 while IFS=$'\n' read -r line; do
 	line=$(tr "\t" "^" <<< "${line}")
-	IFS=$'^' read -r patron_barcode item_charge item_barcode fee_assess_date fineamount <<< "${line}"
+	# required fields: patron_barcode fine_amount
+	#
+	#IFS=$'^' read -r patron_barcode item_charge item_barcode fee_assess_date fineamount <<< "${line}"
+	#
+	IFS=$'^' read -r patron_identifier fineamount patron_barcode item_identifier item_barcode outdate duedate notes  <<< "${line}"
+	
+	if [[ -z $patron_barcode ]];then patron_barcode="${patron_identifier}";fi
+	if [[ item_barcode ]];then notes=" Item: ${item_barcode}. ${notes}";fi
 
 	echo -en "Processing record $counter of ${numloans}. Bad barcodes found: ${badbarcodes}\r"
 
 
-if [[ ! -z ${userid_dict[${patron_barcode}]} ]];then
-	userid=${userid_dict[${patron_barcode}]}
+if [[ ! -z ${user_dict[${patron_barcode}]} ]];then
+	userid=${user_dict[${patron_barcode}]}
 	create_fine
 	account_data=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${fine}" "${okapi_url}/accounts")
 	echo -e "${account_data//$'\n'/ }" >> ${logfile}

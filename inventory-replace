@@ -45,7 +45,7 @@ while mapfile -t -n ${batchsize} folio_recs && ((${#folio_recs[@]})); do
 
 	echo "${folio_recs[@]}" | jq -c  --arg LABEL "${label}" '[inputs] | del(.[].metadata) | { ($LABEL) : . } ' > tmp_batch
 
-	curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d @tmp_batch "${endpoint}" >> ${outfile}
+	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d @tmp_batch "${endpoint}" >> ${outfile}
 
 	printf "Processing record %s of %s\r" $counter $numrecs
 

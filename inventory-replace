@@ -1,0 +1,51 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+rec_type="${1}"
+
+case $rec_type in
+	instances)
+		endpoint="${okapi_url}/instance-storage/batch/synchronous?upsert=true"
+		label="instances"
+		;;
+	items)
+		endpoint="${okapi_url}/item-storage/batch/synchronous?upsert=true"
+		label="items"
+		;;
+	*)
+		echo "You must enter instances or items"
+		exit
+		;;
+esac
+
+batchsize=500
+
+outfile="${rec_type}_update.log"
+infile=${1}.json
+
+if [[ ! -f "${infile}" ]]; then
+	echo "You must supply a ${infile} file"
+	exit
+fi
+
+rm -f ${outfile}
+
+counter=0
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+while mapfile -t -n ${batchsize} folio_recs && ((${#folio_recs[@]})); do
+	counter=$(($counter + ${#folio_recs[@]}))
+
+	echo "${folio_recs[@]}" | jq -c  --arg LABEL "${label}" '[inputs] | del(.[].metadata) | { ($LABEL) : . } ' > tmp_batch
+
+	curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d @tmp_batch "${endpoint}" >> ${outfile}
+
+	printf "Processing record %s of %s\r" $counter $numrecs
+
+done < ${infile}
+
+echo "Processed ${numrecs} records. Output was written to ${outfile}"
+
+
+

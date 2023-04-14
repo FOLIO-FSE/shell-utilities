@@ -110,12 +110,14 @@ case $recordtype in
 	recordtype="users"
 	;;
 *)
-	echo "Record type '${recordtype}' not found. Supported types are campuses, feefineactions, groups, holdings, instances, instance-types, interfaces, items, libraries, licenses, loans, locations, notices, organizations, polines, requests, servicepoints, srs, tags, templates, users. Objects with attached records will need specialized delete routines"
+	echo "Record type '${recordtype}' not found. Supported types are campuses, feefineactions, groups, holdings, instances, instance-types, interfaces, items, libraries, licenses, loans, locations, notices, organizations, polines, requests, servicepoints, srs, tags, templates, users."
 	exit
 	;;
 esac
 
 counter=0
+seconds=1
+
 while mapfile -t -n 6 lines && ((${#lines[@]})); do
 	seq=0
 
@@ -125,9 +127,14 @@ while mapfile -t -n 6 lines && ((${#lines[@]})); do
 
 		counter=$(($counter + 1))
 		seq=$(($seq + 1))
-		printf "Processing record %s of %s\r" $counter $numrecs
 	done
 	wait
+
+        TIME=$SECONDS;msg="$SECONDS seconds"
+        if [[ $SECONDS -gt 60 ]];then TIME=$(bc <<< "scale=1;$SECONDS/60");msg="$TIME minutes";fi
+        if [[ $SECONDS -gt 3600 ]];then TIME=$(bc <<< "scale=1;$SECONDS/3600");msg="$TIME hours     ";fi
+
+	echo -en "Processing record $counter of $numrecs in $msg\r"
 
 	cat tmp_records.* >> ${outfile}
 	rm tmp_records.*

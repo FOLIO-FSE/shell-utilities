@@ -9,17 +9,23 @@ case $rec_type in
 		endpoint="${okapi_url}/instance-storage/batch/synchronous?upsert=true"
 		label="instances"
 		;;
+	holdings)
+		endpoint="${okapi_url}/holdings-storage/batch/synchronous?upsert=true"
+		label="holdingsRecord"
+		;;
 	items)
 		endpoint="${okapi_url}/item-storage/batch/synchronous?upsert=true"
 		label="items"
 		;;
 	*)
-		echo "You must enter instances or items"
+		echo "You must enter instances, holdings, or items"
 		exit
 		;;
 esac
 
 batchsize=500
+echo ${endpoint}
+exit
 
 outfile="${rec_type}_update.log"
 infile=${1}.json

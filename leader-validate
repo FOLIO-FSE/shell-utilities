@@ -1,4 +1,4 @@
-leader="${1}"
+leader=$(echo -n "${1}" |tr '\\' ' ')
 
 length="${leader:0:5}"
 status="${leader:5:1}"

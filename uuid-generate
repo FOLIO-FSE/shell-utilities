@@ -1,7 +1,7 @@
 # The name is constructed as OKAPI_URL:OBJECT_TYPE_NAME:LEGACY_IDENTIFIER
 # e.g. https://okapi-bugfest-juniper.folio.ebsco.com:items:i3696836
 #
-# object type is instances, holdings, items, etc
+# object type is holdings, items, instances, authorities, srs_records_bib, srs_records_holdingsrecord, srs_records_auth, srs_records_edifact, raw_records, parsed_records, loans, requests, fees_fines, users, permissions_users, request_preference, orders, po_lines, organizations, edifact, course, course_listing, instructor, reserve 
 
 okapi_url=$(cat okapi.url)
 namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"

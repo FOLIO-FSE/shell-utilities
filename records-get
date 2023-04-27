@@ -41,6 +41,8 @@ case $rec_type in
 "circlog")
 	endpoint="audit-data/circulation/logs"
 	rec_type="logRecords" ;;
+"contacts")
+	endpoint="organizations-storage/contacts" ;;
 "courses")
 	endpoint="coursereserves/courses";;
 "feefines")
@@ -128,6 +130,7 @@ case $rec_type in
 esac
 
 rm -f ${rec_type}
+
 
 if [[ ${no_total} == "no" ]];then
 	num_records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&limit=${limit}" |jq -r .totalRecords)

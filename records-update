@@ -4,9 +4,9 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-infile=infile
-outfile=outfile
 recordtype=$1
+infile="${recordtype}.json"
+outfile="${recordtype}_update_log.json"
 
 pattern='"source":{}'
 replace='"source":{"id":"9bed0d46-35d1-45f6-801c-dc54d911fe12","personal":{"lastName":"Data","firstName":"Migration"}}'

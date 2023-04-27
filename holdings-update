@@ -8,7 +8,7 @@ searchtype="id"
 
 batchsize=50
 
-if [[ ! -f ${infile} ]];then echo "Expected ${infile} file not found;fi
+if [[ ! -f ${infile} ]];then echo "Expected ${infile} file not found";fi
 
 jq_replace='.holdingsRecords[].permanentLocationId="3ca852c2-67a8-4cf1-8b5e-3ce376943c8e" '
 

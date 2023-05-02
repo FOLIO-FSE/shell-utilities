@@ -28,6 +28,8 @@ case $deletetype in
 	recordtype="location-units/campuses";;
 "contacts")
 	recordtype="organizations-storage/contacts";;
+"courselistings")
+	recordtype="coursereserves/courselistings";;
 "groups")
 	recordtype="groups";;
 "holdings")

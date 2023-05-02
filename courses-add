@@ -5,13 +5,11 @@ okapi_token=$(cat okapi.token)
 declare -A dept_dict
 declare -A term_dict
 
-default_coursetype='ac125345-a476-4e6f-a634-a43d22c2c4bd'
-default_term='f1636f80-f9fa-427a-8409-6680dc4a7671'
+default_coursetype='2780a114-ca01-4356-afd8-0f4ae648c5f4'
+default_term='43564c13-5bf8-4da0-9138-17661f2502b6'
 
-term_dict["Spring Semester"]="f1636f80-f9fa-427a-8409-6680dc4a7671"
-term_dict["Fall Semester"]="e0660015-54c5-4c33-afa4-c7cb39b2076a"
-term_dict["Summer Session"]="0a462da5-ca82-4805-8d72-86656ed415ec"
-
+term_dict["Current"]="43564c13-5bf8-4da0-9138-17661f2502b6"
+term_dict["Permanent"]="0dfb30bb-37a4-46c5-ba01-30587fdc6951"
 
 
 # get list of course departments and populate array using name as key with uuid as value
@@ -25,13 +23,20 @@ for key in "${!dept_dict[@]}";do
 	dept_dict[${newkey}]=${dept_dict["${key}"]}
 done
 
+#while IFS=$'\t' read -r dept courseNumber courseName term;do
+while IFS=$'\t' read -r courseNumber courseName;do
 
-while IFS=$'\t' read -r dept courseNumber courseName term;do
+#courseNumber="${dept} ${courseNumber}"
+#dept=$(tr -dc "[0-9a-z]" <<< ${dept,,})
 
-courseNumber="${dept} ${courseNumber}"
+dept=$(tr -dc "[a-z]" <<< ${courseNumber,,})
 
-dept=$(tr -dc "[0-9a-z]" <<< ${dept,,})
-departmentId=${dept_dict[${dept}]}
+
+if [[ -z ${dept_dict[${dept}]} ]];then 
+	departmentId=${dept_dict["notlisted"]}
+else
+	departmentId=${dept_dict[${dept}]}
+fi
 
 if [[ -z ${term_dict[${term}]} ]];then term=${default_term};else term=${term_dict[${term}]};fi
 

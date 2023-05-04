@@ -19,7 +19,7 @@ no_total="no"
 
 function fetch_batch() {
 	local offset=$1
-	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?limit=${num_retrieved}&offset=${offset}&${query}${sortby}" |jq -c ".${rec_type}[]"  > "tmp_${rec_type}.${t}"
+	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?limit=${num_retrieved}&offset=${offset}&${query}${sortby}" |jq -c ".${rec_type}[] | del(.metadata)"  > "tmp_${rec_type}.${t}"
 }
 
 case $rec_type in

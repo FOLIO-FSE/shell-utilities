@@ -2,7 +2,7 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-search_for=$(sed 's/[^0-9a-f\-]//gi' <<< "$1")
+search_for=$(sed 's/[^0-9a-z\-]//gi' <<< "$1")
 
 barcodefound=0
 
@@ -12,7 +12,7 @@ else
 	if [[ ${search_for} =~ ^[0-9]*$ ]];then
         	endpoint="${okapi_url}/users?query=barcode==${search_for}"
         	barcodefound=1
-	elif [[ ${search_for,,} =~ ^[a-z]*$ ]];then
+	elif [[ ${search_for} =~ ^[a-z]*$ ]];then
         	endpoint="${okapi_url}/users?query=(username=%22${search_for}%2A%22%20or%20externalSystemId=%22${search_for}%2A%22)"
         	barcodefound=1
 	else 

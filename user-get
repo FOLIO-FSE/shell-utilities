@@ -9,10 +9,13 @@ barcodefound=0
 if [[ ${search_for} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
         endpoint="${okapi_url}/users/${search_for}"
 else
-	if [[ ${barcode^^} =~ [A-Z0-9] ]];then
+	if [[ ${search_for} =~ ^[0-9]*$ ]];then
         	endpoint="${okapi_url}/users?query=barcode==${search_for}"
         	barcodefound=1
-	else
+	elif [[ ${search_for,,} =~ ^[a-z]*$ ]];then
+        	endpoint="${okapi_url}/users?query=(username=%22${search_for}%2A%22%20or%20externalSystemId=%22${search_for}%2A%22)"
+        	barcodefound=1
+	else 
         	endpoint="${okapi_url}/users?limit=0"
 	fi
 fi

@@ -4,6 +4,7 @@ okapi_token=$(cat okapi.token)
 
 rec_type=$1
 search_for=$2
+filename="${1}.json"
 
 if [[ ${search_for} == "" ]]; then search_for="cql.allRecords=1";fi
 query="query=${search_for}"
@@ -144,7 +145,7 @@ if [[ ${no_total} == "no" ]];then
 		done
 		wait
 			
-		cat tmp_${rec_type}.* >> ${rec_type}
+		cat tmp_${rec_type}.* >> ${filename}
 		rm tmp_${rec_type}.*
 	
 		if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset $num_records;fi
@@ -158,14 +159,14 @@ else
 	        num_records=$(($offset + $recsretrieved))
 	        printf "%s records retrieved\r" $num_records
 	
-	        $(echo ${apicall} |jq .[] >> ${rec_type})
+	        $(echo ${apicall} |jq '.[] | del(.metadata)' >> ${filename})
 	        offset=$(($offset + 100))
 	        done
 	
 	echo "$num_records records retrieved"
 fi
 
-echo "$num_records records have been exported to \"${rec_type}\""
+echo "$num_records records have been exported to \"${filename}\""
 
 
 

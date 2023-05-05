@@ -147,7 +147,12 @@ ENDOFAWK
 echo -e "${awkscript}" > tmp_awk
 chmod 700 tmp_awk
 
-outfile="${infile}_fixed"
+if [[ "${infile}" =~ \....$ ]];then
+        outfile=$(echo "${infile}" |sed 's/\(.*\)\(\....$\)/\1_fixed\2/')
+else
+        outfile="${infile}_fixed"
+fi
+
 badfile="${infile}_error"
 
 awk -v numrecs=$numrecs -v numfields=$numfields -v header="${fieldnames}" -v outfile=$outfile -v badfile=$badfile -v fieldcounters=$fieldcounters -f tmp_awk ${infile}

@@ -101,10 +101,10 @@ echo
 if [[ ${dateformat} == "us" ]]; then
 	echo "No UK formatted dates detected in first 50 lines"
 	echo "Converting MM-DD-YYYY dates to YYYY-MM-DD and stripping blank dates"
-	sed -i 's/\b\([0-9][0-9]\)-\([0-9][0-9]\)-\([0-9][0-9][0-9][0-9]\)\b/\3-\1-\2/g;s/  -  -    //g;s/    -  -  //g;' "${infile}"
+	sed -i 's/\b\([0-9][0-9]\)-\([0-9][0-9]\)-\([0-9][0-9][0-9][0-9]\)\b/\3-\1-\2/g;s/ \+-  -\( \+\)\?//g' "${infile}"
 else 
 	echo "Converting DD-MM-YYYY dates to YYYY-MM-DD and stripping blank dates"
-	sed -i 's/\b\([0-9][0-9]\)-\([0-9][0-9]\)-\([0-9][0-9][0-9][0-9]\)\b/\3-\2-\1/g;s/  -  -    //g;s/    -  -  //g;' "${infile}"
+	sed -i 's/\b\([0-9][0-9]\)-\([0-9][0-9]\)-\([0-9][0-9][0-9][0-9]\)\b/\3-\2-\1/g;s/ \+-  -\( \+\)\?//g;' "${infile}"
 fi
 
 fieldcounters="${fieldcounters// /}"
@@ -148,11 +148,10 @@ echo -e "${awkscript}" > tmp_awk
 chmod 700 tmp_awk
 
 if [[ "${infile}" =~ \....$ ]];then
-        outfile=$(echo "${infile}" |sed 's/\(.*\)\(\....$\)/\1_fixed\2/')
+	outfile=$(echo "${infile}" |sed 's/\(.*\)\(\....$\)/\1_fixed\2/')
 else
-        outfile="${infile}_fixed"
+	outfile="${infile}_fixed"
 fi
-
 badfile="${infile}_error"
 
 awk -v numrecs=$numrecs -v numfields=$numfields -v header="${fieldnames}" -v outfile=$outfile -v badfile=$badfile -v fieldcounters=$fieldcounters -f tmp_awk ${infile}

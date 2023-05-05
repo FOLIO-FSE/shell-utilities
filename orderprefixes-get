@@ -1,6 +1,0 @@
-tenant=$(cat tenant)
-okapi_url=$(cat okapi.url)
-okapi_token=$(cat okapi.token)
-
-curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/orders/configuration/prefixes?limit=1000" |jq -r '.prefixes[] | [.id, .name, .description] |@tsv' |sort -k2
-

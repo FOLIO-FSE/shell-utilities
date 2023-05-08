@@ -63,6 +63,11 @@ case $rec_type in
 	query="recordType=MARC_HOLDING"
 	sortby=""
 	endpoint="source-storage/records";;
+"importjobs")
+	rec_type="jobExecutions"
+	endpoint="metadata-provider/jobExecutions"
+	limit=1
+	;;
 "inhouse") 
 	rec_type="checkIns"
 	endpoint="check-in-storage/check-ins"

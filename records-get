@@ -5,6 +5,7 @@ okapi_token=$(cat okapi.token)
 rec_type=$1
 search_for=$2
 filename="${1}.json"
+rm -f ${filename}
 
 if [[ ${search_for} == "" ]]; then search_for="cql.allRecords=1";fi
 query="query=${search_for}"
@@ -106,8 +107,6 @@ case $rec_type in
 "organizations")
 	endpoint="organizations-storage/organizations"
 	query="query=%28status%3D%3D%22Active%22%29"
-	#sortby="+sortby+name%2Fsort.ascending"
-	num_retrieved=100
 	;;
 "polines")
 	rec_type="poLines"

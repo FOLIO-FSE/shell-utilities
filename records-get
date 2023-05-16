@@ -132,6 +132,8 @@ case $rec_type in
 "tags")
 	endpoint="tags"
 	no_total="yes";;
+"usergroups")
+	endpoint="groups";;
 "users")
 	endpoint="users";;
 "vouchers")

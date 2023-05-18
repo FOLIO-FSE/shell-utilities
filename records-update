@@ -11,6 +11,10 @@ outfile="${recordtype}_update_log.json"
 pattern='"source":{}'
 replace='"source":{"id":"9bed0d46-35d1-45f6-801c-dc54d911fe12","personal":{"lastName":"Data","firstName":"Migration"}}'
 
+# unrem pattern/replace expression in code below if doing a string replace
+#
+# unrem jq expression in code below if using a jq manipulation 
+
 if [[ ! -f ${infile} ]]; then echo "This script cannot find input file ${infile}";exit;fi
 if [[ $# -eq 0 ]]; then echo "You must enter a record type";exit;fi
 
@@ -18,15 +22,19 @@ numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 fixrecord() {
 	local uuid=${1}
-	local value="f98a99b1-2530-4ba7-825a-5de1e616c4a2"
+	local value="26f5208e-110a-4394-be29-1569a8c84a65"
 	local updated_record
 	local apicall
 
 	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}" |jq -c .)
+# Unrem the appropriate updated_record expression for your task
+
+ 
 #	updated_record=$(echo "${apicall}"  |jq -cr --arg VALUE "${value}" '
 #                (.permanentLoanTypeId = $VALUE)
+#                (.statusId = $VALUE)
 #')
-	updated_record=${apicall//$pattern/$replace}
+	#updated_record=${apicall//$pattern/$replace}
 	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_record}" "${okapi_url}/${recordtype}/${uuid}")
 
 

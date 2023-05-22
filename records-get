@@ -47,6 +47,9 @@ case $rec_type in
 	endpoint="organizations-storage/contacts" ;;
 "courses")
 	endpoint="coursereserves/courses";;
+"expense-classes")
+	endpoint="finance/expense-classes"
+	rec_type="expenseClasses";;
 "feefines")
 	endpoint="feefines";;
 "feefineactions")

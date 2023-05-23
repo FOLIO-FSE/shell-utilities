@@ -7,8 +7,8 @@
 ###
 ### API user requires user-import.add permission
 ###
-### Be sure to change address types to reflect what is in your installation. To transmit custom fields,
-### you will need to encase them in an array. Using a GET request on /users is helpful for syntax
+### Be sure to change address types to reflect what is in your installation. Add other fields as necessary
+### Using a GET request on /users is helpful for syntax
 
 inputFile="users.tsv"
 
@@ -22,7 +22,6 @@ password='and_password'
 defaultAddrType="Home"
 
 ### Departments must be defined in FOLIO and expirationDate must be expressed in YYYY-MM-DD
-
 
 ### first get an authentication token -- you can use the same one for as many 
 ### calls as you want
@@ -79,7 +78,6 @@ IFS='' read -r -d '' user << EndOfUser
         "expirationDate" : "${expirationDate}"
       }
 EndOfUser
-
 }
 
 fieldSeparator=$'\x1e'
@@ -89,7 +87,6 @@ while mapfile -t -n 250 user_records && ((${#user_records[@]})); do
 	users=""
 
 	for input_record in "${user_records[@]}";do
-
 		build_user
 
 		if (( totalRecords==0 ));then 
@@ -98,12 +95,10 @@ while mapfile -t -n 250 user_records && ((${#user_records[@]})); do
 			users="${users}, ${user}"
 		fi
 		
-		
 		totalRecords=$(($totalRecords + 1))
 	done
 	
 	payload="{\"users\": [${users}],\"totalRecords\": ${totalRecords}, \"deactivateMissingUsers\": false, \"updateOnlyPresentFields\": true}"
-
 	
 	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${payload}" "${okapi_url}/user-import"
 

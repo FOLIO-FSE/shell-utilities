@@ -123,6 +123,7 @@ case $rec_type in
 "requests")
 	endpoint="circulation/requests";;
 "schedulednotices")
+	rec_type="scheduledNotices"
 	endpoint="scheduled-notice-storage/scheduled-notices";;
 "servicepoints")
 	endpoint="service-points";;

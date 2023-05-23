@@ -1,0 +1,112 @@
+### This file expects a tab delimited input file. Both input fields and the JSON object will need 
+### to be adapted to a actual fields being transmitted
+### 
+### Matchpoint is externalId. If username or barcode is supplied, these must be unique within
+### the column. If they are not supplied, the object should not contain these fields -- 
+### transmitting an empty string will result in a conflict
+###
+### API user requires user-import.add permission
+###
+### Be sure to change address types to reflect what is in your installation. To transmit custom fields,
+### you will need to encase them in an array. Using a GET request on /users is helpful for syntax
+
+inputFile="users.tsv"
+
+okapi_url="your_okapi_url"
+tenant="your_tenant_id"
+username="user_with_sufficient_permissions"
+password='and_password'
+
+### these must correspond to what's in FOLIO. If an address type is not transmitted, this should be
+### hardcoded in the JSON
+defaultAddrType="Home"
+
+### Departments must be defined in FOLIO and expirationDate must be expressed in YYYY-MM-DD
+
+
+### first get an authentication token -- you can use the same one for as many 
+### calls as you want
+
+IFS='' read -r -d '' okapi_login << EndOfAuth
+{
+  "tenant": "${tenant}",
+  "username": "${username}",
+  "password": "${password}"
+}
+EndOfAuth
+
+okapi_token=$(curl -s -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -d "${okapi_login}" "${okapi_url}/authn/login" |jq -r .okapiToken)
+
+
+### just stick your data into a structure. If you have custom fields
+### to pass through, this will need to be modified
+
+users=""
+
+build_user() {
+	input_record=$(tr "\t" ${fieldSeparator} <<< ${input_record}) ## empty fields are problematic with whitespace delimiters, change field separator
+	addressTypeId=""	
+
+	IFS=${fieldSeparator} read -r username externalSystemId barcode patronGroup lastName firstName email phone addressLine1 addressLine2 city postalCode region department expirationDate <<< ${input_record}
+
+	if [[ addressTypeId == "" ]];then addressTypeId=${defaultAddrType};fi 
+
+IFS='' read -r -d '' user << EndOfUser
+      {
+        "username" : "${username}",
+        "externalSystemId" : "${externalSystemId}",
+        "barcode" : "${barcode}",
+        "active" : true,
+        "patronGroup" : "${patronGroup}",
+	"departments": ["${department}"],
+        "personal" : {
+          "lastName" : "${lastName}",
+          "firstName" : "${firstName}",
+          "email" : "${email}",
+          "phone" : "${phone}",
+          "addresses" : [
+            {
+              "addressLine1" : "${addressLine1}",
+              "addressLine2" : "${addressLine2}",
+              "city" : "${city}",
+              "postalCode" : "${postalCode}",
+              "region" : "${region}",
+              "addressTypeId" : "${addressTypeId}",
+              "primaryAddress" : true
+            }
+          ]
+        },
+        "expirationDate" : "${expirationDate}"
+      }
+EndOfUser
+
+}
+
+fieldSeparator=$'\x1e'
+
+while mapfile -t -n 250 user_records && ((${#user_records[@]})); do
+	totalRecords=0
+	users=""
+
+	for input_record in "${user_records[@]}";do
+
+		build_user
+
+		if (( totalRecords==0 ));then 
+			users="${user}"
+		else
+			users="${users}, ${user}"
+		fi
+		
+		
+		totalRecords=$(($totalRecords + 1))
+	done
+	
+	payload="{\"users\": [${users}],\"totalRecords\": ${totalRecords}, \"deactivateMissingUsers\": false, \"updateOnlyPresentFields\": true}"
+
+	
+	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${payload}" "${okapi_url}/user-import"
+
+done < ${inputFile}
+
+

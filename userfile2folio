@@ -11,6 +11,8 @@
 ### Using a GET request on /users is helpful for syntax
 
 inputFile="users.tsv"
+# strip out all double quotes if present
+sed -i 's/"//d' users.tsv
 
 okapi_url="your_okapi_url"
 tenant="your_tenant_id"

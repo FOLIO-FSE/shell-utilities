@@ -8,7 +8,7 @@ okapi_token=$(cat okapi.token)
 # being reuploaded via batch sync API
 ##############################################################################
 
-infile=items.json
+infile=item_uuids
 outfile=item_update.log
 searchtype="id"
 
@@ -16,6 +16,7 @@ batchsize=50
 
 
 #jq_replace='.items[].effectiveLocationId="b9dc25a2-a7fb-48ad-8da5-8f68e35ba0af" '
+jq_replace='.items[].status.name="Available" '
 
 #string_replace='s/80706534-8346-48d8-945a-9913d8f8833f/1ba579ad-525a-434b-aba5-b00b0364fe2e/g'
 
@@ -36,13 +37,14 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 
 	records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}${querystring}&limit=${batchsize}" )
 
-	if [[ -z jq_replace ]];then
+	if [[ -n ${jq_replace} ]];then
 		updated_records=$(echo "${records}" |jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo)")
 	fi
 
-	if [[ -z string_replace ]];then
+	if [[ -n ${string_replace} ]];then
 		updated_records=$(echo "${records}" |sed ${string_replace} | jq -c 'del(.totalRecords) |del(.resultInfo)')
 	fi
+
 
 	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_records}" "${okapi_url}/item-storage/batch/synchronous?upsert=true" >> ${outfile}
 

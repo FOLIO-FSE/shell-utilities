@@ -45,6 +45,9 @@ case $rec_type in
 	rec_type="logRecords" ;;
 "contacts")
 	endpoint="organizations-storage/contacts" ;;
+"courselistings")
+	rec_type="courseListings"
+	endpoint="coursereserves/courselistings";;
 "courses")
 	endpoint="coursereserves/courses";;
 "expense-classes")

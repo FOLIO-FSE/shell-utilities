@@ -50,6 +50,8 @@ case $rec_type in
 	endpoint="coursereserves/courselistings";;
 "courses")
 	endpoint="coursereserves/courses";;
+"departments")
+	endpoint="departments";;
 "expense-classes")
 	endpoint="finance/expense-classes"
 	rec_type="expenseClasses";;

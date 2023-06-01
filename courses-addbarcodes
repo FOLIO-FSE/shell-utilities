@@ -52,7 +52,6 @@ else
 fi
 
 echo -en "Processing record $counter of $numrecs. Barcodes added: $found -- Failures: $notfound\r"
-	found=$(($found + 1))
 
 done < ${infile}
 

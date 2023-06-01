@@ -30,6 +30,8 @@ case $deletetype in
 	recordtype="organizations-storage/contacts";;
 "courselistings")
 	recordtype="coursereserves/courselistings";;
+"courses")
+	recordtype="coursereserves/courses";;
 "groups")
 	recordtype="groups";;
 "holdings")
@@ -70,6 +72,8 @@ case $deletetype in
 	recordtype="service-points";;
 "srs")
 	recordtype="source-storage/records";;
+"statcodes")
+	recordtype="statcodes";;
 "tags")
 	recordtype="tags";;
 "templates")

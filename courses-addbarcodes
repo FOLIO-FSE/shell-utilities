@@ -43,7 +43,7 @@ EndOfItem
 apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${item}" "${okapi_url}/coursereserves/courselistings/${courseListingId}/reserves")
 echo -e "${apicall}" 
 
-echo ${apicall} |tr "\n" " " >> ${logfile}
+echo ${apicall} |tr "\n" " " |sed 's/$/\n/' >> ${logfile}
 
 if [[ ${apicall} =~ courseListingId ]];then
 	found=$(($found + 1))

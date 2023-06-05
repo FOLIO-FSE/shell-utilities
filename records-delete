@@ -32,6 +32,8 @@ case $deletetype in
 	recordtype="coursereserves/courselistings";;
 "courses")
 	recordtype="coursereserves/courses";;
+"feefineactions")
+	recordtype="feefineactions";;
 "groups")
 	recordtype="groups";;
 "holdings")

@@ -48,6 +48,10 @@ function showmatches() {
 		endpoint="departments"
 		jq="code_name"
         ;;
+	"feefineowners")
+		endpoint="owners"
+		jq=".owners[].servicePointOwner[] | select((.label  |ascii_downcase |contains(\"${search}\")) or (.value == \"${search}\")) | [\"feefineowners\", .value, .label] |@tsv"
+        ;;
 	"fiscalYears")
 		endpoint="finance/fiscal-years"
 		jq="code_name"
@@ -114,10 +118,6 @@ function showmatches() {
 	"noteTypes")
 		endpoint="note-types"
         ;;
-	"owners")
-		endpoint="owners"
-		jq=".${matchtype}[] | select((.owner  |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"${matchtype}\", .id, .owner] |@tsv"
-        ;;
 	"servicepoints")
 		endpoint="service-points"
 		jq="code_name"
@@ -151,7 +151,7 @@ function showmatches() {
 
 echo "Downloading data for  acq units, address types, call number types, cancellation reasons, categories, contributor types, course departments, courses, fee/fine owners, fiscal years, holdings note types, holdings record sources, holdings types, identifier types, instance formats, instance note types, instance relationship types, instance statuses, instance types, item material types, item note types, ledgers, loan policies, loan types, locations, location institutions, location campuses, location libraries, note types, service points, statcodes, and usergroups"
 
-rec_array=("acquisitionsUnits" "addressTypes" "callNumberTypes" "cancellationReasons" "categories" "contributorTypes" "courseDepartments" "courseTerms" "departments" "fiscalYears" "holdingsNoteTypes" "holdingsRecordsSources" "holdingsTypes" "identifierTypes" "instanceFormats" "instanceNoteTypes" "instanceRelationshipTypes" "instanceStatuses" "instanceTypes" "itemNoteTypes" "ledgers" "loanPolicies" "loantypes" "locations" "locinsts" "loccamps" "loclibs" "mtypes" "noteTypes" "owners" "servicepoints" "statisticalCodes" "usergroups")
+rec_array=("acquisitionsUnits" "addressTypes" "callNumberTypes" "cancellationReasons" "categories" "contributorTypes" "courseDepartments" "courseTerms" "departments" "feefineowners" "fiscalYears" "holdingsNoteTypes" "holdingsRecordsSources" "holdingsTypes" "identifierTypes" "instanceFormats" "instanceNoteTypes" "instanceRelationshipTypes" "instanceStatuses" "instanceTypes" "itemNoteTypes" "ledgers" "loanPolicies" "loantypes" "locations" "locinsts" "loccamps" "loclibs" "mtypes" "noteTypes" "servicepoints" "statisticalCodes" "usergroups")
 
 counter=1
 for rec_type in "${rec_array[@]}";do

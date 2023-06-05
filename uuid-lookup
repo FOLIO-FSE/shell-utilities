@@ -50,7 +50,7 @@ function showmatches() {
         ;;
 	"feefineowners")
 		endpoint="owners"
-		jq=".owners[].servicePointOwner[] | select((.label  |ascii_downcase |contains(\"${search}\")) or (.value == \"${search}\")) | [\"feefineowners\", .value, .label] |@tsv"
+		jq=".owners[] | select((.owner  |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"feefineowners\", .id, .owner] |@tsv"
         ;;
 	"fiscalYears")
 		endpoint="finance/fiscal-years"

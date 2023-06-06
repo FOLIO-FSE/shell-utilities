@@ -4,8 +4,11 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
+# batchsize is ignored for users and set to 1 to prevent failure
+batchsize=6
+
 recordtype=$1
-infile="${recordtype}.json"
+infile="${recordtype}.tsv"
 outfile="${recordtype}_update_log.json"
 
 pattern='"source":{}'
@@ -22,21 +25,22 @@ numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 fixrecord() {
 	local uuid=${1}
-	local value="26f5208e-110a-4394-be29-1569a8c84a65"
+	local seq=${2}
+	local value="${3}"
 	local updated_record
 	local apicall
 
 	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}" |jq -c .)
 # Unrem the appropriate updated_record expression for your task
-
+#	updated_record=$(echo "${apicall}"  |jq '.customFields.academicStatus = ["opt_3"]')
  
-#	updated_record=$(echo "${apicall}"  |jq -cr --arg VALUE "${value}" '
+	updated_record=$(echo "${apicall}"  |jq -cr --arg VALUE "${value}" '
 #                (.permanentLoanTypeId = $VALUE)
 #                (.statusId = $VALUE)
-#')
+                (.customFields.academicStatus = $VALUE) # single dropdown or text
+')
 	#updated_record=${apicall//$pattern/$replace}
 	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_record}" "${okapi_url}/${recordtype}/${uuid}")
-
 
 	echo "${apicall}" |grep -i [a-z] >> "tmp_records.${fileno}"
 
@@ -111,6 +115,7 @@ case $recordtype in
 	recordtype="tags"
 	;;
 "users")
+	batchsize=1
 	recordtype="users"
 	;;
 *)
@@ -122,10 +127,12 @@ esac
 counter=0
 SECONDS=1
 
-while mapfile -t -n 6 ids && ((${#ids[@]})); do
+while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
 	seq=0
-	for uuid in "${ids[@]}";do
-		fixrecord ${uuid} ${seq} &
+	for line in "${lines[@]}";do
+		IFS=$'\t' read -r uuid value <<< "${line}"
+		
+		fixrecord "${uuid}" "${seq}" "${value}" &
 
 		counter=$(($counter + 1))
 		seq=$(($seq + 1))

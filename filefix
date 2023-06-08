@@ -15,7 +15,8 @@ else
 fi
 
 function fix_file() {
-infile=${1}
+infile="${1}"
+outfile=$(sed 's/\.....\?$//' <<< "${infile}")
 
 echo
 echo "################ Processing ${infile} #####################"
@@ -31,30 +32,26 @@ if [[ ${dateformat} == "us" ]];then echo "US dates detected. MM-DD-YYYY dates wi
 
 if [[ ! -f ${infile} ]];then echo "The input file ${infile} could not be found";exit;fi
 
-sed -i 's/\r$//' ${infile}
-iconv -f utf-8 -t utf-8 -c ${infile} -o tmp_infile
-mv tmp_infile ${infile}
+awk -v ORS=$'\x1d' -v RS="\r\n" '{print $0}' "${infile}" |tr "\n" " " |tr $'\x1d' "\n" > tmp_infile
+
+iconv -f utf-8 -t utf-8 -c tmp_infile -o tmp_outfile
 
 # detect file characteristics. First line is assumed to contain either tabs or commas
 
-if awk '{exit !/\t/}' ${infile}; then 
+if awk '{exit !/\t/}' tmp_outfile; then 
 	filetype="tab"
-elif awk '{exit !/\|/}' ${infile}; then filetype="pipe"
+elif awk '{exit !/\|/}' tmp_outfile; then filetype="pipe"
 		echo "Pipe delimited file detected. Converting ${infile} to tab delimited."
 		echo "Please be patient."
-		outfile=$(sed 's/\.....\?$//' <<< ${infile})
-		cat ${infile} |sed 's/|/\t/g' > "${outfile}.tsv"
-		infile="${outfile}.tsv"
+		sed -i 's/|/\t/g' tmp_outfile
 		echo "Conversion to tab delimited complete"
 		echo
 
 elif awk '{exit !/,/}' ${infile}; then filetype="comma"
 		echo "Comma delimited file detected. Converting ${infile} to tab delimited."
 		echo "Please be patient."
-		outfile=$(sed 's/\.....\?$//' <<< ${infile})
-		#csvtool -t COMMA -u TAB cat ${infile} > "${outfile}.tsv"
-		csvformat -T "${infile}" > "${outfile}"
-		infile="${outfile}.tsv"
+		csvformat -T tmp_outfile > tmp_outfile1
+		mv tmp_outfile1 tmp_outfile
 		echo "Conversion to tab delimited complete"
 		echo
 fi
@@ -66,10 +63,10 @@ if [[ ! $filetype ]];then
 	exit
 fi
 
-read -r fieldnames < ${infile}
+read -r fieldnames < tmp_outfile
 
-numrecs=$(wc -l ${infile} |cut -d " " -f1)
-numfields=$(awk 'BEGIN{FS="\t"}{print NF;exit}' ${infile})
+numrecs=$(wc -l tmp_outfile |cut -d " " -f1)
+numfields=$(awk 'BEGIN{FS="\t"}{print NF;exit}' tmp_outfile)
 
 echo
 echo "$numfields fields $numrecs lines were detected."
@@ -84,7 +81,7 @@ echo "${fieldnames}" |tr "\t" "\n" |grep -n .
 echo
 
 # normalize fieldnames in file
-sed -i '1 s/[^0-9A-Za-z_\-#)(\.\t]//g' ${infile}
+sed -i '1 s/[^0-9A-Za-z_\-#)(\.\t]//g' tmp_outfile 
 
 echo
 echo "Stripping double quotes from the edges of fields, converting smartquotes, and removing trailing spaces from fields"
@@ -94,17 +91,17 @@ SINGLE=$(echo -ne '\u00B4\u2018\u2019')
 DOUBLE=$(echo -ne '\u201C\u201D')
 NBSP=$(echo -ne '\uc2a0\u00a0\ufeff')
 CONTROL=$(echo -ne '\u001b\u0007\u0001')
-sed -i "s/['\"]*\t['\"]*/\t/g; s/^['\"]//; s/['\"];/;/g; s/;['\"]/;/g; s/['\"]$//;s/[$SINGLE]/'/g; s/[$DOUBLE]/\"/g; s/[$NBSP]/ /g; s/[$CONTROL]/ /g; s/\([^\t]\) *\t/\1\t/g" "${infile}"
+sed -i "s/['\"]*\t['\"]*/\t/g; s/^['\"]//; s/['\"];/;/g; s/;['\"]/;/g; s/['\"]$//;s/[$SINGLE]/'/g; s/[$DOUBLE]/\"/g; s/[$NBSP]/ /g; s/[$CONTROL]/ /g; s/\([^\t]\) *\t/\1\t/g" tmp_outfile
 
 echo
 
 if [[ ${dateformat} == "us" ]]; then
 	echo "No UK formatted dates detected in first 50 lines"
 	echo "Converting MM-DD-YYYY dates to YYYY-MM-DD and stripping blank dates"
-	sed -i 's/\b\([0-9][0-9]\)-\([0-9][0-9]\)-\([0-9][0-9][0-9][0-9]\)\b/\3-\1-\2/g;s/ \+-  -\( \+\)\?//g' "${infile}"
+	sed -i 's/\b\([0-9][0-9]\)-\([0-9][0-9]\)-\([0-9][0-9][0-9][0-9]\)\b/\3-\1-\2/g;s/ \+-  -\( \+\)\?//g' tmp_outfile
 else 
 	echo "Converting DD-MM-YYYY dates to YYYY-MM-DD and stripping blank dates"
-	sed -i 's/\b\([0-9][0-9]\)-\([0-9][0-9]\)-\([0-9][0-9][0-9][0-9]\)\b/\3-\2-\1/g;s/ \+-  -\( \+\)\?//g;' "${infile}"
+	sed -i 's/\b\([0-9][0-9]\)-\([0-9][0-9]\)-\([0-9][0-9][0-9][0-9]\)\b/\3-\2-\1/g;s/ \+-  -\( \+\)\?//g;' tmp_outfile 
 fi
 
 fieldcounters="${fieldcounters// /}"
@@ -154,8 +151,8 @@ else
 fi
 badfile="${infile}_error"
 
-awk -v numrecs=$numrecs -v numfields=$numfields -v header="${fieldnames}" -v outfile=$outfile -v badfile=$badfile -v fieldcounters=$fieldcounters -f tmp_awk ${infile}
-rm tmp_awk
+awk -v numrecs=$numrecs -v numfields=$numfields -v header="${fieldnames}" -v outfile="${outfile}" -v badfile="${badfile}" -v fieldcounters=$fieldcounters -f tmp_awk tmp_outfile
+rm tmp_awk tmp_infile tmp_outfile
 }
 
 for file in "${filelist[@]}";do

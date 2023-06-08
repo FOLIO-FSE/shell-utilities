@@ -33,7 +33,7 @@ if [[ ${dateformat} == "us" ]];then echo "US dates detected. MM-DD-YYYY dates wi
 if [[ ! -f "${infile}" ]];then echo "The input file ${infile} could not be found";exit;fi
 
 cp "${infile}" tmp_infile
-grep -q $'\r'$ "${infile}" && awk -v ORS=$'\x1d' -v RS="\r\n" '{gsub("\n", " ", $0); print $0}' "${infile}" |tr $'\x1d' "\n" > tmp_infile
+head -1 "${infile}" | grep -q $'\r'$ && awk -v ORS=$'\x1d' -v RS="\r\n" '{gsub("\n", " ", $0); print $0}' "${infile}" |tr $'\x1d' "\n" > tmp_infile
 
 iconv -f utf-8 -t utf-8 -c tmp_infile -o tmp_outfile
 

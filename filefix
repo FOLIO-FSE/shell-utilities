@@ -24,13 +24,13 @@ echo
 echo "Detecting and removing trailing carriage returns"
 echo
 
-head -50 ${infile} |grep -o "\b[0-9][2-3]-[0-9][0-9]-[12][09][0-9][0-9]\b" > /dev/null &&  dateformat="us"
-head -50 ${infile} |grep -o "\b[2-3][0-9]-[0-9][0-9]-[12][09][0-9][0-9]\b" > /dev/null && dateformat="uk"
+head -50 "${infile}" |grep -o "\b[0-9][2-3]-[0-9][0-9]-[12][09][0-9][0-9]\b" > /dev/null &&  dateformat="us"
+head -50 "${infile}" |grep -o "\b[2-3][0-9]-[0-9][0-9]-[12][09][0-9][0-9]\b" > /dev/null && dateformat="uk"
 
 if [[ ${dateformat} == "uk" ]];then echo "UK dates detected. DD-MM-YYYY dates will be converted to YYYY-MM-DD";fi
 if [[ ${dateformat} == "us" ]];then echo "US dates detected. MM-DD-YYYY dates will be converted to YYYY-MM-DD";fi
 
-if [[ ! -f ${infile} ]];then echo "The input file ${infile} could not be found";exit;fi
+if [[ ! -f "${infile}" ]];then echo "The input file ${infile} could not be found";exit;fi
 
 awk -v ORS=$'\x1d' -v RS="\r\n" '{print $0}' "${infile}" |tr "\n" " " |tr $'\x1d' "\n" > tmp_infile
 

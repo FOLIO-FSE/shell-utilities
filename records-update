@@ -53,8 +53,6 @@ case $recordtype in
         ;;
 "campuses")
 	recordtype="location-units/campuses";;
-"compositeorders")
-	recordtype="orders/composite-orders";;
 "groups")
 	recordtype="groups";;
 "holdings")
@@ -83,6 +81,8 @@ case $recordtype in
 	recordtype="notes";;
 "notices")
 	recordtype="scheduled-notice-storage/scheduled-notices";;
+"orders")
+	recordtype="orders-storage/purchase-orders";;
 "organizations")
 	recordtype="organizations/organizations";;
 "polines")

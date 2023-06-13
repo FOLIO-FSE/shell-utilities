@@ -43,9 +43,6 @@ case $rec_type in
 "circlog")
 	endpoint="audit-data/circulation/logs"
 	rec_type="logRecords" ;;
-"compositeorders")
-	endpoint="orders/composite-orders" 
-	rec_type="purchaseOrders";;
 "contacts")
 	endpoint="organizations-storage/contacts" ;;
 "courselistings")
@@ -115,6 +112,9 @@ case $rec_type in
 "orderprefixes")
 	rec_type="prefixes"
 	endpoint="orders/configuration/prefixes";;
+"orders")
+	endpoint="orders-storage/purchase-orders" 
+	rec_type="purchaseOrders";;
 "organizations")
 	endpoint="organizations-storage/organizations"
 	query="query=%28status%3D%3D%22Active%22%29"

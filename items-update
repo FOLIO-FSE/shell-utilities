@@ -21,7 +21,7 @@ batchsize=50
 #jq_replace='.items[].permanentLocationId="618ac339-b867-492a-9c71-6140447d7bff" '
 jq_replace='.items[].permanentLoanTypeId="36dde437-be31-463a-8b6e-5ea8f2d523f7" '
 #jq_replace='.items[].status.name="Available" '
-#jq_replace='.items[].volume="" '
+jq_replace='(del(.items[].volume)) '
 
 #string_replace='s/d7ab0739-4ec3-4db7-905e-958b50118a1b/0bfb7f8b-76d1-4bfe-8046-2254ad987534/g'
 

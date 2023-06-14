@@ -144,6 +144,8 @@ case $rec_type in
 "tags")
 	endpoint="tags"
 	no_total="yes";;
+"transactions")
+	endpoint="finance/transactions";;
 "usergroups")
 	endpoint="groups";;
 "users")

@@ -86,10 +86,12 @@ case $deletetype in
 	recordtype="tags";;
 "templates")
 	recordtype="templates";;
+"transactions")
+	recordtype="finance/encumbrances";;
 "users")
 	recordtype="users";;
 *)
-	echo "Record type '${deletetype}' not found. Supported types are campuses, contacts, departments, feefineactions, groups, holdings, instances, instance-types, items, libraries, loan history, loans, loantypes, locations, mattypes, notes, notices, organizations, requests, servicepoints, srs, tags, templates, users. Objects with attached records will need specialized delete routines"
+	echo "Record type '${deletetype}' not found. Supported types are campuses, contacts, departments, feefineactions, groups, holdings, instances, instance-types, items, libraries, loan history, loans, loantypes, locations, mattypes, notes, notices, organizations, requests, servicepoints, srs, tags, templates, transactions, users. Objects with attached records will need specialized delete routines"
 	exit;;
 esac
 

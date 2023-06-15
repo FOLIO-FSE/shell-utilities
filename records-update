@@ -39,7 +39,8 @@ fixrecord() {
 #                (.statusId = $VALUE)
 #                (.customFields.academicStatus = $VALUE) # single dropdown or text
 #                (.permanentLocationId = $VALUE) 
-                (.temporaryLocation = {"id": "bb6ffec9-0b7e-459b-8d60-fc000bddf391"} ) 
+#                (.temporaryLoanType = {"id": $VALUE} ) # UUID, must use items-inventory
+#                (.temporaryLocation = {"id": $VALUE} ) # UUID, must use items-inventory
 #
 ')
 	#updated_record=${apicall//$pattern/$replace}

@@ -39,7 +39,7 @@ fixrecord() {
 #                (.statusId = $VALUE)
 #                (.customFields.academicStatus = $VALUE) # single dropdown or text
 #                (.permanentLocationId = $VALUE) 
-                (.temporaryLocation.id = "75f431c4-d569-406d-8c32-665ebe4dfae5") 
+                (.temporaryLocation = {"id": "bb6ffec9-0b7e-459b-8d60-fc000bddf391"} ) 
 #
 ')
 	#updated_record=${apicall//$pattern/$replace}

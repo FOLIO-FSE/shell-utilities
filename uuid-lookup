@@ -16,124 +16,93 @@ function showmatches() {
 
 	case $matchtype in
 	"acquisitionsUnits")
-		endpoint="acquisitions-units/units"
-        ;;
+		endpoint="acquisitions-units/units";;
 	"addressTypes")
 		endpoint="addresstypes"
-		jq=".${matchtype}[] | select((.addressType  |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"${matchtype}\", .id, .addressType ] |@tsv"
-        ;;
+		jq=".${matchtype}[] | select((.addressType  |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"${matchtype}\", .id, .addressType ] |@tsv";;
 	"cancellationReasons")
-		endpoint="cancellation-reason-storage/cancellation-reasons"
-        ;;
+		endpoint="cancellation-reason-storage/cancellation-reasons";;
 	"callNumberTypes")
-		endpoint="call-number-types"
-        ;;
+		endpoint="call-number-types";;
 	"categories")
 		endpoint="organizations-storage/categories"
-		jq=".${matchtype}[] | select((.value |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"${matchtype}\", .id, .value] |@tsv"
-        ;;
+		jq=".${matchtype}[] | select((.value |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"${matchtype}\", .id, .value] |@tsv";;
 	"contributorTypes")
 		endpoint="contributor-types"
-		jq="code_name"
-        ;;
+		jq="code_name";;
 	"courseDepartments")
 		endpoint="coursereserves/departments"
-		jq=".departments[] | select((.name |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"courseDepartments\", .id, .name] |@tsv"
-        ;;
+		jq=".departments[] | select((.name |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"courseDepartments\", .id, .name] |@tsv";;
 	"courseTerms")
 		endpoint="coursereserves/terms"
-		jq=".terms[] | select((.name |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"courseTerms\", .id, .name] |@tsv"
-        ;;
+		jq=".terms[] | select((.name |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"courseTerms\", .id, .name] |@tsv";;
 	"departments")
 		endpoint="departments"
-		jq="code_name"
-        ;;
+		jq="code_name";;
+	"expenseClasses")
+		endpoint="finance/expense-classes"
+		jq="code_name";;
 	"feefineowners")
 		endpoint="owners"
-		jq=".owners[] | select((.owner  |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"feefineowners\", .id, .owner] |@tsv"
-        ;;
+		jq=".owners[] | select((.owner  |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"feefineowners\", .id, .owner] |@tsv";;
 	"fiscalYears")
 		endpoint="finance/fiscal-years"
-		jq="code_name"
-        ;;
+		jq="code_name";;
 	"holdingsRecordsSources")
-		endpoint="holdings-sources"
-        ;;
+		endpoint="holdings-sources";;
 	"holdingsTypes")
-		endpoint="holdings-types"
-        ;;
+		endpoint="holdings-types";;
 	"identifierTypes")
-		endpoint="identifier-types"
-        ;;
+		endpoint="identifier-types";;
 	"instanceRelationshipTypes")
-		endpoint="instance-relationship-types"
-        ;;
+		endpoint="instance-relationship-types";;
 	"instanceNoteTypes")
-		endpoint="instance-note-types"
-        ;;
+		endpoint="instance-note-types";;
 	"instanceStatuses")
-		endpoint="instance-statuses"
-        ;;
+		endpoint="instance-statuses";;
 	"instanceTypes")
-		endpoint="instance-types"
-        ;;
+		endpoint="instance-types";;
 	"holdingsNoteTypes")
-		endpoint="holdings-note-types"
-        ;;
+		endpoint="holdings-note-types";;
 	"instanceFormats")
-		endpoint="instance-formats"
-        ;;
+		endpoint="instance-formats";;
 	"itemNoteTypes")
-		endpoint="item-note-types"
-        ;;
+		endpoint="item-note-types";;
 	"ledgers")
 		endpoint="finance/ledgers"
-		jq="code_name"
-        ;;
+		jq="code_name";;
 	"loanPolicies")
-		endpoint="loan-policy-storage/loan-policies"
-        ;;
+		endpoint="loan-policy-storage/loan-policies";;
 	"loantypes")
-		endpoint="loan-types"
-        ;;
+		endpoint="loan-types";;
 	"locations")
 		endpoint="locations"
-		jq="code_name"
-        ;;
+		jq="code_name";;
 	"loccamps")
 		endpoint="location-units/campuses"
-		jq="code_name"
-        ;;
+		jq="code_name";;
 	"locinsts")
 		endpoint="location-units/institutions"
-		jq="code_name"
-        ;;
+		jq="code_name";;
 	"loclibs")
 		endpoint="location-units/libraries"
-		jq="code_name"
-        ;;
+		jq="code_name";;
 	"mtypes")
-		endpoint="material-types"
-        ;;
+		endpoint="material-types";;
 	"noteTypes")
-		endpoint="note-types"
-        ;;
+		endpoint="note-types";;
 	"servicepoints")
 		endpoint="service-points"
-		jq="code_name"
-        ;;
+		jq="code_name";;
 	"statisticalCodes")
 		endpoint="statistical-codes"
-		jq="code_name"
-        ;;
+		jq="code_name";;
 	"usergroups")
 		endpoint="groups"
-		jq=".${matchtype}[] | select((.group  |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"${matchtype}\", .id, .group] |@tsv"
-        ;;
+		jq=".${matchtype}[] | select((.group  |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"${matchtype}\", .id, .group] |@tsv";;
 	*)
 		echo "No matching endpoint could be found. Quitting"
-		exit	
-        ;;
+		exit	;;
 	esac
 
 	if [[ ${jq} == "code_name" ]];then 
@@ -149,9 +118,9 @@ function showmatches() {
 }
 
 
-echo "Downloading data for  acq units, address types, call number types, cancellation reasons, categories, contributor types, course departments, courses, fee/fine owners, fiscal years, holdings note types, holdings record sources, holdings types, identifier types, instance formats, instance note types, instance relationship types, instance statuses, instance types, item material types, item note types, ledgers, loan policies, loan types, locations, location institutions, location campuses, location libraries, note types, service points, statcodes, and usergroups"
+echo "Downloading data for  acq units, address types, call number types, cancellation reasons, categories, contributor types, course departments, courses, expense classes, fee/fine owners, fiscal years, holdings note types, holdings record sources, holdings types, identifier types, instance formats, instance note types, instance relationship types, instance statuses, instance types, item material types, item note types, ledgers, loan policies, loan types, locations, location institutions, location campuses, location libraries, note types, service points, statcodes, and usergroups"
 
-rec_array=("acquisitionsUnits" "addressTypes" "callNumberTypes" "cancellationReasons" "categories" "contributorTypes" "courseDepartments" "courseTerms" "departments" "feefineowners" "fiscalYears" "holdingsNoteTypes" "holdingsRecordsSources" "holdingsTypes" "identifierTypes" "instanceFormats" "instanceNoteTypes" "instanceRelationshipTypes" "instanceStatuses" "instanceTypes" "itemNoteTypes" "ledgers" "loanPolicies" "loantypes" "locations" "locinsts" "loccamps" "loclibs" "mtypes" "noteTypes" "servicepoints" "statisticalCodes" "usergroups")
+rec_array=("acquisitionsUnits" "addressTypes" "callNumberTypes" "cancellationReasons" "categories" "contributorTypes" "courseDepartments" "courseTerms" "departments" "expenseClasses" "feefineowners" "fiscalYears" "holdingsNoteTypes" "holdingsRecordsSources" "holdingsTypes" "identifierTypes" "instanceFormats" "instanceNoteTypes" "instanceRelationshipTypes" "instanceStatuses" "instanceTypes" "itemNoteTypes" "ledgers" "loanPolicies" "loantypes" "locations" "locinsts" "loccamps" "loclibs" "mtypes" "noteTypes" "servicepoints" "statisticalCodes" "usergroups")
 
 counter=1
 for rec_type in "${rec_array[@]}";do

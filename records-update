@@ -37,7 +37,10 @@ fixrecord() {
 	updated_record=$(echo "${apicall}"  |jq -cr --arg VALUE "${value}" '
 #                (.permanentLoanTypeId = $VALUE)
 #                (.statusId = $VALUE)
-                (.customFields.academicStatus = $VALUE) # single dropdown or text
+#                (.customFields.academicStatus = $VALUE) # single dropdown or text
+#                (.permanentLocationId = $VALUE) 
+                (.temporaryLocation.id = "75f431c4-d569-406d-8c32-665ebe4dfae5") 
+#
 ')
 	#updated_record=${apicall//$pattern/$replace}
 	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_record}" "${okapi_url}/${recordtype}/${uuid}")
@@ -49,8 +52,7 @@ fixrecord() {
 
 case $recordtype in
 "authorities")
-        recordtype="authority-storage/authorities"
-        ;;
+        recordtype="authority-storage/authorities";;
 "campuses")
 	recordtype="location-units/campuses";;
 "groups")
@@ -69,6 +71,8 @@ case $recordtype in
 	recordtype="invoice/invoice-lines";;
 "items")
 	recordtype="item-storage/items";;
+"items-inventory")
+	recordtype="inventory/items";;
 "libraries")
 	recordtype="location-units/libraries";;
 "licenses")
@@ -81,8 +85,6 @@ case $recordtype in
 	recordtype="notes";;
 "notices")
 	recordtype="scheduled-notice-storage/scheduled-notices";;
-"orders")
-	recordtype="orders-storage/purchase-orders";;
 "organizations")
 	recordtype="organizations/organizations";;
 "polines")
@@ -92,15 +94,14 @@ case $recordtype in
 "servicepoints")
 	recordtype="service-points";;
 "srs")
-        recordtype="source-storage/records"
-        ;;
+        recordtype="source-storage/records";;
 "tags")
 	recordtype="tags";;
 "users")
 	batchsize=1
 	recordtype="users";;
 *)
-	echo "Record type '${recordtype}' not found. Supported types are campuses, composite orders, groups, holdings, instances, instance-types, interfaces, items, libraries, licenses, loans, locations, notes, notices, organizations, polines, requests, servicepoints, srs, tags, users."
+	echo "Record type '${recordtype}' not found. Supported types are campuses, groups, holdings, instances, instance-types, interfaces, items, libraries, licenses, loans, locations, notes, notices, organizations, polines, requests, servicepoints, srs, tags, users."
 	exit;;
 esac
 

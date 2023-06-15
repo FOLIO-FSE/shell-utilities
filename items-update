@@ -8,7 +8,7 @@ okapi_token=$(cat okapi.token)
 # being reuploaded via batch sync API
 ##############################################################################
 
-infile=item_uuids
+infile=uuids
 #infile=barcodes
 outfile=item_update.log
 searchtype="id"
@@ -19,7 +19,8 @@ batchsize=50
 
 #jq_replace='.items[].effectiveLocationId="b9dc25a2-a7fb-48ad-8da5-8f68e35ba0af" '
 #jq_replace='.items[].permanentLocationId="618ac339-b867-492a-9c71-6140447d7bff" '
-jq_replace='.items[].permanentLoanTypeId="36dde437-be31-463a-8b6e-5ea8f2d523f7" '
+jq_replace='.items[].temporaryLocationId="bb6ffec9-0b7e-459b-8d60-fc000bddf391" '
+#jq_replace='.items[].permanentLoanTypeId="36dde437-be31-463a-8b6e-5ea8f2d523f7" '
 #jq_replace='.items[].status.name="Available" '
 jq_replace='(del(.items[].volume)) '
 

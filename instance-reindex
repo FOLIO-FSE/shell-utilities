@@ -33,7 +33,7 @@ update_record() {
 }
 
 
-echo ${uuid} > ${infile}
+if [[ ! -z ${uuid} ]];then echo ${uuid} > ${infile};fi
 
 if [[ ! -f ${infile} ]]; then echo "This script cannot find input file ${infile}";exit;fi
 numrecs=$(wc -l ${infile} |cut -d " " -f1)

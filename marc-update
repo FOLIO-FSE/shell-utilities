@@ -2,15 +2,22 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-datafile="marc.json"
 
-uuid=$(cat "${datafile}" |jq -r .parsedRecordId)
+infile=uuids
 
-apicall=$(curl --http1.1 -s -X PUT \
--H "Content-type: application/json" \
--H "X-Okapi-Tenant: ${tenant}" \
--H "x-okapi-token: ${okapi_token}" \
--d @${datafile} \
-"${okapi_url}/records-editor/records/${uuid}")
+if [[ -z ${infile} ]];then echo "The input file ${infile} could not be found";exit;fi
 
-echo $apicall
+while IFS=$'\n' read -r instance_uuid;do
+
+	record=$(curl -s -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/records-editor/records?externalId=${instance_uuid}") 
+
+	version=$(curl -s -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${instance_uuid}" |jq -r ._version) 
+
+	parsedRecordId=$(echo "${record}" | jq -r .parsedRecordId)
+	record=$(echo "${record}" |jq ".relatedRecordVersion = \"${version}\"")
+	
+	apicall=$(curl --http1.1 -s -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/records-editor/records/${parsedRecordId}")
+echo ${apicall}
+exit
+
+done < ${infile}

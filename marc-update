@@ -2,12 +2,17 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-
 infile=uuids
+
+SECONDS=0
+counter=0
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
 
 if [[ -z ${infile} ]];then echo "The input file ${infile} could not be found";exit;fi
 
 while IFS=$'\n' read -r instance_uuid;do
+	counter=$((counter + 1))
 
 	record=$(curl -s -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/records-editor/records?externalId=${instance_uuid}") 
 
@@ -16,8 +21,14 @@ while IFS=$'\n' read -r instance_uuid;do
 	parsedRecordId=$(echo "${record}" | jq -r .parsedRecordId)
 	record=$(echo "${record}" |jq ".relatedRecordVersion = \"${version}\"")
 	
-	apicall=$(curl --http1.1 -s -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/records-editor/records/${parsedRecordId}")
-echo ${apicall}
-exit
+	apicall=$(curl --http1.1 -s -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/records-editor/records/${parsedRecordId}") >> balp
+
+        TIME=$SECONDS;msg="$SECONDS seconds"
+        if [[ $SECONDS -gt 60 ]];then TIME=$(bc <<< "scale=1;$SECONDS/60");msg="$TIME minutes";fi
+        if [[ $SECONDS -gt 3600 ]];then TIME=$(bc <<< "scale=1;$SECONDS/3600");msg="$TIME hours     ";fi
+	
+	echo -en "Processing record $counter of $numrecs in $msg\r"
 
 done < ${infile}
+
+echo "Processed record $counter of $numrecs in $msg          "

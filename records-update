@@ -11,6 +11,8 @@ recordtype=$1
 infile="${recordtype}.tsv"
 outfile="${recordtype}_update_log.json"
 
+rm -f ${outfile}
+
 pattern='"source":{}'
 replace='"source":{"id":"9bed0d46-35d1-45f6-801c-dc54d911fe12","personal":{"lastName":"Data","firstName":"Migration"}}'
 
@@ -29,8 +31,14 @@ fixrecord() {
 	local value="${3}"
 	local updated_record
 	local apicall
+	
+	if [[ ${recordtype} == "source-storage/records" ]];then 
+		apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${uuid}/formatted?idType=INSTANCE" |jq -c .)
+		uuid=$(echo ${apicall} |jq -r .id)
+	else
+		apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}" |jq -c .)
+	fi
 
-	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}" |jq -c .)
 # Unrem the appropriate updated_record expression for your task
 #	updated_record=$(echo "${apicall}"  |jq '.customFields.academicStatus = ["opt_3"]')
  
@@ -38,10 +46,12 @@ fixrecord() {
 #                (.permanentLoanTypeId = $VALUE)
 #                (.statusId = $VALUE)
 #                (.customFields.academicStatus = $VALUE) # single dropdown or text
+		 #((.parsedRecord.content.fields[] | select(."008") |."008") = $VALUE)               
+		 ((.parsedRecord.content.fields[] | select(."008") |."008") = "780615s19uu    xx a                eng d")               
 #                (.permanentLocationId = $VALUE) 
 #                (.temporaryLoanType = {"id": $VALUE} ) # UUID, must use items-inventory
 #                (.temporaryLocation = {"id": $VALUE} ) # UUID, must use items-inventory
-#
+		|del(.metadata)
 ')
 	#updated_record=${apicall//$pattern/$replace}
 	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_record}" "${okapi_url}/${recordtype}/${uuid}")
@@ -114,7 +124,7 @@ while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
 	for line in "${lines[@]}";do
 		IFS=$'\t' read -r uuid value <<< "${line}"
 		
-		fixrecord "${uuid}" "${seq}" "${value}" &
+		fixrecord "${uuid}" "${seq}" "${value}" 
 
 		counter=$(($counter + 1))
 		seq=$(($seq + 1))
@@ -133,4 +143,5 @@ while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
 done < ${infile}
 
 echo "Finished processing $numrecs ${recordtype} records in $msg"
+echo "Output was sent to ${outfile}"
 

@@ -33,21 +33,21 @@ fixrecord() {
 	local apicall
 	
 	if [[ ${recordtype} == "source-storage/records" ]];then 
-		apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${uuid}/formatted?idType=INSTANCE" |jq -c .)
+		apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${uuid}/formatted?idType=INSTANCE" |jq .)
 		uuid=$(echo ${apicall} |jq -r .id)
 	else
-		apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}" |jq -c .)
+		apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}" |jq .)
 	fi
 
 # Unrem the appropriate updated_record expression for your task
 #	updated_record=$(echo "${apicall}"  |jq '.customFields.academicStatus = ["opt_3"]')
  
-	updated_record=$(echo "${apicall}"  |jq -cr --arg VALUE "${value}" '
+	updated_record=$(echo "${apicall}"  |jq -r --arg VALUE "${value}" '
 #                (.permanentLoanTypeId = $VALUE)
 #                (.statusId = $VALUE)
 #                (.customFields.academicStatus = $VALUE) # single dropdown or text
-		 #((.parsedRecord.content.fields[] | select(."008") |."008") = $VALUE)               
-		 ((.parsedRecord.content.fields[] | select(."008") |."008") = "780615s19uu    xx a                eng d")               
+		 ((.parsedRecord.content.fields[] | select(."008") |."008") = $VALUE)               
+#		 ((.parsedRecord.content.fields[] | select(."008") |."008") = "780615s19uu    xx a                eng d")               
 #                (.permanentLocationId = $VALUE) 
 #                (.temporaryLoanType = {"id": $VALUE} ) # UUID, must use items-inventory
 #                (.temporaryLocation = {"id": $VALUE} ) # UUID, must use items-inventory

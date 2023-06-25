@@ -1,0 +1,38 @@
+leader=$(echo -n "${1}" |tr '\\' ' ')
+
+length="${leader:0:5}"
+status="${leader:5:1}"
+type="${leader:6:1}"
+bib_level="${leader:7:1}"
+type_of_control="${leader:8:1}"
+encoding="${leader:9:1}"
+indicator_count="${leader:10:1}"
+subfield_count="${leader:11:1}"
+base_address="${leader:12:5}"
+encoding_level="${leader:17:1}"
+descriptive_form="${leader:18:1}"
+multipart_resource="${leader:19:1}"
+length_of_directory_entry="${leader:20:1}"
+length_of_starting_position="${leader:21:1}"
+length_of_implementation_defined="${leader:22:1}"
+undefined_field="${leader:23:1}"
+
+if [[ ${#leader} -ne 24 ]];then echo "Leader length ${#leader} is incorrect -- must be 24";fi
+
+if [[ ! "${length}" =~ ^[0-9]{5}$ ]]; then echo "Invalid length: (${length}) -- must be numeric";fi
+if [[ ! "${status}" =~ ^[acdnp]$ ]]; then echo "Invalid status: (${status}) -- must match [acdnp]";fi
+if [[ ! "${type}" =~ ^[acdefgijkmoprt]$ ]]; then echo "Invalid type: (${type}) -- must match [acdefgijkmoprt]";fi
+if [[ ! "${bib_level}" =~ ^[abcdims]$ ]]; then echo "Invalid bib_level: (${bib_level}) -- must match [abcdims]";fi
+if [[ ! "${type_of_control}" =~ ^[\ a]$ ]]; then echo "Invalid type_of_control: (${type_of_control}) -- must match [ a]";fi
+if [[ ! "${encoding}" =~ ^[\ a]$ ]]; then echo "Invalid encoding: (${encoding}) -- must match [ a]";fi
+if [[ ! "${indicator_count}" =~ ^[2]$ ]]; then echo "Invalid indicator_count: (${indicator_count}) -- must match [2]";fi
+if [[ ! "${subfield_count}" =~ ^[2]$ ]]; then echo "Invalid subfield_count: (${subfield_count}) -- must match [2]";fi
+if [[ ! "${base_address}" =~ ^[0-9]{5}$ ]]; then echo "Invalid base_address: (${base_address}) -- must be numeric";fi
+if [[ ! "${encoding_level}" =~ ^[\ 1234578IJKLMuz]$ ]]; then echo "Invalid encoding_level: (${encoding_level}) -- must match [ 1234578IJKLMuz]";fi
+if [[ ! "${descriptive_form}" =~ ^[\ acinu]$ ]]; then echo "Invalid descriptive_form: (${descriptive_form}) -- must match [ acinu]";fi
+if [[ ! "${multipart_resource}" =~ ^[\ abc]$ ]]; then echo "Invalid multipart_resource: (${multipart_resource}) -- must match [ abc]";fi
+if [[ ! "${length_of_directory_entry}" =~ ^[4]$ ]]; then echo "Invalid length_of_directory_entry: (${length_of_directory_entry}) -- must match [4]";fi
+if [[ ! "${length_of_starting_position}" =~ ^[5]$ ]]; then echo "Invalid length_of_starting_position: (${length_of_starting_position}) -- must match [5]";fi
+if [[ ! "${length_of_implementation_defined}" =~ ^[0]$ ]]; then echo "Invalid length_of_implementation_defined: (${length_of_implementation_defined}) -- must match [0]";fi
+if [[ ! "${undefined_field}" =~ ^[0]$ ]]; then echo "Invalid undefined_field: (${undefined_field}) -- must match [0]";fi
+

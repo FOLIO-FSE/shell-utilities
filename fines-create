@@ -108,6 +108,7 @@ counter=1
 badbarcodes=0
 
 numloans=$(cat ${fines_file} |wc -l)
+item_barcode=""
 
 while IFS=$'\n' read -r line; do
 	line=$(tr "\t" "^" <<< "${line}")
@@ -115,10 +116,11 @@ while IFS=$'\n' read -r line; do
 	#
 	#IFS=$'^' read -r patron_barcode item_charge item_barcode fee_assess_date fineamount <<< "${line}"
 	#
-	IFS=$'^' read -r patron_identifier fineamount patron_barcode item_identifier item_barcode outdate duedate notes  <<< "${line}"
+	#IFS=$'^' read -r patron_identifier fineamount patron_barcode item_identifier item_barcode outdate duedate notes  <<< "${line}"
+	IFS=$'^' read -r patron_identifier patron_name fineamount patron_barcode notes  <<< "${line}"
 	
 	if [[ -z $patron_barcode ]];then patron_barcode="${patron_identifier}";fi
-	if [[ item_barcode ]];then notes=" Item: ${item_barcode}. ${notes}";fi
+	if [[ item_barcode != "" ]];then notes=" Item: ${item_barcode}. ${notes}";fi
 
 	echo -en "Processing record $counter of ${numloans}. Bad barcodes found: ${badbarcodes}\r"
 

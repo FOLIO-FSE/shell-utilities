@@ -1,0 +1,69 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+counter=0
+infile=uuids
+
+batchsize=6
+SECONDS=1
+
+case $1 in
+	"restricted" | "missing" | "longmissing" | "unavailable" | "inprocess" )
+		status=$1;;
+	*)
+		echo "You must indicate a status of restricted, inprocess, missing, longmissing, unavailable"
+		exit
+esac
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+markstatus() {
+	local itemId=${1}
+	local uuid
+	local endpoint
+	local apicall
+	local updated_record
+
+	if [[ ${itemId} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+		uuid=${itemId}
+	else
+        	endpoint="${okapi_url}/item-storage/items?query=barcode==${itemId}"
+		apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-storage/items?query=barcode==${itemId}")
+        	uuid=$(echo $apicall |jq -r '.items[0].id')
+	fi
+
+	if [[ ${itemId} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+		uuid=${itemId}
+	fi
+
+	case $status in
+		"restricted")
+			apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{}" "${okapi_url}/inventory/items/${uuid}/mark-restricted");;
+		"inprocess")
+			apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{}" "${okapi_url}/inventory/items/${uuid}/mark-in-process");;
+		"missing")
+			apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{}" "${okapi_url}/inventory/items/${uuid}/mark-missing");;
+		"longmissing")
+			apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{}" "${okapi_url}/inventory/items/${uuid}/mark-long-missing");;
+		"unavailable")
+			apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{}" "${okapi_url}/inventory/items/${uuid}/mark-unavailable");;
+	esac
+}
+
+while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
+	for id in ${ids[@]};do 
+		markstatus "${id}" 
+		counter=$(($counter + 1))
+	done
+	wait
+
+	recsPerSec=$(bc <<< "scale=1;$counter/$SECONDS")	
+	echo -en "Processed $counter records of $numrecs at $recsPerSec records/sec\r"
+	
+done < ${infile}
+
+echo "Processed $counter records"
+
+
+

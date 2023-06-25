@@ -9,14 +9,23 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
+infile=course_barcode
+logfile=course_addbarcodes.log
+
 declare -A dict_courses
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 # get list of course departments and populate array using name as key with uuid as value
  
 eval "$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/coursereserves/courses?limit=100000" |  jq -r '.courses[] | @sh "dict_courses[\(.courseNumber|tostring)]=\(.courseListingId|tostring)"')"
 
+counter=0
+found=0
+notfound=0
+
 while IFS=$'\t' read -r courseNumber barcode;do
 
+counter=$(($counter + 1))
 
 courseListingId=${dict_courses["${courseNumber}"]}
 
@@ -34,7 +43,16 @@ EndOfItem
 apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${item}" "${okapi_url}/coursereserves/courselistings/${courseListingId}/reserves")
 echo -e "${apicall}" 
 
+echo ${apicall} |tr "\n" " " |sed 's/$/\n/' >> ${logfile}
 
-done < course_barcodes
+if [[ ${apicall} =~ courseListingId ]];then
+	found=$(($found + 1))
+else
+	notfound=$(($notfound + 1))
+fi
 
+echo -en "Processing record $counter of $numrecs. Barcodes added: $found -- Failures: $notfound\r"
 
+done < ${infile}
+
+echo "Processed $numrecs barcodes. Results logged in ${logfile}.  Barcodes added: $found -- Failures: $notfound"

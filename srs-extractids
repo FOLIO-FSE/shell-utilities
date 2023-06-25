@@ -1,0 +1,9 @@
+# extracts fields from MARCJSON and outputs in TSV
+
+if [[ -z $4 ]];then echo "Extracts Instance Ids from SRS. Usage: srsextract [filename] [marctag] [subfield] [search string]";exit;fi
+
+TAG=$2
+SUBFIELD=$3
+SEARCH=$4
+
+cat $1 |jq -r "select(.parsedRecord.content.fields[].\"$TAG\".subfields[]?.$SUBFIELD? | contains(\"$SEARCH\")) | .externalIdsHolder.instanceId"

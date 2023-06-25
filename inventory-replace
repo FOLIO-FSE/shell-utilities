@@ -24,8 +24,6 @@ case $rec_type in
 esac
 
 batchsize=500
-echo ${endpoint}
-exit
 
 outfile="${rec_type}_update.log"
 infile=${1}.json

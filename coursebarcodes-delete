@@ -1,0 +1,18 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+infile="listingid_reserveid.tsv"
+outfile="reserve_barcode_delete.log"
+
+rm -f ${outfile}
+
+
+while IFS=$'\t' read -r courseListingId reserveId;do
+
+	apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/coursereserves/courselistings/${courseListingId}/reserves/${reserveId}")
+
+	echo "${apicall}" |tee -a ${outfile}
+
+done < ${infile}
+

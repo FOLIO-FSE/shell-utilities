@@ -17,7 +17,7 @@ update_record() {
 	local version=""
 	local changeid=""
 
-	if [[ ${uuid} =~ ^[a-z]*[0-9]*$ ]];then
+	if [[ ${uuid} =~ ^in[0-9]*$ ]];then
 		uuid=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances?query=hrid==${uuid}" |jq -r '.instances[].id')
 	fi
 
@@ -32,13 +32,8 @@ update_record() {
 
 }
 
-if [[ ${uuid} =~ ^in[0-9]*$ ]];then
-	uuid=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances?query=hrid==${uuid}" |jq -r '.instances[].id')
-fi
 
-if [[ ${uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
-	echo ${uuid} > ${infile}
-fi
+if [[ ! -z ${uuid} ]];then echo ${uuid} > ${infile};fi
 
 if [[ ! -f ${infile} ]]; then echo "This script cannot find input file ${infile}";exit;fi
 numrecs=$(wc -l ${infile} |cut -d " " -f1)

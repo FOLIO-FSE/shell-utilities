@@ -2,13 +2,29 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-infile=infile
+#############################################################################
+# this script expects a file containing a list of search terms (by default id)
+# that is run through the jq_replace or string_replace expressions before
+# being reuploaded via batch sync API
+##############################################################################
+
+infile=uuids
+#infile=barcodes
 outfile=item_update.log
 searchtype="id"
+#searchtype="barcode"
 
 batchsize=50
 
+
 #jq_replace='.items[].effectiveLocationId="b9dc25a2-a7fb-48ad-8da5-8f68e35ba0af" '
+#jq_replace='.items[].permanentLocationId="618ac339-b867-492a-9c71-6140447d7bff" '
+jq_replace='.items[].temporaryLocationId="bb6ffec9-0b7e-459b-8d60-fc000bddf391" '
+#jq_replace='.items[].permanentLoanTypeId="36dde437-be31-463a-8b6e-5ea8f2d523f7" '
+#jq_replace='.items[].status.name="Available" '
+jq_replace='(del(.items[].volume)) '
+
+#string_replace='s/d7ab0739-4ec3-4db7-905e-958b50118a1b/0bfb7f8b-76d1-4bfe-8046-2254ad987534/g'
 
 querydelim="%20or%20${searchtype}="
 endpoint="${okapi_url}/item-storage/items?query="
@@ -25,9 +41,16 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 	idstring="${ids[@]}"
 	querystring="id=${idstring// /${querydelim}}"
 
-	records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}${querystring}&limit=${batchsize}")
+	records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}${querystring}&limit=${batchsize}" )
 
-	updated_records=$(echo "${records}" |jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo)")
+	if [[ -n ${jq_replace} ]];then
+		updated_records=$(echo "${records}" |jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo)")
+	fi
+
+	if [[ -n ${string_replace} ]];then
+		updated_records=$(echo "${records}" |sed ${string_replace} | jq -c 'del(.totalRecords) |del(.resultInfo)')
+	fi
+
 
 	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_records}" "${okapi_url}/item-storage/batch/synchronous?upsert=true" >> ${outfile}
 

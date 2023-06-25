@@ -1,31 +1,8 @@
-# creates an okapi authentication token to be used
-# by other scripts
-#
-# First generate an authentication token. You can use it for
-# as many calls as you like
+okapi_url=$(cat okapi.url)
+tenant=$(cat tenant)
 
-okapi_url=your_okapi_url
-tenant=your_tenant_id
-username=your_username
-pwd=your_password
+okapi_token=$(curl -s -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -d @okapi-login.json "${okapi_url}/authn/login" |jq -r .okapiToken)
 
-IFS='' read -r -d '' okapi_login << EndOfAuth
-{
-  "tenant": "${tenant}",
-  "username": "${username}",
-  "password": "${pwd}"
-}
-EndOfAuth
-
-auth=$(curl -s -w '\n' -X POST -D - \
-  -H "Content-type: application/json" \
-  -H "X-Okapi-Tenant: ${tenant}" \
-  -d "${okapi_login}" \
-  "${okapi_url}/authn/login")
-
-okapi_token=$(echo "${auth}" | grep 'x-okapi-token: ' |sed 's/^.* //')
-
-echo "$auth" 
 echo $okapi_token |tee okapi.token
 
 

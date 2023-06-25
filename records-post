@@ -37,6 +37,9 @@ postrecord() {
 
 
 case $recordtype in
+"agreements")
+	recordtype="erm/sas"
+	;;
 "authorities")
 	recordtype="authority-storage/authorities"
 	;;

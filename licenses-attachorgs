@@ -10,6 +10,8 @@ declare -A org_dict
 infile="license-org.tsv"
 role="licensor" # make sure this is defined in the system
 # this script will force a primary organization
+#
+# Orgs are keyed off code. Switch statement to key by name
 
 all_licenses=""
 all_organizations=""
@@ -32,8 +34,8 @@ while [[ $recsretrieved -eq 100 ]] ;do
 echo "$totalrecs Organizations retrieved"
 echo "${all_organizations}" > orgs
 
-# load organizations into scalar array keyed by downcased name
-eval "$(echo ${all_organizations} |jq -r '. | select(.name |test("[a-zA-Z]"))| @sh "org_dict[\(.name|tostring|ascii_downcase)]=\(.|tostring)"')"
+# load organizations into scalar array keyed by downcased code
+eval "$(echo ${all_organizations} |jq -r '. | select(.name |test("[a-zA-Z]"))| @sh "org_dict[\(.code|tostring|ascii_downcase)]=\(.|tostring)"')"
 
 echo "Normalizing Organization keys"
 # normalize keys

@@ -4,6 +4,8 @@ okapi_token=$(cat okapi.token)
 
 rec_type=$1
 search_for=$2
+filename="${1}.json"
+rm -f ${filename}
 
 if [[ ${search_for} == "" ]]; then search_for="cql.allRecords=1";fi
 query="query=${search_for}"
@@ -19,7 +21,7 @@ no_total="no"
 
 function fetch_batch() {
 	local offset=$1
-	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?limit=${num_retrieved}&offset=${offset}&${query}${sortby}" |jq -c ".${rec_type}[]"  > "tmp_${rec_type}.${t}"
+	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?limit=${num_retrieved}&offset=${offset}&${query}${sortby}" |jq -c ".${rec_type}[] | del(.metadata)"  > "tmp_${rec_type}.${t}"
 }
 
 case $rec_type in
@@ -41,8 +43,18 @@ case $rec_type in
 "circlog")
 	endpoint="audit-data/circulation/logs"
 	rec_type="logRecords" ;;
+"contacts")
+	endpoint="organizations-storage/contacts" ;;
+"courselistings")
+	rec_type="courseListings"
+	endpoint="coursereserves/courselistings";;
 "courses")
 	endpoint="coursereserves/courses";;
+"departments")
+	endpoint="departments";;
+"expense-classes")
+	endpoint="finance/expense-classes"
+	rec_type="expenseClasses";;
 "feefines")
 	endpoint="feefines";;
 "feefineactions")
@@ -60,6 +72,11 @@ case $rec_type in
 	query="recordType=MARC_HOLDING"
 	sortby=""
 	endpoint="source-storage/records";;
+"importjobs")
+	rec_type="jobExecutions"
+	endpoint="metadata-provider/jobExecutions"
+	limit=1
+	;;
 "inhouse") 
 	rec_type="checkIns"
 	endpoint="check-in-storage/check-ins"
@@ -73,6 +90,9 @@ case $rec_type in
 	endpoint="instance-storage/instances";;
 "items")
 	endpoint="item-storage/items";;
+"exportjobs")
+	rec_type="jobExecutions"
+	endpoint="data-export/job-executions";;
 "licenses")
 	endpoint="licenses/licenses"
 	query="sort=name%3Bdesc"
@@ -89,11 +109,15 @@ case $rec_type in
 "notes")
 	limit=1
 	endpoint="notes";;
+"orderprefixes")
+	rec_type="prefixes"
+	endpoint="orders/configuration/prefixes";;
+"orders")
+	endpoint="orders-storage/purchase-orders" 
+	rec_type="purchaseOrders";;
 "organizations")
 	endpoint="organizations-storage/organizations"
 	query="query=%28status%3D%3D%22Active%22%29"
-	#sortby="+sortby+name%2Fsort.ascending"
-	num_retrieved=100
 	;;
 "polines")
 	rec_type="poLines"
@@ -107,6 +131,7 @@ case $rec_type in
 "requests")
 	endpoint="circulation/requests";;
 "schedulednotices")
+	rec_type="scheduledNotices"
 	endpoint="scheduled-notice-storage/scheduled-notices";;
 "servicepoints")
 	endpoint="service-points";;
@@ -119,6 +144,10 @@ case $rec_type in
 "tags")
 	endpoint="tags"
 	no_total="yes";;
+"transactions")
+	endpoint="finance/transactions";;
+"usergroups")
+	endpoint="groups";;
 "users")
 	endpoint="users";;
 "vouchers")
@@ -128,6 +157,7 @@ case $rec_type in
 esac
 
 rm -f ${rec_type}
+
 
 if [[ ${no_total} == "no" ]];then
 	num_records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&limit=${limit}" |jq -r .totalRecords)
@@ -141,7 +171,7 @@ if [[ ${no_total} == "no" ]];then
 		done
 		wait
 			
-		cat tmp_${rec_type}.* >> ${rec_type}
+		cat tmp_${rec_type}.* >> ${filename}
 		rm tmp_${rec_type}.*
 	
 		if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset $num_records;fi
@@ -155,14 +185,14 @@ else
 	        num_records=$(($offset + $recsretrieved))
 	        printf "%s records retrieved\r" $num_records
 	
-	        $(echo ${apicall} |jq .[] >> ${rec_type})
+	        $(echo ${apicall} |jq '.[] | del(.metadata)' >> ${filename})
 	        offset=$(($offset + 100))
 	        done
 	
 	echo "$num_records records retrieved"
 fi
 
-echo "$num_records records have been exported to \"${rec_type}\""
+echo "$num_records records have been exported to \"${filename}\""
 
 
 

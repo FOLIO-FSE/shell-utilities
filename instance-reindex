@@ -26,7 +26,7 @@ update_record() {
 	change_manager_body=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/change-manager/parsedRecords?externalId=${uuid}")
 	changeid=$(jq -r '.id' <<< "${change_manager_body}")
 
-	change_manager_body="$(jq --arg version "$version" '. += {"relatedRecordVersion":$version}' <<< $change_manager_body)"
+	change_manager_body="$(jq --arg version "$version" '. += {"relatedRecordVersion":$version}' <<< "${change_manager_body}")"
 
 	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${change_manager_body}" "${okapi_url}/change-manager/parsedRecords/${changeid}")
 

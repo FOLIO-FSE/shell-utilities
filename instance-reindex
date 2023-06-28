@@ -40,7 +40,7 @@ numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 counter=0
 
-while mapfile -t -n 5 uuids && ((${#uuids[@]})); do
+while mapfile -t -n 15 uuids && ((${#uuids[@]})); do
 	for uuid in ${uuids[@]};do	
 		uuid=${uuid//[^0-9a-z\-]/}
 		update_record "${uuid}" &

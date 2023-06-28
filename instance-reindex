@@ -7,6 +7,7 @@ okapi_token=$(cat okapi.token)
 
 infile=uuids
 SECONDS=1
+threads=10
 
 uuid=${1//[^0-9a-z\-]/}
 
@@ -40,7 +41,7 @@ numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 counter=0
 
-while mapfile -t -n 15 uuids && ((${#uuids[@]})); do
+while mapfile -t -n ${threads} uuids && ((${#uuids[@]})); do
 	for uuid in ${uuids[@]};do	
 		uuid=${uuid//[^0-9a-z\-]/}
 		update_record "${uuid}" &

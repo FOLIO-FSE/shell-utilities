@@ -34,7 +34,7 @@ case $rec_type in
 	endpoint="authority-storage/authorities";;
 "authorities-srs")
 	rec_type="records"
-	query="recordType=MARC_AUTHORITY"
+	query="recordType=MARC_AUTHORITY&state=ACTUAL&sortby=id"
 	sortby=""
 	endpoint="source-storage/records";;
 "boundwiths")
@@ -69,7 +69,7 @@ case $rec_type in
 	endpoint="holdings-storage/holdings";;
 "holdings-srs")
 	rec_type="records"
-	query="recordType=MARC_HOLDING"
+	query="recordType=MARC_HOLDING&state=ACTUAL&sortby=id"
 	sortby=""
 	endpoint="source-storage/records";;
 "importjobs")
@@ -137,6 +137,8 @@ case $rec_type in
 	endpoint="service-points";;
 "srs")
 	rec_type="records"
+	query="recordType=MARC_BIB&state=ACTUAL&sortby=id"
+	sortby=""
 	endpoint="source-storage/records";;
 "statcodes")
 	rec_type="statisticalCodes"

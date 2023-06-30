@@ -42,6 +42,8 @@ case $rec_type in
 "boundwiths")
 	endpoint="inventory-storage/bound-with-parts"
 	rec_type="boundWithParts";;
+"budgets")
+	endpoint="finance/budgets";;
 "circlog")
 	endpoint="audit-data/circulation/logs"
 	rec_type="logRecords" ;;

@@ -64,8 +64,11 @@ case $rec_type in
 "feefineactions")
 	endpoint="feefineactions";;
 "fiscalyears")
-	rec_type=fiscalYears
+	rec_type="fiscalYears"
 	endpoint="finance/fiscal-years";;
+"fund-expense")
+	rec_type="fundCodeVsExpClassesTypes"
+	endpoint="finance/fund-codes-expense-classes";;
 "funds")
 	endpoint="finance/funds";;
 "holdings")

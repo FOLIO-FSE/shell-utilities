@@ -11,7 +11,7 @@ case $rec_type in
 		;;
 	holdings)
 		endpoint="${okapi_url}/holdings-storage/batch/synchronous?upsert=true"
-		label="holdingsRecord"
+		label="holdingsRecords"
 		;;
 	items)
 		endpoint="${okapi_url}/item-storage/batch/synchronous?upsert=true"

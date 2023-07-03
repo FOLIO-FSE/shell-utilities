@@ -136,9 +136,8 @@ while mapfile -t -n 6 lines && ((${#lines[@]})); do
         TIME=$SECONDS;msg="$SECONDS seconds"
         if [[ $SECONDS -gt 60 ]];then TIME=$(bc <<< "scale=1;$SECONDS/60");msg="$TIME minutes";fi
         if [[ $SECONDS -gt 3600 ]];then TIME=$(bc <<< "scale=1;$SECONDS/3600");msg="$TIME hours     ";fi
-	recsPerSec=$(bc <<< "scale=1;$counter/$SECONDS")
 
-	echo -en "Processing record $counter of $numrecs in $msg at $recsPerSec records per second\r"
+	echo -en "Processing record $counter of $numrecs in $msg\r"
 
 	cat tmp_records.* >> ${outfile}
 	rm tmp_records.*

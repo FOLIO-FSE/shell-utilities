@@ -74,7 +74,7 @@ create_org_record() {
 	if [[ ${currency} =~ ^[A-Z][A-Z][A-Z]$ ]]; then currency="\"${currency}\"";fi
 	if [[ ${phone} != "" ]]; then phone="{ \"phoneNumber\" : \"${phone}\", \"type\":\"Office\", \"isPrimary\" : true, \"categories\" : [] }";fi
 	if [[ ${email} =~ @ ]]; then email="{ \"value\" : \"${email}\", \"isPrimary\" : true, \"categories\" : [] }";else email="";fi
-	if [[ ${accountnum} != "" ]]; then accountnum="{\"name\":\"${name}\",\"accountNo\":\"${accountnum}\",\"paymentMethod\":\"Other\",\"accountStatus\":\"Active\",\"libraryCode\":\"-\",\"libraryEdiCode\":\"-\"}"; fi
+	#if [[ ${accountnum} != "" ]]; then accountnum="{\"name\":\"${name}\",\"accountNo\":\"${accountnum}\",\"paymentMethod\":\"Other\",\"accountStatus\":\"Active\",\"libraryCode\":\"-\",\"libraryEdiCode\":\"-\"}"; fi
 
 	if [[ ${fax} != "" ]]; then
 		if [[ ${phone} != "" ]]; then
@@ -124,7 +124,7 @@ IFS='' read -r -d '' org << EndOfOrg
  "urls" : [${url} ],
  "contacts" : [ ],
  "agreements" : [ ],
- "erpCode" : "",
+ "erpCode" : "${accountnum}",
  "organizationTypes" : [ ${orgtype} ],
  "vendorCurrencies" : [ ${currency} ],
  "edi" : {
@@ -137,7 +137,7 @@ IFS='' read -r -d '' org << EndOfOrg
    }
  },
  "interfaces" : [],
- "accounts" : [${accountnum}],
+ "accounts" : [],
  "isVendor" : true,
  "changelogs" : [ ],
  "acqUnitIds" : [${acqunit}]

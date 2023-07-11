@@ -88,6 +88,9 @@ case $recordtype in
 "notices")
 	recordtype="scheduled-notice-storage/scheduled-notices"
 	;;
+"orderlines")
+	recordtype="orders/order-lines"
+	;;
 "organizations")
 	recordtype="organizations/organizations"
 	;;

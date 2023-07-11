@@ -1,0 +1,40 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+declare -A fund_dict
+declare -A po_dict
+
+fundfile="funds.tsv"
+fundmap="po_fund.tsv"
+outfile=outfile
+
+numrecs=$(wc -l ${fundfile} |cut -d " " -f1)
+counter=0
+
+rm -f ${outfile}
+
+while IFS=$'\t' read -r po fund;do
+	po_dict[${po}]=${fund}
+done < ${fundmap}
+	
+
+apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/finance/funds?limit=10000" |jq -rc '.funds[]')
+
+eval $(echo ${apicall} |jq -r '@sh "fund_dict[\(.code|tostring)]=\(.id|tostring)"')
+
+while IFS=$'\t' read -r po record; do
+	fund=${po_dict[$po]}
+
+	if [[ $fund =~ [A-Z] ]];then 
+		fund_uuid=${fund_dict[${fund}]}
+		fund_object="[{\"distributionType\":\"percentage\",\"value\":100,\"fundId\":\"${fund_uuid}\",\"code\":\"${fund}\",\"encumbrance\":null,\"expenseClassId\":null}]"
+		updated_record=$(jq -c --argjson FUND "${fund_object}" '.fundDistribution = $FUND' <<< "${record}") 
+		echo "${updated_record}" >> $outfile
+		counter=$(($counter + 1))
+		echo -en "Processing record $counter of $numrecs\r"
+	fi
+done < ${fundfile}
+
+echo "Done processing $numrecs records             "
+

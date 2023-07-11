@@ -3,10 +3,13 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 declare -A fund_dict
-declare -A po_dict
+declare -A expense_dict
+declare -A po_funddict
+declare -A po_expensedict
 
 fundfile="funds.tsv"
-fundmap="po_fund.tsv"
+#fundmap="po_fund.tsv"
+fundmap="po_fund_expense.tsv"
 outfile=outfile
 
 numrecs=$(wc -l ${fundfile} |cut -d " " -f1)
@@ -14,21 +17,28 @@ counter=0
 
 rm -f ${outfile}
 
-while IFS=$'\t' read -r po fund;do
-	po_dict[${po}]=${fund}
+while IFS=$'\t' read -r po fund expense;do
+	po_funddict[${po}]=${fund}
+	po_expensedict[${po}]=${expense}
 done < ${fundmap}
 	
 
-apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/finance/funds?limit=10000" |jq -rc '.funds[]')
+funds=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/finance/funds?limit=10000" |jq -rc '.funds[]')
 
-eval $(echo ${apicall} |jq -r '@sh "fund_dict[\(.code|tostring)]=\(.id|tostring)"')
+eval $(echo ${funds} |jq -r '@sh "fund_dict[\(.code|tostring)]=\(.id|tostring)"')
+
+expenseClasses=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/finance/expense-classes?limit=10000" |jq -rc '.expenseClasses[]')
+
+eval $(echo ${expenseClasses} |jq -r '@sh "expense_dict[\(.code|tostring)]=\(.id|tostring)"')
 
 while IFS=$'\t' read -r po record; do
-	fund=${po_dict[$po]}
+	fund=${po_funddict[$po]}
+	expenseClass=${po_expensedict[$po]}
 
-	if [[ $fund =~ [A-Z] ]];then 
+	if [[ $fund =~ [A-Z] && $expenseClass =~ [A-Z] ]];then 
 		fund_uuid=${fund_dict[${fund}]}
-		fund_object="[{\"distributionType\":\"percentage\",\"value\":100,\"fundId\":\"${fund_uuid}\",\"code\":\"${fund}\",\"encumbrance\":null,\"expenseClassId\":null}]"
+		expense_uuid=${expense_dict[${expenseClass}]}
+		fund_object="[{\"distributionType\":\"percentage\",\"value\":100,\"fundId\":\"${fund_uuid}\",\"code\":\"${fund}\",\"encumbrance\":null,\"expenseClassId\":\"${expense_uuid}\"}]"
 		updated_record=$(jq -c --argjson FUND "${fund_object}" '.fundDistribution = $FUND' <<< "${record}") 
 		echo "${updated_record}" >> $outfile
 		counter=$(($counter + 1))

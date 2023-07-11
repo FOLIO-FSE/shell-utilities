@@ -119,6 +119,9 @@ case $rec_type in
 "orderprefixes")
 	rec_type="prefixes"
 	endpoint="orders/configuration/prefixes";;
+"orderlines")
+	endpoint="orders/order-lines" 
+	rec_type="poLines";;
 "orders")
 	endpoint="orders-storage/purchase-orders" 
 	rec_type="purchaseOrders";;

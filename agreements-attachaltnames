@@ -1,11 +1,10 @@
-# Script expects a delimited file with name of agreement in first column and name of organization in second colum
+# Script expects a delimited file with name of agreement in first column and alternative name in second colum
 
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 declare -A agreement_dict
-declare -A organization_dict
 
 infile="agreement_name.tsv"
 
@@ -39,7 +38,7 @@ for key in "${!agreement_dict[@]}";do
 done
 
 
-# attach organization 
+# attach alt name
 
 while IFS=$'\t' read -r agreement altname;do
 	compareagreementkey=$(tr -dc "[0-9a-z]" <<< "${agreement,,}")

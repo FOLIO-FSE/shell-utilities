@@ -46,7 +46,7 @@ while IFS=$'\t' read -r instance_uuid value;do
 	seq=0
 	counter=$((counter + 1))
 
-	add_field "${instance_uuid}" "${seq}" "${value}"
+	add_field "${instance_uuid}" "${seq}" "${value}" &
 
 	cat tmp_marcupdate.* >> ${outfile}
 

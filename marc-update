@@ -22,29 +22,33 @@ add_field() {
 	local record
 	local version
 	local parsedRecordId
-	local apicall
+	local newfield
+
+
+	newfield='[{ "tag": "035", "content": "$a (OCoLC)'${value}'", "indicators": [ "\\", "\\" ], "isProtected": false }]'
 
 	record=$(curl -s -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/records-editor/records?externalId=${instance_uuid}") 
-echo ${record}
-exit
 
 	version=$(curl -s -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${instance_uuid}" |jq -r ._version) 
 
 	parsedRecordId=$(echo "${record}" | jq -r .parsedRecordId)
-	record=$(echo "${record}" |jq ".relatedRecordVersion = \"${version}\"")
+
+	record=$(echo "${record}" |jq --arg VERSION ${version} --argjson NEWFIELD "${newfield}" '.relatedRecordVersion = $VERSION | (.fields= .fields + $NEWFIELD)')
 	
-	apicall=$(curl --http1.1 -s -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/records-editor/records/${parsedRecordId}") > tmp_marcupdate.${seq}
+	curl --http1.1 -s -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/records-editor/records/${parsedRecordId}" > tmp_marcupdate.${seq}
 
 }
 
 counter=0
 SECONDS=1
 
-while IFS=$'\n' read -r instance_uuid;do
+while IFS=$'\t' read -r instance_uuid value;do
 	seq=0
 	counter=$((counter + 1))
 
-	add_field "${uuid}" "${seq}" "${value}"
+	add_field "${instance_uuid}" "${seq}" "${value}"
+
+	cat tmp_marcupdate.* >> ${outfile}
 
         TIME=$SECONDS;msg="$SECONDS seconds"
         if [[ $SECONDS -gt 60 ]];then TIME=$(bc <<< "scale=1;$SECONDS/60");msg="$TIME minutes";fi

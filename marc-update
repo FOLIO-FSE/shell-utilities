@@ -42,13 +42,20 @@ add_field() {
 counter=0
 SECONDS=1
 
-while IFS=$'\t' read -r instance_uuid value;do
+while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
 	seq=0
-	counter=$((counter + 1))
+	for line in "${lines[@]}";do
+		IFS=$'\t' read -r instance_uuid value <<< "${line}"
 
-	add_field "${instance_uuid}" "${seq}" "${value}" &
+		add_field "${instance_uuid}" "${seq}" "${value}" &
+
+		counter=$((counter + 1))
+		seq=$((seq + 1))
+	done
+	wait
 
 	cat tmp_marcupdate.* >> ${outfile}
+	rm tmp_marcupdate.*
 
         TIME=$SECONDS;msg="$SECONDS seconds"
         if [[ $SECONDS -gt 60 ]];then TIME=$(bc <<< "scale=1;$SECONDS/60");msg="$TIME minutes";fi

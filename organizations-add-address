@@ -3,6 +3,9 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 filename="org_address.tsv"
+use_deterministic_uuids="yes"
+
+declare -A category_dict
 
 dos2unix ${filename}
 
@@ -10,29 +13,39 @@ numrecs=$(wc -l ${filename} |cut -d " " -f1)
 
 counter=0
 
+cat_types=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/categories?query=cql.allRecords=1%20sortby%20value&limit=2000")
+
+eval "$(echo ${cat_types} |jq -r '.categories[] | @sh "category_dict[\(.value|tostring)]=\(.id|tostring)"')"
+
 while IFS=$'\n' read line;do
 	line=$(echo "${line}" | tr -d '"' | tr "\t" "^")
-	IFS='^' read -r code line1 line2 city state zip country categories <<< ${line}
+	IFS='^' read -r code line1 line2 city state zip country cat_orders cat_payments cat_returns cat_claims <<< ${line}
 
 	organization=$(curl -G -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" --data-urlencode "query=code=${code}" "${okapi_url}/organizations/organizations") 
 
-echo "${categories}"
+
 	if [[ "${organization}" =~ [0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]* ]];then
-		if [[ $categories =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f] ]];then
-			categories=$(sed 's/^/"/' <<< $categories)
-			categories=$(sed 's/$/"/' <<< $categories)
-			categories=$(sed 's/,/","/' <<< $categories)
-		fi
-	 address="{\"isPrimary\":false,\"addressLine1\":\"${line1}\",\"addressLine2\":\"${line2}\",\"city\":\"${city}\",\"stateRegion\":\"${state}\",\"zipCode\":\"${zip}\", \"country\": \"${country}\", \"categories\" : [${categories}]}"	
+		address="{\"isPrimary\":false,\"addressLine1\":\"${line1}\",\"addressLine2\":\"${line2}\",\"city\":\"${city}\",\"stateRegion\":\"${state}\",\"zipCode\":\"${zip}\", \"country\": \"${country}\", \"categories\" : []}"	
+
+		if [[ $cat_orders =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT_ORDERS ${category_dict["Orders"]} '(.categories += ["$CAT_ORDERS"])');fi
+		if [[ $cat_payments =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT_PAYMENTS ${category_dict["Payments"]} '(.categories += [$CAT_PAYMENTS])');fi
+		if [[ $cat_claims =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT_CLAIMS ${category_dict["Claims"]} '(.categories += ["$CAT_CLAIMS"])');fi
+		if [[ $cat_returns =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT_RETURNS ${category_dict["Returns"]} '(.categories += ["$CAT_RETURNS"])');fi
 
 		updated_org=$(echo "${organization}" |jq --argjson ADDRESS "${address}" '.organizations[] | del(.metadata) | .addresses += [ $ADDRESS ]')
+
 		uuid=$(echo "${updated_org}" |jq -r .id)
-        fi
 	
-	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_org}" ${okapi_url}/organizations-storage/organizations/${uuid})
+		if [[ "${uuid}" =~ [0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]* ]];then
+			apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_org}" ${okapi_url}/organizations-storage/organizations/${uuid})
+			echo "${apicall}"
+		else
+			echo "${code} not found"
+		fi
+        fi
 
 	counter=$((counter + 1))
 	echo "Processing $code -- record $counter of $numrecs"
-	echo "${apicall}"
+
 done < ${filename}
 

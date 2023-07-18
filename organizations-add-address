@@ -32,7 +32,7 @@ while IFS=$'\n' read line;do
 		if [[ $cat_claims =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT_CLAIMS ${category_dict["Claims"]} '(.categories += ["$CAT_CLAIMS"])');fi
 		if [[ $cat_returns =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT_RETURNS ${category_dict["Returns"]} '(.categories += ["$CAT_RETURNS"])');fi
 
-		updated_org=$(echo "${organization}" |jq --argjson ADDRESS "${address}" '.organizations[] | del(.metadata) | .addresses += [ $ADDRESS ]')
+		updated_org=$(echo "${organization}" |jq --argjson ADDRESS "${address}" '.organizations[] | del(.metadata) |  (.addresses = .addresses + [ $ADDRESS ])')
 
 		uuid=$(echo "${updated_org}" |jq -r .id)
 	

@@ -11,7 +11,7 @@ IFS='' read -r -d '' agreement << EndOfAgreement
 {
   "periods": [
     {
-      "startDate": "${start_date}"${end_date}
+      "startDate": "${start_date}"
     }
   ],
   "name": ${name},

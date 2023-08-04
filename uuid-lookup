@@ -87,12 +87,18 @@ function showmatches() {
 	"loclibs")
 		endpoint="location-units/libraries"
 		jq="code_name";;
+	"lostItemFeePolicies")
+		endpoint="lost-item-fees-policies";;
 	"mtypes")
 		endpoint="material-types";;
 	"noteTypes")
 		endpoint="note-types";;
 	"organizationTypes")
 		endpoint="organizations-storage/organization-types";;
+	"overdueFinePolicies")
+		endpoint="overdue-fines-policies";;
+	"patronNoticePolicies")
+		endpoint="patron-notice-policy-storage/patron-notice-policies";;
 	"servicepoints")
 		endpoint="service-points"
 		jq="code_name";;
@@ -120,9 +126,9 @@ function showmatches() {
 }
 
 
-echo "Downloading data for  acq units, address types, call number types, cancellation reasons, categories, contributor types, course departments, courses, expense classes, fee/fine owners, fiscal years, holdings note types, holdings record sources, holdings types, identifier types, instance formats, instance note types, instance relationship types, instance statuses, instance types, item material types, item note types, ledgers, loan policies, loan types, locations, location institutions, location campuses, location libraries, note types, organization types, service points, statcodes, and usergroups"
+echo "Downloading data for  acq units, address types, call number types, cancellation reasons, categories, contributor types, course departments, courses, expense classes, fee/fine owners, fiscal years, holdings note types, holdings record sources, holdings types, identifier types, instance formats, instance note types, instance relationship types, instance statuses, instance types, item material types, item note types, ledgers, loan policies, loan types, locations, location institutions, location campuses, location libraries, lost item fee policies, note types, organization types, overdue fine policies, patron notice policies, service points, statcodes, and usergroups"
 
-rec_array=("acquisitionsUnits" "addressTypes" "callNumberTypes" "cancellationReasons" "categories" "contributorTypes" "courseDepartments" "courseTerms" "departments" "expenseClasses" "feefineowners" "fiscalYears" "holdingsNoteTypes" "holdingsRecordsSources" "holdingsTypes" "identifierTypes" "instanceFormats" "instanceNoteTypes" "instanceRelationshipTypes" "instanceStatuses" "instanceTypes" "itemNoteTypes" "ledgers" "loanPolicies" "loantypes" "locations" "locinsts" "loccamps" "loclibs" "mtypes" "noteTypes" "organizationTypes" "servicepoints" "statisticalCodes" "usergroups")
+rec_array=("acquisitionsUnits" "addressTypes" "callNumberTypes" "cancellationReasons" "categories" "contributorTypes" "courseDepartments" "courseTerms" "departments" "expenseClasses" "feefineowners" "fiscalYears" "holdingsNoteTypes" "holdingsRecordsSources" "holdingsTypes" "identifierTypes" "instanceFormats" "instanceNoteTypes" "instanceRelationshipTypes" "instanceStatuses" "instanceTypes" "itemNoteTypes" "ledgers" "loanPolicies" "loantypes" "locations" "locinsts" "loccamps" "loclibs" "lostItemFeePolicies" "mtypes" "noteTypes" "organizationTypes" "overdueFinePolicies" "patronNoticePolicies" "servicepoints" "statisticalCodes" "usergroups")
 
 counter=1
 for rec_type in "${rec_array[@]}";do

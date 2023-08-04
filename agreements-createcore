@@ -11,7 +11,7 @@ IFS='' read -r -d '' agreement << EndOfAgreement
 {
   "periods": [
     {
-      "startDate": "${start_date}"
+      "startDate": "${start_date}"${end_date}
     }
   ],
   "name": ${name},
@@ -50,6 +50,9 @@ while IFS=$'\n' read -r line;do
 	#  start_date is required
 	start_date=${start_date:0:10}
 	if [[ ! ${start_date} =~ [12][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] ]];then start_date=$(date -I);fi
+
+	# end_date is optional
+	if [[ ${end_date} =~ [12][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] ]];then end_date=",{\"endDate\": \"${end_date}\", \"periodStatus\": \"current\"}";fi
 
 	agreement=$(create_agreement)
 

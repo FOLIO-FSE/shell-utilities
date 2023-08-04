@@ -38,7 +38,7 @@ while IFS=$'\n' read -r line;do
 	#renewalPriority="for_review"
 	altname=""
 
-	IFS='^' read -r name description altname start_date <<< "${line}"
+	IFS='^' read -r name description altname start_date end_date <<< "${line}"
 	echo "Processing ${name}"
 	name=$(echo ${name} |jq -aRs)
 	keyname=$(tr -dc [a-z0-9] <<< ${name,,})

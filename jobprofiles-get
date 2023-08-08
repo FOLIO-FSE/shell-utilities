@@ -1,0 +1,20 @@
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+curl --http1.1 -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-export/job-profiles?limit=1000" > export_job_profiles.json &
+
+curl --http1.1 -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-export/mapping-profiles?limit=1000" > export_field_mapping_profiles.json &
+
+curl --http1.1 -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-export/transformation-fields?limit=1000" > export_field_transformations.json &
+
+curl --http1.1 -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-import-profiles/jobProfiles?limit=1000" > import_job_profiles.json &
+
+curl --http1.1 -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-import-profiles/mapping-profiles?limit=1000" > import_field_mapping_profiles.json &
+
+curl --http1.1 -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-import-profiles/transformation-fields?limit=1000" > import_field_transformations.json &
+
+wait
+
+echo "Job profiles, field profiles, and field transformations have been exported to import_job_profiles.json, export_jobProfiles.json, import_field_mapping_profiles.json, export_fieldmapping_profiles.json, import_field_transformations.json, and export_fieldmappingprofiles.json"

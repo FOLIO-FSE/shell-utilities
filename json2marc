@@ -1,0 +1,59 @@
+#mono /home/ssm-user/.local/bin/marcedit/cmarcedit.exe -s "$1" -d "$outfile.mrc" -json2marc
+
+sourcefile="${1}"
+fileroot=$(echo "${sourcefile}" | sed 's/\.....\?$//')
+outputfile="${fileroot}.mrc"
+
+if [[ -z ${sourcefile} ]];then echo -e "json2marc converts JSON on one record per line to MARC\n\nYou must specify a file to process";exit;fi
+
+if [[ ! -f "${sourcefile}" ]];then echo "No JSON file with that name could be found";exit;fi
+echo
+
+echo "Counting records in ${sourcefile}. Please be patient"
+numrecs=$(awk 'BEGIN{RS=ORS="\n"}END{print NR}' "${sourcefile}")
+
+echo "$numrecs records were detected."
+
+jsonfile_process() {
+   local fn="${1}"
+   local infile="${fn}.json"
+   local outfile="${fn}.mrc"
+
+	# set records into array needed by marcedit
+	sed -i 's/$/,/' ${infile}
+	sed -i '$,$s/,*$//' ${infile}
+	sed -i '$,$s/$/]/' ${infile}
+	sed -i '1,1s/^/[/' ${infile}
+
+
+   mono /home/ssm-user/.local/bin/marcedit/cmarcedit.exe -s "$infile" -d "$outfile" -json2marc
+}
+
+if [[ $numrecs -gt 5000 ]];then
+   num_per_file=$(($numrecs / 5))
+   time_to_complete=$(echo "$numrecs/2000" |bc)
+
+   echo "Splitting text file into 5 files in batches of $num_per_file to speed processing. "
+   echo "Estimated time to completion is $time_to_complete seconds"
+
+   awk -v NUM=$num_per_file 'BEGIN{RS=ORS="\n";count=0}{if (NR % NUM == 1) {
+         close(out)
+         count++
+         out = "tmp_mrc_"count".json"
+   }{print $0 > out }}' "${sourcefile}"
+
+   for seq in {1..5}
+   do
+      jsonfile_process "tmp_mrc_${seq}" &
+   done
+   wait
+
+   cat tmp_mrc_*.mrc > "${outputfile}"
+   rm -f tmp_mrc_*.mrc
+else
+   jsonfile_process "${fileroot}"
+   outputfile="${fileroot}.mrc"
+fi
+echo
+echo "MARC file output can be found in ${outputfile}"
+rm -f tmp*.json

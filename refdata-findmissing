@@ -2,11 +2,15 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-echo "Enter the data type of the source file (loantypes, locations, mattypes)."
+echo "Enter the data type of the source file (departments, loantypes, locations, mattypes)."
 read datatype
 infile="${datatype}.tsv" 
 
 case ${datatype} in
+	"departments")
+		endpoint="departments"
+		jq='.departments[].name'
+		;;
 	"loantypes")
 		endpoint="loan-types"
 		jq='.loantypes[].name'
@@ -20,7 +24,7 @@ case ${datatype} in
 		jq='.mtypes[].name'
 		;;
 	*)
-		echo "Data type must be locations or mattypes"
+		echo "Data type must be departments, locations, or mattypes"
 		exit		
 		;;
 esac

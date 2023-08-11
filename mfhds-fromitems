@@ -62,19 +62,19 @@ function build_mfhd() {
 	if (NR % 10000 == 0){ printf "Records created: %d \\r", record_counter }
 }
 {
-	#sub("\r", "", $NF)
+	sub("\r", "", $NF)
 
 	if (NR == 1) {
 		for(i=1;i<=NF;i++) {
 
 			switch($i) {
-				case "RECNO":
+				case "RECORD#BIBLIO":
 					bibId=i
 					break
 				case "LOCATION":
 					location=i
 					break
-				case "CALLNUM":
+				case "CALL#ITEM":
 					callNumpos=i
 					break
 				case "CALL#BIBLIO":
@@ -85,11 +85,14 @@ function build_mfhd() {
 					break
 			}
 		}
+	if (! bibId) {  printf ("\\nNo valid bib ID field could be found\\n"); exit }
+	if (! location ) {  printf ("\\nNo valid location field could be found\\n"); exit }
+	if (! callNumpos ) {  printf ("\\nNo valid location field could be found\\n"); exit }
 	}
 
-	if (callNumFallback) {
-		if (length($callNumFallback) > length($callNumpos)) { callNum = $callNumFallback }
-	}
+	callNum = $callNumpos
+
+	if (callNumFallback && length($callNumpos) == 0) { callNum = $callNumFallback }
 
 	if (! holdIdpos) {holdId = $bibId""$location""callNum}
 

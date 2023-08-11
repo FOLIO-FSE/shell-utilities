@@ -5,9 +5,15 @@ okapi_token=$(cat okapi.token)
 uuid=${1//[^0-9a-f\-]}
 
 if [[ ${uuid} =~ [a-z] ]];then
-	if [[ $2 != "srs" ]];then
+	if [[ $2 != "old" ]] && [[ $2 != "srs" ]];then
 		curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${uuid}/formatted?idType=INSTANCE"
-	else
+	fi	
+
+	if [[ $2 == "old" ]];then
+		curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/source-records?externalId=${uuid}"
+	fi
+
+	if [[ $2 == "srs" ]];then
 		curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${uuid}"
 	fi
 

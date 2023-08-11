@@ -111,4 +111,4 @@ chmod 700 tmp_checkmarc
 
 awk -v ORS=$'\x1d' -v RS='\n' -v OFS=$'\x1e' -v FS='\t' -v SFS=$'\x1f' -v OUTFILE="${outfile}" -b -f tmp_checkmarc "${infile}"
 
-#rm -f tmp_*
+rm -f tmp_*

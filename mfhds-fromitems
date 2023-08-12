@@ -70,18 +70,23 @@ function build_mfhd() {
 			switch($i) {
 				case "RECORD#BIBLIO":
 					bibId=i
+					printf ("\\nBib ID found in $i\\n")
 					break
 				case "LOCATION":
 					location=i
+					printf ("\\nLocation found in $i\\n")
 					break
 				case "CALL#ITEM":
 					callNumpos=i
+					printf ("\\nCall number found in $i\\n")
 					break
 				case "CALL#BIBLIO":
 					callNumFallback=i
+					printf ("\\nCall number fallback found in $i\\n")
 					break
 				case "HOLDID":
 					holdIdpos=i
+					printf ("\\Holdings ID fallback found in $i\\n")
 					break
 			}
 		}

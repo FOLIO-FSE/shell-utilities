@@ -97,6 +97,11 @@ case $rec_type in
 	endpoint="instance-storage/instances";;
 "items")
 	endpoint="item-storage/items";;
+"invoices")
+	endpoint="invoice/invoices";;
+"invoice-lines")
+	rec_type="invoiceLines"
+	endpoint="invoice/invoice-lines";;
 "exportjobs")
 	rec_type="jobExecutions"
 	endpoint="data-export/job-executions";;

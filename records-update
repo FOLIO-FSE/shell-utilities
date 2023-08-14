@@ -51,7 +51,8 @@ fixrecord() {
 #		 ((.parsedRecord.content.fields[] | select(."008" != null) |."008") = "780615s19uu    xx a                eng d")               
 #                (.permanentLocationId = $VALUE) 
 #                (.temporaryLoanType = {"id": $VALUE} ) # UUID, must use items-inventory
-                (.temporaryLocation = {"id": $VALUE} ) # UUID, must use items-inventory
+#                (.temporaryLocation = {"id": $VALUE} ) # UUID, must use items-inventory
+                (.fundDistributions[0].code = "ybpbl" ) 
 		|del(.metadata)
 ')
 	#updated_record=${apicall//$pattern/$replace}

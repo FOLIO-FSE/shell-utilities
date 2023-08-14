@@ -33,6 +33,33 @@ function build_mfhd() {
 	gsub(/HOLDINGSID/, holdId, text_mfhd)
 	gsub(/CALLNUM/, callNum, text_mfhd)
 
+	### nonrequired fields must be entered here
+	if (publicNote > 0 && $publicNote ~ /[a-zA-Z0-9]/) {
+		split($publicNote, statements, ";")
+		for (statement in statements) { text_mfhd = text_mfhd""FS"=538    "SFS"a"statements[statement] }
+	}
+	if (ownershipNote > 0 && $ownershipNote ~ /[a-zA-Z0-9]/) {
+		split($ownershipNote, statements, ";")
+		for (statement in statements) { text_mfhd = text_mfhd""FS"=561  0 "SFS"a"statements[statement] }
+	}
+	if (copyNote > 0 && $copyNote ~ /[a-zA-Z0-9]/) {
+		split($copyNote, statements, ";")
+		for (statement in statements) { text_mfhd = text_mfhd""FS"=562  0 "SFS"a"statements[statement] }
+	}
+	if (bindingNote > 0 && $bindingNote ~ /[a-zA-Z0-9]/) {
+		split($bindingNote, statements, ";")
+		for (statement in statements) { text_mfhd = text_mfhd""FS"=563    "SFS"a"statements[statement] }
+	}
+	if (actionNote > 0 && $actionNote ~ /[a-zA-Z0-9]/) {
+		split($actionNote, statements, ";")
+		for (statement in statements) { text_mfhd = text_mfhd""FS"=583    "SFS"a"statements[statement] }
+	}
+	if (libHas > 0 && $libHas ~ /[a-zA-Z0-9]/) {
+		split($libHas, statements, ";") 
+		for (statement in statements) { text_mfhd = text_mfhd""FS"=866    "SFS"a"statements[statement]
+		}
+	}
+
 	split(text_mfhd, marc_array, FS)	
 	num_mfhd_fields = length(marc_array)
 	
@@ -54,6 +81,7 @@ function build_mfhd() {
 	base_data_address = sprintf("%05d", 24 + length(directory))
 	
 	record_content = record_content
+
 	record_length = 24 + length(directory) + length(record_content) + 1
 	
 	leader = sprintf("%05d", record_length)""leader1""base_data_address""leader2
@@ -70,23 +98,47 @@ function build_mfhd() {
 			switch($i) {
 				case "RECORD#BIBLIO":
 					bibId=i
-					printf ("\\nBib ID found in $i\\n")
+					printf ("Bib ID found in "$i"\\n")
 					break
 				case "LOCATION":
 					location=i
-					printf ("\\nLocation found in $i\\n")
+					printf ("Location found in "$i"\\n")
 					break
 				case "CALL#ITEM":
 					callNumpos=i
-					printf ("\\nCall number found in $i\\n")
+					printf ("Call number found in "$i"\\n")
 					break
 				case "CALL#BIBLIO":
 					callNumFallback=i
-					printf ("\\nCall number fallback found in $i\\n")
+					printf ("Call number fallback found in "$i"\\n")
+					break
+				case "LIBHAS":
+					libHas=i
+					printf ("Lib has found in "$i"\\n")
 					break
 				case "HOLDID":
 					holdIdpos=i
-					printf ("\\Holdings ID fallback found in $i\\n")
+					printf ("Holdings ID fallback found in "$i"\\n")
+					break
+				case "ACTIONNOTE":
+					actionNote=i
+					printf ("Action note has found in "$i"\\n")
+					break
+				case "BINDINGNOTE":
+					bindingNote=i
+					printf ("Binding note has found in "$i"\\n")
+					break
+				case "COPYNOTE":
+					copyNote=i
+					printf ("Copy note has found in "$i"\\n")
+					break
+				case "OWNERSHIPNOTE":
+					ownershipNote=i
+					printf ("Ownership note has found in "$i"\\n")
+					break
+				case "PUBLICNOTE":
+					publicNote=i
+					printf ("Public note has found in "$i"\\n")
 					break
 			}
 		}
@@ -94,7 +146,6 @@ function build_mfhd() {
 	if (! location ) {  printf ("\\nNo valid location field could be found\\n"); exit }
 	if (! callNumpos ) {  printf ("\\nNo valid location field could be found\\n"); exit }
 	}
-
 	callNum = $callNumpos
 
 	if (callNumFallback && length($callNumpos) == 0) { callNum = $callNumFallback }

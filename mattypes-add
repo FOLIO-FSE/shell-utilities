@@ -8,17 +8,20 @@ okapi_token=$(cat okapi.token)
 while read materialtype
 do
 
-materialtype=$(echo ${materialtype} |xargs)
+materialtype=${materialtype/^ *//}
+materialtype=${materialtype/ *$//}
+materialtype=$(jq -aR . <<< ${materialtype})
+
 uuid=$(uuidgen)
 
 IFS='' read -r -d '' materialtype << EndOfMaterialType
-
 {
 "id": "${uuid}",
-"name": "${materialtype}",
+"name": ${materialtype},
 "source": "local"
 }
 EndOfMaterialType
+
 
 apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${materialtype}" "${okapi_url}/material-types")
 

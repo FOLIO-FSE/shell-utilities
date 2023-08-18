@@ -7,9 +7,8 @@ okapi_token=$(cat okapi.token)
 if [[ ! -f "$1" ]];then echo "You must supply a file name"; exit;fi
 
 infile=${1}
-allrecs=$(cat ${infile})
+outfile="${infile}_mapped"
 
-declare -A values_dict
 rectype_arr=("addressTypes" "callNumberTypes" "categories" "courseTerms" "departments" "expenseClasses" "feefineowners" "fiscalYears" "holdingsNoteTypes" "holdingsRecordsSources" "holdingsTypes" "identifierTypes" "itemNoteTypes" "locations" "loantypes" "mtypes" "noteTypes" "organizationTypes" "servicepoints" "statisticalCodes" "usergroups")
 
 
@@ -98,4 +97,32 @@ wait
 cat *.dict.tmp > uuid_map.tsv
 rm *.dict.tmp
 
-echo "UUID map has been created as uuid_map.tsv"
+read -r -d '' awkscript << "ENDOFAWK"
+#!/usr/bin/awk -f 
+BEGIN { FS=OFS="\t"} 
+{
+	if (NR==FNR) { 
+		uuid[$1]=$ 2 
+	} else {
+		for (i=1; i<=NF; i++) {
+			if (uuid[$i]) { $i = uuid[$i] }
+		}
+	
+	for(i=1;i<=NF;i++) { printf("%s%s",$i,i==NF?RS:OFS) > OUTFILE }
+	
+	if (NR % 1 == 0){ printf "Records processed: "NR"\r" }
+	}
+}
+END { 
+	print "Records processed: "NR
+	print "Mapped file is "OUTFILE
+ }
+ENDOFAWK
+
+echo -e "${awkscript}" > tmp_awkscript
+
+awk -v OUTFILE="${outfile}" -f tmp_awkscript uuid_map.tsv "${infile}"
+echo
+echo
+
+rm uuid_map.tsv tmp_awkscript

@@ -1,0 +1,68 @@
+# Updates records based on list of UUIDs 
+# 
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+batchsize=6
+
+infile=uuids
+outfile="srs_update_log.json"
+
+rm -f ${outfile}
+
+if [[ ${1} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then echo "${1}" > uuids;fi
+
+if [[ ! -f ${infile} ]]; then echo "This script cannot find input file ${infile}";exit;fi
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+fixrecord() {
+	local uuid=${1}
+	local seq=${2}
+	local new008
+	local updated_record
+	local apicall
+
+	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${uuid}/formatted?idType=INSTANCE" |jq .)
+
+	new008=$(echo "${apicall}" | jq -r '.rawRecord.content |fromjson |.fields[] |select(."008" != null) | ."008"')
+	uuid=$(echo ${apicall} |jq -r .id)
+ 
+	updated_record=$(echo "${apicall}"  |jq -r --arg VALUE "${new008}" '
+#		 ((.parsedRecord.content.fields[] | select(."008" != null) |."008") = "780615s19uu    xx a                eng d")               
+		 ((.parsedRecord.content.fields[] | select(."008" != null) |."008") = $VALUE)               
+		|del(.metadata)
+')
+	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_record}" "${okapi_url}/source-storage/records/${uuid}")
+
+	echo "${apicall}" |grep -i [a-z] >> "tmp_records.${fileno}"
+
+}
+
+counter=0
+SECONDS=1
+
+while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
+	seq=0
+	for uuid in "${lines[@]}";do
+		fixrecord "${uuid}" "${seq}" 
+		counter=$(($counter + 1))
+		seq=$(($seq + 1))
+	done
+	wait
+	
+        TIME=$SECONDS;msg="$SECONDS seconds"
+        if [[ $SECONDS -gt 60 ]];then TIME=$(bc <<< "scale=1;$SECONDS/60");msg="$TIME minutes";fi
+        if [[ $SECONDS -gt 3600 ]];then TIME=$(bc <<< "scale=1;$SECONDS/3600");msg="$TIME hours     ";fi
+
+        echo -en "Processing record $counter of $numrecs in $msg\r"
+
+	cat tmp_records.* >> ${outfile}
+	rm tmp_records.*
+
+done < ${infile}
+
+echo "Finished processing $numrecs ${recordtype} records in $msg"
+echo "Output was sent to ${outfile}"
+

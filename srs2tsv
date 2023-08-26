@@ -8,9 +8,9 @@ subfield="${field:3:1}"
 
 if [[ -z $field ]];then echo "You must specify an input file and a MARC field";fi
 
-if [[ ${#field} -eq 3 ]];then
+if [[ ${field} =~ ^[0-9][0-9][0-9]$ ]] ;then
 	jq -r --arg FIELD ${field} '[  
-		(.externalIdsHolder.instanceId),
+		(.parsedRecord.content.fields[]."999".subfields[]? | select(.i !=null) | .i),
 		(.parsedRecord.content.fields[]."999".subfields[]? | select(.s !=null) | .s),
 		(.parsedRecord.content.fields[] |select(.[$FIELD] != null) |.[$FIELD] |tostring)
 	] |@tsv' ${infile}
@@ -20,6 +20,13 @@ elif [[ ${#field} -eq 4 ]];then
 		(.externalIdsHolder.instanceId),
 		(.parsedRecord.content.fields[]."999".subfields[]? | select(.s !=null) | .s),
 		(.parsedRecord.content.fields[] | .[$TAG].subfields[]? | select(.[$SUBFIELD] !=null) | .[$SUBFIELD])
+	] |@tsv' ${infile}
+
+elif [[ ${field} == "leader" ]] || [[ ${field} == "ldr" ]] ;then
+	jq -r '[  
+		(.externalIdsHolder.instanceId),
+		(.parsedRecord.content.fields[]."999".subfields[]? | select(.s !=null) | .s),
+		(.parsedRecord.content| select(.leader !=null) | .leader)
 	] |@tsv' ${infile}
 fi
 

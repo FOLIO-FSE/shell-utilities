@@ -1,12 +1,25 @@
 # extracts fields from MARCJSON and outputs in TSV
 
-#cat $1 |jq -r '[  (.parsedRecord.content.fields[] | select (."001" != null) | ."001"), ([ .parsedRecord.content.fields[]."650".subfields[]? | select(.a !=null) | .a ] |join(";"))] | @tsv'
+infile="${1}"
+field="${2}"
 
-cat $1 |jq -r '
-select(.parsedRecord.content.fields[]."856".subfields[]?  |select(.u!= null and (.u |contains("http")))) |
-[
-(.externalIdsHolder.instanceId),
-(.parsedRecord.content.fields[] | select (."001" != null) | ."001"),
-(.parsedRecord.content.fields[]."245".subfields[]? | select(.a !=null) | .a),
-([ .parsedRecord.content.fields[]."650".subfields[]? | select(.a != null) | .a ] |join(";"))
-] | @tsv'
+tag="${field:0:3}"
+subfield="${field:3:1}"
+
+if [[ -z $field ]];then echo "You must specify an input file and a MARC field";fi
+
+if [[ ${#field} -eq 3 ]];then
+	jq -r --arg FIELD ${field} '[  
+		(.externalIdsHolder.instanceId),
+		(.parsedRecord.content.fields[]."999".subfields[]? | select(.s !=null) | .s),
+		(.parsedRecord.content.fields[] |select(.[$FIELD] != null) |.[$FIELD] |tostring)
+	] |@tsv' ${infile}
+
+elif [[ ${#field} -eq 4 ]];then
+	jq -r --arg TAG ${tag} --arg SUBFIELD ${subfield} '[  
+		(.externalIdsHolder.instanceId),
+		(.parsedRecord.content.fields[]."999".subfields[]? | select(.s !=null) | .s),
+		(.parsedRecord.content.fields[] | .[$TAG].subfields[]? | select(.[$SUBFIELD] !=null) | .[$SUBFIELD])
+	] |@tsv' ${infile}
+fi
+

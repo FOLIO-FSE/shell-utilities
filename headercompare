@@ -7,7 +7,7 @@ badfields=0
 declare -A headers
 
 for f in "${filelist[@]}";do
-	header=$(head -1 "${f}")
+	header=$(head -1 "${f}" |tr , "\t")
 	numfields=$(echo "${header}" | awk 'BEGIN{FS="\t"}{print NF}')
 
 	if [[ $counter -ne 1 ]];then

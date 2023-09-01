@@ -1,0 +1,40 @@
+filelist=("$@")
+
+if [[ -z ${filelist} ]];then echo "You must supply a file name or expression (wildcards OK). Example: headercompare [[file list or expression]";fi
+
+counter=1
+badfields=0
+declare -A headers
+
+for f in "${filelist[@]}";do
+	header=$(head -1 "${f}")
+	numfields=$(echo "${header}" | awk 'BEGIN{FS="\t"}{print NF}')
+
+	if [[ $counter -ne 1 ]];then
+		if [[ -z ${headers["${header}"]} ]];then echo fat;badfields=1;fi
+		headers["${header}"]+="\n${f}" 
+	else
+		headers["${header}"]="${f}" 
+	fi
+
+	counter=$(($counter + 1))
+done
+
+if [[ $badfields -eq 0 ]];then
+	echo "All records have the same ${numfields} fields" 
+else
+	echo "Header discrepancies were found"
+	echo "--------------------"
+
+	for header in "${!headers[@]}";do
+		echo "The following files had the same header"
+		echo -e ${headers["${header}"]}
+		echo
+		echo "These were the headers"
+		echo "${header}" |tr "\t" "\n" |grep -n .
+		echo "-------------------"
+	done
+fi
+
+
+

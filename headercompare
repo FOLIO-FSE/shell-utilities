@@ -21,8 +21,12 @@ for f in "${filelist[@]}";do
 done
 
 if [[ $badfields -eq 0 ]];then
+	echo
 	echo "All records have the same ${numfields} fields" 
+        echo "${header}" |tr "\t" "\n" |grep -n .
+        echo
 else
+	echo
 	echo "Header discrepancies were found"
 	echo "--------------------"
 

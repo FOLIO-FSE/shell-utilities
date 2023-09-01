@@ -11,7 +11,7 @@ for f in "${filelist[@]}";do
 	numfields=$(echo "${header}" | awk 'BEGIN{FS="\t"}{print NF}')
 
 	if [[ $counter -ne 1 ]];then
-		if [[ -z ${headers["${header}"]} ]];then echo fat;badfields=1;fi
+		if [[ -z ${headers["${header}"]} ]];then badfields=1;fi
 		headers["${header}"]+="\n${f}" 
 	else
 		headers["${header}"]="${f}" 

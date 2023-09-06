@@ -25,7 +25,7 @@ case $deletetype in
 "authorities")
 	recordtype="authority-storage/authorities";;
 "boundwiths")
-        recordtype="inventory-storage/bound-with-parts"
+        recordtype="inventory-storage/bound-with-parts";;
 "campuses")
 	recordtype="location-units/campuses";;
 "contacts")

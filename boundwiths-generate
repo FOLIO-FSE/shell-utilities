@@ -13,6 +13,7 @@ boundwith_generate() {
 	local itemid=${2}
 	local fileno=${3}
 	local record
+	local bwid=$(uuidgen)
 	
 	if [[ ${strip} == "strip" ]];then
 		itemid="${itemid/./}"
@@ -21,7 +22,6 @@ boundwith_generate() {
 
 	holdid=$(uuid -v 5  ${namespace} ${okapi_url}:holdings:${holdid})
 	itemid=$(uuid -v 5  ${namespace} ${okapi_url}:items:${itemid})
-	bwid=$(uuid -v 5  ${namespace} ${okapi_url}:boundwiths:${bwid})
 
 	record="{\"id\": \"${bwid}\", \"holdingsRecordId\": \"${holdid}\", \"itemId\": \"${itemid}\"}"
 

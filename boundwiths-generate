@@ -1,39 +1,47 @@
-#!/usr/bin/python
-import csv
-import uuid
+okapi_url=$(cat okapi.url)
+namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
+strip=$1
 
-namespace=uuid.UUID(b'8405ae4d-b315-42e1-918a-d1919900cf3f')
+infile="boundwiths_needuuids.tsv"
+outfile="boundwiths.json"
 
-bwfile = open('boundwiths_needuuids.tsv', 'r')
-boundwiths = csv.reader(bwfile, delimiter = '\t')
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+rm -f ${outfile}
 
-base='https://okapi-xxxxx.folio.ebsco.com:'
+boundwith_generate() {
+	local holdid=${1}
+	local itemid=${2}
+	local fileno=${3}
+	local record
+	
+	if [[ ${strip} == "strip" ]];then
+		itemid="${itemid/./}"
+		itemid="${itemid:0:-1}"
+	fi
 
-holding_base = base + 'holdings:'
-item_base = base + 'items:'
-bw_base = base + 'boundwiths:'
+	holdid=$(uuid -v 5  ${namespace} ${okapi_url}:holdings:${holdid})
+	itemid=$(uuid -v 5  ${namespace} ${okapi_url}:items:${itemid})
+	bwid=$(uuid -v 5  ${namespace} ${okapi_url}:boundwiths:${bwid})
 
+	record="{\"id\": \"${bwid}\", \"holdingsRecordId\": \"${holdid}\", \"itemId\": \"${itemid}\"}"
 
-outfile = open('boundwiths.json', 'w')
+	fileno=$(printf "%03d" $fileno)
+	echo "${record}" > "tmp_bw.${fileno}"
+}
 
-counter = 0
+while mapfile -t -n 100 lines && ((${#lines[@]})); do
+	seq=0
+	for line in "${lines[@]}";do
+		read -r holdid itemid <<< "${line}"
+		boundwith_generate ${holdid} ${itemid} ${seq} &
+		counter=$(($counter + 1))
+		seq=$(($seq + 1))
+		printf "Processing %s -- record %s \r" $id $counter $numrecs
+	done
+	wait
 
-for entry in boundwiths:
-    holdid = entry[0]
-    itemid = entry[1]
-    bwid = bw_base + holdid + itemid 
-    holdid = holding_base + holdid
-    itemid = item_base + itemid
-    
-    holdid = str(uuid.uuid5(namespace, holdid))
-    itemid = str(uuid.uuid5(namespace, itemid))
-    bwid = str(uuid.uuid5(namespace, bwid))
+	cat tmp_bw.* >> ${outfile}
+	rm tmp_bw.*
+done < ${infile}
 
-    record = '{"id": "' + bwid + '", "holdingsRecordId": "' + holdid + '", "itemId": "' + itemid + '"}' 
-    outfile.write(record)
-    
-    if counter % 10000 == 0:
-        print("Number of records processed: %s \r" % counter)    
-
-    counter = counter + 1
 

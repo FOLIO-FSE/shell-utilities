@@ -24,6 +24,8 @@ delete_record() {
 case $deletetype in
 "authorities")
 	recordtype="authority-storage/authorities";;
+"boundwiths")
+        recordtype="inventory-storage/bound-with-parts"
 "campuses")
 	recordtype="location-units/campuses";;
 "contacts")
@@ -91,7 +93,7 @@ case $deletetype in
 "users")
 	recordtype="users";;
 *)
-	echo "Record type '${deletetype}' not found. Supported types are campuses, contacts, departments, feefineactions, groups, holdings, instances, instance-types, items, libraries, loan history, loans, loantypes, locations, mattypes, notes, notices, organizations, requests, servicepoints, srs, tags, templates, transactions, users. Objects with attached records will need specialized delete routines"
+	echo "Record type '${deletetype}' not found. Supported types are boundwiths, campuses, contacts, departments, feefineactions, groups, holdings, instances, instance-types, items, libraries, loan history, loans, loantypes, locations, mattypes, notes, notices, organizations, requests, servicepoints, srs, tags, templates, transactions, users. Objects with attached records will need specialized delete routines"
 	exit;;
 esac
 

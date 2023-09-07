@@ -3,7 +3,8 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 filename="org_address.tsv"
-use_deterministic_uuids="yes"
+#use_deterministic_uuids="yes"
+use_deterministic_uuids="no"
 
 declare -A category_dict
 
@@ -19,7 +20,7 @@ eval "$(echo ${cat_types} |jq -r '.categories[] | @sh "category_dict[\(.value|to
 
 while IFS=$'\n' read line;do
 	line=$(echo "${line}" | tr -d '"' | tr "\t" "^")
-	IFS='^' read -r code line1 line2 city state zip country cat_orders cat_payments cat_returns cat_claims <<< ${line}
+	IFS='^' read -r code line1 line2 city state zip country category1 category2 <<< ${line}
 
 	organization=$(curl -G -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" --data-urlencode "query=code=${code}" "${okapi_url}/organizations/organizations") 
 
@@ -27,10 +28,10 @@ while IFS=$'\n' read line;do
 	if [[ "${organization}" =~ [0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]* ]];then
 		address="{\"isPrimary\":false,\"addressLine1\":\"${line1}\",\"addressLine2\":\"${line2}\",\"city\":\"${city}\",\"stateRegion\":\"${state}\",\"zipCode\":\"${zip}\", \"country\": \"${country}\", \"categories\" : []}"	
 
-		if [[ $cat_orders =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT_ORDERS ${category_dict["Orders"]} '(.categories += ["$CAT_ORDERS"])');fi
-		if [[ $cat_payments =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT_PAYMENTS ${category_dict["Payments"]} '(.categories += [$CAT_PAYMENTS])');fi
-		if [[ $cat_claims =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT_CLAIMS ${category_dict["Claims"]} '(.categories += ["$CAT_CLAIMS"])');fi
-		if [[ $cat_returns =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT_RETURNS ${category_dict["Returns"]} '(.categories += ["$CAT_RETURNS"])');fi
+		if [[ $category1 =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT1 ${category_dict["${category1}"]} '(.categories += ["$CAT1"])');fi
+		if [[ $category2 =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT2 ${category_dict["${category2}"]} '(.categories += ["$CAT2"])');fi
+		if [[ $category3 =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT3 ${category_dict["{$category3}"]} '(.categories += ["$CAT3"])');fi
+		if [[ $category4 =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT4 ${category_dict["${category4}"]} '(.categories += ["$CAT4"])');fi
 
 		updated_org=$(echo "${organization}" |jq --argjson ADDRESS "${address}" '.organizations[] | del(.metadata) |  (.addresses = .addresses + [ $ADDRESS ])')
 

@@ -44,6 +44,8 @@ case $rec_type in
 	rec_type="boundWithParts";;
 "budgets")
 	endpoint="finance/budgets";;
+"categories")
+	endpoint="organizations-storage/categories";;
 "circlog")
 	endpoint="audit-data/circulation/logs"
 	rec_type="logRecords" ;;

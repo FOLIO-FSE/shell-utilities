@@ -68,6 +68,8 @@ case $recordtype in
         recordtype="authority-storage/authorities";;
 "campuses")
 	recordtype="location-units/campuses";;
+"categories")
+	recordtype="organizations-storage/categories";;
 "groups")
 	recordtype="groups";;
 "holdings")

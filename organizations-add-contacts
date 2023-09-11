@@ -23,7 +23,7 @@ IFS='' read -r -d '' contact << EndOfContact
   "notes": ${notes},
   "phoneNumbers": [${phones}], 
   "emails": [${emails}], 
-  "categories": [${categories}],
+  "categories": ${categories},
   "id": "${contact_uuid}"
 }
 
@@ -48,9 +48,8 @@ parse_contact() {
 
 while IFS=$'\n' read -r line;do
 	line=$(echo "${line}" |tr "\t" "^" | tr -d '"')
-	#IFS='^' read -r code lname fname title note email description category <<< ${line}
+	IFS='^' read -r code lname fname title note email description category1 category2 <<< ${line}
 	#IFS='^' read -r code contact <<< ${line}
-	IFS='^' read -r code lname fname categories <<< ${line}
 
 	notes=$(echo -n "${note}" |jq . -aRs)
 
@@ -85,27 +84,27 @@ while IFS=$'\n' read -r line;do
 	
 	fi
 
-	if [[ ${phone} =~ [A-Z0-9] ]]; then phones="{ \"phoneNumber\" : \"${phone}\", \"isPrimary\" : true, \"categories\" : [] }";fi
-	
-	if [[ "$email" =~ "@" ]];then emails="{ \"value\" : \"${email}\", \"isPrimary\" : true, \"categories\" : [] }";fi
+	categories="[]"
 
-	if [[ ${cat} != "" ]];then
+	if [[ ${category1} != "" ]];then
 		cat=${cat,,}
-		cat=${category_dict[${cat}]}
-		
-		if [[ "$cat" =~ [a-f] ]];then categories="\"${cat}\"";fi
+		cat="${category_dict[${cat}]}"
+		if [[ "$cat" =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f] ]];then categories=$(echo "${categories}" |jq -rc --arg CAT "${cat}" ' . += [ $CAT ]');fi
+	fi
+	if [[ ${category2} != "" ]];then
+		cat=${cat,,}
+		cat="${category_dict[${cat}]}"
+		if [[ "$cat" =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f] ]];then categories=$(echo "${categories}" |jq -rc --arg CAT "${cat}" ' . += [ $CAT ]');fi
 	fi
 
-        if [[ $categories =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f] ]];then
-                categories=$(sed 's/^/"/' <<< $categories)
-                categories=$(sed 's/$/"/' <<< $categories)
-                categories=$(sed 's/,/","/g' <<< $categories)
-        fi
+	if [[ ${phone} =~ [A-Z0-9] ]]; then phones="{ \"phoneNumber\" : \"${phone}\", \"isPrimary\" : true, \"categories\" : ${categories} }";fi
+	if [[ "$email" =~ "@" ]];then emails="{ \"value\" : \"${email}\", \"isPrimary\" : true, \"categories\" : ${categories} }";fi
+
 
 	contact=$(build_contact)
 
-	if [[ ${phone2} =~ [0-9] ]]; then contact=$(echo "${contact}" | jq ".phones += [ { \"phoneNumber\" : \"${phone2}\", \"isPrimary\" : false, \"categories\" : [] } ]");fi
-	if [[ ${phone3} =~ [0-9] ]]; then contact=$(echo "${contact}" | jq ".phones += [ { \"phoneNumber\" : \"${phone3}\", \"isPrimary\" : false, \"categories\" : [] } ]");fi
+	if [[ ${phone2} =~ [0-9] ]]; then contact=$(echo "${contact}" | jq ".phones += [ { \"phoneNumber\" : \"${phone2}\", \"isPrimary\" : false, \"categories\" : ${categories} } ]");fi
+	if [[ ${phone3} =~ [0-9] ]]; then contact=$(echo "${contact}" | jq ".phones += [ { \"phoneNumber\" : \"${phone3}\", \"isPrimary\" : false, \"categories\" : ${categories} } ]");fi
 
 	# get organization by code
 	organization=$(curl -G -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" --data-urlencode "query=code=${code}" "${okapi_url}/organizations/organizations" |jq '.organizations[] | del(.metadata)')

@@ -38,87 +38,70 @@ postrecord() {
 
 case $recordtype in
 "agreements")
-	recordtype="erm/sas"
-	;;
+	recordtype="erm/sas";;
 "authorities")
-	recordtype="authority-storage/authorities"
-	;;
+	recordtype="authority-storage/authorities";;
 "campuses")
-	recordtype="location-units/campuses"
-	;;
+	recordtype="location-units/campuses";;
 "groups")
-	recordtype="groups"
-	;;
+	recordtype="groups";;
 "feefineactions")
         recordtype="feefineactions"
         ;;
 "holdings")
-	recordtype="holdings-storage/holdings"
-	;;
+	recordtype="holdings-storage/holdings";;
+"identifier-types")
+	recordtype="identifier-types";;
 "instances")
-	recordtype="instance-storage/instances"
-	;;
+	recordtype="instance-storage/instances";;
+"instance-formats")
+	recordtype="instance-formats";;
+"instance-note-types")
+	recordtype="instance-note-types";;
 "instance-types")
-	recordtype="instance-types"
-	;;
+	recordtype="instance-types";;
 "interfaces")
-	recordtype="organizations-storage/interfaces"
-	;;
+	recordtype="organizations-storage/interfaces";;
 "invoices")
-	recordtype="invoice/invoices"
-	;;
+	recordtype="invoice/invoices";;
 "invoice-lines")
-	recordtype="invoice/invoice-lines"
-	;;
+	recordtype="invoice/invoice-lines";;
 "items")
-	recordtype="item-storage/items"
-	;;
+	recordtype="item-storage/items";;
 "libraries")
-	recordtype="location-units/libraries"
-	;;
+	recordtype="location-units/libraries";;
 "licenses")
-	recordtype="licenses/licenses"
-	;;
+	recordtype="licenses/licenses";;
 "loans")
-	recordtype="loan-storage/loans"
-	;;
+	recordtype="loan-storage/loans";;
 "locations")
-	recordtype="locations"
-	;;
+	recordtype="locations";;
+"nature-of-content")
+	recordtype="nature-of-content-terms";;
 "notices")
-	recordtype="scheduled-notice-storage/scheduled-notices"
-	;;
+	recordtype="scheduled-notice-storage/scheduled-notices";;
 "orderlines")
-	recordtype="orders/order-lines"
-	;;
+	recordtype="orders/order-lines";;
 "organizations")
-	recordtype="organizations/organizations"
-	;;
+	recordtype="organizations/organizations";;
 "polines")
-	recordtype="orders-storage/po-lines"
-	;;
+	recordtype="orders-storage/po-lines";;
 "requests")
-	recordtype="circulation/requests"
-	;;
+	recordtype="circulation/requests";;
 "servicepoints")
-	recordtype="service-points"
-	;;
+	recordtype="service-points";;
 "srs")
         recordtype="source-storage/records"
         ;;
 "tags")
-	recordtype="tags"
-	;;
+	recordtype="tags";;
 "templates")
-	recordtype="templates"
-	;;
+	recordtype="templates";;
 "users")
-	recordtype="users"
-	;;
+	recordtype="users";;
 *)
 	echo "Record type '${recordtype}' not found. Supported types are campuses, feefineactions, groups, holdings, instances, instance-types, interfaces, items, libraries, licenses, loans, locations, notices, organizations, polines, requests, servicepoints, srs, tags, templates, users."
-	exit
-	;;
+	exit;;
 esac
 
 counter=0

@@ -120,6 +120,8 @@ case $rec_type in
 	rec_type="loansHistory";;
 "loans")
 	endpoint="loan-storage/loans";;
+"mtypes")
+	endpoint="material-types";;
 "notes")
 	limit=1
 	endpoint="notes";;

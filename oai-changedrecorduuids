@@ -14,7 +14,6 @@ filename=$(printf "oaiharvest/%05d-uuids.csv" $counter)
 SECONDS=0
 
 echo "${oai_server}&metadataPrefix=marc21${from}"
-exit
 
 if [[ ${resumption_token} == '' ]]; then
         rm -rf oaiharvest

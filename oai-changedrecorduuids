@@ -1,0 +1,47 @@
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+edge_key=$(cat edge.key)
+tenant=$(cat tenant)
+edge_url=$(cat okapi.url |sed 's/okapi-/edge-/')
+oai_server="${edge_url}/oai/$(cat edge.key)?verb=ListIdentifiers"
+
+##### change the expression below to determine the time frame ###
+from=$(date -u -d '1 week ago' +"%Y-%m-%dT%H:%M:%SZ")
+
+from='&from='${from}
+
+resumption_token=''
+counter=0
+filename=$(printf "oaiharvest/%05d-uuids.csv" $counter)
+SECONDS=0
+
+echo "${oai_server}&metadataPrefix=marc21${from}"
+exit
+
+if [[ ${resumption_token} == '' ]]; then
+        rm -rf oaiharvest
+        mkdir oaiharvest
+
+        oai_data=$(curl -s --retry 9 --retry-delay 300 "${oai_server}&metadataPrefix=marc21${from}")
+        echo -e "${oai_data}" | xmlstarlet fo |sed 's/ xmlns="[^>]*//' |xmlstarlet sel -t -m "/OAI-PMH/ListIdentifiers/header/identifier/text()" -c "." -n |sed 's/^.*\///' > "${filename}"
+
+        counter=$((${counter} + 1))
+	filename=$(printf "oaiharvest/%05d-uuids.csv" $counter)
+
+        resumption_token=$((grep -o '<resumptionToken.*</resumptionToken>' |grep -oi '>[a-z0-9]*<' |tr -d '<>') <<<  "${oai_data}")
+fi
+
+
+while [[ ${resumption_token} != '' ]]; do
+	oai_data=$(curl -s --retry 9 --retry-delay 60 "${oai_server}&resumptionToken=${resumption_token}")
+	resumption_token=$((grep -o '<resumptionToken.*</resumptionToken>' |grep -oi '>[a-z0-9]*<' |tr -d '<>') <<<  "${oai_data}")
+
+        echo -e "${oai_data}" | xmlstarlet fo |sed 's/ xmlns="[^>]*//' |xmlstarlet sel -t -m "/OAI-PMH/ListIdentifiers/header/identifier/text()" -c "." -n |sed 's/^.*\///' > "${filename}"
+	counter=$((${counter} + 1))
+	filename=$(printf "oaiharvest/%05d-uuids.csv" $counter)
+
+	echo -en "$(( $counter )) tokens processed in $SECONDS seconds\r"
+done
+
+echo "$(( $counter )) tokens processed in $SECONDS seconds"
+

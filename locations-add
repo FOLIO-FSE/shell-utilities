@@ -7,12 +7,16 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-servicePointId="c2c72c79-a262-41e1-a1b6-cf1e5509898d"
-institutionId="92225d21-cab9-436d-9a4f-99444b8c506b"
-campusId="34ba45c6-4b95-4560-9d04-2b9cb0093ca1"
-libraryId="b933d672-1cf4-4b84-ae79-e37ca0d38247"
+servicePointId="0e38c704-6514-46d9-9728-803289cb63d3"
+institutionId="d0a21f4a-b891-4646-a763-3b1cebbcca87"
+campusId="59cbdaa9-9dca-479c-a371-a0183990a820"
+libraryId="be1deee1-8bf9-4b65-b7ee-4591b6f863f6"
 
-while IFS=$'\t' read -r code discovery 
+while IFS=$'\t' read -r code discovery name
+
+if [[ -z ${discovery} ]];then discovery="${code}"; fi 
+if [[ -z ${name} ]];then name="${discovery}"; fi 
+
 do
 
 IFS='' read -r -d '' location << EndOfLocation
@@ -20,7 +24,7 @@ IFS='' read -r -d '' location << EndOfLocation
 {
 "code": "${code}",
 "discoveryDisplayName": "${discovery}",
-"name": "${discovery}",
+"name": "${name}",
 "isActive": true,
 "institutionId": "${institutionId}",
 "campusId": "${campusId}",

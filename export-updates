@@ -54,7 +54,6 @@ upload_file() {
 	apicall=$(curl --http1.1 -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-export/job-profiles?limit=1000")
 
 	jobProfileId=$(echo "${apicall}" |jq -r ".jobProfiles[] | select(.name==\"${profileName}\") | .id")
-echo ${apicall} > ../fat1
 
 	if ! [[ $jobProfileId =~ [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} ]]; then
 		echo "No valid profile found. Exiting."

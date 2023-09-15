@@ -1,0 +1,107 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+workingdir=$(pwd)
+#profileName="MelCat DCB Export FINAL"
+profileName="Default instances export job profile"
+
+logfile="${workingdir}/dataexport_errors.json"
+summaryfile="$(pwd)/summaryfile.log"
+batchdir="batch_download"
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+errors=0
+status=""
+SECONDS=0
+
+rm -f ${logfile}
+
+if ! [ -d "${batchdir}" ]; then
+	echo "This script expects to process a list of files in a directory named 'batch_download'"
+	exit
+fi
+
+
+get_summary() {
+	jobExecutionId=$(cat "${workingdir}/.jobid")
+
+	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-export/job-executions?query=id==${jobExecutionId}") 
+	exported=$(echo "${apicall}" |jq -r .progress.exported)
+	failed=$(echo "${apicall}" |jq -r .progress.failed)
+	total=$(echo "${apicall}" |jq -r .progress.total)
+
+	summarymessage="Exported: ${exported} Failed: ${failed}: Total: ${total}	JobId: $jobExecutionId"
+	echo "${apicall}" >> ${summaryfile}
+
+
+	#curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/metadata-provider/jobLogEntries/${jobExecutionId}?entity=SRS_MARC&errorsOnly=true&limit=10000&order=asc" |jq -r '.entries[]' >> ${logfile}
+
+}
+check_download() {
+	jobExecutionId=$(cat "${workingdir}/.jobid")
+	status=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-export/job-executions?query=id==${jobExecutionId}" |jq -r ".jobExecutions[] | select(.id = \"${jobExecutionId}\") |select(.status != null) | .status")
+	
+}
+
+upload_file() {
+	idfile="$1"
+	cd ${batchdir}
+
+	apicall=$(curl --http1.1 -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-export/job-profiles?limit=1000")
+
+	jobProfileId=$(echo "${apicall}" |jq -r ".jobProfiles[] | select(.name==\"${profileName}\") | .id")
+echo ${apicall} > ../fat1
+
+	if ! [[ $jobProfileId =~ [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} ]]; then
+		echo "No valid profile found. Exiting."
+		exit
+	fi
+
+	fileDefinitionId=$(uuid)
+	
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{\"size\": 1, \"fileName\": \"${idfile}\", \"uploadFormat\":\"csv\", \"id\": \"${fileDefinitionId}\"}" "${okapi_url}/data-export/file-definitions")
+
+	jobExecutionId=$(echo ${apicall} |jq -r .jobExecutionId)
+	echo "${jobExecutionId}" > ${workingdir}/.jobid
+
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/octet-stream" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "@${idfile}" "${okapi_url}/data-export/file-definitions/${fileDefinitionId}/upload")
+
+	payload="{\"fileDefinitionId\": \"${fileDefinitionId}\", \"jobProfileId\": \"${jobProfileId}\", \"idType\": \"instance\"}"
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${payload}" "${okapi_url}/data-export/export")
+
+	echo "${apicall}"
+}
+
+process_file() {
+	idfile="${1}"
+
+	upload_file "${idfile}"
+	status="beginning"
+
+	while [[ ${status} != "" ]];do
+		sleep 5
+		check_download
+	done
+	
+	get_summary
+	echo "Errors have been output to ${logfile}"
+}
+
+counter=1
+numfiles=$(ls ${batchdir} |wc -l)
+
+for idfile in $(ls ${batchdir}); do
+	TIME=$SECONDS;msg="$SECONDS seconds"
+
+	if [[ $SECONDS -gt 60 ]];then TIME=$(($SECONDS/60));msg="$TIME minutes";fi
+	if [[ $SECONDS -gt 3600 ]];then TIME=$(($SECONDS/3600));msg="$TIME hours";fi
+	echo -en "Processing ${idfile} -- $counter of $numfiles in $msg\r"
+
+	output=$(process_file "${idfile}")
+	counter=$(($counter + 1))
+done
+

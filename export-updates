@@ -46,14 +46,14 @@ upload_file() {
 
 process_file() {
 	idfile="${1}"
-	jobExecutionId=$(cat "${workingdir}/.jobid")
 
 	upload_file "${idfile}"
 
 	while [[ ! ${status} =~ [A-Z] ]];do
 		sleep 5
+		jobExecutionId=$(cat "${workingdir}/.jobid")
 		apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-export/job-executions?query=id==${jobExecutionId}" |jq '.jobExecutions[0]') 
-		status=$(echo ${apicall} |jq -r .status')
+		status=$(echo ${apicall} |jq -r .status)
 	done
 
 	exported=$(echo "${apicall}" |jq -r .progress.exported)
@@ -61,7 +61,7 @@ process_file() {
 	total=$(echo "${apicall}" |jq -r .progress.total)
 	status=$(echo "${apicall}" |jq -r .status)
 
-	echo="Status: ${status} Exported: ${exported} Failed: ${failed}: Total: ${total}	JobId: $jobExecutionId"
+	echo "Status: ${status} Exported: ${exported} Failed: ${failed}: Total: ${total}	JobId: $jobExecutionId"
 }
 
 counter=1
@@ -72,10 +72,12 @@ for idfile in $(ls ${batchdir}); do
 
 	if [[ $SECONDS -gt 60 ]];then TIME=$(($SECONDS/60));msg="$TIME minutes";fi
 	if [[ $SECONDS -gt 3600 ]];then TIME=$(($SECONDS/3600));msg="$TIME hours";fi
-	echo "Processing ${idfile} -- $counter of $numfiles in $msg"
+	echo "Processing ${idfile}"
 
 	output=$(process_file "${idfile}")
 	echo "${output}"
+	echo "Processing ${msg} elapsed"
+
 	counter=$(($counter + 1))
 done
 

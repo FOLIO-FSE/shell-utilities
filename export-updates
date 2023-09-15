@@ -35,6 +35,7 @@ upload_file() {
 	fileDefinitionId=$(echo ${apicall} |jq -r .id)	
 	jobExecutionId=$(echo ${apicall} |jq -r .jobExecutionId)
 	echo "${jobExecutionId}" > ${workingdir}/.jobid
+	echo "${fileDefinitionId}" > ${workingdir}/.fileid
 
 	apicall=$(curl --http1.1 -s -w '\n' -X POST  -H "Content-type: application/octet-stream" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" --data-binary @${idfile} "${okapi_url}/data-export/file-definitions/${fileDefinitionId}/upload")
 
@@ -48,20 +49,30 @@ process_file() {
 	idfile="${1}"
 
 	upload_file "${idfile}"
+	checkfile=""
 
-	while [[ ! ${status} =~ [A-Z] ]];do
+	while [[ ! ${checkfile} =~ [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} ]];do
 		sleep 5
 		jobExecutionId=$(cat "${workingdir}/.jobid")
 		apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-export/job-executions?query=id==${jobExecutionId}" |jq '.jobExecutions[0]') 
 		status=$(echo ${apicall} |jq -r .status)
+		checkfile=$(echo ${apicall} |jq -r '.exportedFiles[0].fileId')
 	done
 
 	exported=$(echo "${apicall}" |jq -r .progress.exported)
 	failed=$(echo "${apicall}" |jq -r .progress.failed)
 	total=$(echo "${apicall}" |jq -r .progress.total)
 	status=$(echo "${apicall}" |jq -r .status)
+	fileId=$(echo "${apicall}" |jq -r '.exportedFiles[0].fileId')
+	fileName=$(echo "${apicall}" |jq -r '.exportedFiles[0].fileName')
+
+	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-export/job-executions/${jobExecutionId}/download/${fileId}") 
+	link=$(echo ${apicall} |jq -r .link)
 
 	echo "Status: ${status} Exported: ${exported} Failed: ${failed}: Total: ${total}	JobId: $jobExecutionId"
+	curl -w '\n' -o "${workingdir}/${fileName}" -X GET -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${link}" 
+	echo "Output sent to ${fileName}"
+
 }
 
 counter=1

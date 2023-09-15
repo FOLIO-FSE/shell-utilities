@@ -56,10 +56,9 @@ upload_file() {
 		exit
 	fi
 
-	fileDefinitionId=$(uuid)
-	
-	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{\"size\": 1, \"fileName\": \"${idfile}\", \"uploadFormat\":\"csv\", \"id\": \"${fileDefinitionId}\"}" "${okapi_url}/data-export/file-definitions")
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{\"fileName\": \"${idfile}\"}" "${okapi_url}/data-export/file-definitions")
 
+	fileDefinitionId=$(echo ${apicall} |jq -r .id)	
 	jobExecutionId=$(echo ${apicall} |jq -r .jobExecutionId)
 	echo "${jobExecutionId}" > ${workingdir}/.jobid
 

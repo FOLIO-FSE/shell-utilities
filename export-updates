@@ -6,20 +6,19 @@ workingdir=$(pwd)
 #profileName="MelCat DCB Export FINAL"
 profileName="Default instances export job profile"
 
-batchdir="batch_download"
+fromDate=$(date -I --date '1 month ago')
+toDate=$(date -I)
+
+idfile="search.cql"
+
+echo "(metadata.createdDate>=\"${fromDate}\" and metadata.createdDate<=\"${toDate}\")" > ${idfile}
 
 errors=0
 status=""
 SECONDS=0
 
-if ! [ -d "${batchdir}" ]; then
-	echo "This script expects to process a list of files in a directory named 'batch_download'"
-	exit
-fi
-
 upload_file() {
 	idfile="$1"
-	cd ${batchdir}
 
 	apicall=$(curl --http1.1 -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-export/job-profiles?limit=1000")
 
@@ -30,7 +29,7 @@ upload_file() {
 		exit
 	fi
 
-	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{\"fileName\": \"${idfile}\"}" "${okapi_url}/data-export/file-definitions")
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{\"fileName\": \"${idfile}\", \"uploadFormat\":\"cql\"}" "${okapi_url}/data-export/file-definitions")
 
 	fileDefinitionId=$(echo ${apicall} |jq -r .id)	
 	jobExecutionId=$(echo ${apicall} |jq -r .jobExecutionId)
@@ -75,22 +74,17 @@ process_file() {
 
 }
 
-counter=1
-numfiles=$(ls ${batchdir} |wc -l)
+echo "Processing ${idfile}"
 
-for idfile in $(ls ${batchdir}); do
-	TIME=$SECONDS;msg="$SECONDS seconds"
+output=$(process_file "${idfile}")
+echo "${output}"
 
-	if [[ $SECONDS -gt 60 ]];then TIME=$(($SECONDS/60));msg="$TIME minutes";fi
-	if [[ $SECONDS -gt 3600 ]];then TIME=$(($SECONDS/3600));msg="$TIME hours";fi
-	echo "Processing ${idfile}"
+TIME=$SECONDS;msg="$SECONDS seconds"
+if [[ $SECONDS -gt 60 ]];then TIME=$(($SECONDS/60));msg="$TIME minutes";fi
+if [[ $SECONDS -gt 3600 ]];then TIME=$(($SECONDS/3600));msg="$TIME hours";fi
 
-	output=$(process_file "${idfile}")
-	echo "${output}"
-	echo "Processing ${msg} elapsed"
+echo "Processing ${msg} elapsed"
 
-	counter=$(($counter + 1))
-done
 
 
 	

@@ -10,10 +10,6 @@ logfile="${workingdir}/dataexport_errors.json"
 summaryfile="$(pwd)/summaryfile.log"
 batchdir="batch_download"
 
-tenant=$(cat tenant)
-okapi_url=$(cat okapi.url)
-okapi_token=$(cat okapi.token)
-
 errors=0
 status=""
 SECONDS=0

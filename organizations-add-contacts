@@ -87,12 +87,12 @@ while IFS=$'\n' read -r line;do
 	categories="[]"
 
 	if [[ ${category1} != "" ]];then
-		cat=${cat,,}
+		cat="${cat,,}"
 		cat="${category_dict[${cat}]}"
 		if [[ "$cat" =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f] ]];then categories=$(echo "${categories}" |jq -rc --arg CAT "${cat}" ' . += [ $CAT ]');fi
 	fi
 	if [[ ${category2} != "" ]];then
-		cat=${cat,,}
+		cat="${cat,,}"
 		cat="${category_dict[${cat}]}"
 		if [[ "$cat" =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f] ]];then categories=$(echo "${categories}" |jq -rc --arg CAT "${cat}" ' . += [ $CAT ]');fi
 	fi

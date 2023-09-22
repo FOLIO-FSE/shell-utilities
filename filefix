@@ -29,6 +29,18 @@ function fix_file() {
 infile="${1}"
 outfile=$(sed 's/\.....\?$//' <<< "${infile}")
 
+if [[ "${infile: -4}" == "xlsx" ]];then
+	xlsx2csv -d "\t" --skipemptycolumns "${infile}" > "${outfile}.tsv"
+	if [[ $(head -1 "${outfile}.tsv") =~ ^$'\t' ]];then
+		cut -f2- "${outfile}.tsv" > tmp
+		mv tmp "${outfile}.tsv"
+	fi
+
+	infile="${outfile}.tsv"
+	foundExcel=1
+	echo "Excel file detected -- converting"
+fi
+
 echo
 echo "################ Processing ${infile} #####################"
 echo
@@ -186,6 +198,11 @@ badfile="${infile}_error"
 
 awk -v numrecs=$numrecs -v numfields=$numfields -v header="${fieldnames}" -v outfile="${outfile}" -v badfile="${badfile}" -v fieldcounters=$fieldcounters -f tmp_awk tmp_outfile
 rm tmp_awk tmp_infile tmp_outfile
+
+if [[ foundExcel -eq 1 ]];then
+	rm "${infile}"
+fi
+foundExcel=0
 }
 
 for file in "${filelist[@]}";do

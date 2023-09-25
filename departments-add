@@ -10,11 +10,8 @@ okapi_token=$(cat okapi.token)
 infile="departments.tsv"
 dos2unix ${infile}
 
-while read line
+while  IFS=$'\t' read -r code department;do
 do
-
-code=$(cut -f1 <<<$line)
-department=$(cut -f2 <<<$line)
 
 if [[ "${department}" == "" ]];then department="${code}";fi
 

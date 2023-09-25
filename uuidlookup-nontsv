@@ -1,0 +1,107 @@
+# replaces UUIDs with values if file is given, otherwise looks up matching UUIDs for string
+#
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+if [[ ! -f "$1" ]];then echo "You must supply a file name"; exit;fi
+
+infile=${1}
+grep -oP "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}" "${infile}" |sort -u > match_uuids
+
+
+outfile="${infile}_mapped"
+
+rectype_arr=("addressTypes" "callNumberTypes" "categories" "courseTerms" "departments" "expenseClasses" "feefineowners" "fiscalYears" "holdingsNoteTypes" "holdingsRecordsSources" "holdingsTypes" "identifierTypes" "itemNoteTypes" "locations" "loantypes" "mtypes" "noteTypes" "organizationTypes" "servicepoints" "statisticalCodes" "usergroups")
+
+
+function showmatches() {
+
+	local matchtype="${1}"
+	local jq
+	local endpoint
+	local output
+
+	jq=".${matchtype}[] | [.id, .name] |@tsv"
+
+	case $matchtype in
+	"addressTypes")
+		endpoint="addresstypes"
+		jq=".addressTypes[] | [.id, .addressType] | @tsv";;
+	"callNumberTypes")
+		endpoint="call-number-types";;
+	"categories")
+		endpoint="organizations-storage/categories"
+		jq="value";;
+	"courseTerms")
+		endpoint="coursereserves/terms"
+		jq=".terms[] | [.id, .name] | @tsv";;
+	"departments")
+		endpoint="departments";;
+	"expenseClasses")
+		endpoint="finance/expense-classes"
+		jq="code";;
+	"feefineowners")
+		endpoint="owners"
+		jq=".owners[] | [.id, .owner]| @tsv";;
+	"fiscalYears")
+		endpoint="finance/fiscal-years";;
+	"holdingsNoteTypes")
+		endpoint="holdings-note-types";;
+	"holdingsRecordsSources")
+		endpoint="holdings-sources";;
+	"holdingsTypes")
+		endpoint="holdings-types";;
+	"identifierTypes")
+		endpoint="identifier-types";;
+	"itemNoteTypes")
+		endpoint="item-note-types";;
+	"loantypes")
+		endpoint="loan-types";;
+	"locations")
+		endpoint="locations"
+		jq="code";;
+	"mtypes")
+		endpoint="material-types";;
+	"noteTypes")
+		endpoint="note-types";;
+	"organizationTypes")
+		endpoint="organizations-storage/organization-types";;
+	"servicepoints")
+		endpoint="service-points";;
+	"statisticalCodes")
+		endpoint="statistical-codes";;
+	"usergroups")
+		endpoint="groups"
+		jq=".usergroups[] | [.id, .group]| @tsv";
+	esac
+
+	if [[ ${jq} == "code" ]];then
+		jq=".${matchtype}[] | [.id, .code] | @tsv"
+	fi
+	if [[ ${jq} == "value" ]];then
+		jq=".${matchtype}[] | [.id, .value] | @tsv"
+	fi
+
+	output=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?query=cql.allRecords=1&limit=5000")
+	 echo ${output} | jq -r "${jq}" > ${matchtype}.dict.tmp
+
+}
+
+
+echo "Downloading data for ${rectype_arr[@]}. Please be patient."
+
+for rectype in ${rectype_arr[@]};do
+	showmatches ${rectype} & 
+done
+
+wait
+
+cat *.dict.tmp  | sed 's#[^a-zA-Z0-9, \.\t\-]##g; s#^#s/#; s#\t#/#g; s#$#/g#g' > sed.map
+rm *.dict.tmp
+
+echo "Replacing data, please be patient"
+
+sed -i -f sed.map "${infile}"
+
+#rm sed.map

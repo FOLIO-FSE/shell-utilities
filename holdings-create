@@ -33,12 +33,15 @@ callNumberTypeId=${calltype_dict[${callNumberType}]}
 create_holding() {
 
 	local formerId="${1}"
+	local instanceUUID="${3}"
 	local permanentLocationId="${2}"
-	local callNumber="${3}"
+	#local callNumber="${3}"
 	local instanceId
 	local holdId
 	local apicall
 	local holding
+
+	if [[ -n $instanceUUID ]];then strip="no";fi
 
 	if [[ ${strip} == "yes" ]];then
 		holdId="${formerId/./}"
@@ -47,8 +50,13 @@ create_holding() {
 		holdId=${formerId}
 	fi
 
+	if [[ -z $instanceUUID ]];then
+		instanceId=$(uuid -v 5  ${namespace} ${okapi_url}:instances:${holdId})
+	else
+		instanceId=${instanceUUID}
+	fi
+
 	# sequencing is important since holdId itself is modified
-	instanceId=$(uuid -v 5  ${namespace} ${okapi_url}:instances:${holdId})
 	holdId=$(uuid -v 5  ${namespace} ${okapi_url}:holdings:${holdId})
 
 	permanentLocationId=${location_dict["${permanentLocationId}"]}
@@ -61,26 +69,25 @@ IFS='' read -r -d '' holding << EndOfJSON
   "permanentLocationId": "${permanentLocationId}",
   "callNumberTypeId": "${callNumberTypeId}",
   "callNumber": "${callNumber}",
+  "discoverySuppress": true,
   "id": "${holdId}"
 }
 
 EndOfJSON
+
 apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${holding}" "${okapi_url}/holdings-storage/holdings")
 echo ${apicall}
 echo -e "${formerId} -- ${apicall}" >> holdings.log
-echo ${holding} |jq
+echo "${holding}" |jq .
 }
 
+#while IFS=$'\t' read -r location recNo bibUUID callNo; do
 
-while IFS=$'\n' read -r line; do
-	regex="[\^\'\"\|]"
-	line=${line/${regex}/}
-	line=${line//$'\t'/^}
+while IFS=$'\t' read -r location recNo bibUUID callNo; do
 
-	IFS=$'^' read -r location recNo callNo <<< "${line}"
+	#create_holding "${recNo}" "${location}" "${callNo}"
+	create_holding "${recNo}" "${location}" "${bibUUID}"
 
-	create_holding "${recNo}" "${location}" "${callNo}"
-
-counter=$(($counter + 1))
+	counter=$(($counter + 1))
 done < ${infile}
 

@@ -102,7 +102,7 @@ read -r -d '' awkscript << "ENDOFAWK"
 BEGIN { FS=OFS="\t"} 
 {
 	if (NR==FNR) { 
-		uuid[$1]=$ 2 
+		uuid[$1]=$2 
 	} else {
 		for (i=1; i<=NF; i++) {
 			if (uuid[$i]) { $i = uuid[$i] }

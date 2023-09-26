@@ -30,7 +30,7 @@ infile="${1}"
 outfile=$(sed 's/\.....\?$//' <<< "${infile}")
 
 if [[ "${infile: -4}" == "xlsx" ]];then
-	xlsx2csv -d "\t" --skipemptycolumns "${infile}" > "${outfile}.tsv"
+	/home/ssm-user/.local/bin/xlsx2csv -d "\t" --skipemptycolumns "${infile}" > "${outfile}.tsv"
 	if [[ $(head -1 "${outfile}.tsv") =~ ^$'\t' ]];then
 		cut -f2- "${outfile}.tsv" > tmp
 		mv tmp "${outfile}.tsv"
@@ -131,7 +131,8 @@ echo
 if [[ ${dateformat} == "us" ]]; then
 	echo "No UK formatted dates detected in first 50 lines"
 	echo "Converting MM-DD-YYYY dates to YYYY-MM-DD and stripping blank dates"
-	sed -i 's/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\1-\2/g;s/ \+-  -\( \+\)\?//g' tmp_outfile
+	#sed -i 's/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\1-\2/g;s/ \+-  -\( \+\)\?//g' tmp_outfile
+	sed -i 's/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([89][0-9]\)\b/\119\2/g;s/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\1-\2/g;s/ \+-  -\( \+\)\?//g' tmp_outfile
 fi
 	if [[ ${dateformat} == "us-single" ]]; then
 	echo "Converting US dates with single digits to to YYYY-MM-DD and stripping blank dates"
@@ -140,7 +141,7 @@ fi
 fi
 if [[ ${dateformat} == "uk" ]]; then
 	echo "Converting DD-MM-YYYY dates to YYYY-MM-DD and stripping blank dates"
-	sed -i 's/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\2-\1/g;s/ \+-  -\( \+\)\?//g;' tmp_outfile 
+	sed -i 's/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([89][0-9]\)\b/\119\2/g;s/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\2-\1/g;s/ \+-  -\( \+\)\?//g;' tmp_outfile 
 fi
 if [[ ${dateformat} == "uk-single" ]]; then
 	echo "Converting UK dates with single digits to YYYY-MM-DD and stripping blank dates"

@@ -11,8 +11,6 @@ echo "------------- Agreements Picklist Values -------------"
 apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/refdata?sort=asc&max=1000")
 echo "${apicall}" | jq -r '.[] | [.desc, ([.values[]?.value ] |join(";")) ] |@tsv'
 echo 
-echo "$apicall" | jq -r '.[] |[.desc, ([(.values[] | .value)] | join(";"))] | @tsv'
-echo
 
 echo "------------- License Terms -------------"
 apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/licenses/custprops")

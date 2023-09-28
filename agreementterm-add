@@ -1,0 +1,111 @@
+# Expects data in delimited file named agreements
+#
+# Terms are mapped by their labels, list items by term uuid and normalized value
+#
+# infile should have same name as term
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+field_name="contentType"
+which_picklist="SubscriptionAgreement.ContentType"
+
+infile=${field_name}
+
+declare -A dict_picklist_uuid
+declare -A dict_picklist_values
+declare -A dict_agreement_uuid
+declare -A dict_agreements
+
+declare -a picklist_uuids
+declare -a picklist_desc
+declare -a picklist_labels
+declare -a picklist_values
+declare -a agreement_names
+declare -a agreement_uuids
+declare -a all_agreements
+
+picklists=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/refdata?query=cql.allRecords=1&perPage=100000")
+
+
+picklist_uuids=($(echo ${picklists} |jq -r '.[].id' |tr -cd "[0-9a-zA-Z\-\n]"))
+picklist_desc=($(echo ${picklists} |jq -r '.[].desc' |tr -cd "[0-9a-zA-Z\-.\n]"))
+picklist_values=($(echo ${picklists} |jq -r '.[] | [ .values[].value ] |join("^")' ))
+picklist_labels=($(echo ${picklists} |jq -r '.[] |  [ .values[].label ] |join("^")' |tr -d " " |tr [A-Z] [a-z] ))
+
+echo "The following picklists were detected:"
+echo ${picklist_desc[@]} |tr " " "\n"
+echo
+
+# a bunch of arrays need to be glued together using index position
+
+# declare scalar arrays pointing from term type to uuid
+picklist_length=${#picklist_desc[@]}
+for ((pickcounter=0; pickcounter<=${picklist_length};pickcounter++));do
+	# select the picklist for the column
+	if [[ ${picklist_desc[$pickcounter]}  == "${which_picklist}" ]];then
+
+		echo -e "The following values were found for the chosen picklist:"
+		echo "${picklist_values[$pickcounter]}" |tr "^" "\n"
+		echo
+		echo "Pausing for 10 seconds to allow exit"
+		echo
+		sleep 10
+
+		picklist_uuid="${picklist_uuids[$pickcounter]}"
+		
+		IFS='^' read -r -a value_arr <<< "${picklist_values[$pickcounter]}"
+		IFS='^' read -r -a label_arr <<< "${picklist_labels[$pickcounter]}"
+
+		for ((entry=0; entry<${#label_arr[@]}; entry++));do
+			label=$(echo "${label_arr[$entry],,}" |tr " " "_")
+			value=${value_arr[$entry]}
+			dict_picklist_values["${label}"]="${value}"
+		done
+	fi
+done
+
+termcounter=1
+
+#while IFS=$'\t' read agreement_name term_value note;do
+while IFS=$'\t' read agreement_name term_value;do
+	
+	#public_note=$(jq . -Rs <<< ${note})
+	#internal_note=$(jq . -Rs <<< ${note})
+
+	echo -e "Processing term ${termcounter}"
+
+	agreement=$(curl  --data-urlencode "term=${agreement_name}" --data-urlencode "match=name" -G -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/sas" |jq -r '.[0]')
+
+	agreement_id=$(echo ${agreement} |jq -r '.id')
+
+	dict_agreements[${agreement_id}]="${agreement}"
+
+	
+	term_value=$(echo ${term_value,,} |tr " " "_")
+
+	#term_value=${dict_picklist_values["${term_value}"]}
+
+
+	if [[ ! -z ${term_value} ]];then
+			#.customProperties.${field_name}[0].publicNote = ${note} |
+			#.customProperties.${field_name}[0].note = ${note} | 
+
+		# be sure to modify part adding term based on if multiselect or single select
+			# .customProperties.${field_name}[0].value = \"${term_value}\" | # single select
+
+		agreement=$(echo ${agreement} |jq "
+			del(.customProperties.${field_name}) |
+			.customProperties.${field_name}[0].value = [ \"${term_value}\" ] | # multi select
+			.customProperties.${field_name}[0].note = \"${note}\" | 
+			.customProperties.undefined[0]._delete = true")
+
+
+		apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement}" "${okapi_url}/erm/sas/${agreement_id}")
+
+		echo ${apicall} |jq .
+	fi
+termcounter=$((${termcounter} + 1))
+
+done < ${infile}

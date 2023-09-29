@@ -25,6 +25,7 @@ declare -a picklist_values
 declare -a agreement_names
 declare -a agreement_uuids
 declare -a all_agreements
+declare -a mapped_values
 
 picklists=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/refdata?query=cql.allRecords=1&perPage=100000")
 
@@ -59,7 +60,7 @@ for ((pickcounter=0; pickcounter<=${picklist_length};pickcounter++));do
 		IFS='^' read -r -a label_arr <<< "${picklist_labels[$pickcounter]}"
 
 		for ((entry=0; entry<${#label_arr[@]}; entry++));do
-			label=$(echo "${label_arr[$entry],,}" |tr " " "_")
+			label=$(echo "${label_arr[$entry],,}" |sed 's/[^a-z0-9]//g')
 			value=${value_arr[$entry]}
 			dict_picklist_values["${label}"]="${value}"
 		done
@@ -67,6 +68,26 @@ for ((pickcounter=0; pickcounter<=${picklist_length};pickcounter++));do
 done
 
 termcounter=1
+
+input_term_values=($(cut -f2 "${infile}" |sort -u |sed 's/[^a-z0-9]//ig;s/\(.*\)/\L\1/'))
+
+# Validate entries
+for value in "${input_term_values[@]}";do
+	term=${dict_picklist_values["${value}"]}
+
+	if [[ ! -z $term ]];then
+		echo "$value is mapped to $term"
+	else
+		echo "$value is not mapped"
+		notfound=1
+	fi
+done
+
+if [[ $notfound -eq 1 ]];then
+	echo 
+	echo "Unmapped values were found. Inspect the list above and Correct the data file or FOLIO label so a lowercased alphanumeric match can occur"
+	exit
+fi
 
 #while IFS=$'\t' read agreement_name term_value note;do
 while IFS=$'\t' read agreement_name term_value;do
@@ -83,9 +104,9 @@ while IFS=$'\t' read agreement_name term_value;do
 	dict_agreements[${agreement_id}]="${agreement}"
 
 	
-	term_value=$(echo ${term_value,,} |tr " " "_")
+	term_value=$(echo ${term_value} |sed 's/[^a-z0-9]//ig;s/\(.*\)/\L\1/')
 
-	#term_value=${dict_picklist_values["${term_value}"]}
+	term_value=${dict_picklist_values["${term_value}"]}
 
 
 	if [[ ! -z ${term_value} ]];then

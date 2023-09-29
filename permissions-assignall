@@ -28,7 +28,7 @@ echo "$apicall" | jq -r '.permissions[]' |sort -u > permissions_user
 comm -2 -3 permissions_available permissions_user > permissions_update
 
 add_permission() {
-	local permission="${1}"
+	local new_perm="${1}"
 	local apicall
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{\"permissionName\": \"${new_perm}\"}" "${okapi_url}/perms/users/${uuid}/permissions?indexField=userId")
 }
@@ -41,7 +41,7 @@ while mapfile -t -n ${batchsize} permissions && ((${#permissions[@]})); do
 		echo "${permission}"
 		add_permission "${permission}" &
 	done
-	wait
+	wait 
 done < permissions_update
 
 echo "List of all permissions available is in permissions_available. Permissions user ${uuid} previously had are in permissions_user. Permissions added are in permissions_update"

@@ -6,7 +6,13 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-uuid="${1}"
+uuid="${search_for}"
+batchsize=10
+
+if [[ ! ${search_for} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?query=(username=%22${search_for}%2A%22%20or%20externalSystemId=%22${search_for}%2A%22)")
+        uuid=$(echo $apicall |jq -r '.users[0].id')
+fi
 
 apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/perms/permissions?expanded=true&length=100000")
 
@@ -21,12 +27,21 @@ echo "$apicall" | jq -r '.permissions[]' |sort -u > permissions_user
 
 comm -2 -3 permissions_available permissions_user > permissions_update
 
-cat permissions_update | while read new_perm
-do
+add_permission() {
+	local permission="${1}"
+	local apicall
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{\"permissionName\": \"${new_perm}\"}" "${okapi_url}/perms/users/${uuid}/permissions?indexField=userId")
+}
 
-echo "Adding ${new_perm}"
+echo "Adding permissions:"
+echo
 
-apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{\"permissionName\": \"${new_perm}\"}" "${okapi_url}/perms/users/${uuid}/permissions?indexField=userId")
-done
+while mapfile -t -n ${batchsize} permissions && ((${#permissions[@]})); do
+	for permission in "${permissions[@]}";do
+		echo "${permission}"
+		add_permission "${permission}" &
+	done
+	wait
+done < permissions_update
 
 echo "List of all permissions available is in permissions_available. Permissions user ${uuid} previously had are in permissions_user. Permissions added are in permissions_update"

@@ -124,13 +124,11 @@ while IFS=$'\t' read agreement_name term_value;do
 			agreement=$(echo ${agreement} |jq "
 				del(.customProperties.${field_name}) |
 				.customProperties.${field_name}[0].value = [ \"${term_value}\" ] | # multi select
-				.customProperties.${field_name}[0].note = \"${note}\" | 
 				.customProperties.undefined[0]._delete = true")
 		else
 			agreement=$(echo ${agreement} |jq "
 				del(.customProperties.${field_name}) |
-				.customProperties.${field_name}[0].value = \"${term_value}\" | # multi select
-				.customProperties.${field_name}[0].note = \"${note}\" | 
+				.customProperties.${field_name}[0].value = \"${term_value}\" | # single select
 				.customProperties.undefined[0]._delete = true")
 		fi
 

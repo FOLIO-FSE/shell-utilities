@@ -8,6 +8,8 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
+multiselect="true" #set to false for single valued terms
+
 field_name="contentType"
 which_picklist="SubscriptionAgreement.ContentType"
 
@@ -21,6 +23,7 @@ declare -A dict_agreements
 declare -a picklist_uuids
 declare -a picklist_desc
 declare -a picklist_labels
+declare -a picklist_types
 declare -a picklist_values
 declare -a agreement_names
 declare -a agreement_uuids
@@ -31,6 +34,7 @@ picklists=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Ten
 
 
 picklist_uuids=($(echo ${picklists} |jq -r '.[].id' |tr -cd "[0-9a-zA-Z\-\n]"))
+picklist_types=($(echo ${picklists} |jq -r '.[].type'))
 picklist_desc=($(echo ${picklists} |jq -r '.[].desc' |tr -cd "[0-9a-zA-Z\-.\n]"))
 picklist_values=($(echo ${picklists} |jq -r '.[] | [ .values[].value ] |join("^")' ))
 picklist_labels=($(echo ${picklists} |jq -r '.[] |  [ .values[].label ] |join("^")' |tr -d " " |tr [A-Z] [a-z] ))
@@ -55,6 +59,7 @@ for ((pickcounter=0; pickcounter<=${picklist_length};pickcounter++));do
 		sleep 10
 
 		picklist_uuid="${picklist_uuids[$pickcounter]}"
+		picklist_type="${picklist_types[$pickcounter]}"
 		
 		IFS='^' read -r -a value_arr <<< "${picklist_values[$pickcounter]}"
 		IFS='^' read -r -a label_arr <<< "${picklist_labels[$pickcounter]}"
@@ -100,12 +105,10 @@ while IFS=$'\t' read agreement_name term_value;do
 	agreement=$(curl  --data-urlencode "term=${agreement_name}" --data-urlencode "match=name" -G -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/sas" |jq -r '.[0]')
 
 	agreement_id=$(echo ${agreement} |jq -r '.id')
-
 	dict_agreements[${agreement_id}]="${agreement}"
 
 	
 	term_value=$(echo ${term_value} |sed 's/[^a-z0-9]//ig;s/\(.*\)/\L\1/')
-
 	term_value=${dict_picklist_values["${term_value}"]}
 
 
@@ -115,13 +118,21 @@ while IFS=$'\t' read agreement_name term_value;do
 
 		# be sure to modify part adding term based on if multiselect or single select
 			# .customProperties.${field_name}[0].value = \"${term_value}\" | # single select
+			# .customProperties.${field_name}[0].value = [ \"${term_value}\" ] | # multi select
 
-		agreement=$(echo ${agreement} |jq "
-			del(.customProperties.${field_name}) |
-			.customProperties.${field_name}[0].value = [ \"${term_value}\" ] | # multi select
-			.customProperties.${field_name}[0].note = \"${note}\" | 
-			.customProperties.undefined[0]._delete = true")
-
+		if [[ $multiselect == "true" ]];then 
+			agreement=$(echo ${agreement} |jq "
+				del(.customProperties.${field_name}) |
+				.customProperties.${field_name}[0].value = [ \"${term_value}\" ] | # multi select
+				.customProperties.${field_name}[0].note = \"${note}\" | 
+				.customProperties.undefined[0]._delete = true")
+		else
+			agreement=$(echo ${agreement} |jq "
+				del(.customProperties.${field_name}) |
+				.customProperties.${field_name}[0].value = \"${term_value}\" | # multi select
+				.customProperties.${field_name}[0].note = \"${note}\" | 
+				.customProperties.undefined[0]._delete = true")
+		fi
 
 		apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement}" "${okapi_url}/erm/sas/${agreement_id}")
 

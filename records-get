@@ -95,6 +95,9 @@ case $rec_type in
 "instance-relationships")
 	rec_type="instanceRelationships"
 	endpoint="instance-storage/instance-relationships";;
+"instancerelationshiptypes")
+	rec_type="instanceRelationshipTypes"
+	endpoint="instance-relationship-types";;
 "instances")
 	endpoint="instance-storage/instances";;
 "items")

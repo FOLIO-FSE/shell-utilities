@@ -1,0 +1,21 @@
+
+if [[ -z $1 ]];then 
+	echo "You must enter an input file";exit
+else
+	infile="${1}"
+fi
+
+columnNumber=0
+
+if [[ $2 =~ [a-zA-Z] ]];then
+	matchexpr="^[0-9]:${2}$"
+	columnNumber=$(head -1 ${infile} |tr "\t" "\n" | grep -n . | grep "${matchexpr}" |sed 's/:[^:]*$//')
+else
+	echo "The following columns were detected. Please enter the column number used for deduplication"
+	head -1 ${infile} |tr "\t" "\n" | grep -n .
+	echo
+	echo
+	read columnNumber
+fi
+
+awk -v KEYFIELD=$columnNumber 'BEGIN{FS=OFS="\t";uniquedetected=dupsdetected=0}{if (! seen[$KEYFIELD]){seen[$KEYFIELD]=1;print $0 > FILENAME"_deduped";uniquedetected++}else{print $0 > FILENAME"_duplicates";dupsdetected++}}END{print uniquedetected" unique records were detected and output to "FILENAME"_deduped\n"dupsdetected " duplicates were ouput to "FILENAME"_duplicates"}' "${infile}"

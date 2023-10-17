@@ -8,6 +8,7 @@ batchsize=50
 
 jq_replace=".${rec_type}[]"
 
+querystring="query=id=${idstring// /${querydelim}}"
 querydelim="%20or%20id="
 
 SECONDS=1
@@ -84,6 +85,9 @@ case $rec_type in
 "servicepoints")
 	endpoint="service-points";;
 "srs")
+	querystring="query=externalId=${idstring// /${querydelim}}"
+	querydelim="%20or%20externalId="
+	jq_replace=".records[]"
 	endpoint="source-storage/records";;
 "statcodes")
 	endpoint="statistical-codes";;
@@ -102,7 +106,6 @@ rm -f ${rec_type}
 while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 	counter=$(($counter + ${#ids[@]}))
 	idstring="${ids[@]}"
-	querystring="query=id=${idstring// /${querydelim}}"
 
 	records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${querystring}&limit=${batchsize}")
 

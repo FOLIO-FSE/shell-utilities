@@ -4,7 +4,7 @@ okapi_token=$(cat okapi.token)
 
 rec_type=$1
 infile="uuids"
-batchsize=10
+batchsize=50
 
 jq_replace=".${rec_type}[]"
 

@@ -101,7 +101,7 @@ case $rec_type in
 	echo "Record type not found.";exit;;
 esac
 
-rm -f ${rec_type}
+rm -f ${rec_type}.json
 
 while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 	counter=$(($counter + ${#ids[@]}))

@@ -110,7 +110,7 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 
 	records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${querystring}&limit=${batchsize}")
 
-	echo "${records}" |jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo)" >>  ${rec_type}
+	echo "${records}" |jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo)" >>  "${rec_type}.json"
 
         TIME=$SECONDS;msg="$SECONDS seconds"
 

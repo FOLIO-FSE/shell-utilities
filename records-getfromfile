@@ -4,7 +4,7 @@ okapi_token=$(cat okapi.token)
 
 rec_type=$1
 infile="uuids"
-batchsize=50
+batchsize=10
 
 jq_replace=".${rec_type}[]"
 
@@ -106,6 +106,7 @@ rm -f ${rec_type}
 while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 	counter=$(($counter + ${#ids[@]}))
 	idstring="${ids[@]}"
+	querystring="query=id=${idstring// /${querydelim}}"
 
 	records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${querystring}&limit=${batchsize}")
 

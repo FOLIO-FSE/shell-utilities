@@ -118,7 +118,7 @@ while IFS=$'\t' read agreement_name term_value;do
 
 		# be sure to modify part adding term based on if multiselect or single select
 			# .customProperties.${field_name}[0].value = \"${term_value}\" | # single select
-			# .customProperties.${field_name}[0].value = [ \"${term_value}\" ] | # multi select
+			# .customProperties.${field_name} = [ { \"value\": [ {\"value\": \"${term_value}\"} ] } ] | # multi select
 
 		if [[ $multiselect == "true" ]];then 
 			agreement=$(echo ${agreement} |jq "

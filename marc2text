@@ -42,7 +42,6 @@ BEGIN {
 	}
 	print record > OUTFILE
 	if (NR % 10000 == 0){ printf "Records processed: "NR"\r" }
-
 }
 END { 
 	ORS="\\n"

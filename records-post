@@ -39,6 +39,8 @@ postrecord() {
 case $recordtype in
 "agreements")
 	recordtype="erm/sas";;
+"agreements-picklists")
+	recordtype="erm/refdata";;
 "authorities")
 	recordtype="authority-storage/authorities";;
 "campuses")
@@ -72,6 +74,8 @@ case $recordtype in
 	recordtype="location-units/libraries";;
 "licenses")
 	recordtype="licenses/licenses";;
+"licenses-picklists")
+	recordtype="licenses/refdata";;
 "loans")
 	recordtype="loan-storage/loans";;
 "locations")

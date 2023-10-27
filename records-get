@@ -32,6 +32,12 @@ case $rec_type in
 "agreements")
 	endpoint="erm/sas"
 	no_total="yes";;
+"agreements-picklists")
+	endpoint="erm/refdata"
+	no_total="yes";;
+"agreements-suppl")
+	endpoint="erm/custprops"
+	no_total="yes";;
 "authorities")
 	endpoint="authority-storage/authorities";;
 "authorities-srs")
@@ -113,6 +119,12 @@ case $rec_type in
 "licenses")
 	endpoint="licenses/licenses"
 	query="sort=name%3Bdesc"
+	no_total="yes";;
+"licenses-picklists")
+	endpoint="licenses/refdata"
+	no_total="yes";;
+"licenses-terms")
+	endpoint="licenses/custprops"
 	no_total="yes";;
 "locations")
 	endpoint="locations";;
@@ -212,7 +224,7 @@ else
 	        num_records=$(($offset + $recsretrieved))
 	        printf "%s records retrieved\r" $num_records
 	
-	        $(echo ${apicall} |jq '.[] | del(.metadata)' >> ${filename})
+	        $(echo ${apicall} |jq -c '.[] | del(.metadata)' >> ${filename})
 	        offset=$(($offset + 100))
 	        done
 	

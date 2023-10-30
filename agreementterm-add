@@ -94,6 +94,36 @@ if [[ $notfound -eq 1 ]];then
 	exit
 fi
 
+########################### Retrieve agreements
+
+all_agreements=""
+
+offset=0
+recsretrieved=100
+
+# retrieve all agreements and add to array
+while [[ $recsretrieved -eq 100 ]] ;do
+	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/sas?query=cql.allRecords=1&perPage=100&offset=$offset")
+
+	recsretrieved=$(echo ${apicall} |jq '. |length')
+	totalrecs=$(($offset + $recsretrieved))
+	printf "%s Agreements retrieved\r" $totalrecs
+
+	all_agreements="${all_agreements}$(echo ${apicall} |jq .[])"
+	offset=$(($offset + 100))
+	done
+
+echo "$totalrecs Agreements retrieved"
+
+# load agreements into scalar array keyed by downcased name
+#eval "$(echo ${all_agreements} |jq -r '. | @sh "agreement_dict[\(.name|tostring|ascii_downcase)]=\(.|tostring)"')"
+echo ${all_agreements} |jq -r '.name|ascii_downcase' |sed 's/[^a-z0-9]//g;s/\(.*\)/dict_agreements[z\1]=/' > tmp_key 
+echo ${all_agreements} |jq .id  > tmp_value 
+
+agreement_array_string="$(paste -d'\0' tmp_key tmp_value)"
+eval $(echo "${agreement_array_string}")
+#rm -f tmp_key tmp_value
+
 #while IFS=$'\t' read agreement_name term_value note;do
 while IFS=$'\t' read agreement_name term_value;do
 	
@@ -101,12 +131,10 @@ while IFS=$'\t' read agreement_name term_value;do
 	#internal_note=$(jq . -Rs <<< ${note})
 
 	echo -e "Processing term ${termcounter}"
+	agreement_key=$(echo "${agreement_name,,}" |sed 's/[^a-z0-9]//g;s/^/z/')
+	agreement_id=$(echo "${dict_agreements[${agreement_key}]}")
 
-	agreement=$(curl  --data-urlencode "term=${agreement_name}" --data-urlencode "match=name" -G -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/sas" |jq -r '.[0]')
-
-	agreement_id=$(echo ${agreement} |jq -r '.id')
-	dict_agreements[${agreement_id}]="${agreement}"
-
+	agreement=$(curl  -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/sas/${agreement_id}") # need a fresh retrieve so that elements are handled properly
 	
 	term_value=$(echo ${term_value} |sed 's/[^a-z0-9]//ig;s/\(.*\)/\L\1/')
 	term_value=${dict_picklist_values["${term_value}"]}

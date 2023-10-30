@@ -111,18 +111,16 @@ while [[ $recsretrieved -eq 100 ]] ;do
 
 	all_agreements="${all_agreements}$(echo ${apicall} |jq .[])"
 	offset=$(($offset + 100))
-	done
+done
 
 echo "$totalrecs Agreements retrieved"
 
 # load agreements into scalar array keyed by downcased name
-#eval "$(echo ${all_agreements} |jq -r '. | @sh "agreement_dict[\(.name|tostring|ascii_downcase)]=\(.|tostring)"')"
 echo ${all_agreements} |jq -r '.name|ascii_downcase' |sed 's/[^a-z0-9]//g;s/\(.*\)/dict_agreements[z\1]=/' > tmp_key 
 echo ${all_agreements} |jq .id  > tmp_value 
 
-agreement_array_string="$(paste -d'\0' tmp_key tmp_value)"
-eval $(echo "${agreement_array_string}")
-#rm -f tmp_key tmp_value
+eval "$(paste -d'\0' tmp_key tmp_value)"
+rm -f tmp_key tmp_value
 
 #while IFS=$'\t' read agreement_name term_value note;do
 while IFS=$'\t' read agreement_name term_value;do

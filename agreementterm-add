@@ -62,8 +62,6 @@ for ((pickcounter=0; pickcounter<=${picklist_length};pickcounter++));do
 		echo
 		sleep 10
 
-		picklist_uuid="${picklist_uuids[$pickcounter]}"
-		
 		IFS='^' read -r -a value_arr <<< "${picklist_values[$pickcounter]}"
 		IFS='^' read -r -a label_arr <<< "${picklist_labels[$pickcounter]}"
 

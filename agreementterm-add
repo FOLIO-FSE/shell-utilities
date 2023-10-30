@@ -10,8 +10,8 @@ okapi_token=$(cat okapi.token)
 
 multiselect="true" #set to false for single valued terms
 
-field_name="contentType"
-which_picklist="SubscriptionAgreement.ContentType"
+field_name="Subject"
+which_picklist="Subject"
 
 infile=${field_name}
 
@@ -116,14 +116,9 @@ while IFS=$'\t' read agreement_name term_value;do
 			#.customProperties.${field_name}[0].publicNote = ${note} |
 			#.customProperties.${field_name}[0].note = ${note} | 
 
-		# be sure to modify part adding term based on if multiselect or single select
-			# .customProperties.${field_name}[0].value = \"${term_value}\" | # single select
-			# .customProperties.${field_name} = [ { \"value\": [ {\"value\": \"${term_value}\"} ] } ] | # multi select
-
 		if [[ $multiselect == "true" ]];then 
 			agreement=$(echo ${agreement} |jq "
-				del(.customProperties.${field_name}) |
-				.customProperties.${field_name} = [ { \"value\": [ {\"value\": \"${term_value}\"} ] } ] | # multi select
+				.customProperties.${field_name}[0].value += [ {\"value\": \"${term_value}\"} ] | # multi select
 				.customProperties.undefined[0]._delete = true")
 		else
 			agreement=$(echo ${agreement} |jq "
@@ -135,6 +130,7 @@ while IFS=$'\t' read agreement_name term_value;do
 		apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement}" "${okapi_url}/erm/sas/${agreement_id}")
 
 		echo "${apicall}" 
+
 	fi
 termcounter=$((${termcounter} + 1))
 

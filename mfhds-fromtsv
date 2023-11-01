@@ -81,6 +81,8 @@ function build_mfhd() {
 	directory = directory""OFS
 	base_data_address = sprintf("%05d", 24 + length(directory))
 	
+	record_content = record_content
+
 	record_length = 24 + length(directory) + length(record_content) + 1
 	
 	leader = sprintf("%05d", record_length)""leader1""base_data_address""leader2
@@ -104,6 +106,10 @@ function build_mfhd() {
 					bibId=i
 					printf ("Bib ID found in "$i"\\n")
 					break
+				case "BIB_NO":
+					bibId=i
+					printf ("Bib ID found in "$i"\\n")
+					break
 				case "LOCATION":
 					location=i
 					printf ("Location found in "$i"\\n")
@@ -112,9 +118,17 @@ function build_mfhd() {
 					callNumpos=i
 					printf ("Call number found in "$i"\\n")
 					break
+				case "CALL":
+					callNumpos=i
+					printf ("Call number found in "$i"\\n")
+					break
 				case "CALL#":
 					callNumpos=i
 					printf ("Call number found in "$i"\\n")
+					break
+				case "BIB_CALL":
+					callNumFallback=i
+					printf ("Call number fallback found in "$i"\\n")
 					break
 				case "CALL_NONMARC":
 					callNumFallback=i

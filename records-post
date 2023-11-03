@@ -45,6 +45,8 @@ case $recordtype in
 	recordtype="authority-storage/authorities";;
 "campuses")
 	recordtype="location-units/campuses";;
+"composite-orders")
+	recordtype="orders/composite-orders";;
 "groups")
 	recordtype="groups";;
 "feefineactions")

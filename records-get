@@ -12,32 +12,31 @@ query="query=${search_for}"
 
 # endpoints with different behaviors use different defaults
 num_retrieved=1000
-recsretrieved=100
 sortby="%20sortby%20id"
 
 limit=0
 offset=0
-no_total="no"
+limitOrPerPage="limit"
 
 function fetch_batch() {
 	local offset=$1
-	local jqexpr="jq -c '.${rec_type}[] | del(.metadata)'"
 
-	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?limit=${num_retrieved}&offset=${offset}&${query}${sortby}" |eval "${jqexpr}"  > "tmp_${rec_type}.${t}"
+	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${limitOrPerPage}=${num_retrieved}&offset=${offset}&${query}${sortby}" |eval "${jqexpr}"  > "tmp_${rec_type}.${t}"
 }
 
 case $rec_type in
 "accounts")
 	endpoint="accounts";;
 "agreements")
+	rec_type="results"
 	endpoint="erm/sas"
-	no_total="yes";;
+	erm=1;;
 "agreements-picklists")
 	endpoint="erm/refdata"
-	no_total="yes";;
+	erm=1;;
 "agreements-suppl")
 	endpoint="erm/custprops"
-	no_total="yes";;
+	erm=1;;
 "authorities")
 	endpoint="authority-storage/authorities";;
 "authorities-srs")
@@ -119,13 +118,13 @@ case $rec_type in
 "licenses")
 	endpoint="licenses/licenses"
 	query="sort=name%3Bdesc"
-	no_total="yes";;
+	erm=1;;
 "licenses-picklists")
 	endpoint="licenses/refdata"
-	no_total="yes";;
+	erm=1;;
 "licenses-terms")
 	endpoint="licenses/custprops"
-	no_total="yes";;
+	erm=1;;
 "locations")
 	endpoint="locations";;
 "loantypes")
@@ -197,41 +196,33 @@ esac
 
 rm -f ${rec_type}
 
-
-if [[ ${no_total} == "no" ]];then
-	num_records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&limit=${limit}" |jq -r .totalRecords)
-
-	for (( offset=0; offset<=$num_records; ));do
-		for ((t=0; t<=4; t=$(($t + 1)) )); do
-			if [[ $offset -le $num_records ]];then 
-				fetch_batch $offset &
-				offset=$(($offset + $num_retrieved))
-			fi
-		done
-		wait
-			
-		cat tmp_${rec_type}.* >> ${filename}
-		rm tmp_${rec_type}.*
-	
-		if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset $num_records;fi
-	done
-else
-	# Licenses and agreements need separate handling plus iterative processing because number of records is unknown 
-	while [[ $recsretrieved -eq 100 ]] ;do
-	        apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&perPage=100&offset=$offset")
-	
-	        recsretrieved=$(echo ${apicall} |jq '. |length')
-	        num_records=$(($offset + $recsretrieved))
-	        printf "%s records retrieved\r" $num_records
-	
-	        $(echo ${apicall} |jq -c '.[] | del(.metadata)' >> ${filename})
-	        offset=$(($offset + 100))
-	        done
-	
-	echo "$num_records records retrieved"
+if [[ $erm=="1" ]];then
+	limit="1"
+	num_retrieved=100
+	query="stats=true"
+	limitOrPerPage="perPage"
+	jqexpr="jq -c '.[] | del(.metadata)'"
 fi
 
+if [[ -z $jqexpr ]];then jqexpr="jq -c \".${rec_type}[] | del(.metadata)\"";fi
+
+num_records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&${limitOrPerPage}=${limit}" |jq -r .totalRecords)
+
+
+for (( offset=0; offset<=$num_records; ));do
+	for ((t=0; t<=4; t=$(($t + 1)) )); do
+		if [[ $offset -le $num_records ]];then 
+			fetch_batch $offset &
+			offset=$(($offset + $num_retrieved))
+		fi
+	done
+	wait
+		
+	cat tmp_${rec_type}.* >> ${filename}
+	rm tmp_${rec_type}.*
+
+	if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset $num_records;fi
+done
+
 echo "$num_records records have been exported to \"${filename}\""
-
-
 

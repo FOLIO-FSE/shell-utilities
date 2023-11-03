@@ -30,13 +30,13 @@ case $rec_type in
 "agreements")
 	rec_type="results"
 	endpoint="erm/sas"
-	erm=1;;
+	erm="yes";;
 "agreements-picklists")
 	endpoint="erm/refdata"
-	erm=1;;
+	erm="yes";;
 "agreements-suppl")
 	endpoint="erm/custprops"
-	erm=1;;
+	erm="yes";;
 "authorities")
 	endpoint="authority-storage/authorities";;
 "authorities-srs")
@@ -118,13 +118,13 @@ case $rec_type in
 "licenses")
 	endpoint="licenses/licenses"
 	query="sort=name%3Bdesc"
-	erm=1;;
+	erm="yes";;
 "licenses-picklists")
 	endpoint="licenses/refdata"
-	erm=1;;
+	erm="yes";;
 "licenses-terms")
 	endpoint="licenses/custprops"
-	erm=1;;
+	erm="yes";;
 "locations")
 	endpoint="locations";;
 "loantypes")
@@ -196,7 +196,7 @@ esac
 
 rm -f ${rec_type}
 
-if [[ $erm=="1" ]];then
+if [[ $erm == "yes" ]];then
 	limit="1"
 	num_retrieved=100
 	query="stats=true"
@@ -207,7 +207,6 @@ fi
 if [[ -z $jqexpr ]];then jqexpr="jq -c \".${rec_type}[] | del(.metadata)\"";fi
 
 num_records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&${limitOrPerPage}=${limit}" |jq -r .totalRecords)
-
 
 for (( offset=0; offset<=$num_records; ));do
 	for ((t=0; t<=4; t=$(($t + 1)) )); do

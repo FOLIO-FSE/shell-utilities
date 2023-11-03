@@ -7,6 +7,7 @@ recordtype=$1
 operation=$2
 
 outfile="${recordtype}_posting.log"
+rm -f "${outfile}"
 
 echo "This script expects input file \"${infile}\" to exist and requires two positional arguments:"
 echo "1: recordtype"

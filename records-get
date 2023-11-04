@@ -54,6 +54,9 @@ case $rec_type in
 "circlog")
 	endpoint="audit-data/circulation/logs"
 	rec_type="logRecords" ;;
+"composite-orders")
+	rec_type="purchaseOrders"
+	endpoint="orders/composite-orders" ;;
 "contacts")
 	endpoint="organizations-storage/contacts" ;;
 "courselistings")

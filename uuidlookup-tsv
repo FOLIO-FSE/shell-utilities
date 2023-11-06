@@ -9,7 +9,7 @@ if [[ ! -f "$1" ]];then echo "You must supply a file name"; exit;fi
 infile=${1}
 outfile="${infile}_mapped"
 
-rectype_arr=("addressTypes" "callNumberTypes" "categories" "courseTerms" "departments" "expenseClasses" "feefineowners" "fiscalYears" "holdingsNoteTypes" "holdingsRecordsSources" "holdingsTypes" "identifierTypes" "itemNoteTypes" "locations" "loantypes" "mtypes" "noteTypes" "organizationTypes" "servicepoints" "statisticalCodes" "usergroups")
+rectype_arr=("addressTypes" "callNumberTypes" "categories" "courseTerms" "departments" "expenseClasses" "feefineowners" "fiscalYears" "funds" "holdingsNoteTypes" "holdingsRecordsSources" "holdingsTypes" "identifierTypes" "itemNoteTypes" "locations" "loantypes" "mtypes" "noteTypes" "organizationTypes" "servicepoints" "statisticalCodes" "usergroups")
 
 
 function showmatches() {
@@ -43,6 +43,9 @@ function showmatches() {
 		jq=".owners[] | [.id, .owner]| @tsv";;
 	"fiscalYears")
 		endpoint="finance/fiscal-years";;
+	"funds")
+		endpoint="finance/funds"
+		jq="code";;
 	"holdingsNoteTypes")
 		endpoint="holdings-note-types";;
 	"holdingsRecordsSources")

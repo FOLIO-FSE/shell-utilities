@@ -1,0 +1,33 @@
+infile="${1}"
+found=0
+
+searchcol="${2,,}"
+searchcol="${searchcol//[^a-z0-9]/}"
+
+colheader=$(head -1 "${infile}")
+colkeys="${colheader,,}"
+colkeys="${colkeys//[^a-z0-9$'\t']/}"
+
+IFS=$'\t' read -r -a key_arr <<< "${colkeys}"
+IFS=$'\t' read -r -a header_arr <<< "${colheader}"
+array_len=${#key_arr[@]}
+
+if [[ -z $2 ]];then echo "You must enter a field header or column number";fi
+
+if [[ ! $searchcol =~ ^[0-9]*$ ]];then 
+	for (( i=0; i<$array_len; i++ ));do
+		if [[ ${key_arr[$i]} == $searchcol ]];then
+			found=1
+			searchcol=$(($i+1))
+			break
+		fi
+	done
+	if [[ found -eq 0 ]];then
+		echo "Your column was not found. These are the available columns"
+		echo
+		head -1 "${infile}" |tr "\t" "\n" |sed -n .
+		exit
+	fi
+fi
+
+cut -f${searchcol} "${infile}" |sort |uniq -c |sort -k1nr

@@ -8,8 +8,8 @@ batchsize=50
 
 jq_replace=".${rec_type}[]"
 
-querystring="query=id=${idstring// /${querydelim}}"
 querydelim="%20or%20id="
+querystring="query=id=${idstring// /${querydelim}}"
 
 SECONDS=1
 
@@ -85,8 +85,8 @@ case $rec_type in
 "servicepoints")
 	endpoint="service-points";;
 "srs")
-	querystring="query=externalId=${idstring// /${querydelim}}"
 	querydelim="%20or%20externalId="
+	querystring="query=externalId=${idstring// /${querydelim}}"
 	jq_replace=".records[]"
 	endpoint="source-storage/records";;
 "statcodes")

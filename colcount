@@ -9,7 +9,7 @@ colkeys="${colheader,,}"
 colkeys="${colkeys//[^a-z0-9$'\t']/}"
 
 IFS=$'\t' read -r -a key_arr <<< "${colkeys}"
-IFS=$'\t' read -r -a header_arr <<< "${colheader}"
+
 array_len=${#key_arr[@]}
 
 if [[ -z $2 ]];then echo "You must enter a field header or column number";fi
@@ -22,6 +22,7 @@ if [[ ! $searchcol =~ ^[0-9]*$ ]];then
 			break
 		fi
 	done
+
 	if [[ found -eq 0 ]];then
 		echo "Your column was not found. These are the available columns"
 		echo

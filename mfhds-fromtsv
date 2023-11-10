@@ -33,7 +33,7 @@ function build_mfhd() {
 	gsub(/BIBID/, $bibId, text_mfhd)
 	gsub(/HOLDINGSID/, holdId, text_mfhd)
 	gsub(/CALLNUM/, callNum, text_mfhd)
-	gsub(/CALLPREFIX/, $callPrefix, text_mfhd)
+	if (callPrefix > 0) {gsub(/CALLPREFIX/, $callPrefix, text_mfhd)} else {gsub(/CALLPREFIX/, "", text_mfhd)}
 
 	### nonrequired fields must be entered here
 	if (publicNote > 0 && $publicNote ~ /[a-zA-Z0-9]/) {
@@ -111,6 +111,10 @@ function build_mfhd() {
 					bibId=i
 					printf ("Bib ID found in "$i"\\n")
 					break
+				case "RECORD#BIBLIOGRAPHIC":
+					bibId=i
+					printf ("Bib ID found in "$i"\\n")
+					break
 				case "LOCATION":
 					location=i
 					printf ("Location found in "$i"\\n")
@@ -127,11 +131,19 @@ function build_mfhd() {
 					callNumpos=i
 					printf ("Call number found in "$i"\\n")
 					break
+				case "CALL#ITEM":
+					callNumpos=i
+					printf ("Call number found in "$i"\\n")
+					break
 				case "CALLPREFIX":
 					callPrefix=i
 					printf ("Call number prefix found in "$i"\\n")
 					break
 				case "BIB_CALL":
+					callNumFallback=i
+					printf ("Call number fallback found in "$i"\\n")
+					break
+				case "CALL#BIBLIOGRAPHIC":
 					callNumFallback=i
 					printf ("Call number fallback found in "$i"\\n")
 					break

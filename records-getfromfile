@@ -8,8 +8,7 @@ batchsize=50
 
 jq_replace=".${rec_type}[]"
 
-querydelim="%20or%20id="
-querystring="query=id=${idstring// /${querydelim}}"
+querydelim="%20or%20id=="
 
 SECONDS=1
 
@@ -85,10 +84,8 @@ case $rec_type in
 "servicepoints")
 	endpoint="service-points";;
 "srs")
-	querydelim="%20or%20externalId="
-	querystring="query=externalId=${idstring// /${querydelim}}"
-	jq_replace=".records[]"
-	endpoint="source-storage/records";;
+	echo "SRS cannot be retrieved by batch processes"
+	exit;;
 "statcodes")
 	endpoint="statistical-codes";;
 "tags")
@@ -100,6 +97,7 @@ case $rec_type in
 *)
 	echo "Record type not found.";exit;;
 esac
+
 
 rm -f ${rec_type}.json
 
@@ -121,6 +119,6 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 
 done < ${infile}
 
-echo "$num_records records have been exported to \"${rec_type}\"                      "
+echo "$num_records records have been exported to \"${rec_type}.json\"                      "
 
 

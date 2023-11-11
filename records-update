@@ -112,6 +112,8 @@ case $recordtype in
         recordtype="source-storage/records";;
 "tags")
 	recordtype="tags";;
+"templates")
+	recordtype="templates";;
 "users")
 	batchsize=1
 	recordtype="users";;

@@ -59,6 +59,9 @@ case $rec_type in
 	endpoint="orders/composite-orders" ;;
 "contacts")
 	endpoint="organizations-storage/contacts" ;;
+"coursedepartments")
+	rec_type="courseDepartments"
+	endpoint="coursereserves/departments";;
 "courselistings")
 	rec_type="courseListings"
 	endpoint="coursereserves/courselistings";;
@@ -66,6 +69,8 @@ case $rec_type in
 	endpoint="coursereserves/courses";;
 "departments")
 	endpoint="departments";;
+"entitlements")
+	endpoint="erm/entitlements";;
 "expense-classes")
 	endpoint="finance/expense-classes"
 	rec_type="expenseClasses";;
@@ -197,7 +202,7 @@ case $rec_type in
 "vouchers")
 	endpoint="voucher/vouchers";;
 *)
-	echo "Record type not found.";exit;;
+	echo "Record type '${recordtype}' not found. Supported types are accounts, agreements, agreements-picklists, agreements-suppl, authorities, authorities-srs, boundwiths, budgets, categories, circlog, composite-orders, contacts, coursedepartments, courselistings, courses, departments, entitlements expense-classes, feefines, feefineactions, fiscalyears, fund-expense, funds, holdings, holdings-srs, importjobs, inhouse,  interfaces, instance-relationships, instancerelationshiptypes, instances, items, invoices, invoice-lines, exportjobs, licenses, licenses-picklists, licenses-terms, locations, loantypes, loan-history, loans, mattypes, mtypes, notes, orderprefixes, orderlines, orders, organizations, polines, preceedingsucceeding, requestprefs, requests, schedulednotices, servicepoints, srs, statcodes, tags, templates, transactions, usergroups, users, vouchers.";exit;;
 esac
 
 rm -f ${rec_type}

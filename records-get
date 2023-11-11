@@ -185,6 +185,10 @@ case $rec_type in
 "tags")
 	endpoint="tags"
 	no_total="yes";;
+"templates")
+	query="cql.allRecords%3D1%20AND%20category%3D%22%22"
+	limit="1000"
+	endpoint="templates";;
 "transactions")
 	endpoint="finance/transactions";;
 "usergroups")

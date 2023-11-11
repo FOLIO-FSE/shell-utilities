@@ -70,6 +70,8 @@ case $recordtype in
 	recordtype="location-units/campuses";;
 "categories")
 	recordtype="organizations-storage/categories";;
+"entitlements")
+	recordtype="erm/entitlements";;
 "groups")
 	recordtype="groups";;
 "holdings")
@@ -118,7 +120,7 @@ case $recordtype in
 	batchsize=1
 	recordtype="users";;
 *)
-	echo "Record type '${recordtype}' not found. Supported types are campuses, groups, holdings, instances, instance-types, interfaces, items, items-inventory, libraries, licenses, loans, locations, notes, notices, organizations, polines, requests, servicepoints, srs, tags, users."
+	echo "Record type '${recordtype}' not found. Supported types are authorities, campuses, entitlements, groups, holdings, instances, instance-types, interfaces, invoices, invoice-lines, items, items-inventory, libraries, licenses, loans, locations, notes, notices, organizations, polines, requests, servicepoints, srs, tags, templates, users."
 	exit;;
 esac
 

@@ -11,7 +11,6 @@ infile="departments.tsv"
 dos2unix ${infile}
 
 while  IFS=$'\t' read -r code department;do
-do
 
 if [[ "${department}" == "" ]];then department="${code}";fi
 

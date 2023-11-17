@@ -1,0 +1,52 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+infile=ids
+logfile=parsedRecords.log
+
+search="$1"
+rm -f $logfile
+
+
+if [[ ${search} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ || ${search} =~ ^in[0-9]*$ ]];then
+	echo "${search}" > ids
+fi
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+initialize_batch() {
+
+IFS='' read -r -d '' batch << EndOfBatch
+{
+  "conditions": {
+    "ids": [  ],
+    "idType": ""
+  },
+  "recordType": "MARC_BIB"
+}
+EndOfBatch
+
+}
+
+while mapfile -t -n 1000 ids && ((${#ids[@]})); do
+
+        record_batch=""
+	initialize_batch
+	total=0
+	idType="instanceId"
+
+        for id in ${ids[@]};do
+		if [[ $id =~ ^in ]];then idType="instanceHrid";fi
+       		batch=$(echo "${batch}" |jq --arg ID "${id}" --arg TYPE "${idType}" '.conditions.ids += [ $ID ] | .conditions.idType = $TYPE ')
+                counter=$(($counter + 1))
+                total=$(($total + 1))
+        done
+
+        printf "Processing record %s of %s \r" $counter $numrecs
+
+	apicall=$(curl -s -w '\n' -X POST -D -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${batch}" "${okapi_url}/source-storage/batch/parsed-records/fetch")
+	echo "${apicall}"
+        
+done < ${infile}
+

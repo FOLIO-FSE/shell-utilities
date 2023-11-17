@@ -46,7 +46,7 @@ while mapfile -t -n 1000 ids && ((${#ids[@]})); do
         printf "Processing record %s of %s \r" $counter $numrecs
 
 	apicall=$(curl -s -w '\n' -X POST -D -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${batch}" "${okapi_url}/source-storage/batch/parsed-records/fetch")
-	echo "${apicall}"
+	echo "${apicall}" >> $logfile
         
 done < ${infile}
 

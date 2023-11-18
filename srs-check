@@ -19,5 +19,5 @@ instance001=$(echo "${apicall}" |jq -r '.parsedRecord.content.fields[] |select(.
 state=$(echo "${apicall}" |jq -r .state)
 leaderRecordStatus=$(echo "${apicall}" |jq -r .leaderRecordStatus)
 
-echo -e "id: ${id}\n999s: ${s999}\nmatchedId: ${matchedId}\ngeneration: ${generation}\nparsedRecordId: ${parsedRecordId}\ndeleted: ${deleted}\ninstanceId: ${instanceId}\i999s: ${i999}\ninstanceHrid: ${instanceHrid}\n001: ${instance001}\nstate: ${state}\nleaderRecordStatus: ${leaderRecordStatus}\n"
+echo -e "\nid                : ${id}\nmatchedId/999s    : ${matchedId} --- ${s999}\ngeneration        : ${generation}\nparsedRecordId    : ${parsedRecordId}\ndeleted           : ${deleted}\ninstanceId/999i   : ${instanceId} --- ${i999}\ninstanceHrid/001  : ${instanceHrid} --- ${instance001}\nstate             : ${state}\nleaderRecordStatus: ${leaderRecordStatus}\n"
 

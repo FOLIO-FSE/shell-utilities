@@ -68,6 +68,11 @@ case $rec_type in
 	endpoint="notes";;
 "organizations")
 	endpoint="organizations-storage/organizations";;
+"parsedrecords")
+	batchsize=1
+	querystring="externalId="
+	jq_replace=".relatedRecordVersion=0"
+	endpoint="change-manager/parsedRecords";;
 "polines")
 	jq_replace=".poLines[]"
 	endpoint="orders-storage/po-lines";;
@@ -84,8 +89,10 @@ case $rec_type in
 "servicepoints")
 	endpoint="service-points";;
 "srs")
-	echo "SRS cannot be retrieved by batch processes"
-	exit;;
+	batchsize=1
+	querystring="externalId="
+	jq_replace=".sourceRecords[]"
+	endpoint="source-storage/source-records";;
 "statcodes")
 	endpoint="statistical-codes";;
 "tags")
@@ -104,11 +111,15 @@ rm -f ${rec_type}.json
 while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 	counter=$(($counter + ${#ids[@]}))
 	idstring="${ids[@]}"
-	querystring="query=id=${idstring// /${querydelim}}"
+	if [[ $batchsize -ne 1 ]];then
+		querystring="query=id=${idstring// /${querydelim}}"
+		records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${querystring}&limit=${batchsize}")
+	else
+		records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${querystring}${idstring}")
+echo "${okapi_url}/${endpoint}?${querystring}"
+	fi
 
-	records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${querystring}&limit=${batchsize}")
-
-	echo "${records}" |jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo)" >>  "${rec_type}.json"
+	echo "${records}" |jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo) |del(.metadata)" >>  "${rec_type}.json"
 
         TIME=$SECONDS;msg="$SECONDS seconds"
 

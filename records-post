@@ -29,6 +29,7 @@ postrecord() {
 		apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/${recordtype}")
 	else
 		id=$(echo "${record}" |jq -r .id)
+
 		apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/${recordtype}/${id}")
 	fi
 	
@@ -91,6 +92,8 @@ case $recordtype in
 	recordtype="orders/order-lines";;
 "organizations")
 	recordtype="organizations/organizations";;
+"parsedrecords")
+	recordtype="change-manager/parsedRecords";;
 "polines")
 	recordtype="orders-storage/po-lines";;
 "requests")
@@ -107,7 +110,7 @@ case $recordtype in
 "users")
 	recordtype="users";;
 *)
-	echo "Record type '${recordtype}' not found. Supported types are campuses, composite-orders, feefineactions, groups, holdings, instances, instance-types, interfaces, items, libraries, licenses, loans, locations, notices, organizations, polines, requests, servicepoints, srs, tags, templates, users."
+	echo "Record type '${recordtype}' not found. Supported types are campuses, composite-orders, feefineactions, groups, holdings, instances, instance-types, interfaces, items, libraries, licenses, loans, locations, notices, organizations, parsedrecords, polines, requests, servicepoints, srs, tags, templates, users."
 	exit;;
 esac
 

@@ -42,7 +42,7 @@ if [[ ! $searchcol =~ ^[0-9]*$ ]];then
 	if [[ found -eq 0 ]];then
 		echo "Your column was not found. These are the available columns"
 		echo
-		head -1 "${infile}" |tr "\t" "\n" |sed -n .
+		head -1 "${infile}" |tr "\t" "\n" |grep -n .
 		exit
 	fi
 fi

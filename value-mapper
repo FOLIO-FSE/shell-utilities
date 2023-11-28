@@ -34,7 +34,7 @@ END
 
 if [[ -n "${1}" ]]; then
 	infile="${1}"
-	outfile="${1/.tsv/""}"_fixed.tsv
+	outfile="${1/.tsv/}"_fixed.tsv
 else
 	echo "${instructions}"
 	read infile
@@ -60,7 +60,8 @@ declare paste_expr
 
 IFS=$'\t' read -ra column_headers <<< $(head -1 ${infile})
 
-for column in "${column_headers[@]}"; do
+for (( i=0 ; i <= ${#column_headers[@]} - 1; i++)); do
+	column="${column_headers[$i]}"
 	echo "Processing column ${columncounter} (${column})"
 	cut -f${columncounter} ${infile} > "tmpcols/col_${columncounter}"
 
@@ -73,28 +74,30 @@ for column in "${column_headers[@]}"; do
 		# read the mapped values into a temporary array
 	
 		while IFS=$'\t' read -r key value;do
-			maparr["${key}"]="${value}"
+			key="${key//[^a-zA-Z0-9]/}"
+			maparr["${key,,}"]="${value}"
 		done < "${column}.tsv"
 
 		# load source file into array, map them
 		# and write to file
 
-		IFS=$'\n' read -d '' -r -a tmpcol < "tmpcols/col_${columncounter}"
-
 		mappedvals=0
 		unmappedvals=0
 		totalvals=0
-
+	
 		finalcol=""
 
-		for entry in "${tmpcol[@]}";do
+		while IFS=$'\n' read -r entry;do
 			totalvals=$((totalvals + 1))
-
+	
 			if [[ $(( totalvals % 10000 )) == 0 ]];then
 				printf "      Number of values processed: ${totalvals}\r"
 			fi
+	
+			entry="${entry//[^a-zA-Z0-9]/}"
 
-			mappedval=${maparr["${entry}"]}
+			mappedval=${maparr["${entry,,}"]}
+
 			if [[ -n "${mappedval}" ]];then
 				mappedvals=$((mappedvals + 1))
 				entry="${mappedval}"
@@ -104,7 +107,7 @@ for column in "${column_headers[@]}"; do
 			
 			finalcol+="${entry}\n"
 
-		done
+		done < "tmpcols/col_${columncounter}"
 
 		echo -e "\n      Mapped entries: ${mappedvals}"
 		echo -e "      Unmapped entries: ${unmappedvals}\n"

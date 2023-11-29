@@ -18,6 +18,6 @@ if [[ ${uuid} =~ [a-z] ]];then
 	fi
 
 else
-	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records?limit=0"
+	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records?recordType=MARC_BIB&state=ACTUAL&sortby=id&limit=0"
 fi
 

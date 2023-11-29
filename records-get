@@ -111,6 +111,9 @@ case $rec_type in
 "instance-relationships")
 	rec_type="instanceRelationships"
 	endpoint="instance-storage/instance-relationships";;
+"instanceformats")
+	rec_type="instanceFormats"
+	endpoint="instance-formats";;
 "instancerelationshiptypes")
 	rec_type="instanceRelationshipTypes"
 	endpoint="instance-relationship-types";;

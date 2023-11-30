@@ -13,15 +13,20 @@ query="query=${search_for}"
 # endpoints with different behaviors use different defaults
 num_retrieved=1000
 sortby="%20sortby%20id"
+totalRecords="totalRecords"
+accept="application/json"
 
-limit=0
 offset=0
 limitOrPerPage="limit"
+PageOrOffset="offset"
 
 function fetch_batch() {
 	local offset=$1
+	local page=$2
+	local t=$3
 
-	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${limitOrPerPage}=${num_retrieved}&offset=${offset}&${query}${sortby}" |eval "${jqexpr}"  > "tmp_${rec_type}.${t}"
+	#curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${limitOrPerPage}=${num_retrieved}&offset=${offset}&${query}${sortby}" |eval "${jqexpr}"  > "tmp_${rec_type}.${t}"
+	curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${limitOrPerPage}=${num_retrieved}&${PageOrOffset}=${!PageOrOffset}&${query}${sortby}" |eval "${jqexpr}"  > "tmp_${rec_type}.${t}"
 }
 
 case $rec_type in
@@ -72,6 +77,16 @@ case $rec_type in
 	endpoint="coursereserves/coursetypes";;
 "departments")
 	endpoint="departments";;
+"eholdings")
+	rec_type="data"
+	num_retrieved=100
+	limitOrPerPage="count"
+	PageOrOffset="page"
+	query="q=%2A&filter\[selected\]=true"
+	accept="application/vnd.api+json"
+	sortby=""
+	totalRecords="meta.totalResults"
+	endpoint="eholdings/packages";;
 "entitlements")
 	endpoint="erm/entitlements";;
 "expense-classes")
@@ -100,7 +115,7 @@ case $rec_type in
 "importjobs")
 	rec_type="jobExecutions"
 	endpoint="metadata-provider/jobExecutions"
-	limit=1
+	num_retrieved=1
 	;;
 "inhouse") 
 	rec_type="checkIns"
@@ -156,7 +171,7 @@ case $rec_type in
 "mtypes")
 	endpoint="material-types";;
 "notes")
-	limit=1
+	num_retrieved=1
 	endpoint="notes";;
 "orderprefixes")
 	rec_type="prefixes"
@@ -199,7 +214,7 @@ case $rec_type in
 	endpoint="tags"
 	no_total="yes";;
 "templates")
-	limit="1000"
+	num_retrieved="1000"
 	endpoint="templates";;
 "transactions")
 	endpoint="finance/transactions";;
@@ -210,14 +225,13 @@ case $rec_type in
 "vouchers")
 	endpoint="voucher/vouchers";;
 *)
-	echo "Record type '${recordtype}' not found. Supported types are accounts, agreements, agreements-picklists, agreements-suppl, authorities, authorities-srs, boundwiths, budgets, categories, circlog, composite-orders, contacts, coursedepartments, courselistings, courses, coursetypes, departments, entitlements expense-classes, feefines, feefineactions, fiscalyears, fund-expense, funds, holdings, holdings-srs, importjobs, inhouse,  interfaces, instance-relationships, instancerelationshiptypes, instances, institutions, items, invoices, invoice-lines, exportjobs, licenses, licenses-picklists, licenses-terms, locations, loantypes, loan-history, loans, mattypes, mtypes, notes, orderprefixes, orderlines, orders, organizations, polines, preceedingsucceeding, requestprefs, requests, schedulednotices, servicepoints, srs, statcodes, tags, templates, transactions, usergroups, users, vouchers.";exit;;
+	echo "Record type '${recordtype}' not found. Supported types are accounts, agreements, agreements-picklists, agreements-suppl, authorities, authorities-srs, boundwiths, budgets, categories, circlog, composite-orders, contacts, coursedepartments, courselistings, courses, coursetypes, departments, eholdings, entitlements expense-classes, feefines, feefineactions, fiscalyears, fund-expense, funds, holdings, holdings-srs, importjobs, inhouse,  interfaces, instance-relationships, instancerelationshiptypes, instances, institutions, items, invoices, invoice-lines, exportjobs, licenses, licenses-picklists, licenses-terms, locations, loantypes, loan-history, loans, mattypes, mtypes, notes, orderprefixes, orderlines, orders, organizations, polines, preceedingsucceeding, requestprefs, requests, schedulednotices, servicepoints, srs, statcodes, tags, templates, transactions, usergroups, users, vouchers.";exit;;
 esac
 
 rm -f ${rec_type}
 
 if [[ $erm == "yes" ]];then
-	limit="1"
-	num_retrieved=100
+	num_retrieved="1"
 	query="stats=true"
 	limitOrPerPage="perPage"
 	jqexpr="jq -c '.[] | del(.metadata)'"
@@ -225,12 +239,13 @@ fi
 
 if [[ -z $jqexpr ]];then jqexpr="jq -c \".${rec_type}[] | del(.metadata)\"";fi
 
-num_records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&${limitOrPerPage}=${limit}" |jq -r .totalRecords)
+num_records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&${limitOrPerPage}=${num_retrieved}" |jq -r .${totalRecords})
 
 for (( offset=0; offset<=$num_records; ));do
 	for ((t=0; t<=4; t=$(($t + 1)) )); do
+		page=$(($page + 1))
 		if [[ $offset -le $num_records ]];then 
-			fetch_batch $offset &
+			fetch_batch $offset $page $t &
 			offset=$(($offset + $num_retrieved))
 		fi
 	done

@@ -10,7 +10,7 @@ uuid="${search_for}"
 batchsize=10
 
 if [[ ! ${search_for} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
-	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?query=(username=%22${search_for}%2A%22%20or%20externalSystemId=%22${search_for}%2A%22)")
+	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?query=(username=%22${search_for}%2A%22%20or%20externalSystemId=%22${search_for}%2A%22)")
         uuid=$(echo $apicall |jq -r '.users[0].id')
 fi
 

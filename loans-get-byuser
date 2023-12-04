@@ -5,7 +5,7 @@ okapi_token=$(cat okapi.token)
 user=$(sed 's/[^a-z0-9\-]//g' <<< $1)
 
 if [[ ! ${user} =~ [a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12} ]]; then
-	user=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?query=barcode==${user}" |jq '.users[0].id')
+	user=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?query=barcode==${user}" |jq '.users[0].id')
 fi
 
 apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/loans?limit=100000&query=userId%3D%3D${user}")

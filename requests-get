@@ -9,16 +9,16 @@ rm -rf requests
 
 if [[ ${search_for} != "" ]];then
 	if [[ ${search_for} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
-		curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/requests?query=userId=${search_for}"
+		curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/requests?query=userId=${search_for}"
 		exit
 	else
-		id=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?query=barcode==${search_for}"|jq -r '.users[0].id')
-		curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/requests?query=userId=${id}"
+		id=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?query=barcode==${search_for}"|jq -r '.users[0].id')
+		curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/requests?query=userId=${id}"
 		exit
 	fi
 fi
 
-num_requests=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/requests?limit=0" |jq -r .totalRecords)
+num_requests=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/requests?limit=0" |jq -r .totalRecords)
 
 for (( offset=0; offset<=$num_requests; offset = offset + 1000 ));do
 	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/requests?query=cql.allRecords=1&limit=1000&offset=$offset" |jq -c .requests[] >> requests 

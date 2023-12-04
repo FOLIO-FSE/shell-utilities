@@ -19,12 +19,12 @@ update_record() {
 	local changeid=""
 
 	if [[ ${uuid} =~ ^in[0-9]*$ ]];then
-		uuid=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances?query=hrid==${uuid}" |jq -r '.instances[].id')
+		uuid=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances?query=hrid==${uuid}" |jq -r '.instances[].id')
 	fi
 
-	version=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${uuid}" |jq -r '._version')
+	version=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${uuid}" |jq -r '._version')
 
-	change_manager_body=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/change-manager/parsedRecords?externalId=${uuid}")
+	change_manager_body=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/change-manager/parsedRecords?externalId=${uuid}")
 	changeid=$(jq -r '.id' <<< "${change_manager_body}")
 
 	change_manager_body="$(jq --arg version "$version" '. += {"relatedRecordVersion":$version}' <<< "${change_manager_body}")"

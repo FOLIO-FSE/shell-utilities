@@ -4,6 +4,6 @@ okapi_token=$(cat okapi.token)
 
 license=$(tr -dc "[a-f0-9\-]" <<< $1)
 
-apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/licenses/licenses/${license}")
+apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/licenses/licenses/${license}")
 
 echo "${apicall}" 

@@ -6,7 +6,7 @@ uuid="$1"
 
 if [[ ${uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
 	endpoint="${okapi_url}/inventory/items-by-holdings-id?query=holdingsRecordId==${uuid}"
-	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}" )
+	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}" )
 fi
 
 echo ${apicall} 

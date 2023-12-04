@@ -4,6 +4,6 @@ okapi_token=$(cat okapi.token)
 
 agreement_name="${1}"
 
-agreement=$(curl  -s -w '\n' --data-urlencode "match=name" --data-urlencode "perPage=100" --data-urlencode "term=${license_name}" -G -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/sas")
+agreement=$(curl  -s -w '\n' --data-urlencode "match=name" --data-urlencode "perPage=100" --data-urlencode "term=${license_name}" -G -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/sas")
 
 echo "${agreement}" |jq ".[] |select(.name==\"${agreement_name}\")"

@@ -17,7 +17,7 @@ numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 # get list of course departments and populate array using name as key with uuid as value
  
-eval "$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/coursereserves/courses?limit=100000" |  jq -r '.courses[] | @sh "dict_courses[\(.courseNumber|tostring)]=\(.courseListingId|tostring)"')"
+eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/coursereserves/courses?limit=100000" |  jq -r '.courses[] | @sh "dict_courses[\(.courseNumber|tostring)]=\(.courseListingId|tostring)"')"
 
 counter=0
 found=0

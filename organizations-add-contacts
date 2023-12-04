@@ -12,7 +12,7 @@ numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 # load categories into dictionary
 
-eval "$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/categories?limit=100000" |  jq -r '.categories[] | @sh "category_dict[\(.value|tostring|ascii_downcase)]=\(.id|tostring)"')"
+eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/categories?limit=100000" |  jq -r '.categories[] | @sh "category_dict[\(.value|tostring|ascii_downcase)]=\(.id|tostring)"')"
 
 build_contact() {
 

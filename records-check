@@ -16,7 +16,7 @@ checkrecord() {
 	local uuid=${1}
 	local apicall
 
-	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}")
+	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}")
 	if [[ ${apicall} == *"Not found"* ]];then echo "${uuid} not found";fi
 
 }

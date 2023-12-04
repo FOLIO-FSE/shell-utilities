@@ -32,10 +32,10 @@ fixrecord() {
 	local updated_record
 	local apicall
 	if [[ ${recordtype} == "source-storage/records" ]];then 
-		apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${uuid}/formatted?idType=INSTANCE" |jq .)
+		apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${uuid}/formatted?idType=INSTANCE" |jq .)
 		uuid=$(echo ${apicall} |jq -r .id)
 	else
-		apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}" |jq .)
+		apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}" |jq .)
 	fi
 
 # Unrem the appropriate updated_record expression for your task

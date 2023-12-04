@@ -16,7 +16,7 @@ infile="${field_name}"
 while IFS=$'\t' read license_name term_value;do
 	echo -e "Processing term ${termcounter}"
 
-	license=$(curl  --data-urlencode "term=${license_name}" --data-urlencode "match=name" -G -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/licenses/licenses" |jq -r '.[0]')
+	license=$(curl  --data-urlencode "term=${license_name}" --data-urlencode "match=name" -G -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/licenses/licenses" |jq -r '.[0]')
 
 
 	public_note=$(jq . -Rs <<< ${public_note})

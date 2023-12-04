@@ -21,7 +21,7 @@ getrecord() {
 	local uuid=${1}
 	local seq=${2}
 
-	curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${querystring}${uuid}" > tmp_records.${rec_type}.${seq}
+	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${querystring}${uuid}" > tmp_records.${rec_type}.${seq}
 
 }
 
@@ -123,7 +123,7 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 	idstring="${ids[@]}"
 	if [[ $indivrecord -ne 1 ]];then
 		querystring="query=id=${idstring// /${querydelim}}"
-		records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${querystring}&limit=${batchsize}")
+		records=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${querystring}&limit=${batchsize}")
 	else
 		for uuid in "${ids[@]}";do
 			getrecord "${uuid}" "${seq}" &

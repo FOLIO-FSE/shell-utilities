@@ -29,7 +29,7 @@ markstatus() {
 		uuid=${itemId}
 	else
         	endpoint="${okapi_url}/item-storage/items?query=barcode==${itemId}"
-		apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-storage/items?query=barcode==${itemId}")
+		apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-storage/items?query=barcode==${itemId}")
         	uuid=$(echo $apicall |jq -r '.items[0].id')
 	fi
 

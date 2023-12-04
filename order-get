@@ -5,9 +5,9 @@ okapi_token=$(cat okapi.token)
 order_uuid="$1"
 
 if [[ ${uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
-	curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" ${okapi_url}/orders-storage/purchase-orders/${order_uuid}
+	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" ${okapi_url}/orders-storage/purchase-orders/${order_uuid}
 else
-	curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/orders-storage/purchase-orders?limit=0"
+	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/orders-storage/purchase-orders?limit=0"
 fi
 
 

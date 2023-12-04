@@ -23,11 +23,11 @@ while IFS=$'\t' read -r po fund expense;do
 done < ${fundmap}
 	
 
-funds=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/finance/funds?limit=10000" |jq -rc '.funds[]')
+funds=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/finance/funds?limit=10000" |jq -rc '.funds[]')
 
 eval $(echo ${funds} |jq -r '@sh "fund_dict[\(.code|tostring)]=\(.id|tostring)"')
 
-expenseClasses=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/finance/expense-classes?limit=10000" |jq -rc '.expenseClasses[]')
+expenseClasses=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/finance/expense-classes?limit=10000" |jq -rc '.expenseClasses[]')
 
 eval $(echo ${expenseClasses} |jq -r '@sh "expense_dict[\(.code|tostring)]=\(.id|tostring)"')
 

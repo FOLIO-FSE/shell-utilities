@@ -27,7 +27,7 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 	idstring="${ids[@]}"
 	querystring="id=${idstring// /${querydelim}}"
 
-	records=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}${querystring}&limit=${batchsize}")
+	records=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}${querystring}&limit=${batchsize}")
 
 	updated_records=$(echo "${records}" |jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo)")
 

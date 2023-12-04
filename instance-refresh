@@ -15,7 +15,7 @@ update_record() {
 	local instance_record=""
 
 	if [[ ${uuid} =~ ^[a-z]*[0-9]*$ ]];then
-		uuid=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances?query=hrid==${uuid}" |jq -r '.instances[].id')
+		uuid=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances?query=hrid==${uuid}" |jq -r '.instances[].id')
 	fi
 
 	instance_record=$(curl -s -w '\n' -X GET -D \
@@ -35,7 +35,7 @@ update_record() {
 }
 
 if [[ ${uuid} =~ ^in[0-9a]*$ ]];then
-	uuid=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances?query=hrid==${uuid}" |jq -r '.instances[].id')
+	uuid=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances?query=hrid==${uuid}" |jq -r '.instances[].id')
 fi
 
 if [[ ${uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then

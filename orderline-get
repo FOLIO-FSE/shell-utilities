@@ -4,7 +4,7 @@ okapi_token=$(cat okapi.token)
 
 uuid=${1//[^a-f0-9\-]/}
 
-curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/orders/order-lines/${uuid}"
+curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/orders/order-lines/${uuid}"
 
 
 

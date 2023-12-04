@@ -43,7 +43,7 @@ source_values=$(cut -f${columnNumber} ${infile} |tail -n +2|sort -u)
 
 IFS=$'\n' read -r -d '' -a loc_array <<< "${source_values}"
 
-folio_refdata=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?limit=10000" |jq -r ${jq} |sort)
+folio_refdata=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?limit=10000" |jq -r ${jq} |sort)
 
 echo
 echo "The following ${datatype} were identified in the source file but not in FOLIO"

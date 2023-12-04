@@ -10,5 +10,5 @@ else
 	endpoint="note-types"
 fi 
 
-curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?limit=10000" |jq -r '.noteTypes[] |[.id, .name]|@tsv'
+curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?limit=10000" |jq -r '.noteTypes[] |[.id, .name]|@tsv'
 

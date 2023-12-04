@@ -2,5 +2,5 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/addresstypes?query=cql.allRecords=1%20sortby%20addressType&limit=2000" |jq -r '.addressTypes[] | [ .addressType, .id ] |@tsv'
+curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/addresstypes?query=cql.allRecords=1%20sortby%20addressType&limit=2000" |jq -r '.addressTypes[] | [ .addressType, .id ] |@tsv'
 

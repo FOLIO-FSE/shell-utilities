@@ -14,7 +14,7 @@ term_dict["Permanent"]="0dfb30bb-37a4-46c5-ba01-30587fdc6951"
 
 # get list of course departments and populate array using name as key with uuid as value
  
-eval "$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/coursereserves/departments?limit=1000" |  jq -r '.departments[] | @sh "dept_dict[\(.name|tostring|ascii_downcase)]=\(.id|tostring)"')"
+eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/coursereserves/departments?limit=1000" |  jq -r '.departments[] | @sh "dept_dict[\(.name|tostring|ascii_downcase)]=\(.id|tostring)"')"
 
 # normalize keys
 echo "Normalizing Department keys"

@@ -4,6 +4,6 @@ okapi_token=$(cat okapi.token)
 
 jobid=${1//[^0-9a-f\-]}
 
-curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/reindex/${jobid}" 
+curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/reindex/${jobid}" 
 
 

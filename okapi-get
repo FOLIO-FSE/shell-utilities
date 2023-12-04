@@ -4,7 +4,7 @@ okapi_token=$(cat okapi.token)
 
 url="${1}"
 
-curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${url}"
+curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${url}"
 
 	
 

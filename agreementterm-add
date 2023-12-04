@@ -134,7 +134,7 @@ while IFS=$'\t' read agreement_name term_value;do
 	agreement_key=$(echo "${agreement_name,,}" |sed 's/[^a-z0-9]//g;s/^/z/')
 	agreement_id=$(echo "${dict_agreements[${agreement_key}]}")
 
-	agreement=$(curl  -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/sas/${agreement_id}") # need a fresh retrieve so that elements are handled properly
+	agreement=$(curl  -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/sas/${agreement_id}") # need a fresh retrieve so that elements are handled properly
 	
 	term_value=$(echo ${term_value} |sed 's/[^a-z0-9]//ig;s/\(.*\)/\L\1/')
 	term_value=${dict_picklist_values["${term_value}"]}

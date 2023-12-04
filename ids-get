@@ -30,14 +30,14 @@ status=""
 SECONDS=0
 
 while [[ ${status} == "IN_PROGRESS" ]] ;do
-	status=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/search/resources/jobs/${job_id}" |jq -r .status)
+	status=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/search/resources/jobs/${job_id}" |jq -r .status)
 	echo -n "Time elapsed: $SECONDS seconds, status: ${status}\r"
 	
 	if [[ ${status} == "IN_PROGRESS" ]];then sleep 5;fi
 
 done
 
-curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/search/resources/jobs/${job_id}/ids" > ids
+curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/search/resources/jobs/${job_id}/ids" > ids
 
 echo "Ids have been downloaded to 'ids'"
 

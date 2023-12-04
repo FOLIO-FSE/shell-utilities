@@ -8,14 +8,14 @@ numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
 
-instanceRelationshipTypeId=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-relationship-types" |jq -r '.instanceRelationshipTypes[] |select(.name == "bound-with") | .id')
+instanceRelationshipTypeId=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-relationship-types" |jq -r '.instanceRelationshipTypes[] |select(.name == "bound-with") | .id')
 
 rm -f ${logfile}
 ##################################################
 refresh_record() {
 	local uuid="${1}"
 	local apicall=""
-	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${uuid}")
+	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${uuid}")
 
 	if [[ ${apicall} =~ \"id\": ]];then
 		apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${apicall}" "${okapi_url}/inventory/instances/${uuid}")

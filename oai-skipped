@@ -7,7 +7,7 @@ okapi_token=$(cat okapi.token)
 
 request_id=${1//[^a-f0-9\-]/}
 	
-apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/oai/request-metadata/${request_id}/skipped-instances")
+apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/oai/request-metadata/${request_id}/skipped-instances")
 
 echo ${apicall}
 	

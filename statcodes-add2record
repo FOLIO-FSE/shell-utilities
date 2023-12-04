@@ -20,7 +20,7 @@ while IFS=$'\t' read -r instance_uuid stat1 stat2;do
 
 printf "Processing record %s of %s\r" $counter, $numrecs
 
-record=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${instance_uuid}")
+record=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${instance_uuid}")
 
 stat1_uuid="${statcode_dict[${stat1}]}"
 stat2_uuid="${statcode_dict[${stat2}]}"

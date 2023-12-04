@@ -46,7 +46,7 @@ done
 
 
 # convert org codes into a scalar array pointing to UUIDs
-apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/organizations?limit=100000")
+apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/organizations?limit=100000")
 
 #eval "$(echo ${apicall} |  jq -r '.organizations[] | @sh "dict_org_uuid[\(.code|tostring)]=\(.id|tostring)"')"
 #eval "$(echo ${apicall} |  jq -r '.organizations[] | @sh "dict_org_name[\(.code|tostring)]=\(.name|tostring)"')"

@@ -17,7 +17,7 @@ fi
 if [[ ${search} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
         instance_uuid=${search}
 elif [[ ${search} =~ ^in[0-9a]*$ ]];then
-        instance_uuid=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances?query=hrid==${search}" |jq -r '.instances[].id')
+        instance_uuid=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances?query=hrid==${search}" |jq -r '.instances[].id')
 fi
 
 if [[ ${instance_uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then

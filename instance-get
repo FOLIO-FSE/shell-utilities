@@ -11,19 +11,19 @@ if [[ ${2} == "holdings" ]];then holdings="yes";fi
 if [[ ${search} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
         instance_uuid=${search}
 elif [[ ${search} =~ ^in[0-9a]*$ ]];then
-	instance_uuid=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances?query=hrid==${search}" |jq -r '.instances[].id')
+	instance_uuid=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances?query=hrid==${search}" |jq -r '.instances[].id')
 else
         endpoint="${okapi_url}/item-storage/items?query=barcode==${search}"
 fi
 
 if [[ ${instance_uuid} != "" ]];then
-	curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${instance_uuid}"
+	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${instance_uuid}"
 
 	if [[ ${holdings} != "yes" ]];then exit; fi
 	
 	curl -s -w '\n' -X GET -D \ -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-storage/holdings?limit=10000&query=instanceId==${instance_uuid}"
-	curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/inventory/items?limit=10000&query=instance.id==${instance_uuid}"
+	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/inventory/items?limit=10000&query=instance.id==${instance_uuid}"
 else
-	curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances?limit=0"
+	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances?limit=0"
 fi
 

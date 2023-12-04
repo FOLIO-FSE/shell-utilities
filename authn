@@ -1,9 +1,19 @@
 okapi_url=$(cat okapi.url)
 tenant=$(cat tenant)
+auth_tenant=$(cat auth_tenant 2>/dev/null)
+
+if [[ ${auth_tenant} == "" ]];then auth_tenant=${tenant};fi
 
 apicall=$(curl -c cookies.txt -s -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -d @okapi-login.json "${okapi_url}/authn/login-with-expiry")
 
-access_token=$(cat cookies.txt |grep folioAccessToken |sed 's/.*\t//')
+okapi_token=$(cat cookies.txt |grep folioAccessToken |sed 's/.*\t//') 
+
+if [[ ! ${okapi_token} =~ [a-z] ]];then
+	echo "okapi token not acquired"
+	exit
+else
+	echo ${okapi_token} >  okapi.token
+fi
 
 
 

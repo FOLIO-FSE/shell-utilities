@@ -8,6 +8,6 @@ if [[ ${query} == "" ]];then echo "You must enter a cql query";exit;fi
 
 endpoint="${okapi_url}/search/holdings/ids?query=(${query})"
 
-apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}")
+apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}")
 	
 echo "${apicall}" |jq -r .ids[].id

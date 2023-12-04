@@ -7,7 +7,7 @@ rm items-retrieved 2>/dev/null || true
 while IFS=$'\n' read -r barcode; do
 	item_id=$(echo $line |jq -r .id)
 	
-	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/inventory/items?query=barcode=${barcode}")
+	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/inventory/items?query=barcode=${barcode}")
 	
 	echo -e "${apicall}" |jq -c '.items[]' >> items.out
 	echo ${barcode}

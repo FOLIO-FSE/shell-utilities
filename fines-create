@@ -13,7 +13,7 @@ rm -f ${logfile}
 # FeeFine owner must be defined in /settings/users/owners
 fine_owner="8f31d282-4e06-4ed6-b18c-3580087c8358"
 
-id=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/owners/${fine_owner}" |jq -r .id)
+id=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/owners/${fine_owner}" |jq -r .id)
 if [[ $id != "${fine_owner}" ]];then echo "Fine owner not located. Exiting program";exit;fi
 
 # FeeFine type should be defined in /settings/users/feefinestable

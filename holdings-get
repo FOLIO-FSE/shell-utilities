@@ -5,7 +5,7 @@ search=${1//[^a-fho0-9\-]/}
 instance=$2
 
 if [[ ${instance} == "instance" ]];then 
-        curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-storage/holdings?limit=3000&query=instanceId==${search}" 
+        curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-storage/holdings?limit=3000&query=instanceId==${search}" 
 	exit
 fi
 
@@ -14,13 +14,13 @@ if [[ ${search} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
 fi
 
 if [[ ${search} =~ ^ho[0-9a]*$ ]];then
-        holdings_uuid=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-storage/holdings?query=hrid==${search}" |jq -r '.holdingsRecords[].id')
+        holdings_uuid=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-storage/holdings?query=hrid==${search}" |jq -r '.holdingsRecords[].id')
 fi
 
 if [[ ${holdings_uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
-	curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-storage/holdings/${holdings_uuid}"
+	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-storage/holdings/${holdings_uuid}"
 else
-	curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-storage/holdings?limit=0"
+	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-storage/holdings?limit=0"
 fi
 
 

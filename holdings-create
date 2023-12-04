@@ -18,9 +18,9 @@ namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
 
 echo "Loading reference data. Please be patient."
 
-locations=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/locations?limit=5000")
-sources=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-sources?limit=1000")
-calltypes=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/call-number-types?limit=1000")
+locations=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/locations?limit=5000")
+sources=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-sources?limit=1000")
+calltypes=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/call-number-types?limit=1000")
 
 echo "Structuring reference data"
 eval "$(jq -r '.locations[] | @sh "location_dict[\(.code)]=\(.id)"' <<< ${locations})"

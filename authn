@@ -1,0 +1,9 @@
+okapi_url=$(cat okapi.url)
+tenant=$(cat tenant)
+
+apicall=$(curl -c cookies.txt -s -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -d @okapi-login.json "${okapi_url}/authn/login-with-expiry")
+
+access_token=$(cat cookies.txt |grep folioAccessToken |sed 's/.*\t//')
+
+
+

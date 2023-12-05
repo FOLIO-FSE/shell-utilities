@@ -10,8 +10,10 @@ logfile="feefine.log"
 num_retrieved=1000
 rm -f ${logfile}
 
+sed -i 's/"//g' "${fines_file}"
+
 # FeeFine owner must be defined in /settings/users/owners
-fine_owner="8f31d282-4e06-4ed6-b18c-3580087c8358"
+fine_owner="096f375a-1173-4440-b9e5-56df2c07aca7"
 
 id=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/owners/${fine_owner}" |jq -r .id)
 if [[ $id != "${fine_owner}" ]];then echo "Fine owner not located. Exiting program";exit;fi
@@ -117,7 +119,7 @@ while IFS=$'\n' read -r line; do
 	#IFS=$'^' read -r patron_barcode item_charge item_barcode fee_assess_date fineamount <<< "${line}"
 	#
 	#IFS=$'^' read -r patron_identifier fineamount patron_barcode item_identifier item_barcode outdate duedate notes  <<< "${line}"
-	IFS=$'^' read -r patron_identifier patron_name fineamount patron_barcode notes  <<< "${line}"
+	IFS=$'^' read -r patron_name patron_barcode fineamount notes  <<< "${line}"
 	
 	if [[ -z $patron_barcode ]];then patron_barcode="${patron_identifier}";fi
 	if [[ item_barcode != "" ]];then notes=" Item: ${item_barcode}. ${notes}";fi

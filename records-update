@@ -104,6 +104,8 @@ case $recordtype in
 	recordtype="scheduled-notice-storage/scheduled-notices";;
 "organizations")
 	recordtype="organizations/organizations";;
+"parsedrecords")
+	recordtype="change-manager/parsedRecords";;
 "polines")
 	recordtype="orders-storage/po-lines";;
 "requests")
@@ -120,7 +122,7 @@ case $recordtype in
 	batchsize=1
 	recordtype="users";;
 *)
-	echo "Record type '${recordtype}' not found. Supported types are authorities, campuses, entitlements, groups, holdings, instances, instance-types, interfaces, invoices, invoice-lines, items, items-inventory, libraries, licenses, loans, locations, notes, notices, organizations, polines, requests, servicepoints, srs, tags, templates, users."
+	echo "Record type '${recordtype}' not found. Supported types are authorities, campuses, entitlements, groups, holdings, instances, instance-types, interfaces, invoices, invoice-lines, items, items-inventory, libraries, licenses, loans, locations, notes, notices, organizations, parsedrecords, polines, requests, servicepoints, srs, tags, templates, users."
 	exit;;
 esac
 

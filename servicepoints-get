@@ -4,5 +4,5 @@ okapi_token=$(cat okapi.token)
 
 apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/service-points?limit=1000")
 
-echo ${apicall} |jq -r '.servicepoints[] | [ .id, .code, .name ] |@tsv' 
+echo ${apicall} |jq -r '.servicepoints[] | if (.pickupLocation == true) then .pickupLocation = "Pickup" else .pickupLocation = "No pickup" end |[ .id, .code, .name, .pickupLocation ] |@tsv' 
 

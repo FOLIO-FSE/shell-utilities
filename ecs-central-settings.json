@@ -1,0 +1,35 @@
+central_settings_apis = {
+    "alternativeTitleTypes": "/alternative-title-types",
+    "classificationTypes": "/classification-types",
+    "contributorTypes": "/contributor-types",
+    "instanceFormats": "/instance-formats",
+    "instanceNoteTypes": "/instance-note-types",
+    "instanceStatuses": "/instance-statuses",
+    "issuanceModes": "/modes-of-issuance",
+    "natureOfContentTerms": "/nature-of-content-terms",
+    "identifierTypes": "/identifier-types",
+    "instanceTypes": "/instance-types",
+    "holdingsNoteTypes": "/holdings-note-types",
+    "holdingsTypes": "/holdings-types",
+    "itemNoteTypes": "/item-note-types",
+    "loantypes": "/loan-types",
+    "mtypes": "/material-types",
+    "statisticalCodeTypes": "/statistical-code-types",
+    "statisticalCodes": "/statistical-codes",
+    "electronicAccessRelationships": "/electronic-access-relationships",
+    "callNumberTypes": "/call-number-types"
+}
+inventory_settings_direct = {
+    "contributorNameTypes": "/contributor-name-types",
+    "itemDamageStatuses": "/item-damaged-statuses",
+    "instanceRelationshipTypes": "/instance-relationship-types",
+    "illPolicies": "/ill-policies",
+    "holdingsRecordsSources": "/holdings-sources"
+}
+locations_apis = {
+    "institutions": "/location-units/institutions",
+    "campuses": "/location-units/campuses",
+    "libraries": "/location-units/libraries",
+    "locations": "/locations",
+    "servicePoints": "/service-points"
+}

@@ -16,16 +16,20 @@ rm -f ${outfile}
 if [[ -z ${infile} ]];then echo "The input file ${infile} could not be found";exit;fi
 
 add_field() {
-	local instance_uuid=${1}
-	local seq=${2}
-	local value=${3}
+	local instance_uuid="${1}"
+	local seq="${2}"
+	local value="${3}"
 	local record
 	local version
 	local parsedRecordId
 	local newfield
 
 
-	newfield='[{ "tag": "035", "content": "$a (OCoLC)'${value}'", "indicators": [ "\\", "\\" ], "isProtected": false }]'
+	tag="035"
+	content=" \$a ${value}"
+	#content="${value}"
+
+	newfield='[{ "tag": "'${tag}'", "content": "\$a '${value}'", "indicators": [ "\\", "\\" ], "isProtected": false }]'
 
 	record=$(curl -s -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/records-editor/records?externalId=${instance_uuid}") 
 
@@ -33,7 +37,21 @@ add_field() {
 
 	parsedRecordId=$(echo "${record}" | jq -r .parsedRecordId)
 
-	record=$(echo "${record}" |jq --arg VERSION ${version} --argjson NEWFIELD "${newfield}" '.relatedRecordVersion = $VERSION | (.fields= .fields + $NEWFIELD)')
+	# add new field
+	#record=$(echo "${record}" |jq --arg VERSION ${version} --argjson NEWFIELD "${newfield}" '.relatedRecordVersion = $VERSION | (.fields= .fields + $NEWFIELD)')
+
+	#replace field content 
+	#record=$(echo "${record}" |jq --arg VERSION ${version} --arg TAG ${tag} --arg CONTENT "${content}" '.relatedRecordVersion = $VERSION | .fields[] | select(.tag == $TAG).content = $CONTENT')
+
+	# formula to get index of affected tag
+	index=$(echo "${record}" |jq --arg TAG ${tag} '[ .fields[].tag ] |index($TAG)' )
+
+	# sets whole tag
+	record=$(echo "${record}" |jq --arg VERSION ${version} --arg INDEX ${index} --arg TAG ${tag} --arg CONTENT "${content}" '.relatedRecordVersion = $VERSION | .fields[$INDEX |tonumber].content = $CONTENT')
+
+	# must capture individual array element affected and just set that
+	# appends content to existing tag
+	#record=$(echo "${record}" |jq --arg VERSION ${version} --arg INDEX ${index} --arg TAG ${tag} --arg CONTENT "${content}" '.relatedRecordVersion = $VERSION | .fields[$INDEX |tonumber].content =  (.content|tostring) + $CONTENT')
 	
 	curl --http1.1 -s -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/records-editor/records/${parsedRecordId}" > tmp_marcupdate.${seq}
 
@@ -47,7 +65,7 @@ while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
 	for line in "${lines[@]}";do
 		IFS=$'\t' read -r instance_uuid value <<< "${line}"
 
-		add_field "${instance_uuid}" "${seq}" "${value}" &
+		add_field "${instance_uuid}" "${seq}" "${value}" 
 
 		counter=$((counter + 1))
 		seq=$((seq + 1))

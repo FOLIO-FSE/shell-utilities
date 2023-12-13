@@ -52,6 +52,7 @@ if [[ -z $dateformat ]]; then
 	head -50 "${infile}" |grep -o "\b[0-9][/\-][23][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null &&  dateformat="us-single"
 	head -50 "${infile}" |grep -o "\b[23][0-9][/\-][0-9][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null && dateformat="uk"
 	head -50 "${infile}" |grep -o "\b[23][0-9][/\-][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null && dateformat="uk-single"
+	head -50 "${infile}" |grep -o "\b[12][01239][0-9][0-9]\/[0-9][0-9]\/[0-9][0-9]\b" > /dev/null && dateformat="slashes"
 fi
 
 
@@ -59,6 +60,7 @@ if [[ ${dateformat} == "uk" ]];then echo "UK dates detected. DD-MM-YYYY dates wi
 if [[ ${dateformat} == "uk-single" ]];then echo "UK dates with single digits detected. D-M-YYYY dates will be converted to YYYY-MM-DD";fi
 if [[ ${dateformat} == "us" ]];then echo "US dates detected. MM-DD-YYYY dates will be converted to YYYY-MM-DD";fi
 if [[ ${dateformat} == "us-single" ]];then echo "US dates with single digits detected. M-D-YYYY dates will be converted to YYYY-MM-DD";fi
+
 
 if [[ ! -f "${infile}" ]];then echo "The input file ${infile} could not be found";exit;fi
 
@@ -111,6 +113,8 @@ echo
 echo "${fieldnames}" |tr "\t" "\n" |grep -n .
 echo
 
+head -50 "${infile}" |grep -o "\b[1-9]\.[0-9]\+E+[0-9]\+\b" > /dev/null && echo "WARNING: POSSIBLE EXCEL CORRUPTION -- INSPECT FILE"
+
 # normalize fieldnames in file
 sed -i '1 s/[^0-9A-Za-z_\-#)(\.\t]//g' tmp_outfile 
 
@@ -148,6 +152,11 @@ if [[ ${dateformat} == "uk-single" ]]; then
 	sed -i -r -e 'sx([^0-9]|\b)([0-9][/\-])x\10\2xg;sx/([0-9][/\-])x/0\1xg' tmp_outfile
 	sed -i 's/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\2-\1/g;s/ \+-  -\( \+\)\?//g;' tmp_outfile 
 fi
+if [[ ${dateformat} == "slashes" ]]; then
+	echo "Reformatting dates to YYYY-MM-DD"
+	sed -i 's#\b\([12][1230][0-9][0-9]\)/\([0-9][0-9]\)/\([0-9][0-9]\)\b#\1-\2-\3#g' tmp_outfile 
+fi
+
 
 fieldcounters="${fieldcounters// /}"
 

@@ -36,6 +36,14 @@ function build_mfhd() {
 	if (callPrefix > 0) {gsub(/CALLPREFIX/, $callPrefix, text_mfhd)} else {gsub(/CALLPREFIX/, "", text_mfhd)}
 
 	### nonrequired fields must be entered here
+	if (recType > 0) {
+		switch($recType) {
+			case "s":
+				leader1 = "cy  a22"
+				break
+		}
+	}
+
 	if (publicNote > 0 && $publicNote ~ /[a-zA-Z0-9]/) {
 		split($publicNote, statements, ";")
 		for (statement in statements) { text_mfhd = text_mfhd""FS"=538    "SFS"a"statements[statement] }
@@ -100,6 +108,14 @@ function build_mfhd() {
 	sub("\r", "", $NF)
 
 	if (NR == 1) {
+
+		if ( FILENAME ~ /[Ii}[Tt][Ee][Mm]/ ){ 
+				itemfile = 1
+				printf ("\\n\\nItem file detected -- ignoring note fields\\n\\n") 
+			} else { 
+				printf ("\\n\\nCheckin or holdings file detected fields\\n\\n") 
+		}
+
 		for(i=1;i<=NF;i++) {
 
 			switch(toupper($i)) {
@@ -112,6 +128,10 @@ function build_mfhd() {
 					printf ("Bib ID found in "$i"\\n")
 					break
 				case "RECORD#BIBLIOGRAPHIC":
+					bibId=i
+					printf ("Bib ID found in "$i"\\n")
+					break
+				case "RECORD#BIBLIO":
 					bibId=i
 					printf ("Bib ID found in "$i"\\n")
 					break
@@ -147,44 +167,69 @@ function build_mfhd() {
 					callNumFallback=i
 					printf ("Call number fallback found in "$i"\\n")
 					break
+				case "CALL#BIBLIO":
+					callNumFallback=i
+					printf ("Call number fallback found in "$i"\\n")
+					break
 				case "CALL_NONMARC":
 					callNumFallback=i
 					printf ("Call number fallback found in "$i"\\n")
 					break
 				case "LIBHAS":
 					libHas=i
-					printf ("Lib was found in "$i"\\n")
+					printf ("Lib has was found in "$i"\\n")
+					break
+				case "LIBHAS.HASCHECKIN":
+					libHas=i
+					printf ("Lib has was found in "$i"\\n")
 					break
 				case "HOLDID":
 					holdIdpos=i
 					holdId=i
 					printf ("Holdings ID fallback found in "$i"\\n")
 					break
+				case "INT.NOTE":
+					if (itemfile != 1) {
+						actionNote=i
+						printf ("Action note was found in "$i"\\n")
+					}
+					break
 				case "ACTIONNOTE":
-					actionNote=i
-					printf ("Action note was found in "$i"\\n")
+					if (itemfile != 1) {
+						actionNote=i
+						printf ("Action note was found in "$i"\\n")
+					}
 					break
 				case "BINDINGNOTE":
-					bindingNote=i
-					printf ("Binding note was found in "$i"\\n")
+					if (itemfile != 1) {
+						bindingNote=i
+						printf ("Binding note was found in "$i"\\n")
+					}
 					break
 				case "COPYNOTE":
-					copyNote=i
-					printf ("Copy note was found in "$i"\\n")
+					if (itemfile != 1) {
+						copyNote=i
+						printf ("Copy note was found in "$i"\\n")
+					}
 					break
 				case "OWNERSHIPNOTE":
-					ownershipNote=i
-					printf ("Ownership note was found in "$i"\\n")
+					if (itemfile != 1) {
+						ownershipNote=i
+						printf ("Ownership note was found in "$i"\\n")
+					}
 					break
 				case "PUBLICNOTE":
-					publicNote=i
-					printf ("Public note was found in "$i"\\n")
+					if (itemfile != 1) {
+						publicNote=i
+						printf ("Public note was found in "$i"\\n")
+					}
 					break
 			}
 		}
 	if (! bibId) {  printf ("\\nNo valid bib ID field could be found\\n"); exit }
 	if (! location ) {  printf ("\\nNo valid location field could be found\\n"); exit }
 	if (! callNumpos ) {  printf ("\\nNo valid call number field could be found\\n"); exit }
+	printf("\\n\\n")
 	}
 
 	gsub(/^ */, "", $location) 

@@ -1,4 +1,4 @@
-
+#!/bin/bash
 read -d '' -r instructions << END
 value-mapper looks for 2 column tab-delimited mapping files with the 
 same names as column headers in the input file.

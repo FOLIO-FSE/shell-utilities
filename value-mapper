@@ -57,7 +57,6 @@ columncounter=1
 declare paste_expr
 
 # each column is processed as it is encountered
-
 read -ra column_headers <<< $(head -1 ${infile})
 
 for (( i=0 ; i <= ${#column_headers[@]} - 1; i++)); do

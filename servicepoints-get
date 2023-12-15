@@ -2,7 +2,37 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
+echo "Service points"
+
 apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/service-points?limit=1000")
 
 echo ${apicall} |jq -r '.servicepoints[] | if (.pickupLocation == true) then .pickupLocation = "Pickup" else .pickupLocation = "No pickup" end |[ .id, .code, .name, .pickupLocation ] |@tsv' 
+echo ${apicall} |jq -r '.servicepoints[] | if (.pickupLocation == true) then .pickupLocation = "Pickup" else .pickupLocation = "No pickup" end |[ .id, .code, .name ] |@tsv'  > servicepoints.tsv
+
+echo
+echo "Institutions"
+
+apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/location-units/institutions?limit=1000")
+echo ${apicall} |jq -r '.locinsts[] | [ .id, .code, .name ] |@tsv'  
+echo ${apicall} |jq -r '.locinsts[] | [ .id, .code, .name ] |@tsv'  > institutions.tsv
+
+echo
+echo
+echo "Campuses"
+
+apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/location-units/campuses?limit=1000")
+echo ${apicall} |jq -r '.loccamps[] | [ .id, .code, .name ] |@tsv'  
+echo ${apicall} |jq -r '.loccamps[] | [ .id, .code, .name ] |@tsv'  > campuses.tsv
+echo
+
+echo "Libraries"
+
+apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/location-units/libraries?limit=1000")
+echo ${apicall} |jq -r '.loclibs[] | [ .id, .code, .name ] |@tsv'  
+echo ${apicall} |jq -r '.loclibs[] | [ .id, .code, .name ] |@tsv'  > libraries.tsv
+echo
+echo "Output has been sent to institutions.tsv, campuses.tsv, and libraries.tsv"
+echo
+
+
 

@@ -58,7 +58,7 @@ declare paste_expr
 
 # each column is processed as it is encountered
 
-IFS=$'\t' read -ra column_headers <<< $(head -1 ${infile})
+read -ra column_headers <<< $(head -1 ${infile})
 
 for (( i=0 ; i <= ${#column_headers[@]} - 1; i++)); do
 	column="${column_headers[$i]}"
@@ -66,7 +66,7 @@ for (( i=0 ; i <= ${#column_headers[@]} - 1; i++)); do
 	cut -f${columncounter} ${infile} > "tmpcols/col_${columncounter}"
 
 	# clear out all mapped values to allow reinitialization
-	declare -gA maparr
+	declare -Ag maparr
 		
 	if [[ -f "${column}.tsv" ]];then
 		echo "   Mapping file found"
@@ -86,7 +86,6 @@ for (( i=0 ; i <= ${#column_headers[@]} - 1; i++)); do
 		totalvals=0
 	
 		finalcol=""
-
 		while IFS=$'\n' read -r entry;do
 			totalvals=$((totalvals + 1))
 	
@@ -96,7 +95,9 @@ for (( i=0 ; i <= ${#column_headers[@]} - 1; i++)); do
 	
 			entry="${entry//[^a-zA-Z0-9]/}"
 
-			mappedval=${maparr["${entry,,}"]}
+			if [[ ${entry} =~ [a-zA-Z0-9] ]];then
+				mappedval=${maparr["${entry,,}"]}
+			fi
 
 			if [[ -n "${mappedval}" ]];then
 				mappedvals=$((mappedvals + 1))

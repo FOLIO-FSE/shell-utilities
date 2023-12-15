@@ -61,7 +61,7 @@ read -ra column_headers <<< $(head -1 ${infile})
 
 for (( i=0 ; i <= ${#column_headers[@]} - 1; i++)); do
 	column="${column_headers[$i]}"
-	echo "Processing column ${columncounter} (${column})"
+	echo -n "Column ${columncounter} (${column}): "
 	cut -f${columncounter} ${infile} > "tmpcols/col_${columncounter}"
 
 	# clear out all mapped values to allow reinitialization
@@ -109,12 +109,12 @@ for (( i=0 ; i <= ${#column_headers[@]} - 1; i++)); do
 
 		done < "tmpcols/col_${columncounter}"
 
-		echo -e "\n      Mapped entries: ${mappedvals}"
+		echo -e "      Mapped entries: ${mappedvals}"
 		echo -e "      Unmapped entries: ${unmappedvals}\n"
 		echo -e  "${finalcol}" > "tmpcols/col_${columncounter}"
 	
 	else
-		echo -e "   No mapping file found\n"
+		echo -e "   No mapping file found"
 	fi
 
 	columncounter=$((columncounter + 1))

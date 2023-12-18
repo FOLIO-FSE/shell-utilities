@@ -1,4 +1,11 @@
 #!/bin/bash
+#
+
+# use mapby to determine if a value must be a uuid or if unmapped values are passed verbatim
+
+mapby="value"
+#mapby="uuid"
+
 read -d '' -r instructions << END
 value-mapper looks for 2 column tab-delimited mapping files with the 
 same names as column headers in the input file.
@@ -95,6 +102,11 @@ for (( i=0 ; i <= ${#column_headers[@]} - 1; i++)); do
 
 			if [[ ${entry} =~ [a-zA-Z0-9] ]];then
 				mappedval=${maparr["${entry,,}"]}
+
+				if [[ $mapby == "uuid" ]] && ! [[ ${mappedval} =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]];then
+					unset mappedval
+					entry=""
+				fi
 			fi
 
 			if [[ -n "${mappedval}" ]];then

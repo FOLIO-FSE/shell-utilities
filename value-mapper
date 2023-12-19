@@ -63,7 +63,7 @@ echo "Detected $numfields columns and $numrecs records in data file"
 columncounter=1
 declare paste_expr
 
-IFS='^' read -ra column_headers <<< $(head -1 composite_orders.tsv|tr  '\t' '^')
+IFS=$'\t' read -ra column_headers <<< "$(head -1 composite_orders.tsv)"
 
 for (( i=0 ; i <= ${#column_headers[@]} - 1; i++)); do
 	column="${column_headers[$i]}"

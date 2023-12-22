@@ -64,7 +64,6 @@ if [[ ${dateformat} == "us-single" ]];then echo "US dates with single digits det
 
 if [[ ! -f "${infile}" ]];then echo "The input file ${infile} could not be found";exit;fi
 
-cp "${infile}" tmp_infile
 head -1 "${infile}" | grep -q $'\r'$ && awk -v ORS=$'\x1d' -v RS="\r\n" '{gsub("\n", " ", $0); print $0}' "${infile}" |tr $'\x1d' "\n" > tmp_infile
 
 iconv -f utf-8 -t utf-8 -c tmp_infile -o tmp_outfile
@@ -100,9 +99,12 @@ read -r fieldnames < tmp_outfile
 
 numrecs=$(wc -l tmp_outfile |cut -d " " -f1)
 numfields=$(awk 'BEGIN{FS="\t"}{print NF;exit}' tmp_outfile)
+num_labeled_fields=$(head -1 tmp_outfile |tr '\t' '\n' |grep -i [a-z0-9])
 
 echo
 echo "$numfields fields $numrecs lines were detected."
+
+echo
 echo "Problematic characters will be removed from fieldnames"
 echo
 
@@ -112,6 +114,16 @@ echo "The following fields were detected in ${infile}"
 echo
 echo "${fieldnames}" |tr "\t" "\n" |grep -n .
 echo
+
+num_labeled_fields=$(head -1 tmp_outfile |tr '\t' '\n' |grep -i [a-z0-9] |wc -l)
+
+if [[ $numfields != $num_labeled_fields ]];then
+	echo
+	echo "$numfields fields detected but $num_labeled_fields fields with labels were detected."
+	echo
+	echo "WARNING: DISPARITY BETWEEN NUMBER OF FIELDS AND NUMBER OF LABELS USUALLY INDICATES DATA PROBLEMS -- INSPECT FILE."
+	echo
+fi
 
 head -50 "${infile}" |grep -o "\b[1-9]\.[0-9]\+E+[0-9]\+\b" > /dev/null && echo "WARNING: POSSIBLE EXCEL CORRUPTION -- INSPECT FILE"
 

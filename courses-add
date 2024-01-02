@@ -2,49 +2,57 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
+infile="courses.tsv"
+
 declare -A dept_dict
 declare -A term_dict
 
 default_coursetype='2780a114-ca01-4356-afd8-0f4ae648c5f4'
-default_term='43564c13-5bf8-4da0-9138-17661f2502b6'
-
-term_dict["Current"]="43564c13-5bf8-4da0-9138-17661f2502b6"
-term_dict["Permanent"]="0dfb30bb-37a4-46c5-ba01-30587fdc6951"
-
+default_term='2024 Full year'
+default_dept='University of Canterbury'
 
 # get list of course departments and populate array using name as key with uuid as value
- 
 eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/coursereserves/departments?limit=1000" |  jq -r '.departments[] | @sh "dept_dict[\(.name|tostring|ascii_downcase)]=\(.id|tostring)"')"
 
-# normalize keys
-echo "Normalizing Department keys"
+# get list of course terms and populate array using name as key with uuid as value
+eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/coursereserves/terms?limit=1000" |  jq -r '.terms[] | @sh "term_dict[\(.name|tostring|ascii_downcase)]=\(.id|tostring)"')"
+
+# normalize department and term keys
+echo "Normalizing Department and Term keys"
+
 for key in "${!dept_dict[@]}";do
 	newkey=$(tr -dc [a-z0-9] <<< "${key}")
 	dept_dict[${newkey}]=${dept_dict["${key}"]}
 done
 
+for key in "${!term_dict[@]}";do
+	newkey=$(tr -dc [a-z0-9] <<< "${key}")
+	term_dict[${newkey}]=${term_dict["${key}"]}
+done
+
 #while IFS=$'\t' read -r dept courseNumber courseName term;do
-while IFS=$'\t' read -r courseNumber courseName;do
+while IFS=$'\t' read -r courseNumber courseName term;do
+
+if [[ -z ${dept} ]];then dept="${default_dept}";fi
+if [[ -z ${term} ]];then term="${default_term}";fi
+
+term=$(tr -dc [a-z0-9] <<< "${term,,}")
+dept=$(tr -dc [a-z0-9] <<< "${dept,,}")
 
 #courseNumber="${dept} ${courseNumber}"
 #dept=$(tr -dc "[0-9a-z]" <<< ${dept,,})
+#dept=$(tr -dc "[a-z]" <<< ${courseNumber,,})
 
-dept=$(tr -dc "[a-z]" <<< ${courseNumber,,})
-
-
-if [[ -z ${dept_dict[${dept}]} ]];then 
-	departmentId=${dept_dict["notlisted"]}
-else
-	departmentId=${dept_dict[${dept}]}
-fi
-
-if [[ -z ${term_dict[${term}]} ]];then term=${default_term};else term=${term_dict[${term}]};fi
+departmentId=${dept_dict[${dept}]}
+termId=${term_dict[${term}]}
 
 external=''
 registrar=''
+coursetype=''
 
 if [[ ${externalId} != "" ]];then external="\"externalId\":\"${externalId}\",";fi
 if [[ ${registrarId} != "" ]];then registrar="\"registrarId\":\"${registrarId}\",";fi
+if [[ ${courseTypeId} != "" ]];then coursetype="\"courseTypeId\":\"${courseTypeId}\",";fi
 
 listingid=$(uuidgen)
 
@@ -52,10 +60,10 @@ IFS='' read -r -d '' courselisting << EndOfCourseListing
 
 {
 "id": "${listingid}",
-"courseTypeId": "${default_coursetype}",
+${coursetype}
 ${registrar}
 ${external}
-"termId": "${term}"
+"termId": "${termId}"
 }
 EndOfCourseListing
 
@@ -79,6 +87,6 @@ echo -e "${apicall}"
 apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${course}" "${okapi_url}/coursereserves/courses")
 echo -e "${apicall}" 
 
-done < courses.tsv
+done < "${infile}"
 
 

@@ -1,9 +1,7 @@
 #!/usr/bin/awk -f
 #
 
-# Be sure to add a line for each date to be fixed and tweak to match format
-#
-# expected headers are item_barcode, patron_barcode, request_date, request_expiration_date, comment, request_type, pickup_servicepoint_id
+# Be sure to change separator for date (usually dash or slash) 
 
 function fixdate(value)
 {
@@ -11,59 +9,86 @@ function fixdate(value)
 	
 	if (value ~ /^[0-9]*-[0-9]*-[0-9]*$/) {
 		split(value, datearr, datesep)
-		retval = sprintf("%04d-%02d-%02d", datearr[3], datearr[2], datearr[1])
+		retval = sprintf("%04d-%02d-%02d", datearr[3], datearr[1], datearr[2])
 	} else {retval = ""}
 
 	return retval
 
 }
 
-BEGIN {
+BEGIN{
 	FS=OFS="\t"
 	counter = 0
 	datesep = "-" 
-	sp["mssy"] = "e9046b79-047b-4c4e-a7a1-17d36844a127"
-	sp["alby"] = "22b564d4-5cb0-4d5a-9358-f7e25e3d8fad"
-	sp["well"] = "d8904061-7173-430e-b6e0-4ff37378d1ec"
-	sp["extm"] = "e9046b79-047b-4c4e-a7a1-17d36844a127"
-	sp["intl"] = "e9046b79-047b-4c4e-a7a1-17d36844a127"
+	sp['MB']='e382c996-5376-438e-bd60-1b6638f727c8'
+	sp['CENTRAL']='0e38c704-6514-46d9-9728-803289cb63d3'
+	sp['EPS']=2be01b6e-c5d4-49fc-930f-f90e75d4bfb6'
+	sp['Post']= 61e2fa93-04f2-4bd2-8b50-0882b883382e'
 }
 
 {
-	item_barcode=$1
-	patron_barcode=$2
-	request_date=$3
-	request_expiration_date=$4
-	comment=""
-	request_type="Page"
-	pickup_servicepoint_id=sp[$6]
+
+	if (NR == 1) {
+		numfields = NF
+		comment = ""
+
+		for (i=1;i<=NF;i++) {
+			switch($i) {
+				case "item_barcode":
+					item_barcode=i
+					$i = "item_barcode"
+					break
+				case "patron_barcode":
+					patron_barcode=i
+					$i = "patron_barcode"
+					break
+				case "user_barcode":
+					patron_barcode=i
+					$i = "patron_barcode"
+					break
+				case "request_date":
+					request_date=i
+					$i = "request_date"
+					break
+				case "request_expiration_date":
+					request_expiration_date=i
+					$i = "request_expiration_date"
+					break
+				case "request_type":
+					request_type=i
+					$i = "request_type"
+					break
+				case "pickup_servicepoint_id":
+					pickup_servicepoint_pos=i
+					$i = "pickup_servicepoint_id"
+					break
+				case "comment":
+					comment_pos=i
+					$i = "comment"
+					break
+				}
+		} 
+
+		print "item_barcode\tpatron_barcode\trequest_date\trequest_expiration_date\trequest_type\tpickup_servicepoint_id\tcomment" > "open_loans.tsv"
+
+	} else {
+		pickup_servicepoint_id=sp[$pickup_servicepoint_pos]
+
+		gsub("/", "-", $request_date)
+		gsub("/", "-", $request_expiration_date)
 	
-	gsub("\"", "", item_barcode)
-	gsub("\"", "", patron_barcode)
-	gsub("\"", "", request_date)
-	gsub("/", "-", request_date)
-	gsub("\"", "", request_expiration_date)
-	gsub("/", "-", request_expiration_date)
-	gsub("\"", "", pickup_servicepoint_id)
+		counter++
+		#$request_date = fixdate($request_date) # 
+		#$request_expiration_date = fixdate($request_expiration_date) # 
 
-	if (item_barcode == "") {item_barcode = item_identifier}
-	if (patron_barcode == "") {patron_barcode = patron_identifier}
-
-	gsub(/"/, "", $0)
-	if (NR==1) {print "item_barcode\tpatron_barcode\trequest_date\trequest_expiration_date\tcomment\trequest_type\tpickup_servicepoint_id" > "open_requests.tsv"} else {
-
-	counter++
-	request_date = fixdate(request_date) # 
-	request_expiration_date = fixdate(request_expiration_date) # 
+		if (comment_pos > 1) { comment = $comment_pos }
+		
+		print $item_barcode, $patron_barcode, $request_date, $request_expiration_date, $pickup_servicepoint_id, comment >> "open_requests.tsv" 
 	
-	print item_barcode, patron_barcode, request_date, request_expiration_date, comment, request_type, pickup_servicepoint_id >> "open_requests.tsv" 
-
-	if (counter % 10 == 0) {
-		printf "%s records\r", counter
+		if (counter % 100 == 0) {
+			printf "%s records\r", counter
+		}
 	}
-
-
-}
 
 }
 END{ print counter" records were processed" }

@@ -84,6 +84,8 @@ BEGIN{
 
 		if (comment_pos > 1) { comment = $comment_pos }
 		if (request_type_pos > 1) { request_type = $request_type_pos }
+
+		if ($request_expiration_date == "") { $request_expiration_date = "2099-12-31" }
 		
 		print $item_barcode, $patron_barcode, $request_date, $request_expiration_date, request_type, pickup_servicepoint_id, comment >> "open_requests.tsv" 
 	

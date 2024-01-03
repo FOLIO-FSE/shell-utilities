@@ -1,0 +1,106 @@
+#0cf-e4aa278110b7 expects fine amounts in column 1, patron uuid in column 2
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+blocks_file="blocks.tsv"
+legacySystem="Sierra"
+logfile="block.log"
+num_retrieved=1000
+rm -f ${logfile}
+
+sed -i 's/"//g' "${blocks_file}"
+
+
+function fetch_batch() {
+	local offset=$1
+	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?query=cql.allRecords=1&limit=${num_retrieved}&offset=$offset" |jq -c ".users[]"  > "tmp_users.${t}"
+}
+
+declare -A user_dict 
+
+create_block() {
+
+patron_barcode=${patron_barcode//[^0-9A-Za-z\-]/}
+
+blockId=$(uuid)
+
+IFS='' read -r -d '' block << EndOfJSON
+{
+  "staffInformation": "${notes}",
+  "patronMessage": "",
+  "expirationDate": "",
+  "borrowing": true,
+  "renewals": true,
+  "requests": true,
+  "desc": "Migrated block from ${legacySystem}",
+  "type": "Manual",
+  "userId": "${userId}",
+  "id": "${blockId}"
+}
+EndOfJSON
+}
+
+echo "Retrieving user records"
+all_users=""
+num_records=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?limit=0" |jq -r .totalRecords)
+
+for (( offset=0; offset<=$num_records; ));do
+	for ((t=0; t<=4; t=$(($t + 1)) )); do
+		if [[ $offset -le $num_records ]];then 
+			fetch_batch $offset &
+			offset=$(($offset + $num_retrieved))
+		fi
+	done
+	wait
+		
+	cat tmp_users.* >> tmp_users
+	rm tmp_users.*
+
+	if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset $num_records;fi
+done
+
+# load user uuids into scalar array keyed by barcode 
+echo "Loading ids. Please be patient           "
+
+cat tmp_users | jq -r .barcode > tmp_barcodes
+cat tmp_users | jq -r .id > tmp_ids
+
+counter=0
+
+while IFS=$'\n' read -r barcode && IFS=$'\n' read -r id <&3; do
+        counter=$(($counter+ 1))
+        if [[ $((counter % 1000)) == 0 ]];then echo -en "Records loaded: $counter                 \r";fi
+        user_dict["${barcode}"]="${id}"
+done < tmp_barcodes 3< tmp_ids
+
+echo "$counter records loaded                          "
+
+
+counter=1
+badbarcodes=0
+
+numblocks=$(cat ${blocks_file} |wc -l)
+
+while IFS=$'\t' read -r patron_barcode notes; do
+	echo -en "Processing record $counter of ${numblocks}. Bad barcodes found: ${badbarcodes}\r"
+
+
+if [[ ! -z ${user_dict[${patron_barcode}]} ]];then
+	userId=${user_dict[${patron_barcode}]}
+	create_block
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${block}" "${okapi_url}/manualblocks")
+	echo -e "${apicall//$'\n'/ }" >> ${logfile}
+else
+	badbarcodes=$(($badbarcodes + 1))
+	echo -e "Barcode not found\t${patron_barcode}" >> ${logfile}
+fi
+
+counter=$(($counter + 1))
+
+done < ${blocks_file}
+echo 
+echo "Processing completed"
+
+echo "$badbarcodes barcodes were not found. Server responses are output to ${logfile}"

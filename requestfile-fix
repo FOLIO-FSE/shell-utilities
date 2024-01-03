@@ -20,10 +20,10 @@ BEGIN{
 	FS=OFS="\t"
 	counter = 0
 	datesep = "-" 
-	sp['MB']='e382c996-5376-438e-bd60-1b6638f727c8'
-	sp['CENTRAL']='0e38c704-6514-46d9-9728-803289cb63d3'
-	sp['EPS']=2be01b6e-c5d4-49fc-930f-f90e75d4bfb6'
-	sp['Post']= 61e2fa93-04f2-4bd2-8b50-0882b883382e'
+	sp["MB"]="e382c996-5376-438e-bd60-1b6638f727c8"
+	sp["CENTRAL"]="0e38c704-6514-46d9-9728-803289cb63d3"
+	sp["EPS"]="2be01b6e-c5d4-49fc-930f-f90e75d4bfb6"
+	sp["Post"]="61e2fa93-04f2-4bd2-8b50-0882b883382e"
 }
 
 {
@@ -31,6 +31,7 @@ BEGIN{
 	if (NR == 1) {
 		numfields = NF
 		comment = ""
+		request_type = "Page"
 
 		for (i=1;i<=NF;i++) {
 			switch($i) {
@@ -55,7 +56,7 @@ BEGIN{
 					$i = "request_expiration_date"
 					break
 				case "request_type":
-					request_type=i
+					request_type_pos=i
 					$i = "request_type"
 					break
 				case "pickup_servicepoint_id":
@@ -69,7 +70,7 @@ BEGIN{
 				}
 		} 
 
-		print "item_barcode\tpatron_barcode\trequest_date\trequest_expiration_date\trequest_type\tpickup_servicepoint_id\tcomment" > "open_loans.tsv"
+		print "item_barcode\tpatron_barcode\trequest_date\trequest_expiration_date\trequest_type\tpickup_servicepoint_id\tcomment" > "open_requests.tsv"
 
 	} else {
 		pickup_servicepoint_id=sp[$pickup_servicepoint_pos]
@@ -82,8 +83,9 @@ BEGIN{
 		#$request_expiration_date = fixdate($request_expiration_date) # 
 
 		if (comment_pos > 1) { comment = $comment_pos }
+		if (request_type_pos > 1) { request_type = $request_type_pos }
 		
-		print $item_barcode, $patron_barcode, $request_date, $request_expiration_date, $pickup_servicepoint_id, comment >> "open_requests.tsv" 
+		print $item_barcode, $patron_barcode, $request_date, $request_expiration_date, request_type, pickup_servicepoint_id, comment >> "open_requests.tsv" 
 	
 		if (counter % 100 == 0) {
 			printf "%s records\r", counter

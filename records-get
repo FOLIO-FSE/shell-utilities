@@ -25,7 +25,6 @@ function fetch_batch() {
 	local page=$2
 	local t=$3
 
-	#curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${limitOrPerPage}=${num_retrieved}&offset=${offset}&${query}${sortby}" |eval "${jqexpr}"  > "tmp_${rec_type}.${t}"
 	curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${limitOrPerPage}=${num_retrieved}&${PageOrOffset}=${!PageOrOffset}&${query}${sortby}" |eval "${jqexpr}"  > "tmp_${rec_type}.${t}"
 }
 
@@ -136,6 +135,10 @@ case $rec_type in
 	endpoint="instance-storage/instances";;
 "institutions")
 	endpoint="location-units/institutions";;
+"inventory")
+	rec_type="instances"
+	accept="text/plain"
+	endpoint="inventory-view/instances";;
 "items")
 	endpoint="item-storage/items";;
 "invoices")
@@ -242,7 +245,7 @@ fi
 
 if [[ -z $jqexpr ]];then jqexpr="jq -c \".${rec_type}[] | del(.metadata)\"";fi
 
-num_records=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&${limitOrPerPage}=${num_retrieved}" |jq -r .${totalRecords})
+num_records=$(curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&${limitOrPerPage}=${num_retrieved}" |jq -r .${totalRecords})
 
 for (( offset=0; offset<=$num_records; ));do
 	for ((t=0; t<=4; t=$(($t + 1)) )); do
@@ -255,7 +258,7 @@ for (( offset=0; offset<=$num_records; ));do
 	wait
 		
 	cat tmp_${rec_type}.* >> ${filename}
-	rm tmp_${rec_type}.*
+	#rm tmp_${rec_type}.*
 
 	if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset $num_records;fi
 done

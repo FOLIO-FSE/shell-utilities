@@ -5,6 +5,7 @@ okapi_token=$(cat okapi.token)
 rec_type=$1
 infile="uuids"
 batchsize=50
+accept="application/json"
 
 jq_replace=".${rec_type}[]"
 
@@ -21,7 +22,7 @@ getrecord() {
 	local uuid=${1}
 	local seq=${2}
 
-	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${querystring}${uuid}" > tmp_records.${rec_type}.${seq}
+	curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${querystring}${uuid}" > tmp_records.${rec_type}.${seq}
 
 }
 
@@ -60,6 +61,10 @@ case $rec_type in
 	endpoint="instance-storage/instance-relationships";;
 "instances")
 	endpoint="instance-storage/instances";;
+"inventory")
+	endpoint="inventory-view/instances"
+	jq_replace=".instances[]"
+	accept="text/plain";;
 "items")
 	endpoint="item-storage/items";;
 "licenses")
@@ -123,7 +128,7 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 	idstring="${ids[@]}"
 	if [[ $indivrecord -ne 1 ]];then
 		querystring="query=id=${idstring// /${querydelim}}"
-		records=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${querystring}&limit=${batchsize}")
+		records=$(curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${querystring}&limit=${batchsize}")
 	else
 		for uuid in "${ids[@]}";do
 			getrecord "${uuid}" "${seq}" &

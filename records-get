@@ -137,6 +137,7 @@ case $rec_type in
 	endpoint="location-units/institutions";;
 "inventory")
 	rec_type="instances"
+	num_retrieved=200
 	accept="text/plain"
 	endpoint="inventory-view/instances";;
 "items")

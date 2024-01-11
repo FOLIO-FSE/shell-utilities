@@ -7,17 +7,85 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-servicePointId="0e38c704-6514-46d9-9728-803289cb63d3"
-institutionId="d0a21f4a-b891-4646-a763-3b1cebbcca87"
-campusId="59cbdaa9-9dca-479c-a371-a0183990a820"
-libraryId="be1deee1-8bf9-4b65-b7ee-4591b6f863f6"
+declare -A dict_servicepoints
+declare -A dict_campuses
+declare -A dict_libraries
+
+institutionId="4814995d-2acc-48a0-a192-fc433323ea25"
+campus_default="f13433b2-c968-4b85-b68c-f1100fd94209"
+library_default="cbc1ae0e-646f-4745-9a45-fd823a009a01"
+
+servicepoint_default="aa91aad1-1151-498f-8c25-ff8781a61ac9"
+
+
+# get list of campuses with code as key and uuid as value
+eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/location-units/campuses?limit=1000" |  jq -r '.loclibs[] | @sh "dict_campuse[\(.code|tostring|ascii_downcase)]=\(.id|tostring)"')"
+
+# get list of libraries with code as key and uuid as value
+eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/location-units/libraries?limit=1000" |  jq -r '.loclibs[] | @sh "dict_libraries[\(.code|tostring|ascii_downcase)]=\(.id|tostring)"')"
+
+# get list of service points with code as key with uuid as value
+eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/service-points?limit=1000" |  jq -r '.servicepoints[] | @sh "dict_servicepoints[\(.code|tostring|ascii_downcase)]=\(.id|tostring)"')"
+
+echo "Normalizing campus, library, and servicepoint keys"
+
+for key in "${!dict_campuses[@]}";do
+        newkey=$(tr -dc [a-z0-9] <<< "${key}")
+        dict_campuses[${newkey}]=${dict_campuses["${key}"]}
+done
+
+for key in "${!dict_libraries[@]}";do
+        newkey=$(tr -dc [a-z0-9] <<< "${key}")
+        dict_libraries[${newkey}]=${term_dict["${key}"]}
+done
+
+for key in "${!dict_servicepoints[@]}";do
+        newkey=$(tr -dc [a-z0-9] <<< "${key}")
+        dict_servicepoints[${newkey}]=${dict_servicepoints["${key}"]}
+done
 
 while IFS=$'\t' read -r code discovery name
-
-if [[ -z ${discovery} ]];then discovery="${code}"; fi 
-if [[ -z ${name} ]];then name="${discovery}"; fi 
-
 do
+	comparecampus=$(tr -dc [a-z0-9] <<< "${campus,,}")
+	comparelibrary=$(tr -dc [a-z0-9] <<< "${library,,}")
+	compareservicepoint=$(tr -dc [a-z0-9] <<< "${servicepoint,,}")
+
+	if [[ -z ${campus} ]];then 
+		campusId="${campus_default}"
+	else
+		comparecampus=$(tr -dc [a-z0-9] <<< "${comparecampus,,}")
+		campusId=${dict_campus[${comparecampus}]
+
+		if [[ ! ${campusId} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+			campusId="${campus_default}"
+		fi
+	fi
+
+	if [[ -z ${library} ]];then 
+		libraryId="${library_default}"
+	else
+		comparelibrary=$(tr -dc [a-z0-9] <<< "${comparelibrary,,}")
+		libraryId=${dict_library[${comparelibrary}]
+
+		if [[ ! ${libraryId} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+			libraryId="${library_default}"
+		fi
+	fi
+
+	if [[ -z ${servicepoint} ]];then 
+		servicepointId="${servicepoint_default}"
+	else
+		compareservicepoint=$(tr -dc [a-z0-9] <<< "${compareservicepoint,,}")
+		servicepointId=${dict_servicepoint[${compareservicepoint}]
+
+		if [[ ! ${servicepointId} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+			servicepointId="${servicepoint_default}"
+		fi
+	fi
+
+	if [[ -z ${discovery} ]];then discovery="${code}"; fi 
+	if [[ -z ${name} ]];then name="${discovery}"; fi 
+
 
 IFS='' read -r -d '' location << EndOfLocation
 
@@ -37,9 +105,9 @@ IFS='' read -r -d '' location << EndOfLocation
 }
 EndOfLocation
 
-apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${location}" "${okapi_url}/locations")
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${location}" "${okapi_url}/locations")
 
-echo -e "${apicall}" |jq '.'
+	echo -e "${apicall}" |jq '.'
 done < locations
 
 

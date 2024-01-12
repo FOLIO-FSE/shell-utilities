@@ -7,26 +7,27 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
+infile="locations.tsv"
+
 declare -A dict_servicepoints
 declare -A dict_campuses
 declare -A dict_libraries
 
-institutionId="4814995d-2acc-48a0-a192-fc433323ea25"
-campus_default="f13433b2-c968-4b85-b68c-f1100fd94209"
-library_default="cbc1ae0e-646f-4745-9a45-fd823a009a01"
+institutionId="17548174-55b9-477f-8033-1025c0add488"
+campus_default="7d5ffec2-5521-4a65-b927-4006742bcecc"
+library_default="3292f1c0-8b0a-4954-b855-48e0fe792710"
 
-servicepoint_default="aa91aad1-1151-498f-8c25-ff8781a61ac9"
+servicepoint_default="56ae7175-7c84-4058-aa6f-3075cdb06957"
 
 
 # get list of campuses with code as key and uuid as value
-eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/location-units/campuses?limit=1000" |  jq -r '.loclibs[] | @sh "dict_campuse[\(.code|tostring|ascii_downcase)]=\(.id|tostring)"')"
+eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/location-units/campuses?limit=1000" |  jq -r '.loccamps[] | @sh "dict_campuses[\(.code|tostring|ascii_downcase)]=\(.id|tostring)"')"
 
 # get list of libraries with code as key and uuid as value
 eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/location-units/libraries?limit=1000" |  jq -r '.loclibs[] | @sh "dict_libraries[\(.code|tostring|ascii_downcase)]=\(.id|tostring)"')"
 
 # get list of service points with code as key with uuid as value
 eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/service-points?limit=1000" |  jq -r '.servicepoints[] | @sh "dict_servicepoints[\(.code|tostring|ascii_downcase)]=\(.id|tostring)"')"
-
 echo "Normalizing campus, library, and servicepoint keys"
 
 for key in "${!dict_campuses[@]}";do
@@ -44,8 +45,11 @@ for key in "${!dict_servicepoints[@]}";do
         dict_servicepoints[${newkey}]=${dict_servicepoints["${key}"]}
 done
 
-while IFS=$'\t' read -r code discovery name
+#while IFS=$'\t' read -r code discovery name
+while IFS=$'\t' read -r library code
 do
+	servicepoint=${library}
+
 	comparecampus=$(tr -dc [a-z0-9] <<< "${campus,,}")
 	comparelibrary=$(tr -dc [a-z0-9] <<< "${library,,}")
 	compareservicepoint=$(tr -dc [a-z0-9] <<< "${servicepoint,,}")
@@ -54,7 +58,7 @@ do
 		campusId="${campus_default}"
 	else
 		comparecampus=$(tr -dc [a-z0-9] <<< "${comparecampus,,}")
-		campusId=${dict_campus[${comparecampus}]
+		campusId=${dict_campus[${comparecampus}]}
 
 		if [[ ! ${campusId} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
 			campusId="${campus_default}"
@@ -65,7 +69,7 @@ do
 		libraryId="${library_default}"
 	else
 		comparelibrary=$(tr -dc [a-z0-9] <<< "${comparelibrary,,}")
-		libraryId=${dict_library[${comparelibrary}]
+		libraryId=${dict_library[${comparelibrary}]}
 
 		if [[ ! ${libraryId} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
 			libraryId="${library_default}"
@@ -76,10 +80,10 @@ do
 		servicepointId="${servicepoint_default}"
 	else
 		compareservicepoint=$(tr -dc [a-z0-9] <<< "${compareservicepoint,,}")
-		servicepointId=${dict_servicepoint[${compareservicepoint}]
+		servicepointId=${dict_servicepoint[${compareservicepoint}]}
 
 		if [[ ! ${servicepointId} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
-			servicepointId="${servicepoint_default}"
+			servicePointId="${servicepoint_default}"
 		fi
 	fi
 
@@ -108,6 +112,6 @@ EndOfLocation
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${location}" "${okapi_url}/locations")
 
 	echo -e "${apicall}" |jq '.'
-done < locations
+done < ${infile}
 
 

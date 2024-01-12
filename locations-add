@@ -8,6 +8,8 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 infile="locations.tsv"
+logfile="locations.log"
+rm -f ${logfile}
 
 declare -A dict_servicepoints
 declare -A dict_campuses
@@ -109,7 +111,13 @@ EndOfLocation
 
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${location}" "${okapi_url}/locations")
 
-	echo -e "${apicall}" |jq '.'
+	echo -e "${apicall}" |jq '.' |tee -a ${logfile}
+	unset servicepoint
+	unset library
+	unset campus
+	unset name
+	unset discovery
+
 done < ${infile}
 
 

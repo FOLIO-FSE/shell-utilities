@@ -6,6 +6,7 @@ okapi_token=$(cat okapi.token)
 
 deletetype=$1
 deletefile="delete"
+batchsize=50
 outfile=delete.log
 rm -rf ${outfile}
 
@@ -109,17 +110,11 @@ if [[ ${uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
 	echo ${uuid} > ${deletefile}
 fi
 
-while mapfile -t -n 10 uuids && ((${#uuids[@]})); do
-	seq=0
-	for uuid in ${uuids[@]};do
-		delete_record ${uuid} ${seq} &
-		seq=$(($seq + 1))
-		counter=$(($counter + 1))
-		printf "Processing record %s of %s \r" $counter $numrecs 
-	done
-	wait
-	cat tmp_log.* >> ${outfile}
-	rm tmp_log.*
+while mapfile -t -n ${batchsize} uuids && ((${#uuids[@]})); do
+	querydelim="%20or%20id=="
+	idstring="${uuids[@]}"
+	querystring="query=id==${idstring// /${querydelim}}"
+	curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}?${querystring}"
 done < ${deletefile}
 
 echo "Done processing $counter $recordtype records. See $outfile for details."

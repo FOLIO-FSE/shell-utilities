@@ -5,12 +5,14 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-declare -a item_ids
-declare -a holdings_ids
-
 deletefile="delete"
+batchsize=50
+querydelim="%20or%20id=="
+
+rm -rf delete_instances delete_holdings delete_items delete_*.log
 
 instance_uuid=${1//[^0-9a-z\-]/}
+cp ${deletefile} delete_instances
 
 if [[ ${instance_uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
         echo ${instance_uuid} > ${deletefile}
@@ -19,62 +21,63 @@ fi
 if [[ ! -f ${deletefile} ]]; then echo "This script cannot find input file ${deletefile}";exit;fi
 
 counter=0
+SECONDS=1
 
 numrecs=$(wc -l ${deletefile} |cut -d " " -f1)
 
-while read -r deletethis; do
-	counter=$(($counter + 1))
-	instance_uuid=${deletethis//[^0-9a-z\-]/}
+echo "Retrieving records"
 
-	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-storage/items?limit=10000&query=instance.id==${instance_uuid}")
-	
-	item_ids=($(echo $apicall | jq -r .items[].id))
-	item_arr_size=${#item_ids[@]}
-	
-	if [[ $item_arr_size == 0 ]]
-	then
-		echo "No items were detected"
-	else
-		echo "$item_arr_size items were detected: Deleting items"
-	
-		for item in ${item_ids[*]};do
-	  		echo $item
-			curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/item-storage/items/${item}"
-		done
-	fi
-	
-	apicall=$(curl -s -w '\n' -X GET -D \
-	  -H "Accept: application/json" \
-	  -H "X-Okapi-Tenant: ${tenant}" \
-	  -H "x-okapi-token: ${okapi_token}" \
-	  "${okapi_url}/holdings-storage/holdings?limit=10000&query=instanceId==${instance_uuid}")
-	
-	holdings_ids=($(echo $apicall | jq -r .holdingsRecords[].id))
-	holdings_arr_size=${#holdings_ids[@]}
-	
-	if [[ $holdings_arr_size == 0 ]]
-	then
-		echo "No holdings were detected"
-	else
-		echo "$holdings_arr_size items were detected. Deleting holdings:"
-	
-		for holding in ${holdings_ids[*]};do
-	  		echo $holding
-			curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-storage/holdings/${holding}"
-		done
-	fi
-	
-	srs_uuid=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${instance_uuid}/formatted?idType=INSTANCE" |jq -r '.matchedId')
-	
-	curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${srs_uuid}"
+while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
+	counter=$(($counter + ${#ids[@]}))
+	idstring="${ids[@]}"
+	querystring="query=id=${idstring// /${querydelim}}"
 
-        connectedtitle_ids=($(apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}/preceding-succeeding-titles?query=(precedingInstanceId==${instance_uuid}%20or%20succeedingInstanceId==${instance_uuid}") |jq -r .precedingSucceedingTitles[].id))
+	{
+	for id in "${ids[@]}";do
+		curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}/preceding-succeeding-titles?query=(precedingInstanceId==${uuid}%20or%20succeedingInstanceId==${id}" |jq -r '.precedingSucceedingTitles?' |grep "^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*" >> delete_precedingsucceeding
 
-        for connectedtitle in ${connectedtitle_ids[@]};do
-                curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/preceding-succeeding-titles/${connectedtitle}"
-        done
+		curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${id}/formatted?idType=INSTANCE" |jq -r '.id?' |grep "^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*" >> delete_srs
+	done
+	} &
 
-	curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${instance_uuid}"
-	echo "Processed record $counter of $numrecs"
+	records=$(curl -s -w '\n' -X GET -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/inventory-view/instances?${querystring}&limit=${batchsize}" |jq -c '.instances[]')
+
+	echo "${records}" |jq -r '.holdingsRecords?[]?.id' >> delete_holdings
+	echo "${records}" |jq -r '.items?[]?.id' >> delete_items
+
+	wait
+
+        TIME=$SECONDS;msg="$SECONDS seconds"
+
+        if [[ $SECONDS -gt 60 ]];then TIME=$(($SECONDS/60));msg="$TIME minutes";fi
+        if [[ $SECONDS -gt 3600 ]];then TIME=$(($SECONDS/3600));msg="$TIME hours";fi
+
+        echo -en "Retreiving record $counter of $numrecs in $msg in $(($counter/$SECONDS)) recs/sec          \r"
+
 done < ${deletefile}
+echo
 
+echo "Deleting items"
+mv delete_items delete
+records-delete items
+rm -f delete
+
+echo "Deleting holdings"
+mv delete_holdings delete
+records-delete holdings
+rm -f delete
+
+echo "Deleting SRS"
+mv delete_srs delete
+records-delete srs
+rm -f delete
+
+echo "Deleting connected titles"
+mv delete_precedingsucceeding delete
+records-delete precedingsucceeding
+
+echo "Deleting instances"
+mv delete_instances delete
+records-delete instances
+
+echo "All records have been deleted"

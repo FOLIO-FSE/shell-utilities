@@ -7,8 +7,10 @@ okapi_token=$(cat okapi.token)
 deletetype=$1
 deletefile="delete"
 batchsize=50
-outfile=delete.log
-rm -rf ${outfile}
+outfile=delete_${deletetype}.log
+errorfile=error_${deletetype}.log
+rm -f ${outfile}
+rm -f ${errorfile}
 
 sed -i 's/[^a-f0-9\-]//g' ${deletefile}
 
@@ -156,6 +158,6 @@ fi
 echo "Done processing $counter $recordtype records. See $outfile for details."
 num_errors=$(grep -v "^204" ${outfile} |wc -l)
 
-if [[ num_errors -ne 0 ]];then grep -v "^204" ${outfile} > error.log;echo "$num_errors errors were output to error.log";fi
+if [[ num_errors -ne 0 ]];then grep -v "^204" ${outfile} > ${errorfile};echo "$num_errors errors were output to ${errorfile}";fi
 
 

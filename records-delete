@@ -85,6 +85,8 @@ case $deletetype in
 "organizations")
 	recordtype="organizations/organizations";;
 "precedingsucceeding")
+	singlerecord="yes"
+	batchsize=10
 	recordtype="preceding-suceeding-titles";;
 "requests")
 	recordtype="circulation/requests";;

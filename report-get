@@ -41,7 +41,7 @@ case "${report_type}" in
 
 	echo -e "instanceHrid\ttitle\tsource\tsuppress\titemHrid\tlocation\tmattype\tloantype" > "${outfile}"
 
-	cat inventory.json | jq -r '.instance.hrid? as $instancehrid 
+	cat inventory.json | jq -r '.instance.hrid as $instancehrid 
 		| .instance.hrid as $hrid
 		| .instance.title as $title
 		| .instance.source as $source

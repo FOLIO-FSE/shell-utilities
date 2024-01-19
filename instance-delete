@@ -37,7 +37,7 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 	for id in "${ids[@]}";do
 		curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}/preceding-succeeding-titles?query=(precedingInstanceId==${id}%20or%20succeedingInstanceId==${id}" |jq -r '.precedingSucceedingTitles?' |grep "^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*" >> delete_precedingsucceeding 2>/dev/null
 
-		curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${id}/formatted?idType=INSTANCE" |jq -r '.id?' |grep "^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*" >> delete_srs
+		curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${id}/formatted?idType=INSTANCE" |jq -r '.id?' |grep "^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*" >> delete_srs 2>/dev/null
 	done
 	} &
 

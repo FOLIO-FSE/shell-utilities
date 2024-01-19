@@ -118,7 +118,6 @@ BEGIN { FS=OFS="\t"}
 }
 END { 
 	print "Records processed: "NR
-	print "Mapped file is "OUTFILE
  }
 ENDOFAWK
 
@@ -129,3 +128,10 @@ echo
 echo
 
 rm uuid_map.tsv tmp_awkscript
+
+if [[ -z $2 ]];then 
+	echo "Mapped file is ${outfile}"
+else
+	mv "${outfile}" "${infile}
+	echo "Report can be found in ${infile}"
+fi

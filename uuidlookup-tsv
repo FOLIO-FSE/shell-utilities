@@ -132,6 +132,6 @@ rm uuid_map.tsv tmp_awkscript
 if [[ -z $2 ]];then 
 	echo "Mapped file is ${outfile}"
 else
-	mv "${outfile}" "${infile}
+	mv "${outfile}" "${infile}"
 	echo "Report can be found in ${infile}"
 fi

@@ -62,28 +62,23 @@ echo "Deleting items"
 cp delete_items delete
 records-delete items
 rm -f delete
-mv delete.log delete_items.log 2>/dev/null
 
 echo "Deleting holdings"
 cp delete_holdings delete
 records-delete holdings
 rm -f delete
-mv delete.log delete_holdings.log 2>/dev/null
 
 echo "Deleting SRS"
 cp delete_srs delete
 records-delete srs
 rm -f delete
-mv delete.log delete_srs.log
 
 echo "Deleting connected titles"
 cp delete_precedingsucceeding delete
 records-delete precedingsucceeding
-mv delete.log delete_precedingsucceeding.log 2>/dev/null
 
 echo "Deleting instances"
 cp delete_instances delete
 records-delete instances
-mv delete.log delete_instances.log 2>/dev/null
 
 echo "All records have been deleted"

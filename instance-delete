@@ -8,6 +8,7 @@ okapi_token=$(cat okapi.token)
 deletefile="delete"
 batchsize=50
 querydelim="%20or%20id=="
+sed -i 's/[^a-f0-9\-]//g' ${deletefile}
 
 rm -rf delete_instances delete_holdings delete_items delete_*.log
 
@@ -34,7 +35,7 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 
 	{
 	for id in "${ids[@]}";do
-		curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}/preceding-succeeding-titles?query=(precedingInstanceId==${uuid}%20or%20succeedingInstanceId==${id}" |jq -r '.precedingSucceedingTitles?' |grep "^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*" >> delete_precedingsucceeding
+		curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}/preceding-succeeding-titles?query=(precedingInstanceId==${uuid}%20or%20succeedingInstanceId==${id}" |jq -r '.precedingSucceedingTitles?' |grep "^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*" >> delete_precedingsucceeding 2>/dev/null
 
 		curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${id}/formatted?idType=INSTANCE" |jq -r '.id?' |grep "^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*" >> delete_srs
 	done
@@ -58,26 +59,31 @@ done < ${deletefile}
 echo
 
 echo "Deleting items"
-mv delete_items delete
+cp delete_items delete
 records-delete items
 rm -f delete
+mv delete.log delete_items.log 2>/dev/null
 
 echo "Deleting holdings"
-mv delete_holdings delete
+cp delete_holdings delete
 records-delete holdings
 rm -f delete
+mv delete.log delete_holdings.log 2>/dev/null
 
 echo "Deleting SRS"
-mv delete_srs delete
+cp delete_srs delete
 records-delete srs
 rm -f delete
+mv delete.log delete_srs.log
 
 echo "Deleting connected titles"
-mv delete_precedingsucceeding delete
+cp delete_precedingsucceeding delete
 records-delete precedingsucceeding
+mv delete.log delete_precedingsucceeding.log 2>/dev/null
 
 echo "Deleting instances"
-mv delete_instances delete
+cp delete_instances delete
 records-delete instances
+mv delete.log delete_instances.log 2>/dev/null
 
 echo "All records have been deleted"

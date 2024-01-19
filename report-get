@@ -1,0 +1,66 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+declare -A calltype_dict
+declare -A location_dict
+declare -A loantype_dict
+declare -A mattype_dict
+
+report_type="${1}"
+outfile="${1}".tsv
+
+rm -f "${outfile}"
+
+function item_refdata() {
+	calltypes=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/call-number-types?limit=1000")
+	loantypes=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/loan-types?limit=1000")
+	locations=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/locations?limit=5000")
+	mattypes=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/material-types?limit=5000")
+	
+	echo "Loading reference data. Please be patient."
+	
+	calltypes=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/call-number-types?limit=1000")
+	loantypes=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/loan-types?limit=1000")
+	locations=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/locations?limit=5000")
+	mattypes=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/material-types?limit=5000")
+	
+	echo "Structuring reference data"
+	eval "$(jq -r '.locations[] | @sh "location_dict[\(.code)]=\(.id)"' <<< ${locations})"
+	eval "$(jq -r '.callNumberTypes[] | @sh "calltype_dict[\(.name)]=\(.id)"' <<< ${calltypes})"
+	eval "$(jq -r '.loantypes[] | @sh "loantype_dict[\(.name)]=\(.id)"' <<< ${loantypes})"
+	eval "$(jq -r '.mtypes[] | @sh "mattype_dict[\(.name)]=\(.id)"' <<< ${mattypes})"
+}
+
+
+case "${report_type}" in
+"items")
+	echo "Retrieving inventory to generate an items report. Please be patient"
+	#records-get inventory
+	item_refdata
+
+	echo -e "instanceHrid\ttitle\tsource\tsuppress\titemHrid\tlocation\tmattype\tloantype" > "${outfile}"
+
+	cat inventory.json | jq -r '.instance.hrid? as $instancehrid 
+		| .instance.title as $title
+		| .instance.source as $source
+		| .instance.discoverySuppress as $suppress
+		| [ .items?[]?  |
+		$title // "",
+		$source // "",
+		$suppress // "",
+		.hrid? // "",
+		.effectiveLocationId? // "",
+		.materialTypeId? // "",
+		.permanentLoanTypeId? // ""
+		] |@tsv	'  >> "${outfile}"
+
+
+        ;;
+*)
+	echo "Your report type cannot be found. The following types are available:"
+	echo "items"
+	exit;;
+esac
+
+uuidlookup-tsv "${outfile}" nomap

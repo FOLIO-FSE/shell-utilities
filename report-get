@@ -46,18 +46,28 @@ case "${report_type}" in
 		| .instance.title as $title
 		| .instance.source as $source
 		| .instance.discoverySuppress as $suppress
-		| [ .items?[]?  |
+		| if .items then
+		[ .items[]  |
 		$instancehrid,
 		$title // "",
 		$source,
-		$suppress // "",
-		.hrid? // "",
+		$suppress,
+		.hrid,
 		.effectiveLocationId? // "",
 		.materialTypeId? // "",
 		.permanentLoanTypeId? // ""
-		] |@tsv	'  >> "${outfile}"
-
-
+		] |@tsv	
+		else [
+		$instancehrid,
+		$title // "",
+		$source,
+		$suppress,
+		"no item",
+		"no item",
+		"no item",
+		"no item"
+		] |@tsv	
+		end'  >> "${outfile}"
         ;;
 *)
 	echo "Your report type cannot be found. The following types are available:"

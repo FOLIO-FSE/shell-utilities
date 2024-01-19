@@ -36,7 +36,7 @@ function item_refdata() {
 case "${report_type}" in
 "items")
 	echo "Retrieving inventory to generate an items report. Please be patient"
-	#records-get inventory
+	records-get inventory
 	item_refdata
 
 	echo -e "instanceHrid\ttitle\tsource\tsuppress\titemHrid\tlocation\tmattype\tloantype" > "${outfile}"

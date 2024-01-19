@@ -115,35 +115,43 @@ if [[ ${uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
 	echo ${uuid} > ${deletefile}
 fi
 
-while mapfile -t -n ${batchsize} uuids && ((${#uuids[@]})); do
-	counter=$(($counter + ${#uuids[@]}))
+if [[ ${singlerecord} == "yes" ]];then
+	while mapfile -t -n ${batchsize} uuids && ((${#uuids[@]})); do
+		seq=0
+		for uuid in ${uuids[@]};do
+			delete_record ${uuid} ${seq} &
+			seq=$(($seq + 1))
+			counter=$(($counter + 1))
+		done
 
-	if [[ ${singlerecord} == "yes" ]];then
-		while mapfile -t -n 10 uuids && ((${#uuids[@]})); do
-			seq=0
-			for uuid in ${uuids[@]};do
-				delete_record ${uuid} ${seq} &
-				seq=$(($seq + 1))
-				counter=$(($counter + 1))
-				printf "Processing record %s of %s \r" $counter $numrecs 
-			done
-			wait
-			cat tmp_log.* >> ${outfile}
-			rm tmp_log.*
-		done < ${deletefile}
-	fi
-	querydelim="%20or%20id=="
-	idstring="${uuids[@]}"
-	querystring="query=id==${idstring// /${querydelim}}"
-	curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}?${querystring}"
+		wait
+		cat tmp_log.* >> ${outfile}
+		rm tmp_log.*
 
-        TIME=$SECONDS;msg="$SECONDS seconds"
+       		TIME=$SECONDS;msg="$SECONDS seconds"
 
-        if [[ $SECONDS -gt 60 ]];then TIME=$(($SECONDS/60));msg="$TIME minutes";fi
-        if [[ $SECONDS -gt 3600 ]];then TIME=$(($SECONDS/3600));msg="$TIME hours";fi
+        	if [[ $SECONDS -gt 60 ]];then TIME=$(($SECONDS/60));msg="$TIME minutes";fi
+        	if [[ $SECONDS -gt 3600 ]];then TIME=$(($SECONDS/3600));msg="$TIME hours";fi
 
-        echo -en "Processing record $counter of $numrecs in $msg in $(($counter/$SECONDS)) recs/sec          \r"
-done < ${deletefile}
+        	echo -en "Processing record $counter of $numrecs in $msg in $(($counter/$SECONDS)) recs/sec          \r"
+	done < ${deletefile}
+else
+	while mapfile -t -n ${batchsize} uuids && ((${#uuids[@]})); do
+		counter=$(($counter + ${#uuids[@]}))
+		querydelim="%20or%20id=="
+		idstring="${uuids[@]}"
+		querystring="query=id==${idstring// /${querydelim}}"
+		curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}?${querystring}"
+
+       		TIME=$SECONDS;msg="$SECONDS seconds"
+
+        	if [[ $SECONDS -gt 60 ]];then TIME=$(($SECONDS/60));msg="$TIME minutes";fi
+        	if [[ $SECONDS -gt 3600 ]];then TIME=$(($SECONDS/3600));msg="$TIME hours";fi
+
+        	echo -en "Processing record $counter of $numrecs in $msg in $(($counter/$SECONDS)) recs/sec          \r"
+	done < ${deletefile}
+
+fi
 
 echo "Done processing $counter $recordtype records. See $outfile for details."
 num_errors=$(grep -v "^204" ${outfile} |wc -l)

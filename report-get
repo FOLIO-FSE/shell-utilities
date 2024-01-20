@@ -108,10 +108,7 @@ BEGIN { FS=OFS="\t"}
 		for (i=1; i<=NF; i++) {
 			if (uuid[$i]) { $i = uuid[$i] }
 		}
-	
 	for(i=1;i<=NF;i++) { printf("%s%s",$i,i==NF?RS:OFS) > OUTFILE }
-	
-	if (NR % 1 == 0){ printf "Records processed: "NR"\r" }
 	}
 }
 END { 
@@ -164,6 +161,7 @@ case "${report_type}" in
 	exit;;
 esac
 
+echo "Mapping UUIDs in TSV file to human friendly values"
 awk -v OUTFILE="${outfile}" -f tmp_awkscript uuid_map.tsv "${tmpfile}"
 echo
 echo

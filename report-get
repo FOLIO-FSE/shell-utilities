@@ -2,42 +2,131 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-declare -A calltype_dict
-declare -A location_dict
-declare -A loantype_dict
-declare -A mattype_dict
-
 report_type="${1}"
 outfile="${1}".tsv
+tmpfile="tmp_${report_type}"
 
-rm -f "${outfile}"
+rm -f "${outfile}" "${tmpfile}"
 
-function item_refdata() {
-	calltypes=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/call-number-types?limit=1000")
-	loantypes=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/loan-types?limit=1000")
-	locations=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/locations?limit=5000")
-	mattypes=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/material-types?limit=5000")
-	
-	echo "Loading reference data. Please be patient."
-	
-	calltypes=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/call-number-types?limit=1000")
-	loantypes=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/loan-types?limit=1000")
-	locations=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/locations?limit=5000")
-	mattypes=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/material-types?limit=5000")
-	
-	echo "Structuring reference data"
-	eval "$(jq -r '.locations[] | @sh "location_dict[\(.code)]=\(.id)"' <<< ${locations})"
-	eval "$(jq -r '.callNumberTypes[] | @sh "calltype_dict[\(.name)]=\(.id)"' <<< ${calltypes})"
-	eval "$(jq -r '.loantypes[] | @sh "loantype_dict[\(.name)]=\(.id)"' <<< ${loantypes})"
-	eval "$(jq -r '.mtypes[] | @sh "mattype_dict[\(.name)]=\(.id)"' <<< ${mattypes})"
+rectype_arr=("addressTypes" "callNumberTypes" "categories" "courseTerms" "departments" "expenseClasses" "feefineowners" "fiscalYears" "funds" "holdingsNoteTypes" "holdingsRecordsSources" "holdingsTypes" "identifierTypes" "itemNoteTypes" "locations" "loantypes" "mtypes" "noteTypes" "organizationTypes" "servicepoints" "statisticalCodes" "usergroups")
+
+function showmatches() {
+
+	local matchtype="${1}"
+	local jq
+	local endpoint
+	local output
+
+	jq=".${matchtype}[] | [.id, .name] |@tsv"
+
+	case $matchtype in
+	"addressTypes")
+		endpoint="addresstypes"
+		jq=".addressTypes[] | [.id, .addressType] | @tsv";;
+	"callNumberTypes")
+		endpoint="call-number-types";;
+	"categories")
+		endpoint="organizations-storage/categories"
+		jq="value";;
+	"courseTerms")
+		endpoint="coursereserves/terms"
+		jq=".terms[] | [.id, .name] | @tsv";;
+	"departments")
+		endpoint="departments";;
+	"expenseClasses")
+		endpoint="finance/expense-classes"
+		jq="code";;
+	"feefineowners")
+		endpoint="owners"
+		jq=".owners[] | [.id, .owner]| @tsv";;
+	"fiscalYears")
+		endpoint="finance/fiscal-years";;
+	"funds")
+		endpoint="finance/funds"
+		jq="code";;
+	"holdingsNoteTypes")
+		endpoint="holdings-note-types";;
+	"holdingsRecordsSources")
+		endpoint="holdings-sources";;
+	"holdingsTypes")
+		endpoint="holdings-types";;
+	"identifierTypes")
+		endpoint="identifier-types";;
+	"itemNoteTypes")
+		endpoint="item-note-types";;
+	"loantypes")
+		endpoint="loan-types";;
+	"locations")
+		endpoint="locations"
+		jq="code";;
+	"mtypes")
+		endpoint="material-types";;
+	"noteTypes")
+		endpoint="note-types";;
+	"organizationTypes")
+		endpoint="organizations-storage/organization-types";;
+	"servicepoints")
+		endpoint="service-points";;
+	"statisticalCodes")
+		endpoint="statistical-codes";;
+	"usergroups")
+		endpoint="groups"
+		jq=".usergroups[] | [.id, .group]| @tsv";
+	esac
+
+	if [[ ${jq} == "code" ]];then
+		jq=".${matchtype}[] | [.id, .code] | @tsv"
+	fi
+	if [[ ${jq} == "value" ]];then
+		jq=".${matchtype}[] | [.id, .value] | @tsv"
+	fi
+
+	output=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?query=cql.allRecords=1&limit=5000")
+	 echo ${output} | jq -r "${jq}" > ${matchtype}.dict.tmp
+
 }
 
+
+echo -e "Downloading reference data for ${rectype_arr[@]}. \nPlease be patient."
+
+for rectype in ${rectype_arr[@]};do
+	showmatches ${rectype} & 
+done
+
+wait
+
+cat *.dict.tmp > uuid_map.tsv
+rm *.dict.tmp
+
+read -r -d '' awkscript << "ENDOFAWK"
+#!/usr/bin/awk -f 
+BEGIN { FS=OFS="\t"} 
+{
+	if (NR==FNR) { 
+		uuid[$1]=$2 
+	} else {
+		for (i=1; i<=NF; i++) {
+			if (uuid[$i]) { $i = uuid[$i] }
+		}
+	
+	for(i=1;i<=NF;i++) { printf("%s%s",$i,i==NF?RS:OFS) > OUTFILE }
+	
+	if (NR % 1 == 0){ printf "Records processed: "NR"\r" }
+	}
+}
+END { 
+	print "Records mapped: "NR"        "
+ }
+ENDOFAWK
+
+echo -e "${awkscript}" > tmp_awkscript
 
 case "${report_type}" in
 "items")
 	echo "Retrieving inventory to generate an items report. Please be patient"
 	records-get inventory
-	item_refdata
+
+	echo "Converting JSON to tsv."
 
 	echo -e "instanceHrid\ttitle\tsource\tsuppress\titemHrid\tlocation\tmattype\tloantype" > "${outfile}"
 
@@ -67,7 +156,7 @@ case "${report_type}" in
 		"no item",
 		"no item"
 		] |@tsv	
-		end'  >> "${outfile}"
+		end'  >> "${tmpfile}"
         ;;
 *)
 	echo "Your report type cannot be found. The following types are available:"
@@ -75,4 +164,8 @@ case "${report_type}" in
 	exit;;
 esac
 
-uuidlookup-tsv "${outfile}" nomap
+awk -v OUTFILE="${outfile}" -f tmp_awkscript uuid_map.tsv "${tmpfile}"
+echo
+echo
+
+rm uuid_map.tsv tmp_awkscript "${tmpfile}"

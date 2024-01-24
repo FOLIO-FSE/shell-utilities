@@ -1,0 +1,49 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+search_for=$(sed 's/[^0-9a-z\-]//gi' <<< "$1")
+
+barcodefound=0
+
+if [[ ${search_for} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+        endpoint="${okapi_url}/users/${search_for}"
+else
+	if [[ ${search_for} =~ ^[0-9a-zA-Z]+$ ]];then
+        	endpoint="${okapi_url}/users?query=barcode==${search_for}"
+        	barcodefound=1
+	elif [[ ${search_for} =~ ^[a-z]+$ ]];then
+        	endpoint="${okapi_url}/users?query=(username=%22${search_for}%2A%22%20or%20externalSystemId=%22${search_for}%2A%22)"
+        	barcodefound=1
+	else 
+        	echo "No user was found. Exiting"
+		exit
+	fi
+fi
+
+apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}")
+
+if [[ ${barcodefound} -eq 1 ]];then
+	numrecords=$(echo ${apicall} |jq -r '.users |length')
+	if [[ numrecords -eq 1 ]];then
+        	userId=$(echo $apicall |jq -r '.users[0].id')
+	else 
+		echo "$numrecords were retrieved. This script works only if a single record is retrieved"
+	fi
+fi
+
+id=$(uuidgen)
+
+IFS='' read -r -d '' permissionUser << EndOfTerm
+{
+  "id": "${id}",
+  "userId": "${userId}",
+  "permissions": []
+}
+
+EndOfTerm
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${permissionUser}" "${okapi_url/}perms/users")
+
+echo "${apicall}"
+

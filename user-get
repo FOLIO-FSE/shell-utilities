@@ -9,28 +9,30 @@ barcodefound=0
 if [[ ${search_for} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
         endpoint="${okapi_url}/users/${search_for}"
 else
-	if [[ ${search_for} =~ ^[0-9]+$ ]];then
+	if [[ ${search_for} =~ ^[0-9a-zA-Z]+$ ]];then
         	endpoint="${okapi_url}/users?query=barcode==${search_for}"
         	barcodefound=1
 	elif [[ ${search_for} =~ ^[a-z]+$ ]];then
         	endpoint="${okapi_url}/users?query=(username=%22${search_for}%2A%22%20or%20externalSystemId=%22${search_for}%2A%22)"
         	barcodefound=1
 	else 
-        	endpoint="${okapi_url}/users?limit=0"
+        	echo "No user was found. Exiting"
+		exit
 	fi
 fi
 
-apicall=$(curl -s -w '\n' -X GET -D \
-  -H "Accept: application/json" \
-  -H "X-Okapi-Tenant: ${tenant}" \
-  -H "x-okapi-token: ${okapi_token}" \
-  "${endpoint}")
+apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}")
 
 if [[ ${barcodefound} -eq 1 ]];then
-        apicall=$(echo $apicall |jq '.users[0]')
-        id=$(echo $apicall |jq .id)
+	numrecords=$(echo ${apicall} |jq -r '.users |length')
+	if [[ numrecords -eq 1 ]];then
+		echo "length is 1"
+        	uuid=$(echo $apicall |jq -r '.users[0].id')
+	else 
+		echo "length is not 1"
+	fi
 fi
 
-echo $apicall | jq .
+echo ${apicall} | jq .
 
 

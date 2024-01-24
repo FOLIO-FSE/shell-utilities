@@ -5,12 +5,16 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 deletetype=$1
+uuid=$(echo "$2" |tr -dc [a-f0-9\-])
+
 deletefile="delete"
 batchsize=50
 outfile=delete_${deletetype}.log
 errorfile=error_${deletetype}.log
 rm -f ${outfile}
 rm -f ${errorfile}
+
+if [[ ${uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then echo ${uuid} > delete;fi
 
 sed -i 's/[^a-f0-9\-]//g' ${deletefile}
 
@@ -159,8 +163,8 @@ else
 fi
 
 echo "Done processing $counter $recordtype records. See $outfile for details."
-num_errors=$(grep -v "^204" ${outfile} |wc -l)
+num_errors=$(grep -v "^204" ${outfile} |grep " " |wc -l)
 
-if [[ num_errors -ne 0 ]];then grep -v "^204" ${outfile} > ${errorfile};echo "$num_errors errors were output to ${errorfile}";fi
+if [[ num_errors -ne 0 ]];then grep -v "^204" ${outfile} |grep " " > ${errorfile};echo "$num_errors errors were output to ${errorfile}";fi
 
 

@@ -1,0 +1,34 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+patronGroup="$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/groups?limit=1" | jq -r '.usergroups[0].group')"
+
+
+IFS='' read -r -d '' users << EndOfUsers
+  {
+    "users" : [
+      {
+        "username" : "7777777777",
+        "externalSystemId" : "7777777777",
+        "barcode" : "7777777777",
+        "active" : true,
+        "patronGroup" : "${patronGroup}",
+        "personal" : {
+          "lastName" : "Guapo",
+          "firstName" : "El",
+          "email" : "kbanerjee@ebsco.com",
+          "phone" : "867-5309",
+          "addresses" : []
+        }
+      }
+    ],
+    "totalRecords" : 1,
+    "deactivateMissingUsers" : false,
+    "updateOnlyPresentFields" : true
+  }
+EndOfUsers
+
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${users}" "${okapi_url}/user-import")
+
+echo "${apicall}"

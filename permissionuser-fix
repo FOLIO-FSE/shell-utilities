@@ -30,6 +30,13 @@ if [[ ${barcodefound} -eq 1 ]];then
 	else 
 		echo "$numrecords were retrieved. This script works only if a single record is retrieved"
 	fi
+else
+	userId=$(echo ${apicall} |jq -r .id)
+fi
+
+if [[ ! ${userId} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+	echo "No valid user could be found"
+	exit
 fi
 
 id=$(uuidgen)
@@ -43,7 +50,5 @@ IFS='' read -r -d '' permissionUser << EndOfTerm
 
 EndOfTerm
 
-apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${permissionUser}" "${okapi_url/}perms/users")
-
-echo "${apicall}"
+curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${permissionUser}" "${okapi_url}/perms/users"
 

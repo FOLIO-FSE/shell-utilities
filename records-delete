@@ -89,6 +89,8 @@ case $deletetype in
 "organizations")
 	recordtype="organizations/organizations";;
 "permissionusers")
+	singlerecord="yes"
+	batchsize=10
         recordtype="perms/users";;
 "precedingsucceeding")
 	singlerecord="yes"
@@ -153,6 +155,7 @@ else
 		querystring="query=id==${idstring// /${querydelim}}"
 		apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}?${querystring}")
 		echo -e "${idstring}\t${apicall}" >> ${outfile}
+echo "${okapi_url}/${recordtype}?${querystring}"
 
        		TIME=$SECONDS;msg="$SECONDS seconds"
 

@@ -88,6 +88,8 @@ case $deletetype in
 	recordtype="scheduled-notice-storage/scheduled-notices";;
 "organizations")
 	recordtype="organizations/organizations";;
+"permissionusers")
+        recordtype="perms/users";;
 "precedingsucceeding")
 	singlerecord="yes"
 	batchsize=10

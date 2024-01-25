@@ -16,7 +16,11 @@ else
         	endpoint="${okapi_url}/users?query=(username=%22${search_for}%2A%22%20or%20externalSystemId=%22${search_for}%2A%22)"
         	barcodefound=1
 	else 
-        	echo "No user was found. Exiting"
+		if [[ -z $1 ]];then
+			curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?limit=0"
+		else
+        		echo "No user was found. Exiting"
+		fi
 		exit
 	fi
 fi
@@ -26,10 +30,9 @@ apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Te
 if [[ ${barcodefound} -eq 1 ]];then
 	numrecords=$(echo ${apicall} |jq -r '.users |length')
 	if [[ numrecords -eq 1 ]];then
-		echo "length is 1"
         	uuid=$(echo $apicall |jq -r '.users[0].id')
 	else 
-		echo "length is not 1"
+		echo "$numrecords retrieved. Must retrieve only on record"
 	fi
 fi
 

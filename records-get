@@ -259,7 +259,7 @@ for (( offset=0; offset<=$num_records; ));do
 	wait
 		
 	cat tmp_${rec_type}.* >> ${filename}
-	#rm tmp_${rec_type}.*
+	rm tmp_${rec_type}.*
 
 	if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset $num_records;fi
 done

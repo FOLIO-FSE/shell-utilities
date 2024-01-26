@@ -23,7 +23,7 @@ getrecord() {
 	local uuid=${1}
 	local seq=${2}
 
-	curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}${queryseparator}${querystring}${uuid}" > tmp_records.${rec_type}.${seq}
+	curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}${queryseparator}${querystring}${uuid}${poststring}" > tmp_records.${rec_type}.${seq}
 
 }
 
@@ -40,7 +40,7 @@ case $rec_type in
 	querystring=""
 	poststring="/formatted?idType=AUTHORITY"
 	queryseparator="/"
-	jq_replace=".sourceRecords[]"
+	jq_replace="."
 	endpoint="source-storage/records";;
 "boundwiths")
 	jq_replace=".boundWithParts[]"
@@ -138,7 +138,7 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 		records=$(curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${querystring}&limit=${batchsize}")
 	else
 		for uuid in "${ids[@]}";do
-			getrecord "${uuid}" "${seq}" #&
+			getrecord "${uuid}" "${seq}" &
 			counter=$(($counter + 1))
 			seq=$(($seq + 1))
 

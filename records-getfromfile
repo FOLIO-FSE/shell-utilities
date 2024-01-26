@@ -139,7 +139,6 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 	else
 		for uuid in "${ids[@]}";do
 			getrecord "${uuid}" "${seq}" &
-			counter=$(($counter + 1))
 			seq=$(($seq + 1))
 
 		done

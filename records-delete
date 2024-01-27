@@ -26,6 +26,7 @@ delete_record() {
 	local uuid=${1//[^0-9a-z\-]/}
 	local seq=$2
 	local apicall=$(curl -sI -w '%{http_code}' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}")
+echo "${okapi_url}/${recordtype}/${uuid}"
 	apicall=${apicall:(-3)}
 
 	echo "${apicall} ${uuid}" >> "tmp_log.${seq}"
@@ -86,8 +87,6 @@ case $deletetype in
 	recordtype="material-types";;
 "notes")
 	recordtype="notes";;
-"notices")
-	recordtype="scheduled-notice-storage/scheduled-notices";;
 "organizations")
 	recordtype="organizations/organizations";;
 "permissionusers")
@@ -100,6 +99,10 @@ case $deletetype in
 	recordtype="preceding-suceeding-titles";;
 "requests")
 	recordtype="circulation/requests";;
+"schedulednotices")
+	singlerecord="yes"
+	batchsize=10
+	recordtype="scheduled-notice-storage/scheduled-notices";;
 "servicepoints")
 	recordtype="service-points";;
 "srs")
@@ -117,7 +120,7 @@ case $deletetype in
 "users")
 	recordtype="users";;
 *)
-	echo "Record type '${deletetype}' not found. Supported types are boundwiths, campuses, contacts, coursetypes, departments, feefineactions, groups, holdings, instances, instance-types, items, libraries, loan history, loans, loantypes, locations, mattypes, notes, notices, organizations, requests, servicepoints, srs, tags, templates, transactions, users. Objects with attached records will need specialized delete routines"
+	echo "Record type '${deletetype}' not found. Supported types are boundwiths, campuses, contacts, coursetypes, departments, feefineactions, groups, holdings, instances, instance-types, items, libraries, loan history, loans, loantypes, locations, mattypes, notes, organizations, requests, schedulednotices, servicepoints, srs, tags, templates, transactions, users. Objects with attached records will need specialized delete routines"
 	exit;;
 esac
 

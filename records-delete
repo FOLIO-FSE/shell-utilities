@@ -26,7 +26,6 @@ delete_record() {
 	local uuid=${1//[^0-9a-z\-]/}
 	local seq=$2
 	local apicall=$(curl -sI -w '%{http_code}' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}")
-echo "${okapi_url}/${recordtype}/${uuid}"
 	apicall=${apicall:(-3)}
 
 	echo "${apicall} ${uuid}" >> "tmp_log.${seq}"
@@ -160,7 +159,6 @@ else
 		querystring="query=id==${idstring// /${querydelim}}"
 		apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}?${querystring}")
 		echo -e "${idstring}\t${apicall}" >> ${outfile}
-echo "${okapi_url}/${recordtype}?${querystring}"
 
        		TIME=$SECONDS;msg="$SECONDS seconds"
 

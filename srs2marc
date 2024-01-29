@@ -8,7 +8,7 @@ cat "${infile}" | jq -c '
 	| .leader as $leader
 	| del(.leader)
 	| .leader = $leader
-	|  {leader: $leader} + . 
-' | jq -sc '.' > "${outfile}"
+	|  {leader: $leader} + .
+' | jq -sc '.' |sed 's/{"leader"/\n{"leader"/g' > "${outfile}"
 
 echo "MARC JSON has been output to ${outfile}"

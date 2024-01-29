@@ -1,0 +1,14 @@
+infile="${1}"
+
+fileroot=$(sed 's/\.[^\.]*$//' <<< "${infile}")
+outfile="${fileroot}_marc.json"
+
+cat "${infile}" | jq -c '
+	.parsedRecord.content
+	| .leader as $leader
+	| del(.leader)
+	| .leader = $leader
+	|  {leader: $leader} + . 
+' | jq -sc '.' > "${outfile}"
+
+echo "MARC JSON has been output to ${outfile}"

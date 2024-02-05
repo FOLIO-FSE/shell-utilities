@@ -1,8 +1,24 @@
 infile="${1}"
 
+fileroot=$(echo "${infile}" | sed 's/\.....\?$//')
+outfile="${fileroot}_fixed.json"
+tmpfile="${fileroot}_tmp.json"
+
 echo
 echo "This utility analyzes composite order object files created by the FOLIO migration tools."
 echo "Usage: orders-detectbad [objectfile.json]"
+echo
+
+echo "Checking for fund distributions with no funds"
+echo
+
+cat "${infile}" |jq 'walk(if type == "object" and (.distributionType != null) and (.fundId == null) then del(.) else . end)' > "${tmpfile}"
+
+cat "${tmpfile}"  |jq -c '(.. | arrays) |= if any(values) then map(values) else [] end | del(..|select(. == []))' > "${outfile}"
+
+echo "Corrected file sent to ${outfile}" 
+echo
+echo "Other discovered issues are informational only -- additional modifications not made to the file"
 echo
 
 noquantity=$(jq -r '.compositePoLines[]
@@ -30,3 +46,5 @@ if [[ -n "${noquantity}" ]];then
 	echo -e "${nolistunitprice}"
 	echo
 fi
+
+

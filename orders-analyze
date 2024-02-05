@@ -1,0 +1,32 @@
+infile="${1}"
+
+echo
+echo "This utility analyzes composite order object files created by the FOLIO migration tools."
+echo "Usage: orders-detectbad [objectfile.json]"
+echo
+
+noquantity=$(jq -r '.compositePoLines[]
+        | select(
+        (.locations[] | .quantityPhysical == null and .quantityElectronic == null)
+        ) | [.instanceId, .titleOrPackage]|@tsv' "${infile}")
+
+
+if [[ -n "${noquantity}" ]];then
+	echo "The following PO titles were not associated with a physical or electronic quantity"
+	echo
+	echo -e "${noquantity}"
+	echo
+fi
+
+nolistunitprice=$(jq -r '.compositePoLines[]
+        | select(
+        (.cost.listUnitPrice == null and .cost.listUnitPriceElectronic == null)
+        ) | [.instanceId, .titleOrPackage]|@tsv' "${infile}")
+
+
+if [[ -n "${noquantity}" ]];then
+	echo "The following PO titles were not associated with a list unit price"
+	echo
+	echo -e "${nolistunitprice}"
+	echo
+fi

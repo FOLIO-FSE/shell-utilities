@@ -18,7 +18,7 @@ comm -2 -3 tmp_users tmp_permissionusers > fix_permissionusers
 
 if [ -f "fix_permissionusers" ];then
 	echo "$(wc -l fix_permissionusers |cut -d " " -f1) user records will be fixed. Please wait." 
-	while IFS=read -r user;do permissionuser-fix ${user};done < fix_permissionusers
+	while IFS=$'\n' read -r user;do permissionuser-fix ${user};done < fix_permissionusers
 else
 	echo "No users lacking permission records found"
 fi

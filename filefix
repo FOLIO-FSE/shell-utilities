@@ -48,6 +48,7 @@ echo "Detecting and removing trailing carriage returns"
 echo
 
 if [[ -z $dateformat ]]; then
+
 	head -50 "${infile}" |grep -o "\b[0-9][23][/\-][0-9][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null &&  dateformat="us"
 	head -50 "${infile}" |grep -o "\b[0-9][/\-][23][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null &&  dateformat="us-single"
 	head -50 "${infile}" |grep -o "\b[23][0-9][/\-][0-9][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null && dateformat="uk"
@@ -154,16 +155,18 @@ fi
 	if [[ ${dateformat} == "us-single" ]]; then
 	echo "Converting US dates with single digits to to YYYY-MM-DD and stripping blank dates"
 	sed -i -r -e 'sx([^0-9]|\b)([0-9][/\-])x\10\2xg;sx/([0-9][/\-])x/0\1xg' tmp_outfile
-	sed -i 's/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\1-\2/g;s/ \+-  -\( \+\)\?//g' tmp_outfile
+	sed -i  's/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([7-9][0-9]\)\b/\119\2/g;s/\b\
+([0-9][0-9][/\-][0-9][0-9][/\-]\)\([012][0-9]\)\b/\120\2/g;s/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0
+-9]\)\b/\3-\1-\2/g;s/ \+-  -\( \+\)\?//g' tmp_outfile
 fi
 if [[ ${dateformat} == "uk" ]]; then
 	echo "Converting DD-MM-YYYY dates to YYYY-MM-DD and stripping blank dates"
-	sed -i 's/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([89][0-9]\)\b/\119\2/g;s/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\2-\1/g;s/ \+-  -\( \+\)\?//g;' tmp_outfile 
+	sed -i 's/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([7-9][0-9]\)\b/\119\2/g;s/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\2-\1/g;s/ \+-  -\( \+\)\?//g;' tmp_outfile 
 fi
 if [[ ${dateformat} == "uk-single" ]]; then
 	echo "Converting UK dates with single digits to YYYY-MM-DD and stripping blank dates"
 	sed -i -r -e 'sx([^0-9]|\b)([0-9][/\-])x\10\2xg;sx/([0-9][/\-])x/0\1xg' tmp_outfile
-	sed -i 's/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\2-\1/g;s/ \+-  -\( \+\)\?//g;' tmp_outfile 
+	sed -i 's/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([7-9][0-9]\)\b/\119\2/g;s/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([0-2][0-9]\)\b/\120\2/g;s/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\2-\1/g;s/ \+-  -\( \+\)\?//g;' tmp_outfile 
 fi
 if [[ ${dateformat} == "slashes" ]]; then
 	echo "Reformatting dates to YYYY-MM-DD"

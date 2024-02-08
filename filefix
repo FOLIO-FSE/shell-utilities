@@ -157,9 +157,7 @@ fi
 	if [[ ${dateformat} == "us-single" ]]; then
 	echo "Converting US dates with single digits to to YYYY-MM-DD and stripping blank dates"
 	sed -i -r -e 'sx([^0-9]|\b)([0-9][/\-])x\10\2xg;sx/([0-9][/\-])x/0\1xg' tmp_outfile
-	sed -i  's/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([7-9][0-9]\)\b/\119\2/g;s/\b\
-([0-9][0-9][/\-][0-9][0-9][/\-]\)\([012][0-9]\)\b/\120\2/g;s/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0
--9]\)\b/\3-\1-\2/g;s/ \+-  -\( \+\)\?//g' tmp_outfile
+	sed -i  's/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([7-9][0-9]\)\b/\119\2/g;s/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([012][0-9]\)\b/\120\2/g;s/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\1-\2/g;s/ \+-  -\( \+\)\?//g' tmp_outfile
 fi
 if [[ ${dateformat} == "uk" ]]; then
 	echo "Converting DD-MM-YYYY dates to YYYY-MM-DD and stripping blank dates"

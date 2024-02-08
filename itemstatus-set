@@ -9,11 +9,11 @@ batchsize=6
 SECONDS=1
 
 case $1 in
-	"restricted" | "missing" | "longmissing" | "unavailable" | "inprocess" | "inprocessnonrequestable" | "withdrawn" )
+	"restricted" | "intellectualitem" | "missing" | "longmissing" | "unavailable" | "inprocess" | "inprocessnonrequestable" | "withdrawn" )
 
 		status=$1;;
 	*)
-		echo "You must indicate a status of restricted, inprocess, missing, longmissing, unavailable, withdrawn"
+		echo "You must indicate a status of restricted, inprocess, inprocessnonrequestable, intellectualitem, missing, longmissing, restricted, unavailable, withdrawn"
 		exit
 esac
 
@@ -45,6 +45,8 @@ markstatus() {
 			apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{}" "${okapi_url}/inventory/items/${uuid}/mark-in-process");;
 		"inprocessnonrequestable")
 			apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{}" "${okapi_url}/inventory/items/${uuid}/mark-in-process-non-requestable");;
+		"intellectualitem")
+			apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{}" "${okapi_url}/inventory/items/${uuid}/mark-in-intellectual-item");;
 		"missing")
 			apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{}" "${okapi_url}/inventory/items/${uuid}/mark-missing");;
 		"longmissing")

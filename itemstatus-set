@@ -46,7 +46,7 @@ markstatus() {
 		"inprocessnonrequestable")
 			apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{}" "${okapi_url}/inventory/items/${uuid}/mark-in-process-non-requestable");;
 		"intellectualitem")
-			apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{}" "${okapi_url}/inventory/items/${uuid}/mark-in-intellectual-item");;
+			apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{}" "${okapi_url}/inventory/items/${uuid}/mark-intellectual-item");;
 		"missing")
 			apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{}" "${okapi_url}/inventory/items/${uuid}/mark-missing");;
 		"longmissing")

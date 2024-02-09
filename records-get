@@ -71,6 +71,12 @@ case $rec_type in
 	endpoint="coursereserves/courselistings";;
 "courses")
 	endpoint="coursereserves/courses";;
+"coursereserves")
+	rec_type="reserves"
+	endpoint="coursereserves/reserves";;
+"courseterms")
+	rec_type="terms"
+	endpoint="coursereserves/terms";;
 "coursetypes")
 	rec_type="courseTypes"
 	endpoint="coursereserves/coursetypes";;

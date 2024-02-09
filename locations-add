@@ -14,13 +14,15 @@ rm -f ${logfile}
 declare -A dict_servicepoints
 declare -A dict_campuses
 declare -A dict_libraries
+declare -A dict_institutions
 
-institutionId="17548174-55b9-477f-8033-1025c0add488"
-campus_default="7d5ffec2-5521-4a65-b927-4006742bcecc"
-library_default="3292f1c0-8b0a-4954-b855-48e0fe792710"
+institution_default="silliman"
+campus_default="early_childhood"
+library_default="ecs"
+servicepoint_default="early_childhood"
 
-servicepoint_default="56ae7175-7c84-4058-aa6f-3075cdb06957"
-
+# get list of institutions with code as key and uuid as value
+eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/location-units/institutions?limit=1000" |  jq -r '.locinsts[] | @sh "dict_institutions[\(.code|tostring|ascii_downcase)]=\(.id|tostring)"')"
 
 # get list of campuses with code as key and uuid as value
 eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/location-units/campuses?limit=1000" |  jq -r '.loccamps[] | @sh "dict_campuses[\(.code|tostring|ascii_downcase)]=\(.id|tostring)"')"
@@ -32,6 +34,11 @@ eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant:
 eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/service-points?limit=1000" |  jq -r '.servicepoints[] | @sh "dict_servicepoints[\(.code|tostring|ascii_downcase)]=\(.id|tostring)"')"
 echo "Normalizing campus, library, and servicepoint keys"
 
+for key in "${!dict_institutions[@]}";do
+        newkey=$(tr -dc [a-z0-9] <<< "${key}")
+        dict_institutions[${newkey}]=${dict_institutions["${key}"]}
+done
+
 for key in "${!dict_campuses[@]}";do
         newkey=$(tr -dc [a-z0-9] <<< "${key}")
         dict_campuses[${newkey}]=${dict_campuses["${key}"]}
@@ -39,7 +46,7 @@ done
 
 for key in "${!dict_libraries[@]}";do
         newkey=$(tr -dc [a-z0-9] <<< "${key}")
-        dict_libraries[${newkey}]=${term_dict["${key}"]}
+        dict_libraries[${newkey}]=${dict_libraries["${key}"]}
 done
 
 for key in "${!dict_servicepoints[@]}";do
@@ -48,17 +55,34 @@ for key in "${!dict_servicepoints[@]}";do
 done
 
 #while IFS=$'\t' read -r code discovery name
-while IFS=$'\t' read -r library servicepoint code
+#while IFS=$'\t' read -r library servicepoint code
+while IFS=$'\t' read -r code
 do
 	comparecampus=$(tr -dc [a-z0-9] <<< "${campus,,}")
 	comparelibrary=$(tr -dc [a-z0-9] <<< "${library,,}")
 	compareservicepoint=$(tr -dc [a-z0-9] <<< "${servicepoint,,}")
 
+	institution_default=$(tr -dc [a-z0-9] <<< "${institution_default,,}")
+	campus_default=$(tr -dc [a-z0-9] <<< "${campus_default,,}")
+	library_default=$(tr -dc [a-z0-9] <<< "${library_default,,}")
+	servicepoint_default=$(tr -dc [a-z0-9] <<< "${servicepoint_default,,}")
+
+	if [[ -z ${institution} ]];then 
+		institutionId=${dict_institutions[${institution_default}]}
+	else
+		compareinstitution=$(tr -dc [a-z0-9] <<< "${compareinstitution,,}")
+		institutionId=${dict_institution[${compareinstitution}]}
+
+		if [[ ! ${institutionId} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+			institutionId="${institution_default}"
+		fi
+	fi
+
 	if [[ -z ${campus} ]];then 
-		campusId="${campus_default}"
+		campusId=${dict_campuses[${campus_default}]}
 	else
 		comparecampus=$(tr -dc [a-z0-9] <<< "${comparecampus,,}")
-		campusId=${dict_campus[${comparecampus}]}
+		campusId=${dict_campuses[${comparecampus}]}
 
 		if [[ ! ${campusId} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
 			campusId="${campus_default}"
@@ -66,10 +90,10 @@ do
 	fi
 
 	if [[ -z ${library} ]];then 
-		libraryId="${library_default}"
+		libraryId=${dict_libraries[${library_default}]}
 	else
 		comparelibrary=$(tr -dc [a-z0-9] <<< "${comparelibrary,,}")
-		libraryId=${dict_library[${comparelibrary}]}
+		libraryId=${dict_libraries[${comparelibrary}]}
 
 		if [[ ! ${libraryId} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
 			libraryId="${library_default}"
@@ -77,10 +101,10 @@ do
 	fi
 
 	if [[ -z ${servicepoint} ]];then 
-		servicepointId="${servicepoint_default}"
+		servicePointId=${dict_servicepoints[${servicepoint_default}]}
 	else
 		compareservicepoint=$(tr -dc [a-z0-9] <<< "${compareservicepoint,,}")
-		servicepointId=${dict_servicepoint[${compareservicepoint}]}
+		servicePointId=${dict_servicepoints[${compareservicepoint}]}
 
 		if [[ ! ${servicepointId} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
 			servicePointId="${servicepoint_default}"
@@ -111,7 +135,7 @@ EndOfLocation
 
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${location}" "${okapi_url}/locations")
 
-	echo -e "${apicall}" |jq '.' |tee -a ${logfile}
+	echo -e "${apicall}" |tee -a ${logfile}
 	unset servicepoint
 	unset library
 	unset campus

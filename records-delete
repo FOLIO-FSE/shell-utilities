@@ -7,8 +7,9 @@ okapi_token=$(cat okapi.token)
 deletetype=$1
 uuid=$(echo "$2" |tr -dc [a-f0-9\-])
 
+singlerecord=yes
 deletefile="delete"
-batchsize=50
+batchsize=10
 outfile=delete_${deletetype}.log
 errorfile=error_${deletetype}.log
 rm -f ${outfile}
@@ -48,6 +49,8 @@ case $deletetype in
 	recordtype="coursereserves/courselistings";;
 "courses")
 	recordtype="coursereserves/courses";;
+"coursereserves")
+	recordtype="coursereserves/reserves";;
 "coursetypes")
 	recordtype="coursereserves/coursetypes";;
 "departments")
@@ -90,23 +93,19 @@ case $deletetype in
 	recordtype="organizations/organizations";;
 "permissionusers")
 	singlerecord="yes"
-	batchsize=10
-        recordtype="perms/users";;
+   recordtype="perms/users";;
 "precedingsucceeding")
 	singlerecord="yes"
-	batchsize=10
 	recordtype="preceding-suceeding-titles";;
 "requests")
 	recordtype="circulation/requests";;
 "schedulednotices")
 	singlerecord="yes"
-	batchsize=10
 	recordtype="scheduled-notice-storage/scheduled-notices";;
 "servicepoints")
 	recordtype="service-points";;
 "srs")
 	singlerecord="yes"
-	batchsize=10
 	recordtype="source-storage/records";;
 "statcodes")
 	recordtype="statcodes";;

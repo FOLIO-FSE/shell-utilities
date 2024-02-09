@@ -6,6 +6,7 @@ rec_type=$1
 infile="uuids"
 batchsize=50
 accept="application/json"
+dos2unix "${infile}"
 
 jq_replace=".${rec_type}[]"
 queryseparator="?"
@@ -24,6 +25,7 @@ getrecord() {
 	local seq=${2}
 
 	curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}${queryseparator}${querystring}${uuid}${poststring}" > tmp_records.${rec_type}.${seq}
+curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}${queryseparator}${querystring}${uuid}${poststring}"
 
 }
 
@@ -137,10 +139,10 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 		querystring="query=id=${idstring// /${querydelim}}"
 		records=$(curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${querystring}&limit=${batchsize}")
 	else
+		seq=0
 		for uuid in "${ids[@]}";do
 			getrecord "${uuid}" "${seq}" &
 			seq=$(($seq + 1))
-
 		done
 		wait
 		records=$(cat tmp_records.${rec_type}.*)

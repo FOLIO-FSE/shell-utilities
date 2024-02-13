@@ -12,7 +12,7 @@
 
 inputFile="users.tsv"
 # strip out all double quotes if present
-sed -i 's/"//d' users.tsv
+sed -i 's/"//g' users.tsv
 
 okapi_url="your_okapi_url"
 tenant="your_tenant_id"

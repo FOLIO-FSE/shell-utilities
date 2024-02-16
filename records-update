@@ -9,6 +9,7 @@ batchsize=6
 
 recordtype=$1
 infile="${recordtype}.tsv"
+dos2unix "${infile}"
 outfile="${recordtype}_update_log.json"
 
 rm -f ${outfile}

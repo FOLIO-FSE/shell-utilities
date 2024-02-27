@@ -27,7 +27,14 @@ fi
 
 function fix_file() {
 infile="${1}"
+filedetect="${infile,,}"
+filecontent=""
+
+[[ "${filedetect}" =~ loan ]] && filecontent="loan"
+echo "XXX$filecontent"
+
 outfile=$(sed 's/\.....\?$//' <<< "${infile}")
+
 
 if [[ "${infile: -4}" == "xlsx" ]];then
 	/home/ssm-user/.local/bin/xlsx2csv -d "\t" --skipemptycolumns "${infile}" > "${outfile}.tsv"
@@ -132,7 +139,20 @@ fi
 head -50 "${infile}" |grep -o "\b[1-9]\.[0-9]\+E+[0-9]\+\b" > /dev/null && echo "WARNING: POSSIBLE EXCEL CORRUPTION -- INSPECT FILE"
 
 # normalize fieldnames in file
-sed -i '1 s/[^0-9A-Za-z_\-#)(\.\t]//g' tmp_outfile 
+if [[ ${filecontent} == "loan" ]];then
+sed -i '
+1 s/[^0-9A-Za-z_\-#)(\.\t]//g
+1 s/P[^\t]*BARCODE/patron_barcode/i
+1 s/OUT[^\t]*DATE/out_date/i
+1 s/DUE[^\t]*DATE/due_date/i
+1 s/TOT[^\t]*RENEW[^\t]*/renewal_count/i
+1 s/\(^\|[^P]\)[^\t]*ARCODE/item_barcode/i
+' tmp_outfile 
+else
+	sed -i '1 s/[^0-9A-Za-z_\-#)(\.\t]//g' tmp_outfile 
+fi
+
+read -r fieldnames < tmp_outfile
 
 echo
 echo "Converting smartquotes and hard spaces, and removing control characters from fields"
@@ -142,16 +162,20 @@ SINGLE=$(echo -ne '\u00B4\u2018\u2019')
 DOUBLE=$(echo -ne '\u201C\u201D')
 NBSP=$(echo -ne '\uc2a0\u00a0\ufeff')
 CONTROL=$(echo -ne '\u001b\u0007\u0001')
-#sed -i "s/['\"]*\t['\"]*/\t/g; s/^['\"]//; s/['\"];/;/g; s/;['\"]/;/g; s/['\"]$//;s/[$SINGLE]/'/g; s/[$DOUBLE]/\"/g; s/[$NBSP]/ /g; s/[$CONTROL]/ /g; s/\([^\t]\) *\t/\1\t/g" tmp_outfile
 
-sed -i "s/['\"];['\"]/;/g; s/[$SINGLE]/'/g; s/[$DOUBLE]/\"/g; s/[$NBSP]/ /g; s/[$CONTROL]/ /g" tmp_outfile
+sed -i "
+s/['\"];['\"]/;/g
+s/[$SINGLE]/'/g
+s/[$DOUBLE]/\"/g
+s/[$NBSP]/ /g
+s/[$CONTROL]/ /g
+" tmp_outfile
 
 echo 
 
 if [[ ${dateformat} == "us" ]]; then
 	echo "No UK formatted dates detected in first 50 lines"
 	echo "Converting MM-DD-YYYY dates to YYYY-MM-DD and stripping blank dates"
-	#sed -i 's/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\1-\2/g;s/ \+-  -\( \+\)\?//g' tmp_outfile
 	sed -i 's/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([89][0-9]\)\b/\119\2/g;s/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\1-\2/g;s/ \+-  -\( \+\)\?//g' tmp_outfile
 fi
 	if [[ ${dateformat} == "us-single" ]]; then
@@ -174,6 +198,7 @@ if [[ ${dateformat} == "slashes" ]]; then
 fi
 
 fieldcounters="${fieldcounters// /}"
+
 
 read -r -d '' awkscript << "ENDOFAWK"
 #!/usr/bin/awk -f

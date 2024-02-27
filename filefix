@@ -142,6 +142,7 @@ sed -i '
 1 s/TOT[^\t]*RENEW[^\t]*/renewal_count/i
 1 s/\(^\|[^NP\t]\)[^\t]*TATUS/next_item_status/i
 1 s/\(^\|[^P\t]\)[^\t]*ARCODE/item_barcode/i
+s/ [0-9]*:[0-9]*\($\|[\t]\)/\1/g
 ' tmp_outfile 
 
 echo 

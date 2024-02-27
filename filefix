@@ -31,10 +31,8 @@ filedetect="${infile,,}"
 filecontent=""
 
 [[ "${filedetect}" =~ loan ]] && filecontent="loan"
-echo "XXX$filecontent"
 
 outfile=$(sed 's/\.....\?$//' <<< "${infile}")
-
 
 if [[ "${infile: -4}" == "xlsx" ]];then
 	/home/ssm-user/.local/bin/xlsx2csv -d "\t" --skipemptycolumns "${infile}" > "${outfile}.tsv"
@@ -119,13 +117,6 @@ echo
 echo "Problematic characters will be removed from fieldnames"
 echo
 
-
-fieldnames=$(tr -dc "[[A-Za-z0-9]]_	\-#." <<< "${fieldnames}")
-echo "The following fields were detected in ${infile}"
-echo
-echo "${fieldnames}" |tr "\t" "\n" |grep -n .
-echo
-
 num_labeled_fields=$(head -1 tmp_outfile |tr '\t' '\n' |grep -i [a-z0-9] |wc -l)
 
 if [[ $numfields != $num_labeled_fields ]];then
@@ -143,16 +134,32 @@ if [[ ${filecontent} == "loan" ]];then
 sed -i '
 1 s/[^0-9A-Za-z_\-#)(\.\t]//g
 1 s/P[^\t]*BARCODE/patron_barcode/i
+1 s/BARCODE[^\t]*P[^\t]*/patron_barcode/i
+1 s/I[^\t]*BARCODE/item_barcode/i
+1 s/BARCODE[^\t]*I[^\t]*/item_barcode/i
 1 s/OUT[^\t]*DATE/out_date/i
 1 s/DUE[^\t]*DATE/due_date/i
 1 s/TOT[^\t]*RENEW[^\t]*/renewal_count/i
-1 s/\(^\|[^P]\)[^\t]*ARCODE/item_barcode/i
+1 s/\(^\|[^NP\t]\)[^\t]*TATUS/next_item_status/i
+1 s/\(^\|[^P\t]\)[^\t]*ARCODE/item_barcode/i
 ' tmp_outfile 
+
+echo 
+echo "Loan file detected. Attempting to standardize headers"
+echo
+
 else
 	sed -i '1 s/[^0-9A-Za-z_\-#)(\.\t]//g' tmp_outfile 
 fi
 
 read -r fieldnames < tmp_outfile
+
+fieldnames=$(tr -dc "[[A-Za-z0-9]]_	\-#." <<< "${fieldnames}")
+echo "The following fields were detected in ${infile}"
+echo
+echo "${fieldnames}" |tr "\t" "\n" |grep -n .
+echo
+
 
 echo
 echo "Converting smartquotes and hard spaces, and removing control characters from fields"

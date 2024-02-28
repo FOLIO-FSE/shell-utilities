@@ -133,15 +133,15 @@ head -50 "${infile}" |grep -o "\b[1-9]\.[0-9]\+E+[0-9]\+\b" > /dev/null && echo 
 if [[ ${filecontent} == "loan" ]];then
 sed -i '
 1 s/[^0-9A-Za-z_\-#)(\.\t]//g
-1 s/P[^\t]*BARCODE/patron_barcode/i
-1 s/BARCODE[^\t]*P[^\t]*/patron_barcode/i
-1 s/I[^\t]*BARCODE/item_barcode/i
-1 s/BARCODE[^\t]*I[^\t]*/item_barcode/i
-1 s/OUT[^\t]*DATE/out_date/i
-1 s/DUE[^\t]*DATE/due_date/i
-1 s/TOT[^\t]*RENEW[^\t]*/renewal_count/i
-1 s/\(^\|[^NP\t]\)[^\t]*TATUS/next_item_status/i
-1 s/\(^\|[^P\t]\)[^\t]*ARCODE/item_barcode/i
+1 s/\bp[^\t]*barcode\b/patron_barcode/i
+1 s/\bbarcode[^\t]*p[^\t]*\b/patron_barcode/i
+1 s/\bi[^\t]*barcode\b/item_barcode/i
+1 s/\bbarcode[^\t]*i[^\t]*\b/item_barcode/i
+1 s/\bout[^\t]*date\b/out_date/i
+1 s/\bdue[^\t]*date\b/due_date/i
+1 s/\btot[^\t]*renew[^\t]*\b/renewal_count/i
+1 s/\b[^\tp]*tatus\b/next_item_status/i
+1 s/\b[^p\t][^\t]*arcode/item_barcode/i
 s/ [0-9]*:[0-9]*\($\|[\t]\)/\1/g
 ' tmp_outfile 
 

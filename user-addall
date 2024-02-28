@@ -60,5 +60,3 @@ for acqUnitId in "${acqunit_arr[@]}";do
 	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${postdata}" "${okapi_url}/acquisitions-units/memberships"
 done
 
-echo ${servicepoints}
-

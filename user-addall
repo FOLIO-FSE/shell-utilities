@@ -27,8 +27,6 @@ else
 	fi
 fi
 
-echo "${endpoint}"
-
 apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}")
 
 if [[ ${barcodefound} -eq 1 ]];then
@@ -48,9 +46,11 @@ servicePointIds=$(echo -n "${servicepoint_arr[@]}" | jq -Rs 'split(" ") ')
 
 echo "Adding service points"
 
-postdata="{ \"userId\":\"${userid}\", \"servicePointsIds\": ${servicePointsIds} }"
+servicePointUserId=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/service-points-users?query=userId==${userId}" |jq -r '.servicePointsUsers[0].id')
 
-curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${postdata}" "${okapi_url}/service-point-users"
+postdata="{ \"id\": \"${servicePointUserId}\", \"userId\":\"${userId}\", \"servicePointsIds\": ${servicePointIds} }"
+
+curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${postdata}" "${okapi_url}/service-points-users/${servicePointUserId}"
 
 echo "Adding acq units"
 

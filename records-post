@@ -45,6 +45,8 @@ case $recordtype in
 	recordtype="erm/refdata";;
 "authorities")
 	recordtype="authority-storage/authorities";;
+"authorities-source")
+	recordtype="authority-source-files";;
 "campuses")
 	recordtype="location-units/campuses";;
 "composite-orders")
@@ -110,7 +112,7 @@ case $recordtype in
 "users")
 	recordtype="users";;
 *)
-	echo "Record type '${recordtype}' not found. Supported types are campuses, composite-orders, feefineactions, groups, holdings, instances, instance-types, interfaces, items, libraries, licenses, loans, locations, notices, organizations, parsedrecords, polines, requests, servicepoints, srs, tags, templates, users."
+	echo "Record type '${recordtype}' not found. Supported types are agreements, agreements-picklists, authorities, authorities-source, campuses, composite-orders, groups, feefineactions, holdings, identifier-types, instances, instance-formats, instance-note-types, instance-types, interfaces, invoices, invoice-lines, items, libraries, licenses, licenses-picklists, loans, locations, nature-of-content, notices, orderlines, organizations, parsedrecords, polines, requests, servicepoints, srs, tags, templates, users."
 	exit;;
 esac
 

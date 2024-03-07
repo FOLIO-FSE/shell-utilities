@@ -67,6 +67,8 @@ fixrecord() {
 case $recordtype in
 "authorities")
         recordtype="authority-storage/authorities";;
+"authorities-source")
+	recordtype="authority-source-files";;
 "campuses")
 	recordtype="location-units/campuses";;
 "categories")

@@ -43,6 +43,9 @@ case $rec_type in
 	erm="yes";;
 "authorities")
 	endpoint="authority-storage/authorities";;
+"authorities-source")
+	rec_type="authoritySourceFiles"
+	endpoint="authority-source-files";;
 "authorities-srs")
 	rec_type="records"
 	query="recordType=MARC_AUTHORITY&state=ACTUAL&sortby=id"

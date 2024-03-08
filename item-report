@@ -1,4 +1,4 @@
-#records-get inventory
+records-get inventory
 records-get locations
 
 jq -r '[.id, .code]|@tsv' locations.json > location.tsv

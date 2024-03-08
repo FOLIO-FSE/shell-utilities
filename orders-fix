@@ -1,0 +1,86 @@
+infile="${1}"
+
+fileroot=$(echo "${infile}" | sed 's/\.....\?$//')
+outfile="${fileroot}_fixed.json"
+tmpfile="${fileroot}_tmp"
+
+echo
+echo "This utility analyzes composite order object files created by the FOLIO migration tools."
+echo "Usage: orders-fix [objectfile.json]"
+echo
+
+echo "Checking for fund distributions with no mapped funds"
+echo
+
+#cat "${infile}" |jq 'walk(if type == "object" and (.distributionType != null) and (.fundId == null) then del(.) else . end)' > "${tmpfile}1.json"
+
+# Set values if fundId mapped, otherwise delete object
+
+cat "${infile}" |jq -c 'walk(
+
+	# delete if not properly mapped Fund UUID
+	if type == "object" and (.distributionType != null) 
+	and (.fundId |test("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")|not ) 
+	then del(.) 
+	else . end) |
+
+	# populated rest of fund object if fundId is correct
+	walk(
+	if type == "object" and .fundId 
+	then (
+	.distributionType = "percentage" |
+	.value = 100
+	)
+	else . end) |
+
+	# and delete fundId mapped to note
+	walk(
+	if type == "string" and (. |test("..[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")) 
+	then del(.)
+	else . end) |
+
+	walk(
+	if type == "object" and (.quantity == "0") 
+	then (
+	.quantity = "1" |
+	.quantityPhysical = "1" 
+	)
+	else . end) |
+
+	walk(
+	if type == "object" and (.quantityPhysical == "0") 
+	then (
+	.quantityPhysical = "1" 
+	)
+	else . end) |
+
+	# delete empty arrays
+	(.. | arrays) |= 
+	if any(values) then map(values) else [] end | 
+	del(..|select(. == [])) |
+
+	# cordinate price info
+	walk(
+	if type == "object" and ((.cost.poLineEstimatedPrice == null) and (.cost.currency != null)) then 
+	(.cost.poLineEstimatedPrice, .cost.listUnitPrice) = "0.00" 
+	else . 
+	end)' > "${outfile}"
+
+echo
+echo
+
+noquantity=$(jq -r '.compositePoLines[]
+        | select(
+        (.locations[] | .quantityPhysical == null and .quantityElectronic == null)
+        ) | [.instanceId, .titleOrPackage]|@tsv' "${infile}")
+
+
+if [[ -n "${noquantity}" ]];then
+	echo "The following PO titles were not associated with a physical or electronic quantity"
+	echo
+	echo -e "${noquantity}"
+	echo
+fi
+
+echo "A corrected file has been output to ${outfile}"
+

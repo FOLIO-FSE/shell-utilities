@@ -56,6 +56,8 @@ case $rec_type in
 	rec_type="boundWithParts";;
 "budgets")
 	endpoint="finance/budgets";;
+"calendars")
+	endpoint="calendar/calendars";;
 "categories")
 	endpoint="organizations-storage/categories";;
 "circlog")

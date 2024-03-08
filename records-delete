@@ -39,6 +39,8 @@ case $deletetype in
 	recordtype="authority-storage/authorities";;
 "boundwiths")
         recordtype="inventory-storage/bound-with-parts";;
+"calendars")
+	recordtype="calendar/calendars";;
 "campuses")
 	recordtype="location-units/campuses";;
 "composite-orders")

@@ -75,7 +75,7 @@ if [[ ! -f "${infile}" ]];then echo "The input file ${infile} could not be found
 cp "${infile}" tmp_infile
 
 # make sure dos files look like dos all the way through so newlines in fields don't confuse the script
-head -1 tmp_infile | grep -q $'\r' && awk 'BEGIN{FS="\t";RS=ORS="\n"}{if (NR==1){numfields=NF}else{if ($numfields !~ /\r$/){print $0"\r"}else print $0}}' tmp_infile > "${infile}"
+head -1 tmp_infile | grep -q $'\r' && awk 'BEGIN{FS="\t";RS=ORS="\n"}{if (NR==1){numfields=NF;print $0}else{if ($numfields !~ /\r$/){print $0"\r"}else print $0}}' tmp_infile > "${infile}"
 
 # normalize out newlines within fields in dos files
 head -1 "${infile}" | grep -q $'\r' && awk -v ORS=$'\x1d' -v RS="\r\n" '{gsub("\n", " ", $0); print $0}' "${infile}" |tr $'\x1d' "\n" > tmp_infile

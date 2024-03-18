@@ -86,7 +86,7 @@ iconv -f utf-8 -t utf-8 -c tmp_infile -o tmp_outfile
 
 firstline="$(head -1 tmp_outfile)"
 
-echo "${firstline}" | grep -q "\t" && filetype="tab"
+echo "${firstline}" | grep -qP "\t" && filetype="tab"
 echo "${firstline}" | grep -q "|" && filetype="pipe"
 echo "${firstline}" | grep -q "," && filetype="comma"
 

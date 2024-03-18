@@ -84,16 +84,20 @@ iconv -f utf-8 -t utf-8 -c tmp_infile -o tmp_outfile
 
 # detect file characteristics. First line is assumed to contain either tabs or commas
 
-if awk '{exit !/\t/}' tmp_outfile; then 
-	filetype="tab"
-elif awk '{exit !/\|/}' tmp_outfile; then filetype="pipe"
+firstline="$(head -1 tmp_outfile)"
+
+echo "${firstline}" | grep -q "\t" && filetype="tab"
+echo "${firstline}" | grep -q "|" && filetype="pipe"
+echo "${firstline}" | grep -q "," && filetype="comma"
+
+if [[ ${filetype} == "pipe" ]];then
 		echo "Pipe delimited file detected. Converting ${infile} to tab delimited."
 		echo "Please be patient."
 		sed -i 's/|/\t/g' tmp_outfile
 		echo "Conversion to tab delimited complete"
-		echo
+fi
 
-elif awk '{exit !/,/}' ${infile}; then filetype="comma"
+if [[ ${filetype} == "comma" ]];then
 		echo "Comma delimited file detected. Converting ${infile} to tab delimited."
 		echo "Please be patient."
 		csvformat -T tmp_outfile > tmp_outfile1

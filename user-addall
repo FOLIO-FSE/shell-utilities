@@ -48,9 +48,17 @@ echo "Adding service points"
 
 servicePointUserId=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/service-points-users?query=userId==${userId}" |jq -r '.servicePointsUsers[0].id')
 
-postdata="{ \"id\": \"${servicePointUserId}\", \"userId\":\"${userId}\", \"servicePointsIds\": ${servicePointIds} }"
+if [[ $servicePointUserId == null ]];then 
+	servicePointUserId=$(uuidgen)
+	postdata="{ \"id\": \"${servicePointUserId}\", \"userId\":\"${userId}\", \"servicePointsIds\": ${servicePointIds} }"
 
-curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${postdata}" "${okapi_url}/service-points-users/${servicePointUserId}"
+	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${postdata}" "${okapi_url}/service-points-users"
+else
+	postdata="{ \"id\": \"${servicePointUserId}\", \"userId\":\"${userId}\", \"servicePointsIds\": ${servicePointIds} }"
+	curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${postdata}" "${okapi_url}/service-points-users/${servicePointUserId}"
+fi
+
+
 
 echo "Adding acq units"
 

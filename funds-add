@@ -21,8 +21,6 @@ done
 expenseclassobject=${expenseclassobject::-1}
 expenseclassobject="${expenseclassobject}]"
 
-fiscalyear="1d2f1d48-0cee-40ee-b98f-6f2712e8c5be"
-
 declare -A ledger
 declare -A fiscalYear
 

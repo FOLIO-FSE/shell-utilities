@@ -161,6 +161,8 @@ case $rec_type in
 "exportjobs")
 	rec_type="jobExecutions"
 	endpoint="data-export/job-executions";;
+"ledgers")
+	endpoint="finance/ledgers";;
 "licenses")
 	endpoint="licenses/licenses"
 	query="sort=name%3Bdesc"
@@ -243,7 +245,7 @@ case $rec_type in
 "vouchers")
 	endpoint="voucher/vouchers";;
 *)
-	echo "Record type '${recordtype}' not found. Supported types are accounts, agreements, agreements-picklists, agreements-suppl, authorities, authorities-srs, boundwiths, budgets, categories, circlog, composite-orders, contacts, coursedepartments, courselistings, courses, coursetypes, departments, eholdings, entitlements expense-classes, feefines, feefineactions, fiscalyears, fund-expense, funds, holdings, holdings-srs, importjobs, inhouse,  interfaces, instance-relationships, instancerelationshiptypes, instances, institutions, items, invoices, invoice-lines, exportjobs, licenses, licenses-picklists, licenses-terms, locations, loantypes, loan-history, loans, mattypes, mtypes, notes, orderprefixes, orderlines, orders, organizations, permissionusers, polines, preceedingsucceeding, requestprefs, requests, schedulednotices, servicepoints, srs, statcodes, tags, templates, transactions, usergroups, users, vouchers.";exit;;
+	echo "Record type '${recordtype}' not found. Supported types are accounts, agreements, agreements-picklists, agreements-suppl, authorities, authorities-srs, boundwiths, budgets, categories, circlog, composite-orders, contacts, coursedepartments, courselistings, courses, coursetypes, departments, eholdings, entitlements expense-classes, feefines, feefineactions, fiscalyears, fund-expense, funds, holdings, holdings-srs, importjobs, inhouse,  interfaces, instance-relationships, instancerelationshiptypes, instances, institutions, items, invoices, invoice-lines, exportjobs, ledgers, licenses, licenses-picklists, licenses-terms, locations, loantypes, loan-history, loans, mattypes, mtypes, notes, orderprefixes, orderlines, orders, organizations, permissionusers, polines, preceedingsucceeding, requestprefs, requests, schedulednotices, servicepoints, srs, statcodes, tags, templates, transactions, usergroups, users, vouchers.";exit;;
 esac
 
 rm -f ${rec_type}

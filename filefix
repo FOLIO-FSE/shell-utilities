@@ -88,12 +88,19 @@ firstline="$(head -1 tmp_outfile)"
 
 echo "${firstline}" | grep -qP "\t" && filetype="tab"
 echo "${firstline}" | grep -q "|" && filetype="pipe"
+echo "${firstline}" | fgrep -q "^" && filetype="carrot"
 echo "${firstline}" | grep -q "," && filetype="comma"
 
 if [[ ${filetype} == "pipe" ]];then
 		echo "Pipe delimited file detected. Converting ${infile} to tab delimited."
 		echo "Please be patient."
 		sed -i 's/|/\t/g' tmp_outfile
+		echo "Conversion to tab delimited complete"
+fi
+if [[ ${filetype} == "carrot" ]];then
+		echo "Carrot delimited file detected. Converting ${infile} to tab delimited."
+		echo "Please be patient."
+		sed -i 's/\^/\t/g' tmp_outfile
 		echo "Conversion to tab delimited complete"
 fi
 

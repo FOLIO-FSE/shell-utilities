@@ -10,7 +10,7 @@ firstline="$(head -1 ${infile})"
 
 cp "${infile}" tmp_outfile
 echo "${firstline}" | grep -q "|" && cat "${infile}" |tr '|' '\t' > tmp_outfile
-echo "${firstline}" | fgrep -q "^" && cat "${infile}" |tr '|' '\t' > tmp_outfile
+echo "${firstline}" | fgrep -q "^" && cat "${infile}" |tr '^' '\t' > tmp_outfile
 echo "${firstline}" | fgrep -q "," && csvformat -T "${infile}" > tmp_outfile
 
 numrecs=$(wc -l tmp_outfile |cut -d " " -f1)

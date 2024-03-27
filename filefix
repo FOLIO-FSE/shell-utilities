@@ -53,7 +53,7 @@ echo "Detecting and removing trailing carriage returns"
 echo
 
 if [[ -z $dateformat ]]; then
-	head -50 "${infile}" |grep -o "\b[0|1]\?[0-9][/\-][0-3]\?[0-9][/\-][27-9][0-9]\b" > /dev/null && echo "Six digit date with trailing year detected."
+	head -50 "${infile}" |grep -o "\b[0|1]\?[0-9][/\-][0-3]\?[0-9][/\-][27-9][0-9]\b" > /dev/null && echo "Six digit date with trailing year detected." && dateformat="us-single"
 	head -50 "${infile}" |grep -o "\b[78-9][0-9][/\-][0-3]\?[0-9][/\-][0|1]\?[0-9]\b" > /dev/null && echo "Six digit date with leading year detected."
 
 	head -50 "${infile}" |grep -o "\b[0-9][23][/\-][0-9][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null &&  dateformat="us"

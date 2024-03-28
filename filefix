@@ -241,8 +241,7 @@ BEGIN {
 			for(i=1;i<=NF;i++) {
 				$i = gensub(/^"(.*)"$/, "\\\1", 1, $i)
 				gsub(/ +$/, "", $i)
-				gsub(/^NULL$/, "", $i)
-				gsub(/^null$/, "", $i)
+				gsub(/^(NULL|null)$/, "", $i)
 				printf("%s%s",$i,i==NF?RS:OFS) > outfile
 			}
 	

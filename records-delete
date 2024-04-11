@@ -99,6 +99,8 @@ case $deletetype in
 "precedingsucceeding")
 	singlerecord="yes"
 	recordtype="preceding-suceeding-titles";;
+"requestprefs")
+	recordtype="request-preference-storage/request-preference";;
 "requests")
 	recordtype="circulation/requests";;
 "schedulednotices")

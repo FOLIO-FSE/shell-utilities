@@ -4,14 +4,14 @@ if [[ ! -z $2 ]];then
 	limit=$2
 	limit="${limit//[^0-9]}"
 else
-	limit=2000000
+	limit=4000000
 fi
 
 if [[ ! -f ${infile} ]];then
 	echo "Usage: splitter [filename] [number of records]"
 	echo "Example: splitter somefile.tsv 100000"
 	echo
-	echo "If number of records isn't present, 2,000,000 is assumed"
+	echo "If number of records isn't present, 4,000,000 is assumed"
 	echo
 	exit
 else

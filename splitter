@@ -1,0 +1,60 @@
+infile="${1}"
+
+if [[ ! -z $2 ]];then
+	limit=$2
+	limit="${limit//[^0-9]}"
+else
+	limit=2000000
+fi
+
+if [[ ! -f ${infile} ]];then
+	echo "Usage: splitter [filename] [number of records]"
+	echo "Example: splitter somefile.tsv 100000"
+	echo
+	echo "If number of records isn't present, 2,000,000 is assumed"
+	echo
+	exit
+else
+
+	fileroot=$(echo "${infile}" | sed 's/\.....\?$//')
+	extension=$(echo "${infile}" | sed 's/^.*\.//')
+fi
+
+read -r -d '' awkscript << "ENDOFAWK"
+#!/usr/bin/awk -f
+{
+	if (NR == 1) {
+		header = $0	
+		filecounter = 0
+		counter = 0
+	} 
+
+	if (counter == 0) {
+		outfile = sprintf("%s%04d%s", FILEROOT"_", filecounter, "."EXTENSION)	
+		print header > outfile
+	} 
+
+	print $0 > outfile
+
+	if (NR % 10000 == 0){ printf "Records read: %d Files created: %d \r", NR - 1, filecounter }
+
+	counter++
+
+	if (counter == LIMIT) {
+		filecounter++
+		counter = 0
+		close(outfile)
+	} 
+}
+END {
+	close(outfile)
+	print "Records read: "NR - 1" Files created: "filecounter
+}
+	
+ENDOFAWK
+
+echo -e "${awkscript}" > tmp_splitter
+
+awk -v LIMIT=${limit} -v EXTENSION="${extension}" -v FILEROOT="${infile}" -f tmp_splitter "${infile}"
+
+rm tmp_splitter

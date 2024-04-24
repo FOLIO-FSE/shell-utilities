@@ -1,0 +1,35 @@
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+uuid=${1//[^0-9a-f\-]}
+infile="instanceids"
+outfile="srsids"
+batchsize=10
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+rm -f ${outfile}
+
+getid() {
+	local uuid=${1}
+	local seq=${2}
+
+	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${uuid}/formatted?idType=INSTANCE" |jq -r .id >> tmp_srsuuid.${seq}
+
+}
+
+while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
+	seq=0
+	for id in ${ids[@]};do
+		getid ${id} ${seq} &
+		counter=$(($counter + 1))
+		seq=$(($seq + 1))
+		printf "Processing %s -- record %s of %s\r" $id $counter $numrecs
+	done
+	wait
+
+	cat tmp_srsuuid.* >> ${outfile}
+	rm -f tmp_srsuuid.*
+done < ${infile}
+
+echo "Processed $numrecs records                                                        "

@@ -1,0 +1,57 @@
+# duplicates lines based on splitting on [,;]. Expects a filename and case insensitive column header as arguments
+
+infile="${1}"
+fileroot=$(echo "${infile}" | sed 's/\.....\?$//')
+outfile="${fileroot}_fixed.tsv"
+
+if [[ -z $2 ]];then echo "You must indicate a split column";exit;fi
+
+split_column="${2//[^A-Za-z0-9]/}"
+rm -f "${outfile}"
+
+read -r -d '' awkscript << "ENDOFAWK"
+#!/usr/bin/awk -f 
+
+BEGIN {
+	gsub(/[^a-z0-9]/, "", COL)
+}
+{
+	if (NR == 1) {
+		for(i=1;i<=NF;i++) { 
+			compareheader=tolower($i)
+			gsub(/[^a-z0-9]/, "", compareheader)
+			if (compareheader == COL ) { dupcolumn = i }
+		}
+	print $0 > OUTFILE
+	} else {
+		recordsprocessed++
+
+		numdups = patsplit($dupcolumn,col_array,/[^,;]+/)
+		for (i=1;i<=numdups;i++) {
+			recordscreated++
+			for(j=1;j<=NF;j++) { 
+				if (j == NF) {delim = RS} else {delim = OFS}
+				if (j != dupcolumn ) {
+					printf($j""delim) >> OUTFILE
+				} else {
+				#	printf("%s%s",$j,j==NF?RS:OFS) >> OUTFILE 
+					printf(col_array[i]""delim) >> OUTFILE 
+				}
+			}
+		}
+	printf "Records processed: %d :created: %d \\r", recordsprocessed, recordscreated
+	}
+}
+END { print "" } 
+
+ENDOFAWK
+
+
+echo -e "${awkscript}" > tmp_colsplit
+chmod 700 tmp_colsplit
+
+awk -v COL="${split_column}" -v OUTFILE="${outfile}" -v FS="\t" -v OFS="\t" -f tmp_colsplit "${infile}" 
+
+rm tmp_colsplit
+
+#echo "File has been rebuilt with multivalues in ${split_column} as individual rows and sent to ${outfile}"

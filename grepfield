@@ -1,0 +1,32 @@
+infile="${1}"
+grepfield="${2}"
+regex="${3}"
+
+if [[ ! -f ${infile} ]];then
+   tmp=$(mktemp)
+   infile=$tmp
+   grepfield="^${1}\$"
+   regex="${2}"
+   cp /dev/stdin $infile
+fi
+
+
+firstline="$(head -1 ${infile})"
+
+cp "${infile}" tmp_outfile
+echo "${firstline}" | grep -q "|" && cat "${infile}" |tr '|' '\t' > tmp_outfile
+echo "${firstline}" | fgrep -q "^" && cat "${infile}" |tr '^' '\t' > tmp_outfile
+echo "${firstline}" | fgrep -q "," && csvformat -T "${infile}" > tmp_outfile
+
+numrecs=$(wc -l tmp_outfile |cut -d " " -f1)
+cutfield=$(head -1 tmp_outfile |tr '\t' '\n' |grep -in "${grepfield}" |sed 's/"//g'| sed 's/:.*//')
+
+awk -v REGEX="${regex}" -v FIELD=${cutfield} 'BEGIN{FS=OFS="\t";NOT = 0}{
+	if (substr(REGEX, length(REGEX), 1) == "!") { NOT = 1; REGEX = substr(REGEX, 1, length(REGEX) - 1) }
+	if ($FIELD ~ REGEX && NOT == 0) {print $0}
+	if ($FIELD !~ REGEX && NOT == 1) {print $0} 
+
+}' tmp_outfile
+
+rm -f tmp_outfile $tmp
+

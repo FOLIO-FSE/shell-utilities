@@ -26,4 +26,4 @@ awk -v NUMFIELDS=$numfields -v FS="\t" -v bad=0 -v good=0 '{if (NF == NUMFIELDS)
 
 echo
 
-rm -f $tmp tmp_oufile
+rm -f $tmp tmp_outfile

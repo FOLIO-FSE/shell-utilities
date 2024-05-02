@@ -53,7 +53,9 @@ fixrecord() {
 #                (.permanentLocationId = $VALUE) 
 #                (.temporaryLoanType = {"id": $VALUE} ) # UUID, must use items-inventory
 #                (.temporaryLocation = {"id": $VALUE} ) # UUID, must use items-inventory
-                (.fundDistributions[0].code = "ybpbl" ) 
+#                (.fundDistributions[0].code = "ybpbl" ) 
+                (.statisticalCodeIds += ["958fbc1d-db7f-48dd-8012-9803a0be64b3"] ) 
+
 		|del(.metadata)
 ')
 	#updated_record=${apicall//$pattern/$replace}

@@ -17,7 +17,7 @@ numrecs=$(wc -l tmp_outfile |cut -d " " -f1)
 numfields=$(head -1 tmp_outfile |tr '\t' '\n' |grep -i "[a-z0-9]" |wc -l)
 
 echo
-echo "$numfields fields in $numrecs lines including header were detected."
+echo "$numfields fields in $numrecs lines including header were detected in ${infile} "
 echo
 head -1 tmp_outfile |tr '\t' '\n' |grep -in "[a-z0-9]" |sed 's/"//g'
 echo

@@ -3,10 +3,10 @@ infile="${1}"
 if [[ ! -f ${infile} ]];then
 	tmp=$(mktemp)
 	infile=$tmp
-	cp /dev/stdin $infile
+	cp /dev/stdin "${infile}"
 fi
 
-firstline="$(head -1 ${infile})"
+firstline="$(head -1 \"${infile}\")"
 
 cp "${infile}" tmp_outfile
 echo "${firstline}" | grep -q "|" && cat "${infile}" |tr '|' '\t' > tmp_outfile

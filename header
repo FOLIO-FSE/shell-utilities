@@ -6,7 +6,7 @@ if [[ ! -f ${infile} ]];then
 	cp /dev/stdin "${infile}"
 fi
 
-firstline="$(head -1 \"${infile}\")"
+firstline="$(head -1 ${infile})"
 
 cp "${infile}" tmp_outfile
 echo "${firstline}" | grep -q "|" && cat "${infile}" |tr '|' '\t' > tmp_outfile

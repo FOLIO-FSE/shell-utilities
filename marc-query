@@ -8,6 +8,7 @@ if [[ -z $4 ]];then
 	echo
 	echo "marc-query 260 a ^= 'Paris'"
 	echo "marc-query p_06 = 'a' (leader search)"
+	echo "marc-query 650 ind2 = 7"
 	echo "marc-query 740 a is present"
 	echo "marc-query 740 a is absent"
 	echo "Boolean queries require script modification"

@@ -36,13 +36,13 @@ if (NR % 10000 == 0){ printf "Records procesessed: "NR"\r"}
 
 ENDOFAWK
 
-echo -e "${awkscript}" > tmp_checkmarc
-chmod 700 tmp_checkmarc
+echo -e "${awkscript}" > tmp_awk_marcsplit
+chmod 700 tmp_awk_marcsplit
 
-awk -v RS=$'\x1d' -v ORS=$'\x1d' -v FS=$'\x1e' -v NUMRECS=$num_per_file -b -f tmp_checkmarc "${infile}"
+awk -v RS=$'\x1d' -v ORS=$'\x1d' -v FS=$'\x1e' -v NUMRECS=$num_per_file -b -f tmp_awk_marcsplit "${infile}"
 echo
 numfiles=$(ls m_split* |wc -l)
 echo "All records are processed into the following $numfiles files"
 ls m_split*
 echo
-rm tmp_checkmarc
+rm tmp_awk_marcsplit

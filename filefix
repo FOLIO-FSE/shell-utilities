@@ -35,7 +35,10 @@ fix_characters(){
 	s/[$NBSP]/ /g
 	s/[$CONTROL]/ /g
 	s/\";\"/;/g
-	s/\(^\|\t\)\"\([^\t]\+\)\"\(\t\|$\)/\1\2\3/g
+	s/^\"\|\"$//g
+	s/^\"//
+	s/\"$//
+	s/\"\?\t\"\?/\t/g
 	s/\(^\|\t\)null\(\t\|$\)/\1\2/ig
 	" ${file}
 }
@@ -302,7 +305,6 @@ for splitfile in ${splitlist[@]};do
 done
 wait
 
-echo "${fieldnames}" > "${outfile}"
 cat filefixaa_out filefixab_out filefixac_out filefixad_out filefixae_out >> "${outfile}"
 cat filefixaa_bad filefixab_bad filefixac_bad filefixad_bad filefixae_bad > "${badfile}" 2>/dev/null
 

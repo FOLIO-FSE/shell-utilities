@@ -1,0 +1,31 @@
+
+filelist=("$@")
+numfiles=${#filelist[@]}
+
+rm -f tmp_mergtsvheaders
+
+for (( i=0; i<$numfiles; i++ ));do
+	head -1 ${filelist[$i]} | tr '\t' '\n' >> tmp_mergtsvheaders
+done
+
+cat tmp_mergtsvheaders |sort |uniq -c |grep "^ *${numfiles} " |sed "s/^ *${numfiles} //" > tmp_mergtsvgoodfields
+
+read -r -d '' awkscript << "ENDOFAWK"
+#!/usr/bin/awk -f
+
+BEGIN {
+	FS=OFS="\t"
+}
+
+{
+	if (NF == numfields) { 
+		print $0 > outfile	
+	} else {
+		badrecs++
+		print $0 > badfile
+	}
+	if (NR % 10000 == 0 ) {printf (".")}
+}
+ENDOFAWK
+
+cat tmp_mergtsvgoodfields

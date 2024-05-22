@@ -210,7 +210,7 @@ s/ [0-9]*:[0-9]*\($\|[\t]\)/\1/g
 echo "Loan file detected. Attempting to standardize headers"
 
 else
-	sed -i '1 s/[^0-9A-Za-z_\-#)(\.\t]//g' filefixaa
+	sed -i '1 s/[^0-9A-Za-z_#\)\(\.\t\-]//g' filefixaa
 fi
 
 read -r fieldnames < filefixaa
@@ -234,38 +234,52 @@ wait
 fix_dates(){
 	local file=${1}
 	local dateformat=${2}
+
 	case $dateformat in
 		us)
-			sed -i 's/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([89][0-9]\)\b/\119\2/g;s/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\1-\2/g;s/ \+-  -\( \+\)\?//g' ${file};;
+			sed -i 's/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([89][0-9]\)\b/\119\2/g;s/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\1-\2/g;s/ \+-  -\( \+\)\?//g' ${file}	
+			;;
 		us-single)
 			sed -i -r -e 'sx([^0-9]|\b)([0-9][/\-])x\10\2xg;sx/([0-9][/\-])x/0\1xg' ${file}
-			sed -i  's/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([7-9][0-9]\)\b/\119\2/g;s/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([012][0-9]\)\b/\120\2/g;s/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\1-\2/g;s/ \+-  -\( \+\)\?//g' ${file};;
+			sed -i  's/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([7-9][0-9]\)\b/\119\2/g;s/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([0-2][0-9]\)\b/\120\2/g;s/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\2-\1/g;s/ \+-  -\( \+\)\?//g;' ${file}
+			;;
+
 		uk)
-			sed -i 's/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([7-9][0-9]\)\b/\119\2/g;s/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\2-\1/g;s/ \+-  -\( \+\)\?//g;' ${file};;
+			sed -i 's/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([7-9][0-9]\)\b/\119\2/g;s/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\2-\1/g;s/ \+-  -\( \+\)\?//g;' ${file}
+			;;
 		uk-single)
 			sed -i -r -e 'sx([^0-9]|\b)([0-9][/\-])x\10\2xg;sx/([0-9][/\-])x/0\1xg' ${file}
-			sed -i 's/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([7-9][0-9]\)\b/\119\2/g;s/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([0-2][0-9]\)\b/\120\2/g;s/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\2-\1/g;s/ \+-  -\( \+\)\?//g;' ${file} ;;
+			sed -i 's/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([7-9][0-9]\)\b/\119\2/g;s/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([0-2][0-9]\)\b/\120\2/g;s/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\2-\1/g;s/ \+-  -\( \+\)\?//g;' ${file} 
+			;;
 		slashes)
-			sed -i 's#\b\([12][1230][0-9][0-9]\)/\([0-9][0-9]\)/\([0-9][0-9]\)\b#\1-\2-\3#g' ${file};;
+			sed -i 's#\b\([12][1230][0-9][0-9]\)/\([0-9][0-9]\)/\([0-9][0-9]\)\b#\1-\2-\3#g' ${file}
+			;;
 	esac
 }
+
 
 case $dateformat in
 	us)
 		echo "No UK formatted dates detected in first 50 lines"
-		echo "Converting MM-DD-YYYY dates to YYYY-MM-DD and stripping blank dates";;
+		echo "Converting MM-DD-YYYY dates to YYYY-MM-DD and stripping blank dates"
+		;;
 	us-single)
-		echo "Converting US dates with single digits to to YYYY-MM-DD and stripping blank dates";;
+		echo "Converting US dates with single digits to to YYYY-MM-DD and stripping blank dates"
+		;;
+
 	uk)
-		echo "Converting DD-MM-YYYY dates to YYYY-MM-DD and stripping blank dates";;
+		echo "Converting DD-MM-YYYY dates to YYYY-MM-DD and stripping blank dates"
+		;;
 	uk-single)
-		echo "Converting UK dates with single digits to YYYY-MM-DD and stripping blank dates";;
+		echo "Converting UK dates with single digits to YYYY-MM-DD and stripping blank dates"
+		;;
 	slashes)
-		echo "Reformatting dates to YYYY-MM-DD";;
+		echo "Reformatting dates to YYYY-MM-DD"
+		;;
 esac
 
 for file in ${splitlist[@]};do 
-	fix_dates ${file} &
+	fix_dates ${file} ${dateformat} &
 done
 
 
@@ -305,6 +319,7 @@ for splitfile in ${splitlist[@]};do
 done
 wait
 
+rm -f "${outfile}" "${badfile}"
 cat filefixaa_out filefixab_out filefixac_out filefixad_out filefixae_out >> "${outfile}"
 cat filefixaa_bad filefixab_bad filefixac_bad filefixad_bad filefixae_bad > "${badfile}" 2>/dev/null
 

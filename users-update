@@ -1,0 +1,59 @@
+inputFile="users.tsv"
+sed -i 's/"//g' users.tsv
+
+okapi_url=$(cat okapi.url)
+tenant=$(cat tenant)
+okapi_token=$(cat okapi.token)
+
+#patronGroup="Undergraduate"
+expirationDate="2024-05-31T00:00:00.000+00:00"
+
+users=""
+
+fieldSeparator=$'\x1e'
+
+build_user() {
+	username=""
+
+	input_record=$(tr "\t" ${fieldSeparator} <<< ${input_record}) 
+	IFS=${fieldSeparator} read -r externalSystemId username <<< ${input_record}
+
+	if [[ ${username} == "" ]];then username=${externalSystemId};fi
+
+
+IFS='' read -r -d '' user << EndOfUser
+      {
+        "username" : "${username}",
+        "externalSystemId" : "${externalSystemId}",
+        "expirationDate" : "${expirationDate}",
+	"active": true
+      }
+EndOfUser
+}
+
+fieldSeparator=$'\x1e'
+
+
+while mapfile -t -n 250 user_records && ((${#user_records[@]})); do
+	totalRecords=0
+	users=""
+
+	for input_record in "${user_records[@]}";do
+		build_user
+
+		if (( totalRecords==0 ));then 
+			users="${user}"
+		else
+			users="${users}, ${user}"
+		fi
+		
+		totalRecords=$(($totalRecords + 1))
+	done
+	
+	payload="{\"users\": [${users}],\"totalRecords\": ${totalRecords}, \"deactivateMissingUsers\": false, \"updateOnlyPresentFields\": true}"
+	
+	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${payload}" "${okapi_url}/user-import"
+
+done < ${inputFile}
+
+

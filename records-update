@@ -51,10 +51,11 @@ fixrecord() {
 #		 ((.parsedRecord.content.fields[] | select(."008" != null) |."008") = $VALUE)               
 #		 ((.parsedRecord.content.fields[] | select(."008" != null) |."008") = "780615s19uu    xx a                eng d")               
 #                (.permanentLocationId = $VALUE) 
+                (.materialTypeId = "c6f1d4a7-9b07-4409-a7ab-81aaf6e1fce4") 
 #                (.temporaryLoanType = {"id": $VALUE} ) # UUID, must use items-inventory
 #                (.temporaryLocation = {"id": $VALUE} ) # UUID, must use items-inventory
 #                (.fundDistributions[0].code = "ybpbl" ) 
-                (.statisticalCodeIds += ["958fbc1d-db7f-48dd-8012-9803a0be64b3"] ) 
+#                (.statisticalCodeIds += ["958fbc1d-db7f-48dd-8012-9803a0be64b3"] ) 
 
 		|del(.metadata)
 ')

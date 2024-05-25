@@ -4,7 +4,16 @@ if [[ -z ${filelist} ]];then echo "You must supply a file name or expression (wi
 
 counter=1
 badfields=0
-declare -A headers
+
+allheaders="$(head -q -n1 ${filelist[@]})"
+
+IFS=$'\x1f' read -ra headers <<< $(echo "${allheaders}" |tr ',^|' '\t' | tr -dc '[:print:]\t\n'| tr '\t' $'\x1f' |sort -u)
+
+for f in "${filelist[@]}";do
+	echo "$x $f"
+	x=$(($x + 1))
+done
+exit
 
 for f in "${filelist[@]}";do
 	header=$(head -1 "${f}" |tr , "\t")

@@ -1,0 +1,53 @@
+# updates all items that are not Declared lost, Restricted, or missing to Available 
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+echo "Retrieving records requring update"
+records-get items 'status.name=="Aged%20to%20lost"%20or%20status.name=="Checked%20out"%20or%20status.name=="In%20transit"%20or%20status.name=="Paged"'
+
+echo "Setting status to Available"
+
+infile=loan_uuids
+
+jq -r .id items.json > ${infile}
+
+infile=loan_uuids
+outfile=loan_update.log
+searchtype="id"
+batchsize=50
+jq_replace='.items[].status.name="Available" '
+querydelim="%20or%20${searchtype}="
+endpoint="${okapi_url}/item-storage/items?query="
+
+rm -f ${outfile}
+
+counter=0
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
+	counter=$(($counter + ${#ids[@]}))
+
+	# break array into space separated string
+	idstring="${ids[@]}"
+	querystring="id=${idstring// /${querydelim}}"
+
+	records=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}${querystring}&limit=${batchsize}" )
+
+	if [[ -n ${jq_replace} ]];then
+		updated_records=$(echo "${records}" |jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo)")
+	fi
+
+	if [[ -n ${string_replace} ]];then
+		updated_records=$(echo "${records}" |sed ${string_replace} | jq -c 'del(.totalRecords) |del(.resultInfo)')
+	fi
+
+
+	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_records}" "${okapi_url}/item-storage/batch/synchronous?upsert=true" >> ${outfile}
+
+	printf "Processing record %s of %s\r" $counter $numrecs
+
+done < ${infile}
+
+echo "Set ${numrecs} records to Available status. Output was written to ${outfile}"

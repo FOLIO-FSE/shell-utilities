@@ -201,7 +201,6 @@ case $rec_type in
 "mtypes")
 	endpoint="material-types";;
 "notes")
-	num_retrieved=1
 	endpoint="notes";;
 "orderprefixes")
 	rec_type="prefixes"

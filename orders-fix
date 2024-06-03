@@ -63,8 +63,23 @@ cat "${infile}" |jq -c 'walk(
 	walk(
 	if type == "object" and ((.cost.poLineEstimatedPrice == null) and (.cost.currency != null)) then 
 	(.cost.poLineEstimatedPrice, .cost.listUnitPrice) = "0.00" 
-	else . 
-	end)' > "${outfile}"
+	else .  end) |
+
+	# fix electronic
+	walk(if type == "object" and .orderFormat == "Electronic Resource" then 
+	(.cost.listUnitPriceElectronic = .cost.listUnitPrice |del(.cost.listUnitPrice))
+	| (.cost.quantityElectronic = .cost.quantityPhysical |del(.cost.quantityPhysical)) 
+	| (.locations[].quantityElectronic = .cost.quantityElectronic| del(.locations[].quantityPhysical))
+	else . end) |
+
+	# fix p/e mix 
+	walk(if type == "object" and .orderFormat == "P/E Mix" then 
+	(.cost.listUnitPriceElectronic = "0.00")
+	| (.cost.quantityElectronic = .cost.quantityPhysical) 
+	| (.locations[].quantityElectronic = .cost.quantityElectronic)
+	| (.locations[].quantity = 2)
+	else . end)
+' > "${outfile}"
 
 echo
 echo

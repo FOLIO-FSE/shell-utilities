@@ -84,6 +84,8 @@ case $recordtype in
 	recordtype="licenses/refdata";;
 "loans")
 	recordtype="loan-storage/loans";;
+"loantypes")
+	recordtype="loan-types";;
 "locations")
 	recordtype="locations";;
 "nature-of-content")

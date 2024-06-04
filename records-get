@@ -113,6 +113,7 @@ case $rec_type in
 "feefineactions")
 	endpoint="feefineactions";;
 "fines")
+	rec_type="feefineactions"
 	endpoint="feefineactions";;
 "fiscalyears")
 	rec_type="fiscalYears"

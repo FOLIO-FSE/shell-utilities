@@ -10,6 +10,8 @@ set="${3}"
 
 user_uuid=$(echo $1 |tr -dc [a-z0-9\-])
 
+if [[ -z $new_perm ]];then echo "Usage: permission-add [user_uuid_or_username] [new_permission] [\"set\" if permission set]";exit;fi
+
 usernamefound=0
 
 if [[ $set == "set" ]];then

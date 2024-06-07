@@ -1,0 +1,32 @@
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+tenant=$(cat tenant)
+
+echo "Retrieving all fine records"
+
+records-get feefineactions
+
+finethreshold=10
+
+#### generate list of users and fine over threshold
+
+cat feefineactions.json \
+	|jq -r 'select(.balance>0)|[.userId, .balance]|@tsv' \
+	|awk -v THRESHOLD=$finethreshold '{ balance[$1]+=$2 } 
+		END { for (user in balance) {
+			if (balance[user] > THRESHOLD) {
+				printf("%s\t%s\n", user, balance[user]) 
+			}
+		}}' \
+	| sort -k2nr > users_fines.tmp
+
+
+#### convert user uuids to barcodes and list the fine
+rm -f users_fines.tsv
+
+while read -r uuid fine;do
+	barcode=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users/${uuid}" |jq -r .barcode)
+	echo "$barcode	$fine" |tee -a users_fines.tsv
+done < users_fines.tmp
+
+rm users_fines.tmp

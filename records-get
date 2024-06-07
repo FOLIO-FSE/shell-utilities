@@ -220,6 +220,10 @@ case $rec_type in
 	endpoint="organizations-storage/organizations"
 	query="query=%28status%3D%3D%22Active%22%29"
 	;;
+"permissions")
+	sortby=""
+	num_retrieved=20000
+	endpoint="perms/permissions";;
 "permissionusers")
 	rec_type="permissionUsers"
 	endpoint="perms/users";;

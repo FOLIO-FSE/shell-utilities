@@ -12,13 +12,13 @@ finethreshold=10
 
 cat accounts.json \
 	|jq -r 'select(.status.name=="Open" and .remaining>0 )|[.userId, .remaining]|@tsv' \
-	|awk -v THRESHOLD=$finethreshold 'BEGIN{FS="\t"}{ remaining[$1]+=$2 } 
+	|awk -v THRESHOLD=$finethreshold 'BEGIN{OFS="\t"}{ remaining[$1]+=$2 } 
 		END { for (user in remaining) {
 			if (remaining[user] > THRESHOLD) {
 				print(user, remaining[user]) 
 			}
 		}}' \
-	| sort -k2nr > users_fines.tmp
+	| sort > users_fines.tmp
 
 
 #### convert user uuids to barcodes and list the fine
@@ -26,9 +26,14 @@ rm -f users_fines.tsv
 
 echo
 
-while read -r uuid fine;do
-	barcode=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users/${uuid}" |jq -r .barcode)
-	echo "$barcode	$fine" |tee -a users_fines.tsv
-done < users_fines.tmp
+cut -f1 users_fines.tmp > uuids
 
-rm users_fines.tmp
+echo "Retrieving user barcodes for fines"
+records-getfromfile users
+
+jq -sr '.|sort_by(.id)|.[] |.barcode' users.json > tmp_users
+paste tmp_users users_fines.tmp |cut -f1,3 |sort -k2nr > users_fines.tsv
+
+echo "Output has been sent to users_fines.tsv"
+
+rm users_fines.tmp accounts.json users.json uuids tmp_users

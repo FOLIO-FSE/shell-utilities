@@ -4,18 +4,18 @@ tenant=$(cat tenant)
 
 echo "Retrieving all fine records"
 
-records-get feefineactions
+records-get accounts
 
 finethreshold=10
 
 #### generate list of users and fine over threshold
 
-cat feefineactions.json \
-	|jq -r 'select(.balance>0)|[.userId, .balance]|@tsv' \
-	|awk -v THRESHOLD=$finethreshold 'BEGIN{FS="\t"}{ balance[$1]+=$2 } 
-		END { for (user in balance) {
-			if (balance[user] > THRESHOLD) {
-				print(user, balance[user]) 
+cat accounts.json \
+	|jq -r 'select(.status.name=="Open" and .remaining>0 )|[.userId, .remaining]|@tsv' \
+	|awk -v THRESHOLD=$finethreshold 'BEGIN{FS="\t"}{ remaining[$1]+=$2 } 
+		END { for (user in remaining) {
+			if (remaining[user] > THRESHOLD) {
+				print(user, remaining[user]) 
 			}
 		}}' \
 	| sort -k2nr > users_fines.tmp

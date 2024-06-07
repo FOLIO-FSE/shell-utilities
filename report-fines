@@ -12,10 +12,10 @@ finethreshold=10
 
 cat feefineactions.json \
 	|jq -r 'select(.balance>0)|[.userId, .balance]|@tsv' \
-	|awk -v THRESHOLD=$finethreshold '{ balance[$1]+=$2 } 
+	|awk -v THRESHOLD=$finethreshold 'BEGIN{FS="\t"}{ balance[$1]+=$2 } 
 		END { for (user in balance) {
 			if (balance[user] > THRESHOLD) {
-				printf("%s\t%s\n", user, balance[user]) 
+				print(user, balance[user]) 
 			}
 		}}' \
 	| sort -k2nr > users_fines.tmp
@@ -23,6 +23,8 @@ cat feefineactions.json \
 
 #### convert user uuids to barcodes and list the fine
 rm -f users_fines.tsv
+
+echo
 
 while read -r uuid fine;do
 	barcode=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users/${uuid}" |jq -r .barcode)

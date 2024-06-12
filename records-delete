@@ -121,8 +121,11 @@ case $deletetype in
 	recordtype="finance/encumbrances";;
 "users")
 	recordtype="users";;
+"users-safe")
+	batchsize=5
+	recordtype="bl-users/by-id";;
 *)
-	echo "Record type '${deletetype}' not found. Supported types are boundwiths, campuses, contacts, coursetypes, departments, feefineactions, groups, holdings, instances, instance-types, items, libraries, loan history, loans, loantypes, locations, mattypes, notes, organizations, requests, schedulednotices, servicepoints, srs, tags, templates, transactions, users. Objects with attached records will need specialized delete routines"
+	echo "Record type '${deletetype}' not found. Supported types are boundwiths, campuses, contacts, coursetypes, departments, feefineactions, groups, holdings, instances, instance-types, items, libraries, loan history, loans, loantypes, locations, mattypes, notes, organizations, requests, schedulednotices, servicepoints, srs, tags, templates, transactions, users, users-safe. Objects with attached records will need specialized delete routines"
 	exit;;
 esac
 

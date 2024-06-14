@@ -42,15 +42,15 @@ cat "${infile}" |jq -c 'walk(
 	walk(
 	if type == "object" and (.quantity == "0") 
 	then (
-	.quantity = "1" |
-	.quantityPhysical = "1" 
+	.quantity = 1 |
+	.quantityPhysical = 1 
 	)
 	else . end) |
 
 	walk(
 	if type == "object" and (.quantityPhysical == "0") 
 	then (
-	.quantityPhysical = "1" 
+	.quantityPhysical = 1 
 	)
 	else . end) |
 
@@ -77,7 +77,7 @@ cat "${infile}" |jq -c 'walk(
 	(.cost.listUnitPriceElectronic = "0.00")
 	| (.cost.quantityElectronic = .cost.quantityPhysical) 
 	| (.locations[].quantityElectronic = .cost.quantityElectronic)
-	| (.locations[].quantity = 2)
+	| (.locations[].quantity = (.cost.quantityPhysical|tonumber) + (.cost.quantityElectronic|tonumber))
 	else . end)
 ' > "${outfile}"
 

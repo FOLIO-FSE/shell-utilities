@@ -91,11 +91,15 @@ case $deletetype in
 	recordtype="material-types";;
 "notes")
 	recordtype="notes";;
+"orders")
+	recordtype="orders-storage/purchase-orders";;
 "organizations")
 	recordtype="organizations/organizations";;
 "permissionusers")
 	singlerecord="yes"
    recordtype="perms/users";;
+"polines")
+	recordtype="orders-storage/po-lines";;
 "precedingsucceeding")
 	singlerecord="yes"
 	recordtype="preceding-suceeding-titles";;

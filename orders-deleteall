@@ -1,0 +1,6 @@
+records-get polines
+jq -r .id polines.json > delete
+records-delete polines
+records-get orders
+jq -r .id orders.json > delete
+records-delete orders

@@ -57,7 +57,7 @@ case $recordtype in
         recordtype="feefineactions"
         ;;
 "fines")
-        recordtyp="feefineactions";;
+        recordtype="feefineactions";;
 "holdings")
 	recordtype="holdings-storage/holdings";;
 "identifier-types")

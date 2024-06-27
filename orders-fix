@@ -24,6 +24,9 @@ cat "${infile}" |jq -c 'walk(
 	then del(.) 
 	else . end) |
 
+	# remove invalid characters from PO number
+	if .poNumber != null then .poNumber = (.poNumber|gsub("[^a-zA-Z0-9]"; "")) else . end |
+
 	# populated rest of fund object if fundId is correct
 	walk(
 	if type == "object" and .fundId 

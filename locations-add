@@ -16,10 +16,10 @@ declare -A dict_campuses
 declare -A dict_libraries
 declare -A dict_institutions
 
-institution_default="silliman"
-campus_default="early_childhood"
-library_default="ecs"
-servicepoint_default="early_childhood"
+institution_default="CU"
+campus_default="Morningside"
+library_default="Lehman"
+servicepoint_default="LEHMAN"
 
 # get list of institutions with code as key and uuid as value
 eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/location-units/institutions?limit=1000" |  jq -r '.locinsts[] | @sh "dict_institutions[\(.code|tostring|ascii_downcase)]=\(.id|tostring)"')"
@@ -55,8 +55,8 @@ for key in "${!dict_servicepoints[@]}";do
 done
 
 #while IFS=$'\t' read -r code discovery name
-#while IFS=$'\t' read -r library servicepoint code
-while IFS=$'\t' read -r code
+#while IFS=$'\t' read -r code
+while IFS=$'\t' read -r institution campus library name code discovery servicepoint
 do
 	comparecampus=$(tr -dc [a-z0-9] <<< "${campus,,}")
 	comparelibrary=$(tr -dc [a-z0-9] <<< "${library,,}")

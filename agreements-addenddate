@@ -38,7 +38,7 @@ for key in "${!agreement_dict[@]}";do
 	agreement_dict[${newkey}]=${agreement_dict["${key}"]}
 done
 
-#add script
+#add period enddate
 
 while IFS=$'\t' read -r agreement endDate;do
 	compareagreementkey=$(tr -dc "[0-9a-z]" <<< "${agreement,,}")

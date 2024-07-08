@@ -58,6 +58,7 @@ done
 #while IFS=$'\t' read -r code
 while IFS=$'\t' read -r institution campus library name code discovery servicepoint
 do
+	compareinstitution=$(tr -dc [a-z0-9] <<< "${institution,,}")
 	comparecampus=$(tr -dc [a-z0-9] <<< "${campus,,}")
 	comparelibrary=$(tr -dc [a-z0-9] <<< "${library,,}")
 	compareservicepoint=$(tr -dc [a-z0-9] <<< "${servicepoint,,}")
@@ -70,11 +71,10 @@ do
 	if [[ -z ${institution} ]];then 
 		institutionId=${dict_institutions[${institution_default}]}
 	else
-		compareinstitution=$(tr -dc [a-z0-9] <<< "${compareinstitution,,}")
-		institutionId=${dict_institution[${compareinstitution}]}
+		institutionId=${dict_institutions[${compareinstitution}]}
 
 		if [[ ! ${institutionId} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
-			institutionId="${institution_default}"
+			institutionId=${dict_institutions[${institution_default}]}
 		fi
 	fi
 
@@ -85,7 +85,7 @@ do
 		campusId=${dict_campuses[${comparecampus}]}
 
 		if [[ ! ${campusId} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
-			campusId="${campus_default}"
+			campusId=${dict_campuses[${campus_default}]}
 		fi
 	fi
 
@@ -96,18 +96,17 @@ do
 		libraryId=${dict_libraries[${comparelibrary}]}
 
 		if [[ ! ${libraryId} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
-			libraryId="${library_default}"
+			libraryId=${dict_libraries[${comparelibrary}]}
 		fi
 	fi
 
 	if [[ -z ${servicepoint} ]];then 
 		servicePointId=${dict_servicepoints[${servicepoint_default}]}
 	else
-		compareservicepoint=$(tr -dc [a-z0-9] <<< "${compareservicepoint,,}")
 		servicePointId=${dict_servicepoints[${compareservicepoint}]}
 
 		if [[ ! ${servicepointId} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
-			servicePointId="${servicepoint_default}"
+			servicePointId=${dict_servicepoints[${servicepoint_default}]}
 		fi
 	fi
 

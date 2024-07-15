@@ -2,5 +2,42 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/locations?limit=10000" |jq -r '.locations[] | [.code, .name, .discoveryDisplayName] |@tsv'
+declare -A dict_servicepoints
+declare -A dict_campuses
+declare -A dict_libraries
+declare -A dict_institutions
+
+rm -f locations.tsv
+
+eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/location-units/institutions?limit=1000" |  jq -r '.locinsts[] | @sh "dict_institutions[\(.id|tostring)]=\(.code|tostring)"')"
+
+eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/location-units/campuses?limit=1000" |  jq -r '.loccamps[] | @sh "dict_campuses[\(.id|tostring)]=\(.code|tostring)"')"
+
+eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/location-units/libraries?limit=1000" |  jq -r '.loclibs[] | @sh "dict_libraries[\(.id|tostring)]=\(.code|tostring)"')"
+
+eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/service-points?limit=1000" |  jq -r '.servicepoints[] | @sh "dict_servicepoints[\(.id|tostring)]=\(.code|tostring)"')"
+echo "Normalizing campus, library, and servicepoint keys"
+
+curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/locations?limit=10000" |jq -r '.locations[] | [.code, .name, .discoveryDisplayName, .institutionId, .campusId, .libraryId, .primaryServicePoint] |@tsv' > tmp_locations
+
+echo -n "Processing location: "
+
+while IFS=$'\t' read -r code name discovery institution campus library servicepoint
+do
+	institution=${dict_institutions[${institution}]}
+	campus=${dict_campuses[${campus}]}
+	library=${dict_libraries[${library}]}
+	servicepoint=${dict_servicepoints[${servicepoint}]}
+
+echo -e "${code}\t${name}\t${discovery}\t${institution}\t${campus}\t${library}\t${servicepoint}" >> locations.tsv
+echo -n "${code} "
+
+done < tmp_locations
+echo
+echo
+echo "Output has been sent to locations.tsv"
+
+rm tmp_locations
+
+
 

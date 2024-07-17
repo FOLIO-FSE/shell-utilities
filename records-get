@@ -208,6 +208,7 @@ case $rec_type in
 "notes")
 	endpoint="notes";;
 "notices")
+	rec_type="scheduledNotices"
 	endpoint="scheduled-notice-storage/scheduled-notices";;
 "orderprefixes")
 	rec_type="prefixes"

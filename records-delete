@@ -91,6 +91,8 @@ case $deletetype in
 	recordtype="material-types";;
 "notes")
 	recordtype="notes";;
+"notices")
+	recordtype="scheduled-notice-storage/scheduled-notices";;
 "orders")
 	recordtype="orders-storage/purchase-orders";;
 "organizations")
@@ -129,7 +131,7 @@ case $deletetype in
 	batchsize=5
 	recordtype="bl-users/by-id";;
 *)
-	echo "Record type '${deletetype}' not found. Supported types are boundwiths, campuses, contacts, coursetypes, departments, feefineactions, groups, holdings, instances, instance-types, items, libraries, loan history, loans, loantypes, locations, mattypes, notes, organizations, requests, schedulednotices, servicepoints, srs, tags, templates, transactions, users, users-safe. Objects with attached records will need specialized delete routines"
+	echo "Record type '${deletetype}' not found. Supported types are boundwiths, campuses, contacts, coursetypes, departments, feefineactions, groups, holdings, instances, instance-types, items, libraries, loan history, loans, loantypes, locations, mattypes, notes, notices, organizations, requests, schedulednotices, servicepoints, srs, tags, templates, transactions, users, users-safe. Objects with attached records will need specialized delete routines"
 	exit;;
 esac
 

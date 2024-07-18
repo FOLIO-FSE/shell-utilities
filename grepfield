@@ -20,7 +20,12 @@ echo "${firstline}" | fgrep -q "^" && cat "${infile}" |tr '^' '\t' > tmp_outfile
 echo "${firstline}" | fgrep -q "," && csvformat -T "${infile}" > tmp_outfile
 
 numrecs=$(wc -l tmp_outfile |cut -d " " -f1)
-cutfield=$(head -1 tmp_outfile |tr '\t' '\n' |egrep -in "(^|\t)${grepfield}(\t|$)" |sed 's/"//g'| sed 's/:.*//' |tr -d '\n')
+
+if [[ grepfield =~ ^[0-9]+$ ]];then
+	cutfield=grepfield 
+else
+	cutfield=$(head -1 tmp_outfile |tr '\t' '\n' |egrep -in "(^|\t)${grepfield}(\t|$)" |head -1|sed 's/"//g'| sed 's/:.*//' |tr -d '\n')
+fi
 
 awk -v REGEX="${regex}" -v FIELD=${cutfield} 'BEGIN{FS=OFS="\t";NOT = 0}{
 	if (substr(REGEX, length(REGEX), 1) == "!") { NOT = 1; REGEX = substr(REGEX, 1, length(REGEX) - 1) }

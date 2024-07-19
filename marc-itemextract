@@ -357,11 +357,13 @@ if [[ ${system} == "wms"  ]];then
 	tags[2]="3"
 	tags[3]="x"
 	tags[4]="z"
+	tags[5]="e"
 
 	labels[1]="barcode"
 	labels[2]="volume"
-	labels[3]="imsg"
-	labels[4]="opacmsg"
+	labels[3]="checkin_msg"
+	labels[4]="staff_note"
+	labels[5]="public_note"
 fi
 
 taglist="$(echo ${tags[@]})"

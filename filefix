@@ -296,8 +296,13 @@ BEGIN {
 	if (NF == numfields) { 
 		print $0 > outfile	
 	} else {
-		badrecs++
-		print $0 > badfile
+		if ((NF == numfields + 1) && (substr($0, length($0), 1) == "\t")) {
+			$0 = substr($0, 1, length($0) - 1)
+			print $0 > outfile	
+		} else {
+			badrecs++
+			print $0 > badfile
+		}
 	}
 	if (NR % 10000 == 0 ) {printf (".")}
 }

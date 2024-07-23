@@ -3,7 +3,7 @@ infile="${1}"
 if [[ ! -f ${infile} ]];then
 	tmp=$(mktemp)
 	infile=$tmp
-	cp /dev/stdin "${infile}"
+	cp /dev/stdin $infile
 fi
 
 firstline="$(head -1 ${infile})"
@@ -17,9 +17,9 @@ numrecs=$(wc -l tmp_outfile |cut -d " " -f1)
 numfields=$(head -1 tmp_outfile |tr '\t' '\n' |grep -i "[a-z0-9]" |wc -l)
 
 echo
-echo "$numfields fields in $numrecs lines including header were detected in ${infile} "
+echo "$numfields fields in $numrecs lines including header were detected."
 echo
-head -1 tmp_outfile |tr '\t' '\n' |grep -in "[a-z0-9]" |sed 's/"//g'
+head -1 tmp_outfile |tr '\t' '\n' |grep -in "[a-z0-9]" |sed 's/"//g' |column
 echo
 
 awk -v NUMFIELDS=$numfields -v FS="\t" -v bad=0 -v good=0 '{if (NF == NUMFIELDS){good++}else{bad++}}END{print good-1" of "NR-1" records contained the same number of fields as the header.\n"bad" records contained the wrong number of fields"}' tmp_outfile 

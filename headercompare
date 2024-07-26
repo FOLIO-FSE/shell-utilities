@@ -13,7 +13,6 @@ for f in "${filelist[@]}";do
 	echo "$x $f"
 	x=$(($x + 1))
 done
-exit
 
 for f in "${filelist[@]}";do
 	header=$(head -1 "${f}" |tr , "\t")

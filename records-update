@@ -55,7 +55,8 @@ fixrecord() {
 #                (.temporaryLoanType = {"id": $VALUE} ) # UUID, must use items-inventory
 #                (.temporaryLocation = {"id": $VALUE} ) # UUID, must use items-inventory
 #                (.fundDistributions[0].code = "ybpbl" ) 
-                (.administrativeNotes += [$VALUE] ) 
+#                (.administrativeNotes += [$VALUE] ) 
+                (.active = true ) 
 #                (.statisticalCodeIds += ["958fbc1d-db7f-48dd-8012-9803a0be64b3"] ) 
 
 		|del(.metadata)
@@ -126,7 +127,6 @@ case $recordtype in
 "templates")
 	recordtype="templates";;
 "users")
-	batchsize=1
 	recordtype="users";;
 *)
 	echo "Record type '${recordtype}' not found. Supported types are authorities, campuses, entitlements, groups, holdings, instances, instance-types, interfaces, invoices, invoice-lines, items, items-inventory, libraries, licenses, loans, locations, notes, notices, organizations, parsedrecords, polines, requests, servicepoints, srs, tags, templates, users."

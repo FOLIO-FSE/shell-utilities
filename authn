@@ -41,9 +41,12 @@ fi
 
 apicall=$(curl -c cookies.txt -s -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${auth_tenant}" -d "${okapi_login}" "${okapi_url}/authn/login-with-expiry")
 
+okapi_token="$(cat cookies.txt |grep folioAccessToken| cut -f7)"
+
 if [[ ! ${okapi_token} =~ [a-z] ]];then
 	echo "okapi token not acquired"
 	exit
 else
-	echo ${okapi_token} >  okapi.token
+	echo -n ${okapi_token} >  okapi.token
 fi
+

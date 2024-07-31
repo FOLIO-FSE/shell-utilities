@@ -14,9 +14,10 @@ echo
 
 #cat "${infile}" |jq 'walk(if type == "object" and (.distributionType != null) and (.fundId == null) then del(.) else . end)' > "${tmpfile}1.json"
 
-# Set values if fundId mapped, otherwise delete object
+# add details object if not present
+cat "${infile}" |jq -c '.compositePoLines[] |= if .details==null then .details={} else . end |
 
-cat "${infile}" |jq -c 'walk(
+	walk(
 
 	# delete if not properly mapped Fund UUID
 	if type == "object" and (.distributionType != null) 

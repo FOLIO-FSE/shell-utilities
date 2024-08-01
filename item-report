@@ -3,7 +3,7 @@ records-get locations
 
 jq -r '[.id, .code]|@tsv' locations.json > location.tsv
 
-echo -e "title\tcall_num\tbarcode\tlocation" > item_report.tsv
+echo -e "call_num\ttitle\tbarcode\tlocation" > item_report.tsv
 
 cat inventory.json |jq -r --arg delim $'\x1f' '
 	.instance.title as $title |

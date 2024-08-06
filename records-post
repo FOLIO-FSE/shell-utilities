@@ -1,4 +1,6 @@
 auth 2>/dev/null || authn 2>/dev/null
+SECONDS=0
+TIMER=0
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
@@ -140,9 +142,15 @@ while mapfile -t -n 6 lines && ((${#lines[@]})); do
 	done
 	wait
 
-        TIME=$SECONDS;msg="$SECONDS seconds"
-        if [[ $SECONDS -gt 60 ]];then TIME=$(bc <<< "scale=1;$SECONDS/60");msg="$TIME minutes";fi
-        if [[ $SECONDS -gt 3600 ]];then TIME=$(bc <<< "scale=1;$SECONDS/3600");msg="$TIME hours     ";fi
+        if [[ $SECONDS -gt 500 ]]; then
+		TIMER=$(($TIMER + $SECONDS))
+                auth 2>/dev/null || authn 2>/dev/null
+                SECONDS=0
+        fi
+
+        TIME=$TIMER;msg="$TIMER seconds"
+        if [[ $TIMER -gt 60 ]];then TIME=$(bc <<< "scale=1;$TIMER/60");msg="$TIME minutes";fi
+        if [[ $TIMER -gt 3600 ]];then TIME=$(bc <<< "scale=1;$TIMER/3600");msg="$TIME hours     ";fi
 
 	echo -en "Processing record $counter of $numrecs in $msg\r"
 

@@ -1,4 +1,5 @@
 auth 2>/dev/null || authn 2>/dev/null
+SECONDS=0
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
@@ -152,10 +153,16 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 
 	echo "${records}" |jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo) |del(.metadata)" >>  "${rec_type}.json"
 
-        TIME=$SECONDS;msg="$SECONDS seconds"
+        if [[ $SECONDS -gt 500 ]]; then
+		TIMER=$(($TIMER + $SECONDS))
+                auth 2>/dev/null || authn 2>/dev/null
+                SECONDS=0
+        fi
 
-        if [[ $SECONDS -gt 60 ]];then TIME=$(($SECONDS/60));msg="$TIME minutes";fi
-        if [[ $SECONDS -gt 3600 ]];then TIME=$(($SECONDS/3600));msg="$TIME hours";fi
+        TIME=$TIMER;msg="$TIMER seconds"
+
+        if [[ $TIMER -gt 60 ]];then TIME=$(($TIMER/60));msg="$TIME minutes";fi
+        if [[ $TIMER -gt 3600 ]];then TIME=$(($TIMER/3600));msg="$TIME hours";fi
 
         echo -en "Processing record $counter of $numrecs in $msg in $(($counter/$SECONDS)) recs/sec          \r"
 

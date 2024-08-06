@@ -1,4 +1,5 @@
 auth 2>/dev/null || authn 2>/dev/null
+SECONDS=0
 # Supply without a uuid to delete all of many record types
 # 
 tenant=$(cat tenant)
@@ -25,6 +26,10 @@ errors=0
 SECONDS=1
 
 delete_record() {
+        if [[ $SECONDS -gt 500 ]]; then
+                auth 2>/dev/null || authn 2>/dev/null
+                SECONDS=0
+        fi
 	local uuid=${1//[^0-9a-z\-]/}
 	local seq=$2
 	local apicall=$(curl -sI -w '%{http_code}' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}")

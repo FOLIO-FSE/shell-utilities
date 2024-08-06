@@ -14,7 +14,7 @@ Most scripts here require the jq utility to use and have been tested only on WSL
 - *okapi.url* -- contains the okapi URL for your tenant
 - *okapi.token* -- contains a valid okapi token
 
-To get an okapi token, you will first need to run the *auth* script. Having said that, this script is provided only to make the token generation process transparent -- it's recommended that you adapt the mechanism to avoid storing credentials.
+To get an okapi token, you will first need to run the *authn* script. 
 
 Any API requiring an edge key will also require a file named *edge.key*
 

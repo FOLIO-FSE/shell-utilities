@@ -1,3 +1,4 @@
+auth 2>/dev/null || authn 2>/dev/null
 # gets list of available permissions and assigns all of them to a uuid
 #
 # Usage ./permissions-assign-all "uuid"

@@ -1,6 +1,6 @@
+auth 2>/dev/null || authn 2>/dev/null
 # retrieves item and holdings data associated with
 # an instance
-
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)

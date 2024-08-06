@@ -1,3 +1,4 @@
+auth 2>/dev/null || authn 2>/dev/null
 # updates all items that are not Declared lost, Restricted, or missing to Available 
 
 tenant=$(cat tenant)

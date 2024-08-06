@@ -1,3 +1,4 @@
+auth 2>/dev/null || authn 2>/dev/null
 #usage ./refdata-get
 #
 # creates directory and adds json files for each type

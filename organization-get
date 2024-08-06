@@ -1,3 +1,4 @@
+auth 2>/dev/null || authn 2>/dev/null
 # gives organization uuid when given an organization code
 #
 # useage: ./organization-get "org_code"

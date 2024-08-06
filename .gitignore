@@ -2,3 +2,4 @@ okapi.*
 tenant
 edge.*
 db-*
+auth

@@ -1,3 +1,4 @@
+auth 2>/dev/null || authn 2>/dev/null
 ### This file expects a tab delimited input file. Both input fields and the JSON object will need 
 ### to be adapted to a actual fields being transmitted
 ### 

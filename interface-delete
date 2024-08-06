@@ -1,3 +1,4 @@
+auth 2>/dev/null || authn 2>/dev/null
 # Supply without a uuid to delete all of many record types
 # 
 tenant=$(cat tenant)

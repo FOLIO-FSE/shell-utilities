@@ -1,3 +1,4 @@
+auth 2>/dev/null || authn 2>/dev/null
 # reindexes elasticsearch
 
 tenant=$(cat tenant)

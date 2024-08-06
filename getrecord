@@ -1,3 +1,4 @@
+auth 2>/dev/null || authn 2>/dev/null
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 edge_url=$(cat okapi.url |sed 's/okapi/edge/')

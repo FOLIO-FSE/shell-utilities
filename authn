@@ -23,6 +23,7 @@ else
         tenant=$(cat tenant)
 fi
 
+
 if [[ ${auth_tenant} == "" ]];then auth_tenant=${tenant};fi
 
 if [[ ! -f okapi-login.json ]];then
@@ -39,12 +40,15 @@ else
         okapi_login=$(cat okapi-login.json)
 fi
 
-okapi_token=$(curl -c - -s -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${!librarytenant}" -d "${okapi_login}" "${!libraryokapi}/authn/login-with-expiry" |grep folioAccessToken| cut -f7
+find . -maxdepth 1 -name okapi.token -newermt '-500 seconds' |grep okapi && good=1
 
-if [[ ! ${okapi_token} =~ [a-z] ]];then
-	echo "okapi token not acquired"
-	exit
-else
-	echo -n ${okapi_token} >  okapi.token
+if [[ $good -ne 1 ]];then
+	okapi_token=$(curl -c - -s -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -d "${okapi_login}" "${okapi_url}/authn/login-with-expiry" |grep folioAccessToken| cut -f7)
+	
+	if [[ ! ${okapi_token} =~ [a-z] ]];then
+		echo "okapi token not acquired"
+		exit
+	else
+		echo -n ${okapi_token} >  okapi.token
+	fi
 fi
-

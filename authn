@@ -40,7 +40,7 @@ else
         okapi_login=$(cat okapi-login.json)
 fi
 
-find . -maxdepth 1 -name okapi.token -newermt '-500 seconds' |grep okapi && good=1
+find . -maxdepth 1 -name okapi.token -newermt '-500 seconds' |grep -q okapi && good=1
 
 if [[ $good -ne 1 ]];then
 	okapi_token=$(curl -c - -s -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -d "${okapi_login}" "${okapi_url}/authn/login-with-expiry" |grep folioAccessToken| cut -f7)

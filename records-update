@@ -1,4 +1,5 @@
 auth 2>/dev/null || authn 2>/dev/null
+SECONDS=0
 # Updates records based on list of UUIDs 
 # 
 tenant=$(cat tenant)
@@ -28,6 +29,11 @@ if [[ $# -eq 0 ]]; then echo "You must enter a record type";exit;fi
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 fixrecord() {
+        if [[ $SECONDS -gt 500 ]]; then
+                auth 2>/dev/null || authn 2>/dev/null
+                SECONDS=0
+        fi
+
 	local uuid=${1}
 	local seq=${2}
 	local value="${3}"
@@ -44,11 +50,12 @@ fixrecord() {
 #	updated_record=$(echo "${apicall}"  |jq '.customFields.academicStatus = ["opt_3"]')
  
 	updated_record=$(echo "${apicall}"  |jq -r --arg VALUE "${value}" '
+		(if .volume != null then .volume = (.volume |sub(" *Acc.*"; "")) else . end)
 #                (.permanentLoanTypeId = $VALUE)
 #                (.statusId = $VALUE)
 #                (.customFields.academicStatus = $VALUE) # single dropdown or text
 #                 (.notes |= .+ [{"holdingsNoteTypeId": "b160f13a-ddba-4053-b9c4-60ec5ea45d56", "staffOnly": false, "note": $VALUE}]) 
-#                 (.notes |= .+ [{"itemNoteTypeId": "838d3057-f7ac-49fc-978e-49de7a6862ad", "staffOnly": true, "note": $VALUE}]) 
+                 | (.notes |= .+ [{"itemNoteTypeId": "fe77913f-207f-4017-9f57-52ebe16e20eb", "staffOnly": true, "note": $VALUE}]) 
 #		 ((.parsedRecord.content.fields[] | select(."008" != null) |."008") = $VALUE)               
 #		 ((.parsedRecord.content.fields[] | select(."008" != null) |."008") = "780615s19uu    xx a                eng d")               
 #                (.permanentLocationId = $VALUE) 
@@ -57,7 +64,7 @@ fixrecord() {
 #                (.temporaryLocation = {"id": $VALUE} ) # UUID, must use items-inventory
 #                (.fundDistributions[0].code = "ybpbl" ) 
 #                (.administrativeNotes += [$VALUE] ) 
-                (.active = true ) 
+#                (.active = true ) 
 #                (.statisticalCodeIds += ["958fbc1d-db7f-48dd-8012-9803a0be64b3"] ) 
 
 		|del(.metadata)

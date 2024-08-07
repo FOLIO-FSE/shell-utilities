@@ -1,5 +1,6 @@
 auth 2>/dev/null || authn 2>/dev/null
 SECONDS=1
+OFFSET=0
 # Updates records based on list of UUIDs 
 # 
 tenant=$(cat tenant)
@@ -144,8 +145,9 @@ while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
         if [[ $SECONDS -gt 500 ]]; then
                 auth 2>/dev/null || authn 2>/dev/null
 		okapi_token=$(cat okapi.token)
-		TIMER=$(($TIMER + $SECONDS))
                 SECONDS=1
+		OFFSET=$(($OFFSET + 1))
+		TIMER=$(($OFFSET * 500 + $SECONDS))
         fi
 
 	seq=0

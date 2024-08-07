@@ -1,5 +1,6 @@
 auth 2>/dev/null || authn 2>/dev/null
-SECONDS=0
+SECONDS=1
+TIMEROFFSET=0
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
@@ -154,9 +155,9 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 	echo "${records}" |jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo) |del(.metadata)" >>  "${rec_type}.json"
 
         if [[ $SECONDS -gt 500 ]]; then
-		TIMER=$(($TIMER + $SECONDS))
+		TIMER=$(($TIMEROFFSET * 500 + $SECONDS))
                 auth 2>/dev/null || authn 2>/dev/null
-                SECONDS=0
+                SECONDS=1
         fi
 
         TIME=$TIMER;msg="$TIMER seconds"

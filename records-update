@@ -29,11 +29,6 @@ if [[ $# -eq 0 ]]; then echo "You must enter a record type";exit;fi
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 fixrecord() {
-        if [[ $SECONDS -gt 500 ]]; then
-                auth 2>/dev/null || authn 2>/dev/null
-                SECONDS=0
-        fi
-
 	local uuid=${1}
 	local seq=${2}
 	local value="${3}"
@@ -145,6 +140,12 @@ counter=0
 SECONDS=1
 
 while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
+
+        if [[ $SECONDS -gt 500 ]]; then
+                auth 2>/dev/null || authn 2>/dev/null
+                SECONDS=0
+        fi
+
 	seq=0
 	for line in "${lines[@]}";do
 		IFS=$'\t' read -r uuid value <<< "${line}"

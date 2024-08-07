@@ -157,6 +157,7 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
         if [[ $SECONDS -gt 500 ]]; then
 		TIMER=$(($TIMEROFFSET * 500 + $SECONDS))
                 auth 2>/dev/null || authn 2>/dev/null
+		okapi_token=$(cat okapi.token)
                 SECONDS=1
         fi
 

@@ -1,4 +1,6 @@
 auth 2>/dev/null || authn 2>/dev/null
+SECONDS=1
+
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
@@ -294,6 +296,12 @@ if [[ -z $jqexpr ]];then jqexpr="jq -c \".${rec_type}[] | del(.metadata)\"";fi
 num_records=$(curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&${limitOrPerPage}=${num_retrieved}" |jq -r .${totalRecords})
 
 for (( offset=0; offset<=$num_records; ));do
+	if [[ $SECONDS -gt 500 ]]; then
+		auth 2>/dev/null || authn 2>/dev/null
+		okapi_token=$(cat okapi.token)
+		SECONDS=1
+	fi
+
 	for ((t=0; t<=4; t=$(($t + 1)) )); do
 		page=$(($page + 1))
 		if [[ $offset -le $num_records ]];then 

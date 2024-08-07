@@ -1,5 +1,5 @@
 auth 2>/dev/null || authn 2>/dev/null
-SECONDS=0
+SECONDS=1
 TIMER=0
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
@@ -145,7 +145,8 @@ while mapfile -t -n 6 lines && ((${#lines[@]})); do
         if [[ $SECONDS -gt 500 ]]; then
 		TIMER=$(($TIMER + $SECONDS))
                 auth 2>/dev/null || authn 2>/dev/null
-                SECONDS=0
+		okapi_token=$(cat okapi.token)
+                SECONDS=1
         fi
 
         TIME=$TIMER;msg="$TIMER seconds"

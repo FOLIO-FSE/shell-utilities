@@ -1,5 +1,5 @@
 auth 2>/dev/null || authn 2>/dev/null
-SECONDS=0
+SECONDS=1
 # Updates records based on list of UUIDs 
 # 
 tenant=$(cat tenant)

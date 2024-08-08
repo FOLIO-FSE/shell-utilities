@@ -6,6 +6,7 @@ okapi_token=$(cat okapi.token)
 infile=uuids
 outfile="parsedrecords.json"
 batchsize=1000
+counter=0
 
 search="$1"
 rm -f $outfile
@@ -42,7 +43,7 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 
 	batch=$(echo "${batch}" |jq ".conditions.ids = [ \"${idstring}\" ] | .conditions.idType = \"${idType}\" ")
 
-        counter=$(($batchsize * ($counter + 1)))
+        counter=$(($counter + ${#ids[@]}))
 
         printf "Processing record %s of %s \r" $counter $numrecs
 
@@ -50,4 +51,5 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 	echo "${apicall}" >> $outfile
 
 done < ${infile}
+        print "Processed %s records. Output has been sent to ${outfile} " $counter $numrecs
 

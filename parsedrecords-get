@@ -3,15 +3,15 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-infile=ids
-logfile=parsedRecords.log
+infile=uuids
+outfile="parsedrecords.json"
 
 search="$1"
-rm -f $logfile
+rm -f $outfile
 
 
 if [[ ${search} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ || ${search} =~ ^in[0-9]*$ ]];then
-	echo "${search}" > ids
+	echo "${search}" > uuids
 fi
 
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
@@ -48,7 +48,7 @@ while mapfile -t -n 1000 ids && ((${#ids[@]})); do
         printf "Processing record %s of %s \r" $counter $numrecs
 
 	apicall=$(curl -s -w '\n' -X POST -D -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${batch}" "${okapi_url}/source-storage/batch/parsed-records/fetch")
-	echo "${apicall}" >> $logfile
+	echo "${apicall}" >> $outfile
 
 done < ${infile}
 

@@ -10,6 +10,15 @@ counter=0
 
 search="$1"
 rm -f $outfile
+idType="INSTANCE"
+
+# INSTANCE("instanceId"),
+# HOLDINGS("holdingsId"),
+# AUTHORITY("authorityId"),
+# EXTERNAL("externalId"),
+# NOTE: not really external id but is default from dto
+# RECORD("matchedId"),
+# SRS_RECORD("id");
 
 
 if [[ ${search} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ || ${search} =~ ^in[0-9]*$ ]];then
@@ -34,21 +43,22 @@ EndOfBatch
 
 while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 
-        record_batch=""
+        batch=""
 	initialize_batch
-	idType="instanceId"
 	idstring=$(echo "${ids[@]}" |sed 's/[^a-f0-9in \-]//g;s/ /","/g')
 
 	if [[ ${ids[0]} =~ ^in ]];then idType="instanceHrid";fi
 
-	batch=$(echo "${batch}" |jq ".conditions.ids = [ \"${idstring}\" ] | .conditions.idType = \"${idType}\" ")
+	batch=$(echo "${batch}" |jq -c ".conditions.ids = [ \"${idstring}\" ] | .conditions.idType = \"${idType}\" ")
+
+	echo "${batch}" > fat
 
         counter=$(($counter + ${#ids[@]}))
 
         printf "Processing record %s of %s \r" $counter $numrecs
 
-	apicall=$(curl -s -w '\n' -X POST -D -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${batch}" "${okapi_url}/source-storage/batch/parsed-records/fetch")
-	echo "${apicall}" >> $outfile
+	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${batch}" "${okapi_url}/source-storage/batch/parsed-records/fetch" |jq -c '.records[]' >> "${outfile}"
+
 done < ${infile}
 
         print "Processed %s records. Output has been sent to ${outfile} " $counter $numrecs

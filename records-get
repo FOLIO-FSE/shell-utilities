@@ -115,6 +115,9 @@ case $rec_type in
 	endpoint="feefines";;
 "feefineactions")
 	endpoint="feefineactions";;
+"fieldprotection")
+	rec_type="marcFieldProtectionSettings"
+	endpoint="field-protection-settings/marc";;
 "fines")
 	rec_type="feefineactions"
 	endpoint="feefineactions";;

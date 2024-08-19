@@ -9,11 +9,11 @@ okapi_token=$(cat okapi.token)
 # being reuploaded via batch sync API
 ##############################################################################
 
-infile=uuids
-#infile=barcodes
+#infile=uuids
+infile=barcodes
 outfile=item_update.log
-searchtype="id"
-#searchtype="barcode"
+#searchtype="id"
+searchtype="barcode"
 #
 
 batchsize=50
@@ -26,7 +26,8 @@ batchsize=50
 #jq_replace='.items[].materialTypeId="b47ec2ce-5eb4-42ea-a610-777920b67943" '
 #jq_replace='.items[].status.name="Aged to lost" '
 #jq_replace='(del(.items[].volume)) '
-jq_replace='.items[].discoverySuppress=true '
+#jq_replace='.items[].discoverySuppress=true '
+jq_replace='.items[].notes[] |= if .itemNoteTypeId == "faa78286-5852-488c-b9d6-f2d1e6291dfd" then .note = "20240809" else . end'
 
 #string_replace='s/d7ab0739-4ec3-4db7-905e-958b50118a1b/0bfb7f8b-76d1-4bfe-8046-2254ad987534/g'
 
@@ -43,7 +44,7 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 
 	# break array into space separated string
 	idstring="${ids[@]}"
-	querystring="id=${idstring// /${querydelim}}"
+	querystring="${searchtype}=${idstring// /${querydelim}}"
 
 	records=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}${querystring}&limit=${batchsize}" )
 
@@ -54,7 +55,6 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 	if [[ -n ${string_replace} ]];then
 		updated_records=$(echo "${records}" |sed ${string_replace} | jq -c 'del(.totalRecords) |del(.resultInfo)')
 	fi
-
 
 	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_records}" "${okapi_url}/item-storage/batch/synchronous?upsert=true" >> ${outfile}
 

@@ -29,7 +29,8 @@ batchsize=50
 #jq_replace='.items[].status.name="Aged to lost" '
 #jq_replace='(del(.items[].volume)) '
 #jq_replace='.items[].discoverySuppress=true '
-jq_replace='.items[].notes[] |= if .itemNoteTypeId == "faa78286-5852-488c-b9d6-f2d1e6291dfd" then .note = "20240809" else . end'
+#jq_replace='.items[].notes[] |= if .itemNoteTypeId == "faa78286-5852-488c-b9d6-f2d1e6291dfd" then .note = "20240809" else . end'
+jq_replace='.items[].notes[] |= if .itemNoteTypeId == "7bbe29d9-6a9f-47dd-b7d8-92b754a51c5f" then .note = (.note|tonumber +1 |tostring) else . end'
 
 #string_replace='s/d7ab0739-4ec3-4db7-905e-958b50118a1b/0bfb7f8b-76d1-4bfe-8046-2254ad987534/g'
 

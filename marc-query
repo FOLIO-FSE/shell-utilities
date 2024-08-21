@@ -8,11 +8,12 @@ if [[ -z $4 ]];then
 	echo "search syntax: marc-query [field] [subfield] [operator] [value] OR marc-query [field] [operator] [value] leader (to specify leader search)"
 	echo
 	echo "marc-query 260 a ^= 'Paris'"
-	echo "marc-query p_06 = 'a' (leader search)"
+	echo "marc-query p_06 = 'a' leader (leader search)"
 	echo "marc-query 650 ind2 = 7"
-	echo "marc-query 740 a is present"
+	echo "marc-query 740 is present"
 	echo "marc-query 740 a is absent"
-	echo "Boolean queries require script modification"
+	echo "You can add two boolean conditions following the pattern above"
+	echo "Additional ones require script modification"
 	exit
 fi
 
@@ -28,12 +29,35 @@ else
 	subfield="${2}"
 	operator="${3}"
 	value="'"${4}"'"
-fi
 
+	search1="${field}.${subfield} ${operator} ${value}"
+	search2=""
+	search3=""
+
+	bool="${5}"
+	field2="${6}"
+	subfield2="${7}"
+	operator2="${8}"
+	value2="'"${9}"'"
+
+	if [[ $value2 =~ [A-Za-z0-9] ]];then
+		search2=" ${bool} ${field2}.${subfield2} ${operator2} ${value2}"
+	fi
+
+	bool2="${10}"
+	field3="${11}"
+	subfield3="${12}"
+	operator3="${13}"
+	value3="'"${14}"'"
+
+	if [[ $value3 =~ [A-Za-z0-9] ]];then
+		search3=" ${bool2} ${field3}.${subfield3} ${operator3} ${value3}"
+	fi
+fi
 
 IFS='' read -r -d '' fieldsearch << EndOfJSON
 {
-	"fieldsSearchExpression": "${field}.${subfield} ${operator} ${value}"
+	"fieldsSearchExpression": "${search1}${search2}${search3}"
 }
 EndOfJSON
 

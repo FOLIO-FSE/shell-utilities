@@ -167,6 +167,7 @@ case $rec_type in
 "instances")
 	endpoint="instance-storage/instances";;
 "institutions")
+	rec_type="locinsts"
 	endpoint="location-units/institutions";;
 "inventory-items")
 	rec_type="items"

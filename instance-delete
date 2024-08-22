@@ -40,7 +40,7 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 		OFFSET=$(($OFFSET + 1))
 		TIMER=$(($OFFSET * 500 + $SECONDS))
 	else
-		if [[ $OFFSET -eq 0 ]];then TIMER=$SECONDS
+		if [[ $OFFSET -eq 0 ]];then TIMER=$SECONDS;fi
         fi
 
 	counter=$(($counter + ${#ids[@]}))

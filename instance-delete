@@ -1,4 +1,6 @@
 auth 2>/dev/null || authn 2>/dev/null
+SECONDS=1
+OFFSET=0
 # retrieves item and holdings data associated with
 # an instance
 
@@ -30,6 +32,17 @@ numrecs=$(wc -l ${deletefile} |cut -d " " -f1)
 echo "Retrieving records"
 
 while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
+
+        if [[ $SECONDS -gt 500 ]]; then
+                auth 2>/dev/null || authn 2>/dev/null
+		okapi_token=$(cat okapi.token)
+                SECONDS=1
+		OFFSET=$(($OFFSET + 1))
+		TIMER=$(($OFFSET * 500 + $SECONDS))
+	else
+		if [[ $OFFSET -eq 0 ]];then TIMER=$SECONDS
+        fi
+
 	counter=$(($counter + ${#ids[@]}))
 	idstring="${ids[@]}"
 	querystring="query=id=${idstring// /${querydelim}}"
@@ -49,10 +62,10 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 
 	wait
 
-        TIME=$SECONDS;msg="$SECONDS seconds"
+        msg="$TIMER seconds"
 
-        if [[ $SECONDS -gt 60 ]];then TIME=$(($SECONDS/60));msg="$TIME minutes";fi
-        if [[ $SECONDS -gt 3600 ]];then TIME=$(($SECONDS/3600));msg="$TIME hours";fi
+        if [[ $TIMER -gt 60 ]];then TIME=$(($SECONDS/60));msg="$TIME minutes";fi
+        if [[ $TIMER -gt 3600 ]];then TIME=$(($SECONDS/3600));msg="$TIME hours";fi
 
         echo -en "Retreiving record $counter of $numrecs in $msg in $(($counter/$SECONDS)) recs/sec          \r"
 

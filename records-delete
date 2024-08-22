@@ -26,10 +26,17 @@ errors=0
 SECONDS=1
 
 delete_record() {
+
         if [[ $SECONDS -gt 500 ]]; then
                 auth 2>/dev/null || authn 2>/dev/null
-                SECONDS=0
+                okapi_token=$(cat okapi.token)
+                SECONDS=1
+                OFFSET=$(($OFFSET + 1))
+                TIMER=$(($OFFSET * 500 + $SECONDS))
+        else
+                if [[ $OFFSET -eq 0 ]];then TIMER=$SECONDS
         fi
+
 	local uuid=${1//[^0-9a-z\-]/}
 	local seq=$2
 	local apicall=$(curl -sI -w '%{http_code}' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}")
@@ -167,12 +174,12 @@ if [[ ${singlerecord} == "yes" ]];then
 		cat tmp_log.* >> ${outfile}
 		rm tmp_log.*
 
-       		TIME=$SECONDS;msg="$SECONDS seconds"
+        	msg="$TIMER seconds"
 
-        	if [[ $SECONDS -gt 60 ]];then TIME=$(($SECONDS/60));msg="$TIME minutes";fi
-        	if [[ $SECONDS -gt 3600 ]];then TIME=$(($SECONDS/3600));msg="$TIME hours";fi
+        	if [[ $TIMER -gt 60 ]];then TIME=$(($TIMER/60));msg="$TIME minutes";fi
+        	if [[ $TIMER -gt 3600 ]];then TIME=$(($TIMER/3600));msg="$TIME hours";fi
 
-        	echo -en "Processing record $counter of $numrecs in $msg in $(($counter/$SECONDS)) recs/sec          \r"
+        	echo -en "Processing record $counter of $numrecs in $msg in $(($counter/$TIMER)) recs/sec          \r"
 	done < ${deletefile}
 else
 	while mapfile -t -n ${batchsize} uuids && ((${#uuids[@]})); do
@@ -183,12 +190,12 @@ else
 		apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}?${querystring}")
 		echo -e "${idstring}\t${apicall}" >> ${outfile}
 
-       		TIME=$SECONDS;msg="$SECONDS seconds"
+       		msg="$TIMER seconds"
 
         	if [[ $SECONDS -gt 60 ]];then TIME=$(($SECONDS/60));msg="$TIME minutes";fi
         	if [[ $SECONDS -gt 3600 ]];then TIME=$(($SECONDS/3600));msg="$TIME hours";fi
 
-        	echo -en "Processing record $counter of $numrecs in $msg in $(($counter/$SECONDS)) recs/sec          \r"
+        	echo -en "Processing record $counter of $numrecs in $msg in $(($counter/$TIMER)) recs/sec          \r"
 	done < ${deletefile}
 
 fi

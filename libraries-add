@@ -51,7 +51,7 @@ IFS='' read -r -d '' library << EndOfLibrary
 
 EndOfLibrary
 
-	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${location}" "${okapi_url}/location-units/libraries")
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${library}" "${okapi_url}/location-units/libraries")
 
 	echo -e "${apicall}" |tee -a ${logfile}
 	unset library

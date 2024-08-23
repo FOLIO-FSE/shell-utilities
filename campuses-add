@@ -1,0 +1,58 @@
+auth 2>/dev/null || authn 2>/dev/null
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+infile="campuses.tsv"
+logfile="campuses.log"
+rm -f ${logfile}
+
+declare -A dict_institutions
+
+institution_default="columbia"
+
+# get list of institutions with code as key and uuid as value
+eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/location-units/institutions?limit=1000" |  jq -r '.locinsts[] | @sh "dict_institutions[\(.code|tostring|ascii_downcase)]=\(.id|tostring)"')"
+
+for key in "${!dict_institutions[@]}";do
+        newkey=$(tr -dc [a-z0-9] <<< "${key}")
+        dict_institutions[${newkey}]=${dict_institutions["${key}"]}
+done
+
+while IFS=$'\t' read -r institution code name
+do
+	compareinstitution=$(tr -dc [a-z0-9] <<< "${institution,,}")
+	institution_default=$(tr -dc [a-z0-9] <<< "${institution_default,,}")
+
+	if [[ -z ${institution} ]];then 
+		institutionId=${dict_institutions[${institution_default}]}
+	else
+		institutionId=${dict_institutions[${compareinstitution}]}
+
+		if [[ ! ${institutionId} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+			institutionId=${dict_institutions[${institution_default}]}
+		fi
+	fi
+
+	if [[ -z ${name} ]];then name="${code}"; fi 
+
+
+IFS='' read -r -d '' campus << EndOfCampus
+
+{
+"code": "${code}",
+"name": "${name}",
+"institutionId": "${institutionId}"
+}
+EndOfCampus
+
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${campus}" "${okapi_url}/location-units/campuses")
+
+	echo -e "${apicall}" |tee -a ${logfile}
+	unset campus
+	unset name
+
+done < ${infile}
+
+

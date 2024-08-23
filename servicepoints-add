@@ -1,0 +1,61 @@
+auth 2>/dev/null || authn 2>/dev/null
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+infile="servicepoints.tsv"
+logfile="servicepoints.log"
+rm -f ${logfile}
+
+
+while IFS=$'\t' read -r name code discovery lag duration pickup
+do
+	if [[ -z ${name} ]];then name="${code}"; fi 
+	if [[ -z ${discovery} ]];then discovery="${name}"; fi 
+	if [[ -z ${pickup} ]];then pickup="true"; fi 
+
+	duration="${duration//[^0-9]/}"
+	expiry="${expiry//[^0-9]/}"
+	lag="${lag//[^0-9]/}"
+	if [[ -z ${duration} ]];then duration="7"; fi 
+	if [[ -z ${expiry} ]];then expiry="7"; fi 
+	if [[ -z ${lag} ]];then lag="0"; fi 
+
+	pickup=${pickup:0:1}
+	pickup=${pickup,,}
+	if [[ -z ${pickup} || ${pickup} == "y" ]];then 
+		pickup="true"
+
+IFS='' read -r -d '' holdshelf << EndOfHoldShelf
+
+  "holdShelfExpiryPeriod": { "duration": ${duration}, "intervalId": "Days" },
+  "holdShelfClosedLibraryDateManagement": "Keep_the_current_due_date",
+EndOfHoldShelf
+
+	else
+		pickup="false"
+		holdshelf=""
+	fi 
+
+IFS='' read -r -d '' servicepoint << EndOfServicePoint
+{
+  "name": "${name}",
+  "code": "${code}",
+  "discoveryDisplayName": "${discovery}",
+  "pickupLocation": ${pickup}, ${holdshelf}
+  "staffSlips": []
+}
+EndOfServicePoint
+
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${servicepoint}" "${okapi_url}/service-points")
+
+	echo -e "${apicall}" |tee -a ${logfile}
+	unset servicepoint
+	unset discovery
+	unset name
+	unset code
+
+done < ${infile}
+
+

@@ -1,0 +1,63 @@
+auth 2>/dev/null || authn 2>/dev/null
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+infile="libraries.tsv"
+logfile="libraries.log"
+rm -f ${logfile}
+
+declare -A dict_campuses
+
+campus_default="Morningside"
+
+# get list of campuses with code as key and uuid as value
+eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/location-units/campuses?limit=1000" |  jq -r '.loccamps[] | @sh "dict_campuses[\(.code|tostring|ascii_downcase)]=\(.id|tostring)"')"
+
+for key in "${!dict_campuses[@]}";do
+        newkey=$(tr -dc [a-z0-9] <<< "${key}")
+        dict_campuses[${newkey}]=${dict_campuses["${key}"]}
+done
+
+while IFS=$'\t' read -r campus name code
+do
+	comparecampus=$(tr -dc [a-z0-9] <<< "${campus,,}")
+	comparelibrary=$(tr -dc [a-z0-9] <<< "${library,,}")
+
+	campus_default=$(tr -dc [a-z0-9] <<< "${campus_default,,}")
+
+	if [[ -z ${campus} ]];then 
+		campusId=${dict_campuses[${campus_default}]}
+	else
+		comparecampus=$(tr -dc [a-z0-9] <<< "${comparecampus,,}")
+		campusId=${dict_campuses[${comparecampus}]}
+
+		if [[ ! ${campusId} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+			campusId=${dict_campuses[${campus_default}]}
+		fi
+	fi
+
+	if [[ -z ${name} ]];then name="${code}"; fi 
+
+
+IFS='' read -r -d '' library << EndOfLibrary
+
+{
+"name": "${name}",
+"code": "${code}",
+"campusId": "${campusId}",
+}
+
+EndOfLibrary
+
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${location}" "${okapi_url}/location-units/libraries")
+
+	echo -e "${apicall}" |tee -a ${logfile}
+	unset library
+	unset campus
+	unset name
+
+done < ${infile}
+
+

@@ -46,7 +46,7 @@ IFS='' read -r -d '' library << EndOfLibrary
 {
 "name": "${name}",
 "code": "${code}",
-"campusId": "${campusId}",
+"campusId": "${campusId}"
 }
 
 EndOfLibrary

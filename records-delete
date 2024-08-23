@@ -1,5 +1,6 @@
 auth 2>/dev/null || authn 2>/dev/null
-SECONDS=0
+SECONDS=1
+TIMER=1
 # Supply without a uuid to delete all of many record types
 # 
 tenant=$(cat tenant)

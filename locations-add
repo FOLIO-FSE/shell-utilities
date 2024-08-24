@@ -1,8 +1,4 @@
 auth 2>/dev/null || authn 2>/dev/null
-# Creates location based on contents of tab delimited file
-#
-# Code is expected in column 1 of a file named "locations"
-# Display name is set in column 2
 
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
@@ -20,7 +16,7 @@ declare -A dict_institutions
 institution_default="CU"
 campus_default="Morningside"
 library_default="Lehman"
-servicepoint_default="LEHMAN"
+servicepoint_default="Migration"
 
 # get list of institutions with code as key and uuid as value
 eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/location-units/institutions?limit=1000" |  jq -r '.locinsts[] | @sh "dict_institutions[\(.code|tostring|ascii_downcase)]=\(.id|tostring)"')"

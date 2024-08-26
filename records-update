@@ -51,6 +51,7 @@ fixrecord() {
 #		 ((.parsedRecord.content.fields[] | select(."008" != null) |."008") = $VALUE)               
 #                (.active = true ) 
 #                (.administrativeNotes += [$VALUE] ) 
+                (.agreementContentTypes = [{"_delete": true, "contentType": {"value": $VALUE}}] ) 
 #                (.customFields.academicStatus = $VALUE) # single dropdown or text
 #                (.fundDistributions[0].code = "ybpbl" ) 
 #                (.materialTypeId = "c6f1d4a7-9b07-4409-a7ab-81aaf6e1fce4") 

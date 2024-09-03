@@ -63,9 +63,8 @@ BEGIN {
 	leader = sprintf("%05d", record_length)""leader1""base_data_address""leader2
 
 	print leader""directory""record_content > OUTFILE
-	created = created + 1
 
-	if (NR % 10000 == 0){ printf "Records processed: %d \\r", record_counter, created }
+	if (NR % 10000 == 0){ printf "Records processed: %d \\r", NR }
 
 }
 END { 

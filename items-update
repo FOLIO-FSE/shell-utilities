@@ -11,18 +11,27 @@ OFFSET=0
 # being reuploaded via batch sync API
 ##############################################################################
 
-infile=uuids
-#infile=barcodes
+#infile=uuids
+infile=barcodes
 outfile=item_update.log
-searchtype="id"
-#searchtype="barcode"
-#
+
+dos2unix ${infile}
+
+case ${infile} in
+	uuids)
+		searchtype="id";;
+	barcodes)
+		searchtype="barcode";;
+	*)
+		echo "No valid search type was found. Exiting"
+		exit;;
+esac
 
 batchsize=50
 
 
 #jq_replace='.items[].effectiveLocationId="b9dc25a2-a7fb-48ad-8da5-8f68e35ba0af" '
-#jq_replace='.items[].permanentLocationId="618ac339-b867-492a-9c71-6140447d7bff" '
+jq_replace='.items[].permanentLocationId="7a71d1ab-5591-4553-b09a-e4ff223417e0" '
 #jq_replace='.items[].temporaryLocationId="bb6ffec9-0b7e-459b-8d60-fc000bddf391" '
 #jq_replace='.items[].permanentLoanTypeId="36dde437-be31-463a-8b6e-5ea8f2d523f7" '
 #jq_replace='.items[].materialTypeId="b47ec2ce-5eb4-42ea-a610-777920b67943" '
@@ -30,7 +39,7 @@ batchsize=50
 #jq_replace='(del(.items[].volume)) '
 #jq_replace='.items[].discoverySuppress=true '
 #jq_replace='.items[].notes[] |= if .itemNoteTypeId == "faa78286-5852-488c-b9d6-f2d1e6291dfd" then .note = "20240809" else . end'
-jq_replace='.items[].notes[] |= if .itemNoteTypeId == "7bbe29d9-6a9f-47dd-b7d8-92b754a51c5f" then .note = (.note|tonumber +1 |tostring) else . end'
+#jq_replace='.items[].notes[] |= if .itemNoteTypeId == "7bbe29d9-6a9f-47dd-b7d8-92b754a51c5f" then .note = (.note|tonumber +1 |tostring) else . end'
 
 #string_replace='s/d7ab0739-4ec3-4db7-905e-958b50118a1b/0bfb7f8b-76d1-4bfe-8046-2254ad987534/g'
 
@@ -57,6 +66,8 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 	# break array into space separated string
 	idstring="${ids[@]}"
 	querystring="${searchtype}=${idstring// /${querydelim}}"
+
+
 
 	records=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}${querystring}&limit=${batchsize}" )
 

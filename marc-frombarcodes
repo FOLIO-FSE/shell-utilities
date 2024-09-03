@@ -1,4 +1,5 @@
 infile="${1}"
+dos2unix "${infile}"
 
 if [[ -z ${infile} ]];then echo "You must supply a file name of barcodes";fi
 

@@ -57,8 +57,6 @@ BEGIN {
 	directory = directory""OFS
 	base_data_address = sprintf("%05d", 24 + length(directory))
 	
-	record_content = record_content
-
 	record_length = 24 + length(directory) + length(record_content) + 1
 	
 	leader = sprintf("%05d", record_length)""leader1""base_data_address""leader2

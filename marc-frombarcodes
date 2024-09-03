@@ -1,6 +1,6 @@
 infile="${1}"
 
-if [[ -z ${infile} ]];then echo "You must supply a file name for a tab delimited file\nYou will need to modify the fields in the awk script to match the headers of your input file";fi
+if [[ -z ${infile} ]];then echo "You must supply a file name of barcodes";fi
 
 fileroot=$(echo "${infile}" | sed 's/\.....\?$//')
 

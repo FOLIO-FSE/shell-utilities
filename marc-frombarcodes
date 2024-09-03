@@ -67,8 +67,6 @@ BEGIN {
 
 	if (NR % 10000 == 0){ printf "Records processed: %d \\r", record_counter, created }
 
-	sub("\r", "", $NF)
-
 }
 END { 
 	if (badawk != 1) {

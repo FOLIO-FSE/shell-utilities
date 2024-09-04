@@ -1,0 +1,55 @@
+auth 2>/dev/null || authn 2>/dev/null
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+logfile="jobprofiles.log"
+
+rm -f ${logfile}
+
+############## import profile to update items
+
+mappingprofile='{"profile":{"name":"ZZZ Items, update on barcode -- KB","incomingRecordType":"MARC_BIBLIOGRAPHIC","existingRecordType":"ITEM","description":"","mappingDetails":{"name":"item","recordType":"ITEM","mappingFields":[{"name":"status.name","enabled":true,"path":"item.status.name","subfields":[],"value":"\"Available\""}]}},"addedRelations":[],"deletedRelations":[]}'
+
+
+mappingprofile=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${mappingprofile}" "${okapi_url}/data-import-profiles/mappingProfiles" |jq -c .)
+echo "${mappingprofile}" |tee -a ${logfile}
+map_id=$(jq -r .id <<< "${mappingprofile}")
+
+matchprofile='{"profile":{"name":"ZZZ Items, match on 001 barcode -- KB","description":"","incomingRecordType":"MARC_BIBLIOGRAPHIC","matchDetails":[{"incomingRecordType":"MARC_BIBLIOGRAPHIC","incomingMatchExpression":{"fields":[{"label":"field","value":"001"},{"label":"indicator1","value":""},{"label":"indicator2","value":""},{"label":"recordSubfield","value":""}],"staticValueDetails":null,"dataValueType":"VALUE_FROM_RECORD"},"existingRecordType":"ITEM","existingMatchExpression":{"fields":[{"label":"field","value":"item.barcode"}],"dataValueType":"VALUE_FROM_RECORD"},"matchCriterion":"EXACTLY_MATCHES"}],"existingRecordType":"ITEM"},"addedRelations":[],"deletedRelations":[]}'
+
+matchprofile=$(curl --http1.1 -s -w '\n' -X POST -H 'Content-type: application/json' -H 'Accept: text/plain' -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${matchprofile}" "${okapi_url}/data-import-profiles/matchProfiles" |jq -c .)
+echo "${matchprofile}" |tee -a ${logfile}
+match_id=$(jq -r .id <<< "${matchprofile}")
+
+actionprofile='{"profile":{"description":"","name":"ZZZ Items update status to Available -- KB","action":"UPDATE","folioRecord":"ITEM"},"addedRelations":[],"deletedRelations":[]}'
+
+actionprofile=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${actionprofile}" "${okapi_url}/data-import-profiles/actionProfiles" | jq -c .)
+echo "${actionprofile}" |tee -a ${logfile}
+action_id=$(jq -r .id <<< "${actionprofile}")
+
+actionprofile=$(echo "${actionprofile}" |jq -c --arg ACTION_ID ${action_id} --arg MAP_ID ${map_id} '.addedRelations = [{ "masterProfileId": $ACTION_ID, "masterProfileType": "ACTION_PROFILE", "detailProfileId": $MAP_ID, "detailProfileType": "MAPPING_PROFILE"}]')
+
+curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${actionprofile}" "${okapi_url}/data-import-profiles/actionProfiles/${action_id}"| jq -c . | tee -a ${logfile}
+
+jobprofile='{"profile":{"name":"ZZZ Item, match on barcode -- KB","description":"","dataType":"MARC"},"addedRelations":[],"deletedRelations":[]}'
+
+
+jobprofile=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${jobprofile}" "${okapi_url}/data-import-profiles/jobProfiles" |jq -c .)
+job_id=$(jq -r .id <<< "${jobprofile}")
+echo "${apicall}" |tee -a ${logfile}
+
+jobprofile=$(echo "${jobprofile}" |jq -c --arg JOB_ID ${job_id} --arg MATCH_ID ${match_id} --arg ACTION_ID ${action_id} '.addedRelations = [  { "masterProfileId": $JOB_ID, "masterWrapperId": null, "masterProfileType": "JOB_PROFILE", "detailProfileId": $MATCH_ID, "detailWrapperId": null, "detailProfileType": "MATCH_PROFILE", "order": 0 }, { "masterProfileId": $MATCH_ID, "masterWrapperId": null, "masterProfileType": "MATCH_PROFILE", "detailProfileId": $ACTION_ID, "detailWrapperId": null, "detailProfileType": "ACTION_PROFILE", "order": 0, "reactTo": "MATCH" }]')
+curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${jobprofile}" "${okapi_url}/data-import-profiles/jobProfiles/${job_id}" |jq -c . |tee -a ${logfile}
+
+################ export profile to export ids
+
+mappingprofile='{"name":"ZZZ Instance, Holdings, Item -- KB","default":false,"recordTypes":["INSTANCE","HOLDINGS","ITEM"],"outputFormat":"MARC","transformations":[{"fieldId":"holdings.id","path":"$.holdings[*].id","recordType":"HOLDINGS","transformation":"901  $a","enabled":true},{"fieldId":"instance.id","path":"$.instance.id","recordType":"INSTANCE","transformation":"001  ","enabled":true},{"fieldId":"item.barcode","path":"$.holdings[*].items[*].barcode","recordType":"ITEM","transformation":"902  $b","enabled":true},{"fieldId":"item.hrid","path":"$.holdings[*].items[*].hrid","recordType":"ITEM","transformation":"902  $a","enabled":true},{"fieldId":"item.id","path":"$.holdings[*].items[*].id","recordType":"ITEM","transformation":"901  $b","enabled":true}]}'
+
+mappingprofile="$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${mappingprofile}" "${okapi_url}/data-export/mapping-profiles" | tee -a ${logfile})"
+map_id=$(jq -r .id <<< "${mappingprofile}")
+
+jobprofile=$(jq -r --arg MAP_ID ${map_id} '.mappingProfileId = $MAP_ID' <<< '{"name":"ZZZ Instance, Holdings, Items -- KB"}')
+
+curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${jobprofile}" "${okapi_url}/data-export/job-profiles" | tee -a ${logfile}

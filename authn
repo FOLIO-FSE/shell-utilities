@@ -28,6 +28,9 @@ if [[ ${auth_tenant} == "" ]];then auth_tenant=${tenant};fi
 
 if [[ ! -f okapi-login.json ]];then
 
+echo -n "Password: "
+read -r pwd
+
 IFS='' read -r -d '' okapi_login << EndOfAuth
 {
   "tenant": "${tenant}",

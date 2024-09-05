@@ -28,6 +28,8 @@ if [[ ${auth_tenant} == "" ]];then auth_tenant=${tenant};fi
 
 if [[ ! -f okapi-login.json ]];then
 
+echo -n "Username: "
+read -r username 
 echo -n "Password: "
 read -r pwd
 

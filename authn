@@ -18,7 +18,7 @@ fi
 if [[ -z $auth_tenant ]] && [[ ! -f auth.tenant ]];then
         echo -n "Auth tenant: "
         read -r auth_tenant
-        echo "$auth_tenant" > auth_tenant
+        echo "$auth_tenant" > auth.tenant
 else
         tenant=$(cat tenant)
 fi

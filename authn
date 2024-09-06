@@ -1,7 +1,7 @@
 if [[ -z $okapi_url ]] && [[ ! -f okapi.url ]];then
         echo -n "Okapi URL: "
         read -r okapi_url
-        echo "$okapi_url" > okapi.url
+        echo -n "$okapi_url" > okapi.url
 else
         okapi_url=$(cat okapi.url)
 fi
@@ -10,7 +10,7 @@ fi
 if [[ -z $tenant ]] && [[ ! -f tenant ]];then
         echo -n "tenant: "
         read -r tenant
-        echo "$tenant" > tenant
+        echo -n "$tenant" > tenant
 else
         tenant=$(cat tenant)
 fi
@@ -18,7 +18,7 @@ fi
 if [[ -z $auth_tenant ]] && [[ ! -f auth.tenant ]];then
         echo -n "Auth tenant: "
         read -r auth_tenant
-        echo "$auth_tenant" > auth.tenant
+        echo -n "$auth_tenant" > auth.tenant
 else
         tenant=$(cat tenant)
 fi

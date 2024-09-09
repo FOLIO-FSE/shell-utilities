@@ -26,7 +26,7 @@ declare -A export_mappingprofile
 
 	############## export profile to send bib ids, holdings ids, item ids
 
-	export_mappingprofile[1]='{"name":"ZKB Instance, Holdings, Item","default":false,"recordTypes":["INSTANCE","HOLDINGS","ITEM"],"outputFormat":"MARC","transformations":[{"fieldId":"holdings.id","path":"$.holdings[*].id","recordType":"HOLDINGS","transformation":"901  $a","enabled":true},{"fieldId":"instance.id","path":"$.instance.id","recordType":"INSTANCE","transformation":"001  ","enabled":true},{"fieldId":"item.barcode","path":"$.holdings[*].items[*].barcode","recordType":"ITEM","transformation":"902  $b","enabled":true},{"fieldId":"item.hrid","path":"$.holdings[*].items[*].hrid","recordType":"ITEM","transformation":"902  $a","enabled":true},{"fieldId":"item.id","path":"$.holdings[*].items[*].id","recordType":"ITEM","transformation":"901  $b","enabled":true}]}'
+	export_mappingprofile[1]='{"transformations":[{"fieldId":"holdings.id","path":"$.holdings[*].id","recordType":"HOLDINGS","transformation":"901  $a","enabled":true},{"fieldId":"instance.id","path":"$.instance.id","recordType":"INSTANCE","transformation":"001  ","enabled":true},{"fieldId":"item.barcode","path":"$.holdings[*].items[*].barcode","recordType":"ITEM","transformation":"902  $b","enabled":true},{"fieldId":"item.hrid","path":"$.holdings[*].items[*].hrid","recordType":"ITEM","transformation":"902  $a","enabled":true},{"fieldId":"item.id","path":"$.holdings[*].items[*].id","recordType":"ITEM","transformation":"901  $b","enabled":true}],"recordTypes":["INSTANCE","HOLDINGS","ITEM"],"outputFormat":"MARC","name":"ZKB Instance, Holdings, Items"}'
 
 
 #################### define export profiles. Mapping and job profiles needed
@@ -37,49 +37,49 @@ function load_import_profile {
 
 	##### mapping profile
 
-	import_mappingprofile[$which_profile]=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${import_mappingprofile[$which_profile]}" "${okapi_url}/data-import-profiles/mappingProfiles" |jq -c .)
+	import_mappingprofile[$which_profile]=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${import_mappingprofile[$which_profile]}" "${okapi_url}/data-import-profiles/mappingProfiles" |jq -c .)
 	echo "${import_mappingprofile[$which_profile]}" | tee -a ${logfile}
 	map_id=$(jq -r .id <<< "${import_mappingprofile[$which_profile]}")
 	profile_name=$(jq -r '.profile.name' <<< "${import_mappingprofile[$which_profile]}")
 
 	##### match profile
 
-	import_matchprofile[$which_profile]=$(curl --http1.1 -s -w '\n' -X POST -H 'Content-type: application/json' -H 'Accept: text/plain' -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${import_matchprofile[$which_profile]}" "${okapi_url}/data-import-profiles/matchProfiles" |jq -c .)
+	import_matchprofile[$which_profile]=$(curl --http1.1 -s -w '\n' -X POST -H 'Content-type: application/json' -H 'Accept: application/json' -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${import_matchprofile[$which_profile]}" "${okapi_url}/data-import-profiles/matchProfiles" |jq -c .)
 	echo "${import_matchprofile[$which_profile]}" |tee -a ${logfile}
 	match_id=$(jq -r .id <<< "${import_matchprofile[$which_profile]}")
 
 	##### action profile
 
-	import_actionprofile[$which_profile]=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${import_actionprofile[$which_profile]}" "${okapi_url}/data-import-profiles/actionProfiles" | jq -c .)
+	import_actionprofile[$which_profile]=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${import_actionprofile[$which_profile]}" "${okapi_url}/data-import-profiles/actionProfiles" | jq -c .)
 	echo "${import_actionprofile[$which_profile]}" |tee -a ${logfile}
 	action_id=$(jq -r .id <<< "${import_actionprofile[$which_profile]}")
 
 	import_actionprofile[$which_profile]=$(echo "${import_actionprofile[$which_profile]}" |jq -c --arg ACTION_ID ${action_id} --arg MAP_ID ${map_id} '.addedRelations = [{ "masterProfileId": $ACTION_ID, "masterProfileType": "ACTION_PROFILE", "detailProfileId": $MAP_ID, "detailProfileType": "MAPPING_PROFILE"}]')
 
-	curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${import_actionprofile[$which_profile]}" "${okapi_url}/data-import-profiles/actionProfiles/${action_id}"| jq -c . | tee -a ${logfile}
+	curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${import_actionprofile[$which_profile]}" "${okapi_url}/data-import-profiles/actionProfiles/${action_id}"| jq -c . | tee -a ${logfile}
 
 	##### job profile
 
 	import_jobprofile="{\"profile\":{\"name\":\"${profile_name}\",\"description\":\"\",\"dataType\":\"MARC\"},\"addedRelations\":[],\"deletedRelations\":[]}"
 
 
-	import_jobprofile=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${import_jobprofile}" "${okapi_url}/data-import-profiles/jobProfiles" |jq -c .)
+	import_jobprofile=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${import_jobprofile}" "${okapi_url}/data-import-profiles/jobProfiles" |jq -c .)
 	job_id=$(jq -r .id <<< "${import_jobprofile}")
 	echo "${apicall}" |tee -a ${logfile}
 
 	import_jobprofile=$(echo "${import_jobprofile}" |jq -c --arg JOB_ID ${job_id} --arg MATCH_ID ${match_id} --arg ACTION_ID ${action_id} '.addedRelations = [  { "masterProfileId": $JOB_ID, "masterWrapperId": null, "masterProfileType": "JOB_PROFILE", "detailProfileId": $MATCH_ID, "detailWrapperId": null, "detailProfileType": "MATCH_PROFILE", "order": 0 }, { "masterProfileId": $MATCH_ID, "masterWrapperId": null, "masterProfileType": "MATCH_PROFILE", "detailProfileId": $ACTION_ID, "detailWrapperId": null, "detailProfileType": "ACTION_PROFILE", "order": 0, "reactTo": "MATCH" }]')
-	curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${import_jobprofile}" "${okapi_url}/data-import-profiles/jobProfiles/${job_id}" |jq -c . |tee -a ${logfile}
+	curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${import_jobprofile}" "${okapi_url}/data-import-profiles/jobProfiles/${job_id}" |jq -c . |tee -a ${logfile}
 
 }
 
 function load_export_profile {
-	export_mappingprofile[$which_profile]="$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${export_mappingprofile[$which_profile]}" "${okapi_url}/data-export/mapping-profiles" | jq -c . |tee -a ${logfile})"
+	export_mappingprofile[$which_profile]="$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${export_mappingprofile[$which_profile]}" "${okapi_url}/data-export/mapping-profiles" | jq -c . |tee -a ${logfile})"
 	map_id=$(jq -r .id <<< "${export_mappingprofile[$which_profile]}")
 	profile_name=$(jq -r .name <<< "${export_mappingprofile[$which_profile]}")
 
 	jobprofile="{\"name\":\"${profile_name}\", \"mappingProfileId\": \"${map_id}\"}"
-
-	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${jobprofile}" "${okapi_url}/data-export/job-profiles" | jq -c . |tee -a ${logfile}
+	sleep 1
+	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${jobprofile}" "${okapi_url}/data-export/job-profiles" | jq -c . |tee -a ${logfile}
 
 }
 
@@ -88,7 +88,8 @@ function load_export_profile {
 numprofiles=${#import_mappingprofile[@]}
 
 for (( which_profile=1; which_profile<=${numprofiles}; which_profile++));do
-	load_import_profile
+#	load_import_profile
+echo
 done
 
 ##################### load export profiles

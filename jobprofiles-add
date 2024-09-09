@@ -88,8 +88,7 @@ function load_export_profile {
 numprofiles=${#import_mappingprofile[@]}
 
 for (( which_profile=1; which_profile<=${numprofiles}; which_profile++));do
-#	load_import_profile
-echo
+	load_import_profile
 done
 
 ##################### load export profiles

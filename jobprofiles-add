@@ -41,6 +41,14 @@ declare -A export_mappingprofile
 
 	import_actionprofile[3]='{"profile":{"description":"","name":"ZKB Holdings update on UUID","action":"UPDATE","folioRecord":"HOLDINGS"},"addedRelations":[],"deletedRelations":[]}'
 
+	############## update instance from 001 UUID
+
+	import_mappingprofile[4]='{"profile":{"name":"ZKB Instances, update on 001 UUID","incomingRecordType":"MARC_BIBLIOGRAPHIC","existingRecordType":"INSTANCE","description":"","mappingDetails":{"name":"instance","recordType":"INSTANCE","mappingFields":[{"name":"discoverySuppress","enabled":true,"path":"instance.discoverySuppress","value":"","subfields":[],"booleanFieldAction":"ALL_TRUE"}]}},"addedRelations":[],"deletedRelations":[]}'
+
+	import_matchprofile[4]='{"profile":{"name":"ZKB Instances, match on 001 UUID","description":"","incomingRecordType":"MARC_BIBLIOGRAPHIC","matchDetails":[{"incomingRecordType":"MARC_BIBLIOGRAPHIC","incomingMatchExpression":{"fields":[{"label":"field","value":"001"},{"label":"indicator1","value":""},{"label":"indicator2","value":""},{"label":"recordSubfield","value":""}],"staticValueDetails":null,"dataValueType":"VALUE_FROM_RECORD"},"existingRecordType":"INSTANCE","existingMatchExpression":{"fields":[{"label":"field","value":"instance.id"}],"dataValueType":"VALUE_FROM_RECORD"},"matchCriterion":"EXACTLY_MATCHES"}],"existingRecordType":"INSTANCE"},"addedRelations":[],"deletedRelations":[]}'
+
+	import_actionprofile[4]='{"profile":{"description":"","name":"ZKB Instances update on 001 UUID","action":"UPDATE","folioRecord":"INSTANCE"},"addedRelations":[],"deletedRelations":[]}'
+
 #################### define export profiles. Mapping profile only needed 
 
 	############## export profile to send bib ids, holdings ids, item ids

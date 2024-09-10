@@ -27,18 +27,27 @@ declare -A export_mappingprofile
 
 	############## update items from 001 UUID
 
-	import_mappingprofile[2]='{"profile":{"name":"ZKB Items, update on UUID","incomingRecordType":"MARC_BIBLIOGRAPHIC","existingRecordType":"ITEM","description":"","mappingDetails":{"name":"item","recordType":"ITEM","mappingFields":[{"name":"discoverySuppress","enabled":true,"path":"item.discoverySuppress","value":null,"subfields":[],"booleanFieldAction":"ALL_TRUE"}}]}},"addedRelations":[],"deletedRelations":[]}'
+	import_mappingprofile[2]='{"profile":{"name":"ZKB Items, update on UUID","incomingRecordType":"MARC_BIBLIOGRAPHIC","existingRecordType":"ITEM","description":"","mappingDetails":{"name":"item","recordType":"ITEM","mappingFields":[{"name":"discoverySuppress","enabled":true,"path":"item.discoverySuppress","value":null,"subfields":[],"booleanFieldAction":"ALL_TRUE"}]}},"addedRelations":[],"deletedRelations":[]}'
 
 	import_matchprofile[2]='{"profile":{"name":"ZKB Items, match on 001 UUID","description":"","incomingRecordType":"MARC_BIBLIOGRAPHIC","matchDetails":[{"incomingRecordType":"MARC_BIBLIOGRAPHIC","incomingMatchExpression":{"fields":[{"label":"field","value":"001"},{"label":"indicator1","value":""},{"label":"indicator2","value":""},{"label":"recordSubfield","value":""}],"staticValueDetails":null,"dataValueType":"VALUE_FROM_RECORD"},"existingRecordType":"ITEM","existingMatchExpression":{"fields":[{"label":"field","value":"item.id"}],"dataValueType":"VALUE_FROM_RECORD"},"matchCriterion":"EXACTLY_MATCHES"}],"existingRecordType":"ITEM"},"addedRelations":[],"deletedRelations":[]}'
 
 	import_actionprofile[2]='{"profile":{"description":"","name":"ZKB Items update on UUID","action":"UPDATE","folioRecord":"ITEM"},"addedRelations":[],"deletedRelations":[]}'
+
+	############## update holdings from 001 UUID
+
+	import_mappingprofile[3]='{"profile":{"name":"ZKB Holdings, update on UUID","incomingRecordType":"MARC_BIBLIOGRAPHIC","existingRecordType":"HOLDINGS","description":"","mappingDetails":{"name":"holdings","recordType":"HOLDINGS","mappingFields":[{"name":"discoverySuppress","enabled":true,"path":"holdings.discoverySuppress","value":"","subfields":[]}]}},"addedRelations":[],"deletedRelations":[]}'
+
+	import_matchprofile[3]='{"profile":{"name":"ZKB Holdings, match on 001 UUID","description":"","incomingRecordType":"MARC_BIBLIOGRAPHIC","matchDetails":[{"incomingRecordType":"MARC_BIBLIOGRAPHIC","incomingMatchExpression":{"fields":[{"label":"field","value":"001"},{"label":"indicator1","value":""},{"label":"indicator2","value":""},{"label":"recordSubfield","value":""}],"staticValueDetails":null,"dataValueType":"VALUE_FROM_RECORD"},"existingRecordType":"HOLDINGS","existingMatchExpression":{"fields":[{"label":"field","value":"holdingsrecord.id"}],"dataValueType":"VALUE_FROM_RECORD"},"matchCriterion":"EXACTLY_MATCHES"}],"existingRecordType":"HOLDINGS"},"addedRelations":[],"deletedRelations":[]}'
+
+	import_actionprofile[3]='{"profile":{"description":"","name":"ZKB Holdings update on UUID","action":"UPDATE","folioRecord":"HOLDINGS"},"addedRelations":[],"deletedRelations":[]}'
+
+#################### define export profiles. Mapping profile only needed 
 
 	############## export profile to send bib ids, holdings ids, item ids
 
 	export_mappingprofile[1]='{"transformations":[{"fieldId":"holdings.id","path":"$.holdings[*].id","recordType":"HOLDINGS","transformation":"901  $a","enabled":true},{"fieldId":"instance.id","path":"$.instance.id","recordType":"INSTANCE","transformation":"001  ","enabled":true},{"fieldId":"item.barcode","path":"$.holdings[*].items[*].barcode","recordType":"ITEM","transformation":"902  $b","enabled":true},{"fieldId":"item.hrid","path":"$.holdings[*].items[*].hrid","recordType":"ITEM","transformation":"902  $a","enabled":true},{"fieldId":"item.id","path":"$.holdings[*].items[*].id","recordType":"ITEM","transformation":"901  $b","enabled":true}],"recordTypes":["INSTANCE","HOLDINGS","ITEM"],"outputFormat":"MARC","name":"ZKB Instance, Holdings, Items"}'
 
 
-#################### define export profiles. Mapping and job profiles needed
  
 ############## load import profile 
 
@@ -46,16 +55,20 @@ function load_import_profile {
 
 	##### mapping profile
 
-	import_mappingprofile[$which_profile]=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${import_mappingprofile[$which_profile]}" "${okapi_url}/data-import-profiles/mappingProfiles" |jq -c .)
-	echo "${import_mappingprofile[$which_profile]}" | tee -a ${logfile}
-	map_id=$(jq -r .id <<< "${import_mappingprofile[$which_profile]}")
-	profile_name=$(jq -r '.profile.name' <<< "${import_mappingprofile[$which_profile]}")
+	if [[ ${import_mappingprofile[$which_profile]} != "" ]];then
+		import_mappingprofile[$which_profile]=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${import_mappingprofile[$which_profile]}" "${okapi_url}/data-import-profiles/mappingProfiles" |jq -c .)
+		echo "${import_mappingprofile[$which_profile]}" | tee -a ${logfile}
+		map_id=$(jq -r .id <<< "${import_mappingprofile[$which_profile]}")
+	else
+		map_id=""
+	fi
 
 	##### match profile
 
 	import_matchprofile[$which_profile]=$(curl --http1.1 -s -w '\n' -X POST -H 'Content-type: application/json' -H 'Accept: application/json' -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${import_matchprofile[$which_profile]}" "${okapi_url}/data-import-profiles/matchProfiles" |jq -c .)
 	echo "${import_matchprofile[$which_profile]}" |tee -a ${logfile}
 	match_id=$(jq -r .id <<< "${import_matchprofile[$which_profile]}")
+	profile_name=$(jq -r '.profile.name' <<< "${import_matchprofile[$which_profile]}")
 
 	##### action profile
 
@@ -101,7 +114,6 @@ for (( which_profile=1; which_profile<=${numprofiles}; which_profile++));do
 done
 
 ##################### load export profiles
-
 
 numprofiles=${#export_mappingprofile[@]}
 

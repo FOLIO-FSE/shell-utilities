@@ -1,0 +1,82 @@
+infile="${1}"
+dos2unix "${infile}"
+
+if [[ -z ${infile} ]];then echo "You must supply a file name of barcodes";fi
+
+fileroot=$(echo "${infile}" | sed 's/\.....\?$//')
+
+outfile="ids-in-001.mrc"
+
+read -r -d '' awkscript << "ENDOFAWK"
+#!/usr/bin/awk -f
+
+BEGIN {
+        record_template="=LDR  00000cam  2200000   4500"FS"=001  RECNO"
+
+	if(length("а") != 2) {
+		badawk = 1
+		printf("Your version of awk does not support marc-frombarcodes -- you need a version that supports the -b switch\\n")
+		exit
+	}
+}
+{
+	leader1 = "cam a22"
+	leader2 = "0  4500"
+	directory = ""
+	base_address = 0
+	field_counter = 0 
+	field_length = 0
+	record_content = ""
+	record_counter++
+
+	gsub(/"/, "", $0) 
+	gsub(/^ */, "", $0) 
+	gsub(/ *$/, "", $0) 
+
+	text_marc = record_template
+
+	gsub(/RECNO/, $0, text_marc)
+
+	split(text_marc, marc_array, FS)	
+	num_marc_fields = length(marc_array)
+	
+	for (field = 2; field <= num_marc_fields; ++field) {
+		tag = substr(marc_array[field], 2, 3)
+	
+		field_content = substr(marc_array[field], 7)""OFS
+		field_length=sprintf("%04d", length(field_content))
+	
+		directory_address = sprintf("%05d", base_address)
+		base_address = base_address + field_length
+	
+		directory = directory""tag""field_length""directory_address
+		record_content = record_content""field_content
+		field_counter++
+	}
+	
+	directory = directory""OFS
+	base_data_address = sprintf("%05d", 24 + length(directory))
+	
+	record_length = 24 + length(directory) + length(record_content) + 1
+	
+	leader = sprintf("%05d", record_length)""leader1""base_data_address""leader2
+
+	print leader""directory""record_content > OUTFILE
+
+	if (NR % 10000 == 0){ printf "Records processed: %d \\r", NR }
+
+}
+END { 
+	if (badawk != 1) {
+		printf ("\\n\\n Records created: %d Output file: %s\\n", NR, OUTFILE)
+	}
+}
+
+ENDOFAWK
+
+echo -e "${awkscript}" > tmp_checkmarc
+chmod 700 tmp_checkmarc
+
+awk -v ORS=$'\x1d' -v RS='\n' -v OFS=$'\x1e' -v FS='\t' -v SFS=$'\x1f' -v OUTFILE="${outfile}" -b -f tmp_checkmarc "${infile}"
+
+rm -f tmp_checkmarc

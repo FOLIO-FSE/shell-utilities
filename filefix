@@ -81,6 +81,8 @@ function to_tsv(){
 		comma)
 			csvformat -T ${file} > "${file}1"
 			mv "${file}1" ${file} ;;
+		semicolon)
+			sed -i 's/;/\t/g' ${file} ;;
 	esac
 }
 
@@ -150,6 +152,7 @@ echo "${firstline}" | grep -q "|" && filetype="pipe"
 echo "${firstline}" | fgrep -q "^" && filetype="carrot"
 echo "${firstline}" | grep -q "," && filetype="comma"
 echo "${firstline}" | grep -qP "\t" && filetype="tab"
+echo "${firstline}" | grep -qP ";" && filetype="semicolon"
 
 if [[ ! $filetype ]];then
 	echo "${infile} doesn't appear to be comma or tab delimited."
@@ -200,7 +203,9 @@ sed -i '
 1 s/\bi[^\t]*barcode\b/item_barcode/i
 1 s/\bbarcode[^\t]*i[^\t]*\b/item_barcode/i
 1 s/\bout[^\t]*date\b/out_date/i
+1 s/\bdatecheckedout\b/out_date/i
 1 s/\bdue[^\t]*date\b/due_date/i
+1 s/\bdate[^\t]*due\b/due_date/i
 1 s/\btot[^\t]*renew[^\t]*\b/renewal_count/i
 1 s/\b[^\tp]*tatus\b/next_item_status/i
 1 s/\b[^p\t][^\t]*arcode/item_barcode/i

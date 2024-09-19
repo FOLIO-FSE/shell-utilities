@@ -10,7 +10,7 @@ rm -f ${logfile}
 
 declare -A dict_campuses
 
-campus_default="Morningside"
+campus_default="TAR UMT"
 
 # get list of campuses with code as key and uuid as value
 eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/location-units/campuses?limit=1000" |  jq -r '.loccamps[] | @sh "dict_campuses[\(.code|tostring|ascii_downcase)]=\(.id|tostring)"')"
@@ -23,8 +23,6 @@ done
 while IFS=$'\t' read -r campus name code
 do
 	comparecampus=$(tr -dc [a-z0-9] <<< "${campus,,}")
-	comparelibrary=$(tr -dc [a-z0-9] <<< "${library,,}")
-
 	campus_default=$(tr -dc [a-z0-9] <<< "${campus_default,,}")
 
 	if [[ -z ${campus} ]];then 
@@ -38,7 +36,7 @@ do
 		fi
 	fi
 
-	if [[ -z ${name} ]];then name="${code}"; fi 
+	if [[ -z ${code} ]];then name="${name}"; fi 
 
 
 IFS='' read -r -d '' library << EndOfLibrary

@@ -149,8 +149,9 @@ while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
 		okapi_token=$(cat okapi.token)
                 SECONDS=1
 		OFFSET=$(($OFFSET + 1))
-		TIMER=$(($OFFSET * 500 + $SECONDS))
         fi
+
+	TIMER=$(($OFFSET * 500 + $SECONDS))
 
 	seq=0
 	for line in "${lines[@]}";do

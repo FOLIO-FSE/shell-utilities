@@ -51,14 +51,14 @@ fixrecord() {
 #		 ((.parsedRecord.content.fields[] | select(."008" != null) |."008") = $VALUE)               
 #                (.active = true ) 
 #                (.administrativeNotes += [$VALUE] ) 
-                (.agreementContentTypes = [{"_delete": true, "contentType": {"value": $VALUE}}] ) 
+#                (.agreementContentTypes = [{"_delete": true, "contentType": {"value": $VALUE}}] ) 
 #                (.customFields.academicStatus = $VALUE) # single dropdown or text
 #                (.fundDistributions[0].code = "ybpbl" ) 
 #                (.materialTypeId = "c6f1d4a7-9b07-4409-a7ab-81aaf6e1fce4") 
 #                (.notes |= .+ [{"holdingsNoteTypeId": "b160f13a-ddba-4053-b9c4-60ec5ea45d56", "staffOnly": false, "note": $VALUE}]) 
 #                (.permanentLoanTypeId = $VALUE)
 #                (.permanentLocationId = $VALUE) 
-#                (.statisticalCodeIds += ["958fbc1d-db7f-48dd-8012-9803a0be64b3"] ) 
+                (.statisticalCodeIds += ["85c69c58-8ab7-47ea-89ea-585dae6ef0d0"] ) 
 #                (.statusId = $VALUE)
 #                (.temporaryLoanType = {"id": $VALUE} ) # UUID, must use items-inventory
 #                (.temporaryLocation = {"id": $VALUE} ) # UUID, must use items-inventory
@@ -163,9 +163,9 @@ while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
 	done
 	wait
 	
-        TIME=$SECONDS;msg="$SECONDS seconds"
-        if [[ $SECONDS -gt 60 ]];then TIME=$(bc <<< "scale=1;$SECONDS/60");msg="$TIME minutes";fi
-        if [[ $SECONDS -gt 3600 ]];then TIME=$(bc <<< "scale=1;$SECONDS/3600");msg="$TIME hours     ";fi
+        TIME=$TIMER;msg="$SECONDS seconds"
+        if [[ $TIMER -gt 60 ]];then TIME=$(bc <<< "scale=1;$TIMER/60");msg="$TIME minutes";fi
+        if [[ $TIMER -gt 3600 ]];then TIME=$(bc <<< "scale=1;$TIMER/3600");msg="$TIME hours     ";fi
 
         echo -en "Processing record $counter of $numrecs in $msg\r"
 

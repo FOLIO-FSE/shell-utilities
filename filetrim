@@ -21,12 +21,10 @@ IFS=$'\t' read -r -a map_arr <<< "${mapkeys}"
 key_arr_len=${#key_arr[@]}
 map_arr_len=${#map_arr[@]}
 
-echo $key_arr_len
-echo $map_arr_len
-
 cutlist=""
 
 echo "The following columns will be extracted"
+echo
 
 for (( i=0; i<$key_arr_len; i++ ));do
 	for (( j=0; j<$map_arr_len; j++ ));do
@@ -43,6 +41,7 @@ echo "Extracting columns. Please wait"
 cutlist=${cutlist/,/-f}
 
 cut "${cutlist}" "${datafile}" > "${outfile}"
+echo
 echo "Output has been sent to ${outfile}"
 
 

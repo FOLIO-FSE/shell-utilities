@@ -1,0 +1,48 @@
+if [ -z $2 ];then 
+	echo "Usage: filetrim [datafile.tsv] [mapfile.json]"
+else
+	datafile="${1}"
+	mapfile="${2}"
+	outfile=$(echo "${datafile}" | sed 's/\.....\?$/_trimmed.tsv/')
+fi
+
+
+
+mapkeys="$(jq -r '.data[].legacy_field' ${2} |sort -u |grep -i [a-z0-9] |sed '/Not mapped/d' |tr '\n' '\t')"
+colkeys="$(head -1 ${1})"
+
+if [[ ! ${colkeys} =~ $'\t' ]]; then
+    echo "Data file must be tab delimited. Exiting"
+fi
+
+IFS=$'\t' read -r -a key_arr <<< "${colkeys}"
+IFS=$'\t' read -r -a map_arr <<< "${mapkeys}"
+
+key_arr_len=${#key_arr[@]}
+map_arr_len=${#map_arr[@]}
+
+echo $key_arr_len
+echo $map_arr_len
+
+cutlist=""
+
+echo "The following columns will be extracted"
+
+for (( i=0; i<$key_arr_len; i++ ));do
+	for (( j=0; j<$map_arr_len; j++ ));do
+		if [[ ${key_arr[$i]} ==  ${map_arr[$j]} ]];then
+			nextval=$(( $i + 1 ))
+			cutlist="${cutlist},${nextval}"
+				echo "${key_arr[$i]}: column $nextval"
+		fi
+	done
+done
+
+echo "Extracting columns. Please wait"
+
+cutlist=${cutlist/,/-f}
+
+cut "${cutlist}" "${datafile}" > "${outfile}"
+echo "Output has been sent to ${outfile}"
+
+

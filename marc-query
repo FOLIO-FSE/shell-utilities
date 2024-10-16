@@ -4,7 +4,7 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-if [[ -z $4 ]];then
+if [[ -z $3 ]];then
 	echo "search syntax: marc-query [field] [subfield] [operator] [value] OR marc-query [field] [operator] [value] leader (to specify leader search)"
 	echo
 	echo "marc-query 260 a ^= 'Paris'"
@@ -53,6 +53,14 @@ else
 	if [[ $value3 =~ [A-Za-z0-9] ]];then
 		search3=" ${bool2} ${field3}.${subfield3} ${operator3} ${value3}"
 	fi
+fi
+
+if [ "$#" -eq 3 ]; then
+	searchtype="fieldsearch"
+	subfield="value"
+	operator="${2}"
+	value="'"${3}"'"
+	search1="${field}.${subfield} ${operator} ${value}"
 fi
 
 IFS='' read -r -d '' fieldsearch << EndOfJSON

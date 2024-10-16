@@ -72,7 +72,9 @@ data="${!searchtype}"
 
 apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/source-storage/stream/marc-record-identifiers")
 
-echo -e "${apicall}" 
+echo -e "${apicall}" |jq -r .records[] > ids
+echo "$(jq -r '.records|length' <<< ${apicall}) records have been exported to \"ids\""
+
 
 # examples
 # left anchred search: "260.a ^= 'Paris'"

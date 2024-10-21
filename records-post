@@ -103,6 +103,8 @@ case $recordtype in
 	recordtype="orders/order-lines";;
 "organizations")
 	recordtype="organizations/organizations";;
+"orders")
+	recordtype="orders-storage/purchase-orders";;
 "parsedrecords")
 	recordtype="change-manager/parsedRecords";;
 "permissions")

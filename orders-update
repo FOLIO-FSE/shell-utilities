@@ -6,9 +6,8 @@ SECONDS=1
 OFFSET=0
 
 #############################################################################
-# this script expects a file containing a list of search terms (by default id)
-# that is run through the jq_replace or string_replace expressions before
-# being reuploaded via batch sync API
+# this script expects a file containing a list of po numbers
+# that is run through the jq_replace expressions 
 ##############################################################################
 
 infile=ponumbers

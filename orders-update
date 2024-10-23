@@ -1,0 +1,56 @@
+auth 2>/dev/null || authn 2>/dev/null
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+SECONDS=1
+OFFSET=0
+
+#############################################################################
+# this script expects a file containing a list of search terms (by default id)
+# that is run through the jq_replace or string_replace expressions before
+# being reuploaded via batch sync API
+##############################################################################
+
+infile=ponumbers
+outfile=order_update.log
+
+dos2unix ${infile}
+
+jq_replace='.purchaseOrders[] | .orderType="Ongoing"'
+endpoint="${okapi_url}/orders-storage/purchase-orders?query=poNumber=="
+
+rm -f ${outfile}
+
+counter=0
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+while IFS=$'\n' read poLine; do
+	counter=$(($counter + 1))
+
+        if [[ $SECONDS -gt 500 ]]; then
+                auth 2>/dev/null || authn 2>/dev/null
+		okapi_token=$(cat okapi.token)
+                SECONDS=1
+		OFFSET=$(($OFFSET + 1))
+		TIMER=$(($OFFSET * 500 + $SECONDS))
+        fi
+
+	record=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}${poLine}" )
+
+	updated_record=$(echo "${record}" |jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo)")
+	uuid=$(jq -r .id <<< "${updated_record}")
+
+	curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_record}" "${okapi_url}/orders-storage/purchase-orders/${uuid}" >> ${outfile}
+
+        TIME=$SECONDS;msg="$SECONDS seconds"
+        if [[ $SECONDS -gt 60 ]];then TIME=$(bc <<< "scale=1;$SECONDS/60");msg="$TIME minutes";fi
+        if [[ $SECONDS -gt 3600 ]];then TIME=$(bc <<< "scale=1;$SECONDS/3600");msg="$TIME hours     ";fi
+
+	echo -en "Processing record $counter of $numrecs in $msg\r"
+
+done < ${infile}
+
+echo "Processed ${numrecs} records. Output was written to ${outfile}"
+
+
+

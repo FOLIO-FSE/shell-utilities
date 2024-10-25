@@ -11,9 +11,9 @@ outfile="packages.log"
 rm -f ${outfile}
 
 echo "Retrieving agreements"
-records-get agreements
+#records-get agreements
 echo "Retrieving packages"
-records-get packages
+#records-get packages
 
 all_packages="$(<packages.json)"
 all_agreements="$(<agreements.json)"
@@ -40,10 +40,14 @@ while IFS=$'\n' read -r agreement_name;do
 	agreement_uuid=$(jq -r --arg NAME "${agreement_name}" 'select(.name == $NAME) |.id' <<< "${all_agreements}")
 	
 	agreement_line=$(create_agreementline)
-	
-	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement_line}" "${okapi_url}/erm/entitlements")
 
-echo "${apicall}" >> ${outfile}
+	if [[ ${#package_id} -gt 1 ]];then	
+		apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement_line}" "${okapi_url}/erm/entitlements")
+
+		echo "${apicall}" >> ${outfile}
+	else
+		echo "No package matching ${agreement_name} can be found"
+	fi
 
 	echo "${apicall}"
 	counter=$((counter + 1))

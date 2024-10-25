@@ -11,9 +11,9 @@ outfile="packages.log"
 rm -f ${outfile}
 
 echo "Retrieving agreements"
-#records-get agreements
+records-get agreements
 echo "Retrieving packages"
-#records-get packages
+records-get packages
 
 all_packages="$(<packages.json)"
 all_agreements="$(<agreements.json)"

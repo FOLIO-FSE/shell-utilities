@@ -4,7 +4,19 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 rm -f agreement.log
+rm -f packages.log
+
 infile="agreements.tsv"
+
+echo "Automatically link to packages in HLM with same name as agreement? (y/n)"
+read answer
+
+if [[ ${answer,,} == "y" ]];then 
+	hlm="yes"
+	echo "Retrieving packages for HLM comparison"
+	records-get packages
+	all_packages="$(<packages.json)"
+fi
 
 create_agreement() {
 
@@ -22,7 +34,7 @@ IFS='' read -r -d '' agreement << EndOfAgreement
   "outwardRelationships": [],
   "inwardRelationships": [],
   "linkedLicenses": [],
-  "id": "${uuid}"
+  "id": "${agreement_uuid}"
 }
 EndOfAgreement
 
@@ -30,6 +42,19 @@ echo "${agreement}"
 
 }
 
+create_agreementline() {
+
+IFS='' read -r -d '' agreementline << EndOfAgreementLine
+{
+	"type":"external",
+	"authority":"ekb-package",
+	"reference":"${package_id}",
+	"owner":"${agreement_uuid}"
+}
+EndOfAgreementLine
+
+echo "${agreementline}"
+}
 
 while IFS=$'\n' read -r line;do 
 	line=$(echo "${line}" |tr "\t" "^")
@@ -41,7 +66,7 @@ while IFS=$'\n' read -r line;do
 
 	IFS='^' read -r name description altname start_date end_date <<< "${line}"
 	echo "Processing ${name}"
-	name=$(echo ${name} |jq -aRs)
+	name=$(echo -n "${name}" |jq -jaRs |sed 's/"//g')
 	keyname=$(tr -dc [a-z0-9] <<< ${name,,})
 
 	# agreement uuid -- needs to be global
@@ -60,13 +85,29 @@ while IFS=$'\n' read -r line;do
 	if [[ ${isPerpetual} =~ [a-zA-Z] ]];then agreement=$(echo "${agreement}" | jq ".isPerpetual = { \"value\": \"${isPerpetual}\" } ");fi
 	if [[ ${renewalPriority} =~ [a-zA-Z] ]];then agreement=$(echo "${agreement}" | jq ".renewalPriority = { \"value\": \"${renewalPriority}\" } ");fi
 	if [[ ${altname,,} =~ [0-9a-z]  ]]; then altname=$(echo ${altname} |jq -aRs .);agreement=$(echo "${agreement}" | jq ".alternateNames += [{ \"_delete\" : false, \"name\" : ${altname} }]");fi
-	if [[ ${end_date} =~ [12][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] ]];then agreement=$(echo "${agreement}" | jq ".periods += [{ \"endDate\": \"${end_date}\", \"periodStatus\": \"current\" }]";fi
+	if [[ ${end_date} =~ [12][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] ]];then agreement=$(echo "${agreement}" | jq ".periods += [{ \"endDate\": \"${end_date}\", \"periodStatus\": \"current\" }]");fi
 	
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement}" "${okapi_url}/erm/sas")
+	agreement_uuid=$(jq -r .id <<< ${apicall})
 
 echo "${apicall}" >> agreement.log
 
 	echo "${apicall}"
+	
+	if [[ $hlm == "yes" ]];then
+		package_id=$(jq -r --arg NAME "${name}" 'select(.attributes.name == $NAME) |.id' <<< "${all_packages}")
+
+		if [[ ${#package_id} -gt 1 ]];then
+			echo "Creating agreement line"
+			agreement_line=$(create_agreementline)
+			apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement_line}" "${okapi_url}/erm/entitlements")
+			echo "${apicall}"
+			echo "${apicall}" >> packages.log
+		else
+			echo "Matching agreement not found"
+		fi
+	fi
+
 	counter=$((counter + 1))
 done < ${infile}
 

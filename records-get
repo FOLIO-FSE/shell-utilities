@@ -237,6 +237,16 @@ case $rec_type in
 	endpoint="organizations-storage/organizations"
 	query="query=%28status%3D%3D%22Active%22%29"
 	;;
+"packages")
+	rec_type="data"
+	num_retrieved=100
+	limitOrPerPage="count"
+	PageOrOffset="page"
+	query="q=%2A&filter\[selected\]=true"
+	accept="application/vnd.api+json"
+	sortby=""
+	totalRecords="meta.totalResults"
+	endpoint="eholdings/packages";;
 "permissions")
 	sortby=""
 	num_retrieved=20000

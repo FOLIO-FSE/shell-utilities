@@ -35,7 +35,6 @@ echo "${agreementline}"
 
 while IFS=$'\n' read -r agreement_name;do 
 	echo "Processing ${agreement_name}"
-	agreement_name=$(echo -n "${agreement_name}" |jq -jaRs |sed 's/"//g')
 	package_id=$(jq -r --arg NAME "${agreement_name}" 'select(.attributes.name == $NAME) |.id' <<< "${all_packages}")
 	agreement_uuid=$(jq -r --arg NAME "${agreement_name}" 'select(.name == $NAME) |.id' <<< "${all_agreements}")
 	

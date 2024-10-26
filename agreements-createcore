@@ -66,6 +66,7 @@ while IFS=$'\n' read -r line;do
 
 	IFS='^' read -r name description altname start_date end_date <<< "${line}"
 	echo "Processing ${name}"
+	matchname="${name}"
 	name=$(echo -n "${name}" |jq -jaRs |sed 's/"//g')
 	keyname=$(tr -dc [a-z0-9] <<< ${name,,})
 
@@ -95,7 +96,7 @@ echo "${apicall}" >> agreement.log
 	echo "${apicall}"
 	
 	if [[ $hlm == "yes" ]];then
-		package_id=$(jq -r --arg NAME "${name}" 'select(.attributes.name == $NAME) |.id' <<< "${all_packages}")
+		package_id=$(jq -r --arg NAME "${matchname}" 'select(.attributes.name == $NAME) |.id' <<< "${all_packages}")
 
 		if [[ ${#package_id} -gt 1 ]];then
 			echo "Creating agreement line"

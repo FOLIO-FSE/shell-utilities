@@ -28,16 +28,6 @@ SECONDS=1
 
 delete_record() {
 
-        if [[ $SECONDS -gt 500 ]]; then
-                auth 2>/dev/null || authn 2>/dev/null
-                okapi_token=$(cat okapi.token)
-                SECONDS=1
-                OFFSET=$(($OFFSET + 1))
-                TIMER=$(($OFFSET * 500 + $SECONDS))
-        else
-                if [[ $OFFSET -eq 0 ]];then TIMER=$SECONDS;fi
-        fi
-
 	local uuid=${1//[^0-9a-z\-]/}
 	local seq=$2
 	local apicall=$(curl -sI -w '%{http_code}' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}")
@@ -164,6 +154,17 @@ fi
 
 if [[ ${singlerecord} == "yes" ]];then
 	while mapfile -t -n ${batchsize} uuids && ((${#uuids[@]})); do
+
+	        if [[ $SECONDS -gt 500 ]]; then
+	                auth 2>/dev/null || authn 2>/dev/null
+	                okapi_token=$(cat okapi.token)
+	                SECONDS=1
+	                OFFSET=$(($OFFSET + 1))
+	                TIMER=$(($OFFSET * 500 + $SECONDS))
+	        else
+	                if [[ $OFFSET -eq 0 ]];then TIMER=$SECONDS;fi
+	        fi
+
 		seq=0
 		for uuid in ${uuids[@]};do
 			delete_record ${uuid} ${seq} &

@@ -21,7 +21,7 @@ else
 
 fi	
 
-cat ids | tr -d ' \r' | tr "\n" $'\x1d' > tmp_ids
+cat ids |tr "\n" $'\x1d' > tmp_ids
 
 fileroot=$(echo "${infile}" | sed 's/\.....\?$//')
 outfile="${fileroot}_extract.mrc"
@@ -39,8 +39,10 @@ BEGIN { records_found = 0
 {
 
 if (NR == FNR) {
-	#gsub("\\n", "", $1)
+	gsub("\\n", "", $1)
+	gsub(" *$", "", $1)
 	seen[$1] = 1
+	next
 }
 
 good_record=0
@@ -84,13 +86,12 @@ if (directory_check == 0) {
 		}
 	}
 
-#gsub(" *$", "", id_content)
-gsub(" ", "", id_content)
+gsub(" *$", "", id_content)
 
 if ( NOT == 0 && seen[id_content] == 1 ) { 
 	foundrecs++
 	print $0 > OUTFILE
-	}
+	} 
 if ( NOT == 1 && ! seen[id_content] ) { 
 	foundrecs++
 	print $0 > OUTFILE

@@ -24,6 +24,7 @@ if [[ $numfields -lt 34 ]];then
 	head -1 tmp_outfile |tr '\t' '\n' |grep -in "[a-z0-9]" |sed 's/"//g' 
 else
 	head -1 tmp_outfile |tr '\t' '\n' |grep -in "[a-z0-9]" |sed 's/"//g' |column
+fi
 echo
 
 awk -v NUMFIELDS=$numfields -v FS="\t" -v bad=0 -v good=0 '{if (NF == NUMFIELDS){good++}else{bad++}}END{print good-1" of "NR-1" records contained the same number of fields as the header.\n"bad" records contained the wrong number of fields"}' tmp_outfile 

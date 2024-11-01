@@ -125,28 +125,6 @@ function words2numbers() {
 
 }
 
-function date_preprocess() {
-	local infile="${1}"
-	words=0
-
-	head -50 "${infile}" |grep -Pqoi "\b(apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t\/-]*[\/-][0-9][0-9]*[\/-][0-9][0-9]*\b" && words=1
-	head -50 "${infile}" |grep -Pqoi "\b[0-9\[0-9]*[\/-](apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t\/-]*[\/-][0-9][0-9]*\b" && words=2
-
-	if [[ $words -gt 0 ]];then
-		echo
-		echo "Dates containing words detected"
-		echo
-
-		for splitfile in ${splitlist[@]};do 
-			words2numbers ${splitfile} ${words} & 
-		done
-		wait
-
-	fi
-
-
-}
-
 function fix_file() {
 local infile="${1}"
 local outfile=""
@@ -189,9 +167,22 @@ num_per_file=$(($numrecs / 5 + 1))
 split -l $num_per_file ${infile} filefix
 splitlist=(filefixaa filefixab filefixac filefixad filefixae)
 
-words="no"
+words=0
 
-date_preprocess "${infile}"
+head -50 "${infile}" |grep -Pqoi "\b(apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t\/-]*[\/-][0-9][0-9]*[\/-][0-9][0-9]*\b" && words=1
+head -50 "${infile}" |grep -Pqoi "\b[0-9\[0-9]*[\/-](apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t\/-]*[\/-][0-9][0-9]*\b" && words=2
+
+if [[ $words -gt 0 ]];then
+	echo
+	echo "Dates containing words detected"
+	echo
+
+	for splitfile in ${splitlist[@]};do 
+		words2numbers ${splitfile} ${words} & 
+	done
+	wait
+
+fi
 
 if [[ -z $dateformat ]]; then
 	head -50 "${infile}" |grep -o "\b[0|1]\?[0-9][/\-][0-3]\?[0-9][/\-][27-9][0-9]\b" > /dev/null && echo "Six digit date with trailing year detected." && dateformat="us-single"

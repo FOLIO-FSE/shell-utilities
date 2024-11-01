@@ -169,8 +169,8 @@ splitlist=(filefixaa filefixab filefixac filefixad filefixae)
 
 words=0
 
-head -50 "${infile}" |grep -Pqoi "\b(apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t\/-]*[\/-][0-9][0-9]*[\/-][0-9][0-9]*\b" && words=1
-head -50 "${infile}" |grep -Pqoi "\b[0-9\[0-9]*[\/-](apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t\/-]*[\/-][0-9][0-9]*\b" && words=2
+head -50 filefixaa |grep -Pqoi "\b(apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t\/-]*[\/-][0-9][0-9]*[\/-][0-9][0-9]*\b" && words=1
+head -50 filefixaa |grep -Pqoi "\b[0-9\[0-9]*[\/-](apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t\/-]*[\/-][0-9][0-9]*\b" && words=2
 
 if [[ $words -gt 0 ]];then
 	echo
@@ -185,14 +185,14 @@ if [[ $words -gt 0 ]];then
 fi
 
 if [[ -z $dateformat ]]; then
-	head -50 "${infile}" |grep -o "\b[0|1]\?[0-9][/\-][0-3]\?[0-9][/\-][27-9][0-9]\b" > /dev/null && echo "Six digit date with trailing year detected." && dateformat="us-single"
-	head -50 "${infile}" |grep -o "\b[78-9][0-9][/\-][0-3]\?[0-9][/\-][0|1]\?[0-9]\b" > /dev/null && echo "Six digit date with leading year detected."
+	head -50 filefixaa |grep -o "\b[0|1]\?[0-9][/\-][0-3]\?[0-9][/\-][27-9][0-9]\b" > /dev/null && echo "Six digit date with trailing year detected." && dateformat="us-single"
+	head -50 filefixaa |grep -o "\b[78-9][0-9][/\-][0-3]\?[0-9][/\-][0|1]\?[0-9]\b" > /dev/null && echo "Six digit date with leading year detected."
 
-	head -50 "${infile}" |grep -o "\b[0-2][0-9][/\-][0-9][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null &&  dateformat="us"
-	head -50 "${infile}" |grep -o "\b[0-9][/\-][23][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null &&  dateformat="us-single"
-	head -50 "${infile}" |grep -o "\b[23][0-9][/\-][0-9][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null && dateformat="uk"
-	head -50 "${infile}" |grep -o "\b[23][0-9][/\-][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null && dateformat="uk-single"
-	head -50 "${infile}" |grep -o "\b[12][01239][0-9][0-9]\/[0-9][0-9]\/[0-9][0-9]\b" > /dev/null && dateformat="slashes"
+	head -50 filefixaa |grep -o "\b[0-2][0-9][/\-][0-9][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null &&  dateformat="us"
+	head -50 filefixaa |grep -o "\b[0-9][/\-][23][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null &&  dateformat="us-single"
+	head -50 filefixaa |grep -o "\b[23][0-9][/\-][0-9][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null && dateformat="uk"
+	head -50 filefixaa |grep -o "\b[23][0-9][/\-][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null && dateformat="uk-single"
+	head -50 filefixaa |grep -o "\b[12][01239][0-9][0-9]\/[0-9][0-9]\/[0-9][0-9]\b" > /dev/null && dateformat="slashes"
 fi
 
 

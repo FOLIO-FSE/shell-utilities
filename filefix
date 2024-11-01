@@ -86,6 +86,67 @@ function to_tsv(){
 	esac
 }
 
+function words2numbers() {
+	local wordfile="${1}"
+	local words="${2}"
+
+
+	if [[ $words -eq 2 ]];then
+		sed -i 's/\b\([0-9]*[0-9]\)[\/-]jan[^\t\/-]*[\/-]\([0-9][0-9][0-9]*\)\b/\1\-01-\2/ig
+			s/\b\([0-9]*[0-9]\)[\/-]feb[^\t\/-]*[\/-]\([0-9][0-9][0-9]*\)\b/\1\-02-\2/ig
+			s/\b\([0-9]*[0-9]\)[\/-]mar[^\t\/-]*[\/-]\([0-9][0-9][0-9]*\)\b/\1\-03-\2/ig
+			s/\b\([0-9]*[0-9]\)[\/-]apr[^\t\/-]*[\/-]\([0-9][0-9][0-9]*\)\b/\1\-04-\2/ig
+			s/\b\([0-9]*[0-9]\)[\/-]may[^\t\/-]*[\/-]\([0-9][0-9][0-9]*\)\b/\1\-05-\2/ig
+			s/\b\([0-9]*[0-9]\)[\/-]jun[^\t\/-]*[\/-]\([0-9][0-9][0-9]*\)\b/\1\-06-\2/ig
+			s/\b\([0-9]*[0-9]\)[\/-]jul[^\t\/-]*[\/-]\([0-9][0-9][0-9]*\)\b/\1\-07-\2/ig
+			s/\b\([0-9]*[0-9]\)[\/-]aug[^\t\/-]*[\/-]\([0-9][0-9][0-9]*\)\b/\1\-08-\2/ig
+			s/\b\([0-9]*[0-9]\)[\/-]sep[^\t\/-]*[\/-]\([0-9][0-9][0-9]*\)\b/\1\-09-\2/ig
+			s/\b\([0-9]*[0-9]\)[\/-]oct[^\t\/-]*[\/-]\([0-9][0-9][0-9]*\)\b/\1\-10-\2/ig
+			s/\b\([0-9]*[0-9]\)[\/-]nov[^\t\/-]*[\/-]\([0-9][0-9][0-9]*\)\b/\1\-11-\2/ig
+			s/\b\([0-9]*[0-9]\)[\/-]dec[^\t\/-]*[\/-]\([0-9][0-9][0-9]*\)\b/\1\-12-\2/ig
+		' "${wordfile}"
+	fi
+
+	if [[ $words -eq 1 ]];then
+		sed -i 's/\bjan[^\t\/-]*[\/-]\([0-9]*[0-9]\)[\/-]\([0-9][0-9][0-9]*\)\b/01-\1-\2/ig
+			s/\bfeb[^\t\/-]*[\/-]\([0-9]*[0-9]\)[\/-]\([0-9][0-9][0-9]*\)\b/02-\1-\2/ig
+			s/\bmar[^\t\/-]*[\/-]\([0-9]*[0-9]\)[\/-]\([0-9][0-9][0-9]*\)\b/03-\1-\2/ig
+			s/\bapr[\t^\/-]*[\/-]\([0-9]*[0-9]\)[\/-]\([0-9][0-9][0-9]*\)\b/04-\1-\2/ig
+			s/\bmay[^\t\/-]*[\/-]\([0-9]*[0-9]\)[\/-]\([0-9][0-9][0-9]*\)\b/05-\1-\2/ig
+			s/\bjun[^\t\/-]*[\/-]\([0-9]*[0-9]\)[\/-]\([0-9][0-9][0-9]*\)\b/06-\1-\2/ig
+			s/\bjul[^\t\/-]*[\/-]\([0-9]*[0-9]\)[\/-]\([0-9][0-9][0-9]*\)\b/07-\1-\2/ig
+			s/\baug[^\t\/-]*[\/-]\([0-9]*[0-9]\)[\/-]\([0-9][0-9][0-9]*\)\b/08-\1-\2/ig
+			s/\bsep[^\t\/-]*[\/-]\([0-9]*[0-9]\)[\/-]\([0-9][0-9][0-9]*\)\b/09-\1-\2/ig
+			s/\boct[^\t\/-]*[\/-]\([0-9]*[0-9]\)[\/-]\([0-9][0-9][0-9]*\)\b/10-\1-\2/ig
+			s/\bnov[^\t\/-]*[\/-]\([0-9]*[0-9]\)[\/-]\([0-9][0-9][0-9]*\)\b/11-\1-\2/ig
+			s/\bdec[^\t\/-]*[\/-]\([0-9]*[0-9]\)[\/-]\([0-9][0-9][0-9]*\)\b/12-\1-\2/ig
+		' "${wordfile}"
+	fi
+
+}
+
+function date_preprocess() {
+	local infile="${1}"
+	words=0
+
+	head -50 "${infile}" |grep -qoi "\b\(apr\|aug\|dec\|feb\|jan\|jul\|jun\|mar\|may\|nov\|oct\|sep\)[^	\/-]*[\/-][0-9][0-9]*[\/-][0-9][0-9]*\b" && words=1
+	head -50 "${infile}" |grep -qoi "\b[0-9\[0-9]*[\/-]\(apr\|aug\|dec\|feb\|jan\|jul\|jun\|mar\|may\|nov\|oct\|sep\)[^	\/-]*[\/-][0-9][0-9]*\b" && words=2
+
+	if [[ $words -gt 0 ]];then
+		echo
+		echo "Dates containing words detected"
+		echo
+
+		for splitfile in ${splitlist[@]};do 
+			words2numbers ${splitfile} ${words} & 
+		done
+		wait
+
+	fi
+
+
+}
+
 function fix_file() {
 local infile="${1}"
 local outfile=""
@@ -116,6 +177,22 @@ fi
 echo
 echo "################ Processing ${infile} #####################"
 
+if [[ ! -f "${infile}" ]];then echo "The input file ${infile} could not be found";exit;fi
+
+dosfile=0
+
+head -1 ${infile} | grep -q $'\r' && dosfile=1
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+num_per_file=$(($numrecs / 5 + 1))
+
+split -l $num_per_file ${infile} filefix
+splitlist=(filefixaa filefixab filefixac filefixad filefixae)
+
+words="no"
+
+date_preprocess "${infile}"
+
 if [[ -z $dateformat ]]; then
 	head -50 "${infile}" |grep -o "\b[0|1]\?[0-9][/\-][0-3]\?[0-9][/\-][27-9][0-9]\b" > /dev/null && echo "Six digit date with trailing year detected." && dateformat="us-single"
 	head -50 "${infile}" |grep -o "\b[78-9][0-9][/\-][0-3]\?[0-9][/\-][0|1]\?[0-9]\b" > /dev/null && echo "Six digit date with leading year detected."
@@ -128,23 +205,12 @@ if [[ -z $dateformat ]]; then
 fi
 
 
+
 if [[ ${dateformat} == "uk" ]];then echo "UK dates detected. DD-MM-YYYY dates will be converted to YYYY-MM-DD";fi
 if [[ ${dateformat} == "uk-single" ]];then echo "UK dates with single digits detected. D-M-YYYY dates will be converted to YYYY-MM-DD";fi
 if [[ ${dateformat} == "us" ]];then echo "US dates detected. MM-DD-YYYY dates will be converted to YYYY-MM-DD";fi
 if [[ ${dateformat} == "us-single" ]];then echo "US dates with single digits detected. M-D-YYYY dates will be converted to YYYY-MM-DD";fi
 
-
-if [[ ! -f "${infile}" ]];then echo "The input file ${infile} could not be found";exit;fi
-
-dosfile=0
-
-head -1 ${infile} | grep -q $'\r' && dosfile=1
-
-numrecs=$(wc -l ${infile} |cut -d " " -f1)
-num_per_file=$(($numrecs / 5 + 1))
-
-split -l $num_per_file ${infile} filefix
-splitlist=(filefixaa filefixab filefixac filefixad filefixae)
 
 
 for splitfile in ${splitlist[@]};do 
@@ -245,6 +311,7 @@ fix_dates(){
 	local file=${1}
 	local dateformat=${2}
 
+
 	case $dateformat in
 		us)
 			sed -i 's/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([89][0-9]\)\b/\119\2/g;s/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\1-\2/g;s/ \+-  -\( \+\)\?//g' ${file}	
@@ -289,7 +356,8 @@ case $dateformat in
 esac
 
 for file in ${splitlist[@]};do 
-	fix_dates ${file} ${dateformat} &
+
+	fix_dates ${file} ${dateformat} ${words} &
 done
 wait
 

@@ -38,6 +38,7 @@ fix_characters(){
 	s/^\"\|\"$//g
 	s/^\"//
 	s/\"$//
+	s/\r/ /g
 	s/\"\?\t\"\?/\t/g
 	s/^[(]*null[)]*\t/\t/i
 	s/\t[(]*null[)]*$/\t/i

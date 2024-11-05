@@ -17,6 +17,7 @@ echo "(metadata.createdDate>=\"${fromDate}\" and metadata.createdDate<=\"${toDat
 errors=0
 status=""
 SECONDS=0
+OFFSET=0
 
 upload_file() {
 	idfile="$1"
@@ -52,6 +53,15 @@ process_file() {
 	checkfile=""
 
 	while [[ ! ${checkfile} =~ [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} ]];do
+		if [[ $SECONDS -gt 500 ]]; then
+			auth 2>/dev/null || authn 2>/dev/null
+			okapi_token=$(cat okapi.token)
+			SECONDS=1
+			OFFSET=$(($OFFSET + 1))
+		fi
+
+		TIMER=$(($OFFSET * 500 + $SECONDS))
+
 		sleep 5
 		jobExecutionId=$(cat "${workingdir}/.jobid")
 		apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-export/job-executions?query=id==${jobExecutionId}" |jq '.jobExecutions[0]') 
@@ -80,9 +90,9 @@ echo "Processing ${idfile}"
 output=$(process_file "${idfile}")
 echo "${output}"
 
-TIME=$SECONDS;msg="$SECONDS seconds"
-if [[ $SECONDS -gt 60 ]];then TIME=$(($SECONDS/60));msg="$TIME minutes";fi
-if [[ $SECONDS -gt 3600 ]];then TIME=$(($SECONDS/3600));msg="$TIME hours";fi
+TIME=$TIMER;msg="$TIMER seconds"
+if [[ $TIMER -gt 60 ]];then TIME=$(($TIMER/60));msg="$TIME minutes";fi
+if [[ $TIMER -gt 3600 ]];then TIME=$(($TIMER/3600));msg="$TIME hours";fi
 
 echo "Processing ${msg} elapsed"
 

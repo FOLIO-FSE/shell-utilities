@@ -40,10 +40,8 @@ fix_characters(){
 	s/\"$//
 	s/\r/ /g
 	s/\"\?\t\"\?/\t/g
-	s/^[(]*null[)]*\t/\t/i
-	s/\t[(]*null[)]*$/\t/i
-	s/\t[(]*null[)]*\t/\t\t/ig
 	s/\(^\|\t\)[(]*null[)]*\(\t\|$\)/\1\2/ig
+	s/\t[(]*null[)]*\t/\t\t/ig
 	" ${file}
 }
 

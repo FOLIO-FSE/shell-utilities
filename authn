@@ -41,19 +41,17 @@ IFS='' read -r -d '' okapi_login << EndOfAuth
 }
 EndOfAuth
 
+echo "${okapi_login}" > okapi-login.json
+
 else
         okapi_login=$(cat okapi-login.json)
 fi
 
-find . -maxdepth 1 -name okapi.token -newermt '-500 seconds' |grep -q okapi && good=1
-
-if [[ $good -ne 1 ]];then
-	okapi_token=$(curl -c - -s -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -d "${okapi_login}" "${okapi_url}/authn/login-with-expiry" |grep folioAccessToken| cut -f7)
+okapi_token=$(curl -c - -s -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -d "${okapi_login}" "${okapi_url}/authn/login-with-expiry" |grep folioAccessToken| cut -f7)
 	
-	if [[ ! ${okapi_token} =~ [a-z] ]];then
-		echo "okapi token not acquired"
-		exit
-	else
-		echo -n ${okapi_token} >  okapi.token
-	fi
+if [[ ! ${okapi_token} =~ [a-z] ]];then
+	echo "okapi token not acquired"
+	exit
+else
+	echo -n ${okapi_token} >  okapi.token
 fi

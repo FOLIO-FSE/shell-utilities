@@ -1,0 +1,42 @@
+auth 2>/dev/null || authn 2>/dev/null
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+profile="${1,,}"
+
+case ${profile} in
+
+	instance | instances)
+		profile="instance"
+		profileName="Default instances export job profile"
+		;;
+	holding | holdings)
+		profile="holding"
+		profileName="Default holdings export job profile"
+		;;
+	authority | authorities)
+		profile="authority"
+		profileName="Default authority export job profile"
+		;;
+	*)
+		echo "Usage: export-all instance|holding|authority"
+		;;
+esac
+	
+
+apicall=$(curl --http1.1 -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-export/job-profiles?limit=1000")
+
+jobProfileId=$(echo "${apicall}" |jq -r ".jobProfiles[] | select(.name==\"${profileName}\") | .id")
+
+if ! [[ $jobProfileId =~ [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} ]]; then
+	echo "No valid profile found. Exiting."
+	exit
+fi
+
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{ \"idType\": \"${profile}\", \"jobProfileId\": \"${jobProfileId}\", \"suppressedFromDiscovery\": true, \"deletedRecords\": true}" "${okapi_url}/data-export/export-all")
+
+
+
+
+	

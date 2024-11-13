@@ -1,0 +1,21 @@
+auth 2>/dev/null || authn 2>/dev/null
+# list available permissions and subpermissions. Usage: ./permissions-list
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+echo "Acquiring folio_admin permissions"
+
+folio_admin_perms=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/perms/permissions?expandSubs=false&query=(permissionName=="folio_admin")&length=100000" |jq '.permissions[0] |del(.metadata) |del(.childOf) |del(.grantedTo)|del(.dummy)|del(.deprecated)')
+
+perm_uuid=$(jq -r .id <<< "${folio_admin_perms}")
+
+echo "Getting list of all permissions"
+
+all_perms=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/perms/permissions?expandSubs=true&query=(mutable==true)&length=100000" | jq '..|.permissionName?' |sort -u |sed '/null/d' |tr -d '\n' |sed 's/""/","/g;s/^/[/;s/$/]/' )
+
+folio_admin_perms=$(jq --argjson ALLPERMS "${all_perms}" '.subPermissions = $ALLPERMS' <<< "${folio_admin_perms}")
+
+curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${folio_admin_perms}" "${okapi_url}/perms/permissions/${perm_uuid}"
+

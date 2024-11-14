@@ -6,7 +6,7 @@ okapi_token=$(cat okapi.token)
 declare -A organization_dict
 
 filename="org_alias.tsv"
-use_deterministic_uuids="yes"
+use_deterministic_uuids="no"
 
 dos2unix ${filename}
 
@@ -59,7 +59,7 @@ while IFS=$'\n' read line;do
 	line=$(echo "${line}" | tr -d '"' | tr "\t" "^")
 	IFS='^' read -r code alias <<< ${line}
 
-	alias=$(echo "${alias}" |jq -aRs)
+	alias=$(echo -n "${alias}" |jq -aRs)
 
 	if [[ ${use_deterministic_uuids} == "yes" ]];then 
 		uuid=$(uuid -v 5  8405ae4d-b315-42e1-918a-d1919900cf3f "${okapi_url}:organizations:${code}")

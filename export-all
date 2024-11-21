@@ -12,7 +12,7 @@ OFFSET=0
 
 case ${profile} in
 
-	instance | instances)
+	instance | instances | bib | bibs)
 		profile="instance"
 		profileName="Default instances export job profile"
 		;;

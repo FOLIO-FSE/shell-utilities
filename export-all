@@ -109,7 +109,7 @@ apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenan
 link=$(echo ${apicall} |jq -r .link)
 
 echo "Status: ${status} Exported: ${exported} Failed: ${failed}: Total: ${total}	        "
-echo JobId: $jobExecutionId"
+echo "JobId: $jobExecutionId"
 echo
 echo "exporting file to ${workingdir}/${fileName} Please be patient"
 curl -w '\n' -o "${workingdir}/${fileName}" -X GET -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${link}" 

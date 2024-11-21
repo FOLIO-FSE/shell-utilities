@@ -4,6 +4,11 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 profile="${1,,}"
+workingdir=$(pwd)
+errors=0
+status=""
+SECONDS=0
+OFFSET=0
 
 case ${profile} in
 
@@ -34,9 +39,77 @@ if ! [[ $jobProfileId =~ [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f
 	exit
 fi
 
-	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{ \"idType\": \"${profile}\", \"jobProfileId\": \"${jobProfileId}\", \"suppressedFromDiscovery\": true, \"deletedRecords\": true}" "${okapi_url}/data-export/export-all")
+IFS='' read -r -d '' export_json << EndOfExport
+{
+  "idType": "${profile}",
+  "jobProfileId": "${jobProfileId}",
+  "suppressedFromDiscovery": true,
+  "deletedRecords": true
+}
+EndOfExport
 
+echo "Posting export job"
 
+curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${export_json}" "${okapi_url}/data-export/export-all" 
 
+echo "Detecting job and file identifiers"
+sleep 2
 
-	
+exportJob=$(curl --http1.1 -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-export/job-executions?query=status=(IN_PROGRESS)%20sortBy%20startedDate/sort.descending&limit=1" |jq -r '.jobExecutions[0]')
+
+echo ${exportJob} > exportJob
+
+jobExecutionId=$(jq -r .id <<< "${exportJob}")
+fileId=$(jq -r '.exportedFiles[0].fileId' <<< "${exportJob}")
+fileName=$(jq -r '.exportedFiles[0].fileName' <<< "${exportJob}")
+
+echo
+echo "Job execution ID: ${jobExecutionId}"
+echo "File ID: ${fileId}"
+echo "File name: ${fileName}"
+echo 
+echo "Please wait"
+echo
+
+status="IN_PROGRESS"
+
+while [[ ${status} == "IN_PROGRESS" ]];do
+	if [[ $SECONDS -gt 500 ]]; then
+		auth 2>/dev/null || authn 2>/dev/null
+		okapi_token=$(cat okapi.token)
+		SECONDS=1
+		OFFSET=$(($OFFSET + 1))
+	fi
+
+	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-export/job-executions?query=id==${jobExecutionId}" |jq '.jobExecutions[0]') 
+
+	exported=$(jq -r .progress.exported <<< "${apicall}")
+	failed=$(jq -r .progress.failed <<< "${apicall}")
+	total=$(jq -r .progress.total <<< "${apicall}")
+	status=$(jq -r .status <<< "${apicall}")
+
+	TIMER=$(($OFFSET * 500 + $SECONDS))
+	TIME=$TIMER;msg="$TIMER seconds"
+	if [[ $TIMER -gt 60 ]];then TIME=$(($TIMER/60));msg="$TIME minutes";fi
+	if [[ $TIMER -gt 3600 ]];then TIME=$(($TIMER/3600));msg="$TIME hours";fi
+
+	echo -en "Exported: ${exported} Failed: ${failed} Total: ${total} -- Elapsed time: ${msg}\r"
+
+	sleep 5
+done
+
+apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-export/job-executions?query=id==${jobExecutionId}" |jq '.jobExecutions[0]') 
+
+exported=$(echo "${apicall}" |jq -r .progress.exported)
+failed=$(echo "${apicall}" |jq -r .progress.failed)
+total=$(echo "${apicall}" |jq -r .progress.total)
+status=$(echo "${apicall}" |jq -r .status)
+
+apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-export/job-executions/${jobExecutionId}/download/${fileId}") 
+link=$(echo ${apicall} |jq -r .link)
+
+echo "Status: ${status} Exported: ${exported} Failed: ${failed}: Total: ${total}	JobId: $jobExecutionId"
+echo
+echo "exporting file to ${workingdir}/${fileName} Please be patient"
+curl -w '\n' -o "${workingdir}/${fileName}" -X GET -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${link}" 
+echo "Output sent to ${fileName}"

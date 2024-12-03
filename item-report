@@ -3,7 +3,7 @@ records-get locations
 
 jq -r '[.id, .code]|@tsv' locations.json > location.tsv
 
-echo -e "call_num\ttitle\tbarcode\tlocation" > item_report.tsv
+echo -e "call_num\ttitle\tbarcode\tlocation\tmattype" > item_report.tsv
 
 cat inventory.json |jq -r --arg delim $'\x1f' '
 	.instance.title as $title |
@@ -15,7 +15,8 @@ cat inventory.json |jq -r --arg delim $'\x1f' '
 	"\(.effectiveCallNumberComponents.callNumber)" // "no call number",
 	$title,
 	"\(.barcode)" // "no barcode",
-	"\(.effectiveLocationId)" // ""
+	"\(.effectiveLocationId)" // "",
+	"\(.materialType.name)" // ""
 	] |join($delim)
 	' | tr $'\x1f' '\t' |sort >> item_report.tsv 
 

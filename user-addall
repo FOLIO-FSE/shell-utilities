@@ -11,6 +11,7 @@ barcodefound=0
 
 if [[ ${search_for} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
         endpoint="${okapi_url}/users/${search_for}"
+	userId=${search_for}
 else
 	if [[ ${search_for} =~ ^[0-9]+$ ]];then
         	endpoint="${okapi_url}/users?query=barcode==${search_for}"

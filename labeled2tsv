@@ -1,0 +1,47 @@
+filelist=("$@")
+infile="${filelist[0]}"
+
+add_prefixes() {
+	echo "Adding prefixes to nested fields"
+
+	awk -v PREFIX_ON="${prefix_on}" -v PREFIX_OFF="${prefix_off}" '{
+		printrecord = "yes"	
+
+		if ($0 ~ PREFIX_ON) { PREFIX = $1; sub("_BEGIN", "", PREFIX);printrecord = "no" }
+		if ($0 ~ PREFIX_OFF) { PREFIX = ""; printrecord = "no" }
+		if (printrecord == "yes") { print PREFIX""$0 }
+
+	}' tmp_cleanfile > tmp_prefixed
+
+	cp tmp_prefixed tmp_cleanfile 
+}
+
+clean_file() {
+	echo "Normalizing ${filetype} ${infile}"
+	sed "s/${field_detect}/\t/" "${infile}" > tmp_cleanfile	
+
+	if [[ $prefix_on != "" ]];then add_prefixes;fi
+
+	echo "Identifying fields"
+	grep -P "\t." tmp_cleanfile |cut -f1 |sort -u > tmp_fields
+
+}
+
+prefix_on=""
+prefix_off=""
+
+fgrep -q '*** DOCUMENT BOUNDARY ***' "${infile}" && filetype="sirsi"
+
+case $filetype in
+	sirsi)
+		RS="... DOCUMENT BOUNDARY ..."
+		field_detect=" \\+|a"
+		prefix_on="_BEGIN."
+		prefix_off="_END."
+		;;
+
+esac
+
+FS="\n"
+
+clean_file

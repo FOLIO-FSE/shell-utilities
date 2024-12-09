@@ -27,8 +27,31 @@ clean_file() {
 
 }
 
+labeled2tsv() {
+	# generate header
+	cat tmp_fields |tr '\n' '\t' > "${outfile}"
+
+	awk -v SOURCERS="${RS}" -v FS="\t" '{
+		if (NR == FNR) { 
+			labels[NR] = $1 
+			data[NR] = ""
+		} else {
+			for (entry in data) { data[entry] = "" } # clear out data array
+			RS=SOURCERS; FS="\n" # prepare  to read labeled data
+
+		}
+
+	}'
+}
+
 prefix_on=""
 prefix_off=""
+
+if [[ "${infile}" =~ \....$ ]];then
+	outfile=$(echo "${infile}" |sed 's/\(.*\)\(\....$\)/\1_fixed\2/')
+else
+	outfile="${infile}_fixed"
+fi
 
 fgrep -q '*** DOCUMENT BOUNDARY ***' "${infile}" && filetype="sirsi"
 
@@ -42,6 +65,5 @@ case $filetype in
 
 esac
 
-FS="\n"
-
 clean_file
+labeled2tsv

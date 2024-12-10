@@ -31,31 +31,35 @@ labeled2tsv() {
 	# generate header
 	cat tmp_fields |tr '\n' '\t' > "${outfile}"
 
-	awk -v OUTFILE="${outfile}" -v SOURCERS="${RS}" '{
+	awk -v OUTFILE="${outfile}" -v RS="${RS}" -v ORS="\n" -v FS="\n" -v OFS="\t" '{
 		if (NR == FNR) { 
-			RS = "\n"
-			labels[$1] = NR 
-			data[NR] = ""
-			NUMFIELDS++	
+			NUMFIELDS = NF
+
+			for (i = 1; i <= NF; i++ ) {
+				labels[$i] = i 
+				data[i] = "" 
+			} 
+
 		} else {
-			RS = SOURCERS; FS="\n"
 			for (entry in data) { data[entry] = "" } # clear out data array
-print $1
-			for (i=1; i<=NUMFIELDS; i++) {
-				split($i, label_field)
 
-				label = label_field[0]
-				field = label_field[1]
+			for (i=1; i<=NF; i++) {
+				split($i, label_field, "\t")
 
-				if (labels[label] != "") {
-					if (data[i] == "") {
-						data[i] = field
+				label = label_field[1]
+				field = label_field[2]
+
+				fieldindex=labels[label]
+
+				if (fieldindex > 0) {
+					if (data[fieldindex] == "") {
+						data[fieldindex] = field
 					} else {
-						data[i] = data[i]";"field
+						data[fieldindex] = data[fieldindex]";"field
 					}
 				}
 			}
-			for (i=1; i<=NUMFIELDS; i++) { printf("%s%s",data[i],i==NF?RS:OFS) >> OUTFILE }
+			for (i=1; i<=NUMFIELDS; i++) { printf("%s%s",data[i],i==NUMFIELDS?ORS:OFS) >> OUTFILE }
 	
 			if ((NR % 1000) == 0) { printf ("%d records processed\r", NR) }
 		}
@@ -63,7 +67,7 @@ print $1
 	}
 	END {
 		print NR" records were processed and sent to "OUTFILE
-	}' tmp_fields junk  tmp_cleanfile
+	}' tmp_fields tmp_cleanfile
 }
 
 prefix_on=""
@@ -79,7 +83,7 @@ fgrep -q '*** DOCUMENT BOUNDARY ***' "${infile}" && filetype="sirsi"
 
 case $filetype in
 	sirsi)
-		RS="... DOCUMENT BOUNDARY ..."
+		RS="... DOCUMENT BOUNDARY ..." 
 		field_detect=" \\+|a"
 		prefix_on="_BEGIN."
 		prefix_off="_END."

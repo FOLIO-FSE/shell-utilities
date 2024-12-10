@@ -20,6 +20,7 @@ declare -a term_values
 
 orgrole="licensor" # make sure this is defined in the system
 orgrole="2c91808d92915a650192951afb450001" # make sure this is defined in the system
+orgrole='{ "_delete": false, "role": { "id": "2c91808d92915a650192951afb450001" } }'
 
 picklists=$(curl -s -w '\n' -X GET \
   -H "Accept: application/json" \
@@ -75,7 +76,7 @@ while IFS=$'\n' read line;do
 
 	if [[ ! -z $orgcode ]];then
 		if [[ "${dict_org_name[${orgcode}]+abc}" ]];then
-			orgs="{ \"_delete\": false, \"primaryOrg\":true, \"org\": { \"name\": \"${dict_org_name[${orgcode}]}\", \"orgsUuid\": \"${dict_org_uuid[${orgcode}]}\" }, \"role\": \"${orgrole}\" }"
+			orgs="{ \"_delete\": false, \"primaryOrg\":true, \"org\": { \"name\": \"${dict_org_name[${orgcode}]}\", \"orgsUuid\": \"${dict_org_uuid[${orgcode}]}\" }, \"roles\": [ ${orgrole} ] }"
 		fi
 	fi
 

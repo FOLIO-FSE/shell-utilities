@@ -17,7 +17,7 @@ add_prefixes() {
 }
 
 clean_file() {
-	echo "Normalizing ${filetype} ${infile}"
+	echo "Normalizing ${infile} (${filetype} file detected)"
 	sed "s/${field_detect}/\t/" "${infile}" > tmp_cleanfile	
 
 	if [[ $prefix_on != "" ]];then add_prefixes;fi
@@ -31,26 +31,48 @@ labeled2tsv() {
 	# generate header
 	cat tmp_fields |tr '\n' '\t' > "${outfile}"
 
-	awk -v SOURCERS="${RS}" -v FS="\t" '{
+	awk -v OUTFILE="${outfile}" -v SOURCERS="${RS}" '{
 		if (NR == FNR) { 
-			labels[NR] = $1 
+			RS = "\n"
+			labels[$1] = NR 
 			data[NR] = ""
+			NUMFIELDS++	
 		} else {
+			RS = SOURCERS; FS="\n"
 			for (entry in data) { data[entry] = "" } # clear out data array
-			RS=SOURCERS; FS="\n" # prepare  to read labeled data
+print $1
+			for (i=1; i<=NUMFIELDS; i++) {
+				split($i, label_field)
 
+				label = label_field[0]
+				field = label_field[1]
+
+				if (labels[label] != "") {
+					if (data[i] == "") {
+						data[i] = field
+					} else {
+						data[i] = data[i]";"field
+					}
+				}
+			}
+			for (i=1; i<=NUMFIELDS; i++) { printf("%s%s",data[i],i==NF?RS:OFS) >> OUTFILE }
+	
+			if ((NR % 1000) == 0) { printf ("%d records processed\r", NR) }
 		}
 
-	}'
+	}
+	END {
+		print NR" records were processed and sent to "OUTFILE
+	}' tmp_fields junk  tmp_cleanfile
 }
 
 prefix_on=""
 prefix_off=""
 
 if [[ "${infile}" =~ \....$ ]];then
-	outfile=$(echo "${infile}" |sed 's/\(.*\)\(\....$\)/\1_fixed\2/')
+	outfile=$(echo "${infile}" |sed 's/\(.*\)\(\....$\)/\1_fixed.tsv/')
 else
-	outfile="${infile}_fixed"
+	outfile="${infile}_fixed.tsv"
 fi
 
 fgrep -q '*** DOCUMENT BOUNDARY ***' "${infile}" && filetype="sirsi"

@@ -87,6 +87,8 @@ case $recordtype in
 	recordtype="licenses/licenses";;
 "licenses-picklists")
 	recordtype="licenses/refdata";;
+"licenses-terms")
+	recordtype="licenses/custprops";;
 "loans")
 	recordtype="loan-storage/loans";;
 "loantypes")
@@ -125,7 +127,7 @@ case $recordtype in
 "users")
 	recordtype="users";;
 *)
-	echo "Record type '${recordtype}' not found. Supported types are agreements, agreements-picklists, authorities, authorities-source, campuses, composite-orders, groups, feefineactions, holdings, identifiertypes, instances, instance-formats, instance-note-types, instance-types, interfaces, invoices, invoice-lines, items, libraries, licenses, licenses-picklists, loans, locations, mattypes, nature-of-content, notices, orderlines, organizations, parsedrecords, permissions, polines, requests, servicepoints, srs, tags, templates, users."
+	echo "Record type '${recordtype}' not found. Supported types are agreements, agreements-picklists, authorities, authorities-source, campuses, composite-orders, groups, feefineactions, holdings, identifiertypes, instances, instance-formats, instance-note-types, instance-types, interfaces, invoices, invoice-lines, items, libraries, licenses, licenses-picklists, licenses-terms, loans, locations, mattypes, nature-of-content, notices, orderlines, organizations, parsedrecords, permissions, polines, requests, servicepoints, srs, tags, templates, users."
 	exit;;
 esac
 

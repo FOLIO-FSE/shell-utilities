@@ -50,6 +50,8 @@ case $recordtype in
 	recordtype="authority-storage/authorities";;
 "authorities-source")
 	recordtype="authority-source-files";;
+"budgets")
+	recordtype="finance/budgets";;
 "campuses")
 	recordtype="location-units/campuses";;
 "composite-orders")

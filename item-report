@@ -3,7 +3,7 @@ records-get locations
 records-get mattypes 
 
 jq -r '[.id, .code]|@tsv' locations.json > location.tsv
-jq -r '[.id, .name]|@tsv' mattypes.json > location.tsv
+jq -r '[.id, .name]|@tsv' mattypes.json > mattype.tsv
 
 echo -e "call_num\ttitle\tbarcode\tlocation\tmattype\tstatus" > item_report.tsv
 

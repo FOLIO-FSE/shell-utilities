@@ -136,7 +136,7 @@ case $rec_type in
 	endpoint="finance/fund-codes-expense-classes";;
 "fund-groups")
 	rec_type="groups"
-	endpoint="finance/funds";;
+	endpoint="finance/groups";;
 "funds")
 	endpoint="finance/funds";;
 "holdings")

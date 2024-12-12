@@ -396,9 +396,9 @@ echo -e "${awkscript}" > tmp_filefixawk
 chmod 700 tmp_filefixawk
 
 if [[ "${infile}" =~ \....$ ]];then
-	outfile=$(echo "${infile}" |sed 's/\(.*\)\(\....$\)/\1_fixed\2/')
+	outfile=$(echo "${infile}" |sed 's/\(.*\)\(\....$\)/\1_fixed.tsv/')
 else
-	outfile="${infile}_fixed"
+	outfile="${infile}_fixed.tsv"
 fi
 badfile="${infile}_error"
 echo

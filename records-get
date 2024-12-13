@@ -16,18 +16,9 @@ query="query=${search_for}"
 # endpoints with different behaviors use different defaults
 num_retrieved=1000
 sortby="%20sortby%20id"
-id_type="id"
-max_id="00000000-0000-0000-0000-000000000000"
+idtype="id"
 totalRecords="totalRecords"
 accept="application/json"
-
-limitByMaxArray=("authorities" "authorities-srs" "circlog" "holdings" "holdings-srs" "instances" "inventory" "inventory-items" "items" "loans" "notices" "srs" "users")
-
-for lim in "${limitByMaxArray[@]}";do
-	if [ "${lim}" == "${rec_type}" ] ; then
-		useMax="yes"
-	fi
-done
 
 offset=0
 limitOrPerPage="limit"
@@ -35,20 +26,9 @@ PageOrOffset="offset"
 
 function fetch_batch() {
 	local offset=$1
-	local page=$2
-	local t=$3
+	local t=$2
 
-	if [[ ${useMax} == "yes" ]];then
-		limitByMax="%20and%20id%3e${max_id}"
-		offset=$(($t * num_retrieved))
-		pager="&offset=${offset}"
-	else
-		limitByMax=""
-		pager="&${PageOrOffset}=${!PageOrOffset}"
-	fi
-
-	curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${limitOrPerPage}=${num_retrieved}${pager}&${query}${limitByMax}${sortby}" |eval "${jqexpr}"  > "tmp_${rec_type}.${t}"
-
+	curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${limitOrPerPage}=${num_retrieved}&${PageOrOffset}=${!PageOrOffset}&${query}${sortby}" |eval "${jqexpr}"  > "tmp_${rec_type}.${t}"
 }
 
 case $rec_type in
@@ -155,7 +135,7 @@ case $rec_type in
 	endpoint="finance/fund-codes-expense-classes";;
 "fund-groups")
 	rec_type="groups"
-	endpoint="finance/funds";;
+	endpoint="finance/groups";;
 "funds")
 	endpoint="finance/funds";;
 "holdings")
@@ -201,7 +181,7 @@ case $rec_type in
 	endpoint="inventory/items";;
 "inventory")
 	rec_type="instances"
-	id_type="instanceId"
+	id_type=".instanceId"
 	num_retrieved=200
 	accept="text/plain"
 	endpoint="inventory-view/instances";;
@@ -347,20 +327,17 @@ for (( offset=0; offset<=$num_records; ));do
 	fi
 
 	for ((t=0; t<=4; t=$(($t + 1)) )); do
-		page=$(($page + 1))
 		if [[ $offset -le $num_records ]];then 
-			fetch_batch $offset $page $t &
+			fetch_batch $offset $t &
 			offset=$(($offset + $num_retrieved))
 		fi
 	done
 	wait
 		
-	max_id=$(cat tmp_${rec_type}.* |jq --arg IDTYPE ${id_type} -scr 'max_by(.[$IDTYPE]) |.[$IDTYPE]')
-
 	cat tmp_${rec_type}.* >> ${filename}
 	rm tmp_${rec_type}.*
 
-	if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s               \r" $offset $num_records;fi
+	if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s          \r" $offset $num_records;fi
 done
 
 echo "$num_records records have been exported to \"${filename}\""

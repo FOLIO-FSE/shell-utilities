@@ -1,6 +1,7 @@
 auth 2>/dev/null || authn 2>/dev/null
 SECONDS=1
 TIMER=0
+
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
@@ -8,6 +9,7 @@ okapi_token=$(cat okapi.token)
 infile="${1}.json"
 recordtype=$1
 operation=${2^^}
+batchsize=10
 
 outfile="${recordtype}_posting.log"
 rm -f "${outfile}"
@@ -158,7 +160,7 @@ esac
 counter=0
 seconds=1
 
-while mapfile -t -n 6 lines && ((${#lines[@]})); do
+while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
 	seq=0
 
 	for line in "${lines[@]}";do

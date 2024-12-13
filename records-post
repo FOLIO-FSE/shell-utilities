@@ -21,19 +21,22 @@ echo "If operation is not supplied, script will use PUT if _version is detected 
 if [[ ! -f ${infile} ]]; then echo "This script cannot find input file ${infile}";exit;fi
 if [[ $# -eq 0 ]]; then echo "You must enter a record type";exit;fi
 
-head ${infile} > tmp_postput
 
-grep -q _version tmp_postput && versionfound="yes"
-
-if [[ versionfound == "yes" ]];then 
-	echo "Version detected. Updating records with HTTP PUT"
-	operation="PUT"
-else
-	echo "No version detected. Creating records with HTTP POST"
-	operation="POST"
+if [[ -z $2 ]];then 
+	head ${infile} > tmp_postput
+	echo "No POST or PUT directive given. Autodetecting"
+	echo
+	grep -q _version tmp_postput && versionfound="yes"
+	if [[ versionfound == "yes" ]];then 
+		echo "Version detected. Updating records with HTTP PUT"
+		operation="PUT"
+	else
+		echo "No version detected. Creating records with HTTP POST"
+		operation="POST"
+	fi
+	rm tmp_postput
 fi
 
-rm tmp_postput
 
 
 numrecs=$(wc -l ${infile} |cut -d " " -f1)

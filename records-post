@@ -12,14 +12,29 @@ operation=${2^^}
 outfile="${recordtype}_posting.log"
 rm -f "${outfile}"
 
-echo "This script expects input file \"${infile}\" to exist and requires two positional arguments:"
+echo "This script expects input file \"${infile}\" to exist and takes two positional arguments:"
 echo "1: recordtype"
 echo "2: operation (POST or PUT)"
+echo
+echo "If operation is not supplied, script will use PUT if _version is detected in data file and POST if it is not"
 
 if [[ ! -f ${infile} ]]; then echo "This script cannot find input file ${infile}";exit;fi
 if [[ $# -eq 0 ]]; then echo "You must enter a record type";exit;fi
 
-if [[ $operation != "POST" && $operation != "PUT" ]]; then echo "Operation must be POST or PUT";exit;fi
+head ${infile} > tmp_postput
+
+grep -q _version tmp_postput && versionfound="yes"
+
+if [[ versionfound == "yes" ]];then 
+	echo "Version detected. Updating records with HTTP PUT"
+	operation="PUT"
+else
+	echo "No version detected. Creating records with HTTP POST"
+	operation="POST"
+fi
+
+rm tmp_postput
+
 
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 

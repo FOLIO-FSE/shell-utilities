@@ -84,7 +84,7 @@ case $rec_type in
 "contacts")
 	endpoint="organizations-storage/contacts" ;;
 "coursedepartments")
-	rec_type="courseDepartments"
+	rec_type="departments"
 	endpoint="coursereserves/departments";;
 "courselistings")
 	rec_type="courseListings"

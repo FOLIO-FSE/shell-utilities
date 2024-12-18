@@ -5,6 +5,7 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 infile="update"
+dos2unix "${infile}"
 counter=1
 
 numrecs=$(wc -l ${infile} |cut -d " " -f1)

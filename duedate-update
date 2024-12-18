@@ -15,6 +15,10 @@ numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 while IFS=$'\t' read -r search duedate; do
 	# duedate is UTC date/time, e.g. 2025-01-31T04:59:00Z
+	item_uuid=""
+	item_status=""
+	loan_uuid=""
+	apicall=""
 
 	if [[ ${search} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
 		item_uuid=${search}

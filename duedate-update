@@ -1,5 +1,6 @@
 auth 2>/dev/null || authn 2>/dev/null
 
+
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
@@ -57,6 +58,12 @@ EndOfJSON
 
 	echo "Processing ${search} -- record $counter of $numrecs"
 	counter=$((counter + 1))
+
+	if [[ $SECONDS -gt 500 ]]; then
+		auth 2>/dev/null || authn 2>/dev/null
+		okapi_token=$(cat okapi.token)
+		SECONDS=1
+	fi
 done < ${infile}
 
 echo "Processing completed, results logged to ${logfile}"

@@ -5,12 +5,16 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 infile="update"
+logfile="duedate.log"
 dos2unix "${infile}"
 counter=1
+
+rm -f ${logfile}
 
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 while IFS=$'\t' read -r search duedate; do
+	# duedate is UTC date/time, e.g. 2025-01-31T04:59:00Z
 
 	if [[ ${search} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
 		item_uuid=${search}
@@ -19,18 +23,22 @@ while IFS=$'\t' read -r search duedate; do
           		-H "Accept: application/json" \
           		-H "X-Okapi-Tenant: ${tenant}" \
           		-H "x-okapi-token: ${okapi_token}" \
-          		"${okapi_url}/inventory/items?query=barcode=${barcode}")
+          		"${okapi_url}/inventory/items?query=%28barcode==${search}%29")
 
-        	item_uuid=$(echo "${apicall}" |jq -r .items[0].id)
+        	item_uuid=$(echo "${apicall}" |jq -r '.items[0].id')
+        	item_status=$(echo "${apicall}" |jq -r '.items[0].status.name')
+
 	fi
 
-	apicall=$(curl -s -w '\n' -X GET -D \
-	  -H "Accept: application/json" \
-	  -H "X-Okapi-Tenant: ${tenant}" \
- 	 -H "x-okapi-token: ${okapi_token}" \
-  	${okapi_url}/loan-storage/loans?query=itemId=%22${item_uuid}%22)
+	if [[ ${item_status} == "Checked out" ]];then
+		apicall=$(curl -s -w '\n' -X GET -D \
+		  -H "Accept: application/json" \
+		  -H "X-Okapi-Tenant: ${tenant}" \
+	 	 -H "x-okapi-token: ${okapi_token}" \
+	  	"${okapi_url}/loan-storage/loans?query=itemId=%22${item_uuid}%22")
 
-        loan_uuid=$(echo "${apicall}" |jq -r .loans[0].id)
+	
+	        loan_uuid=$(echo "${apicall}" |jq -r '.loans[] |select(.itemStatus == "Checked out") |.id')
 
 IFS='' read -r -d '' data << EndOfJSON
 {
@@ -38,9 +46,13 @@ IFS='' read -r -d '' data << EndOfJSON
 }
 EndOfJSON
 
-
-	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/circulation/loans/${loan_uuid}/change-due-date")
+		apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/circulation/loans/${loan_uuid}/change-due-date" |tr -d '\n')
+		echo "${apicall}" >> "${logfile}"
+		
+	fi
 
 	echo "Processing ${search} -- record $counter of $numrecs"
 	counter=$((counter + 1))
 done < ${infile}
+
+echo "Processing completed, results logged to ${logfile}"

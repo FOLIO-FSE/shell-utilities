@@ -16,7 +16,7 @@ while read -r barcode note;do
           -H "Accept: application/json" \
           -H "X-Okapi-Tenant: ${tenant}" \
           -H "x-okapi-token: ${okapi_token}" \
-          "${okapi_url}/users?query=barcode=${barcode}")
+          "${okapi_url}/users?query=barcode==${barcode}")
 
 	# get uuid from barcode
         id=$(echo $apicall | jq -r .users[].id)

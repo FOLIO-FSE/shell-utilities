@@ -5,7 +5,7 @@ okapi_token=$(cat okapi.token)
 
 while read -r barcode;do
 	
-	query="query=barcode=${barcode}"
+	query="query=barcode==${barcode}"
 	
 	apicall=$(curl -s -w '\n' -X GET -D \
 	  -H "Accept: application/json" \

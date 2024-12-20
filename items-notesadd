@@ -11,7 +11,7 @@ while IFS=$'\t' read -r barcode note; do
 	  -H "Accept: application/json" \
 	  -H "X-Okapi-Tenant: ${tenant}" \
 	  -H "x-okapi-token: ${okapi_token}" \
-	  "${okapi_url}/inventory/items?query=barcode=${barcode}")
+	  "${okapi_url}/inventory/items?query=barcode==${barcode}")
 
 	uuid=$(echo "${apicall}" |jq -r .items[0].id)
 

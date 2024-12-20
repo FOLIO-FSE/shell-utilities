@@ -21,7 +21,7 @@ esac
 batchsize=50
 
 
-querydelim="%20or%20barcode="
+querydelim="%20or%20barcode=="
 endpoint="${okapi_url}/item-storage/items?query="
 
 rm -f ${outfile}
@@ -43,7 +43,7 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 
 	# break array into space separated string
 	idstring="${ids[@]}"
-	querystring="barcode=${idstring// /${querydelim}}"
+	querystring="barcode==${idstring// /${querydelim}}"
 
 	records=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}${querystring}&limit=${batchsize}" |jq -c .items[])
 

@@ -6,6 +6,9 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
+infile="loantypes"
+if [[ ! -f ${infile} ]];then echo "Cannot find a file named ${infile} containing a single column of FOLIO loan type names";exit;fi
+
 while read loantype
 do
 
@@ -24,6 +27,6 @@ apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" 
 
 echo -e "${apicall}" |jq '.'
 
-done < loantypes 
+done < ${infile}
 
 

@@ -1,0 +1,33 @@
+auth 2>/dev/null || authn 2>/dev/null
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+infile="ids"
+
+profileName="ZKB Items, update on barcode"
+
+all_job_profiles=$(curl --http1.1 -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-import-profiles/jobProfiles?limit=1000")
+
+jobProfileId=$(echo "${all_job_profiles}" |jq -r ".jobProfiles[] | select(.name==\"${profileName}\") | .id")
+
+
+if ! [[ $jobProfileId =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]]; then
+	echo "No valid profile found. Exiting."
+	exit
+fi
+
+user_id=$(cat okapi.token |base64 -di |jq -r 'select(.user_id != null) |.user_id' 2>/dev/null)
+
+jobExecutionId=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{\"sourceType\": \"ONLINE\", \"userId\": \"${user_id}\"}" "${okapi_url}/change-manager/jobExecutions" | jq -r .parentJobExecutionId )
+
+if ! [[ $jobExecutionId =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]]; then
+	echo "Failed to obtain jobExecutionId. Exiting."
+	exit
+fi
+
+echo "posting {\"id\": \"${jobProfileId}\", \"name\": \"${profileName}\", \"dataType\": \"MARC\"}"
+
+curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{\"id\": \"${jobProfileId}\", \"name\": \"${profileName}\", \"dataType\": \"MARC\"}" "${okapi_url}/change-manager/jobExecutions/${jobExecutionId}/jobProfile" 
+

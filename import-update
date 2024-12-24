@@ -4,17 +4,55 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-idfile="ids"
-numrecs=$(wc -l ${idfile} |cut -f1 -d " ")
-
+infile="ids"
 profileName="ZKB Items, update on barcode"
 
-cat ${idfile} |sed 's/[^a-z0-9\-\.]//g' | \
-	jq -nR  --arg NUMRECS ${numrecs} '{"initialRecords": [inputs as $ID | select(($ID|length)>0) 
-		|{"leader":"00047cam a22000370  4500","fields":[{"001":$ID}]} ]} 
-		|.recordsMetadata.last = true | .recordsMetadata.counter = 1 
-		| .recordsMetadata.total = ( $NUMRECS|tonumber) | .recordsMetadata.contentType = "MARC_JSON" ' > tmp_processfile
+batch=0
+total=0
+numrecs=$(wc -l ${infile} |cut -f1 -d " ")
+
+dos2unix "${infile}"
+idfile=$(head -1 "${infile}" |wc -c)
+
+if [[ ${#idfile} -lt 38 ]];then idfile="yes";fi
+
+rm -rf tmp_import
+mkdir tmp_import
+cp "${infile}" tmp_import
+cd tmp_import
+split -l 1000 "${infile}"
+rm "${infile}"
+
+total_arr=() # needed to remember variable from loop
+
+post_records() {
+	currentfile="${1}"
+	batchsize=$(wc -l ${currentfile} |cut -f1 -d " ")
+	total=$(($total + $batchsize))
+	batchuuid=$(uuidgen)
+
+	echo "$currentfile -- $batchsize -- $total "
+
+	#create MARC file out of ids if file detected to consist of ids
+
+	if [[ ${idfile} == "yes" ]];then 
+		cat ${currentfile} | jq -nR  --argjson BATCHSIZE ${batchsize} --argjson TOTAL ${total} '
+				{"initialRecords": [inputs as $ID 
+				| select(($ID|length)>0) 
+				|{"leader":"00047cam a22000370  4500","fields":[{"001":$ID}]} ]} 
+				|.recordsMetadata.last = false | .recordsMetadata.counter = $BATCHSIZE 
+				| .recordsMetadata.total = $TOTAL | .recordsMetadata.contentType = "MARC_JSON" ' > tmp_processfile
+	fi
+}
+
+for recordfile in $(ls);do
+	post_records ${recordfile} 
+	total_arr+=($total) # array needed to remember variable outside loop
+done
+echo "gas ${total_arr[-1]}"
+
 exit
+
 
 all_job_profiles=$(curl --http1.1 -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-import-profiles/jobProfiles?limit=1000")
 
@@ -28,10 +66,15 @@ fi
 
 user_id=$(cat okapi.token |base64 -di |jq -r 'select(.user_id != null) |.user_id' 2>/dev/null)
 
-parentJobExecutionId=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{\"sourceType\": \"ONLINE\", \"userId\": \"${user_id}\"}" "${okapi_url}/change-manager/jobExecutions" | jq -r .parentJobExecutionId )
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{\"sourceType\": \"ONLINE\", \"userId\": \"${user_id}\"}" "${okapi_url}/change-manager/jobExecutions")
 
-if ! [[ $jobExecutionId =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]]; then
-	echo "Failed to obtain jobExecutionId. Exiting."
+parentJobExecutionId=$(jq -r .parentJobExecutionId <<< "${apicall}")
+jobExecutionId=$(jq -r '.jobExecutions |= sort_by(.hrid) | '.jobExecutions[-1].id <<< "${apicall}")
+
+if ! [[ $parentJobExecutionId =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ && jobExecutionId =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]];then
+	echo "Failed to obtain parentJobExecutionId or jobExecutionId. Exiting."
+	echo
+	echo "${apicall}"
 	exit
 fi
 

@@ -42,7 +42,7 @@ numrecs=$(wc -l ${infile} |cut -d " " -f1)
 while mapfile -t -n ${batchsize} folio_recs && ((${#folio_recs[@]})); do
 	counter=$(($counter + ${#folio_recs[@]}))
 
-	echo "${folio_recs[@]}" | jq -c  --arg LABEL "${label}" '[inputs] | del(.[].metadata) | { ($LABEL) : . } ' > tmp_batch
+	echo "${folio_recs[@]}" | jq -nc  --arg LABEL "${label}" '[inputs] | del(.[].metadata) | { ($LABEL) : . } ' > tmp_batch
 
 	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d @tmp_batch "${endpoint}" >> ${outfile}
 

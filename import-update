@@ -25,13 +25,13 @@ rm "${infile}"
 
 total_arr=() # needed to remember variable from loop
 
+####################################
+
 post_records() {
 	currentfile="${1}"
 	batchsize=$(wc -l ${currentfile} |cut -f1 -d " ")
 	total=$(($total + $batchsize))
 	batchuuid=$(uuidgen)
-
-	echo "$currentfile -- $batchsize -- $total "
 
 	#create MARC file out of ids if file detected to consist of ids
 
@@ -45,14 +45,7 @@ post_records() {
 	fi
 }
 
-for recordfile in $(ls);do
-	post_records ${recordfile} 
-	total_arr+=($total) # array needed to remember variable outside loop
-done
-echo "gas ${total_arr[-1]}"
-
-exit
-
+#####################################
 
 all_job_profiles=$(curl --http1.1 -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-import-profiles/jobProfiles?limit=1000")
 
@@ -64,7 +57,13 @@ if ! [[ $jobProfileId =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-
 	exit
 fi
 
-user_id=$(cat okapi.token |base64 -di |jq -r 'select(.user_id != null) |.user_id' 2>/dev/null)
+user_id=$(cat ../okapi.token |base64 -di 2>/dev/null |jq -r 'select(.user_id != null) |.user_id' 2>/dev/null)
+
+if ! [[ $user_id =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]]; then
+	echo "No valid user id detected from okapi token. Exiting."
+	exit
+fi
+
 
 apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{\"sourceType\": \"ONLINE\", \"userId\": \"${user_id}\"}" "${okapi_url}/change-manager/jobExecutions")
 
@@ -77,6 +76,16 @@ if ! [[ $parentJobExecutionId =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4
 	echo "${apicall}"
 	exit
 fi
+
+
+for recordfile in $(ls);do
+	post_records ${recordfile} 
+	total_arr+=($total) # array needed to remember variable outside loop
+done
+
+exit
+
+
 
 echo "posting {\"id\": \"${jobProfileId}\", \"name\": \"${profileName}\", \"dataType\": \"MARC\"}"
 

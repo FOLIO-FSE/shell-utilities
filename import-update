@@ -5,16 +5,24 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 infile="ids"
-profileName="ZKB Items, update on barcode"
+profileName="ZKB Items, update on UUID"
 
 batch=0
 total=0
 numrecs=$(wc -l ${infile} |cut -f1 -d " ")
+total_arr=() # needed to remember variable from loop
 
 dos2unix "${infile}"
 idfile=$(head -1 "${infile}" |wc -c)
 
 if [[ ${#idfile} -lt 38 ]];then idfile="yes";fi
+
+user_id=$(cat okapi.token |base64 -di 2>/dev/null |jq -r 'select(.user_id != null) |.user_id' 2>/dev/null)
+
+if ! [[ $user_id =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]]; then
+	echo "No valid user id detected from okapi token. Exiting."
+	exit
+fi
 
 rm -rf tmp_import
 mkdir tmp_import
@@ -23,7 +31,6 @@ cd tmp_import
 split -l 1000 "${infile}"
 rm "${infile}"
 
-total_arr=() # needed to remember variable from loop
 
 ####################################
 
@@ -36,11 +43,11 @@ post_records() {
 	#create MARC file out of ids if file detected to consist of ids
 
 	if [[ ${idfile} == "yes" ]];then 
-		cat ${currentfile} | jq -nR  --argjson BATCHSIZE ${batchsize} --argjson TOTAL ${total} '
+		cat ${currentfile} | jq -nR   --arg BATCHUUID ${batchuuid} --argjson BATCHSIZE ${batchsize} --argjson TOTAL ${total} '
 				{"initialRecords": [inputs as $ID 
 				| select(($ID|length)>0) 
 				|{"leader":"00047cam a22000370  4500","fields":[{"001":$ID}]} ]} 
-				|.recordsMetadata.last = false | .recordsMetadata.counter = $BATCHSIZE 
+				| .id = $BATCHUUID |.recordsMetadata.last = false | .recordsMetadata.counter = $BATCHSIZE 
 				| .recordsMetadata.total = $TOTAL | .recordsMetadata.contentType = "MARC_JSON" ' > tmp_processfile
 	fi
 }
@@ -57,12 +64,6 @@ if ! [[ $jobProfileId =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-
 	exit
 fi
 
-user_id=$(cat ../okapi.token |base64 -di 2>/dev/null |jq -r 'select(.user_id != null) |.user_id' 2>/dev/null)
-
-if ! [[ $user_id =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]]; then
-	echo "No valid user id detected from okapi token. Exiting."
-	exit
-fi
 
 
 apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{\"sourceType\": \"ONLINE\", \"userId\": \"${user_id}\"}" "${okapi_url}/change-manager/jobExecutions")
@@ -77,6 +78,12 @@ if ! [[ $parentJobExecutionId =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4
 	exit
 fi
 
+echo "posting {\"id\": \"${jobProfileId}\", \"name\": \"${profileName}\", \"dataType\": \"MARC\"}"
+
+
+apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{\"id\": \"${jobProfileId}\", \"name\": \"${profileName}\", \"dataType\": \"MARC\"}" "${okapi_url}/change-manager/jobExecutions/${parentJobExecutionId}/jobProfile")
+
+jq -r . <<< "${apicall}"
 
 for recordfile in $(ls);do
 	post_records ${recordfile} 
@@ -87,7 +94,4 @@ exit
 
 
 
-echo "posting {\"id\": \"${jobProfileId}\", \"name\": \"${profileName}\", \"dataType\": \"MARC\"}"
-
-curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{\"id\": \"${jobProfileId}\", \"name\": \"${profileName}\", \"dataType\": \"MARC\"}" "${okapi_url}/change-manager/jobExecutions/${parentJobExecutionId}/jobProfile" 
 

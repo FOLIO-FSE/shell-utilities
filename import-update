@@ -15,7 +15,7 @@ if [[ ! -f "${infile}" ]];then echo "You must supply a file named \"${infile}\""
 echo "Matching on file named \"${infile}\""
 
 batch=0
-total=0
+counter=0
 numrecs=$(wc -l ${infile} |cut -f1 -d " ")
 echo "${numrecs} records detected"
 
@@ -49,22 +49,24 @@ rm "${infile}"
 post_records() {
 	currentfile="${1}"
 	batchsize=$(wc -l ${currentfile} |cut -f1 -d " ")
-	total=$(($total + $batchsize))
+	
+	counter=$(($counter + $batchsize))
 	batchuuid=$(uuidgen)
-
-	sed -i 's/\(.*\)/{"leader":"00047cam a22000370  4500","fields":[{"001":"\1"}] }/' ${currentfile} 
 
 	#create MARC file out of ids if file detected to consist of ids
 
 	if [[ ${idfile} == "yes" ]];then 
-		cat ${currentfile} | jq -nR   --arg BATCHUUID ${batchuuid} --argjson BATCHSIZE ${batchsize} --argjson TOTAL ${total} '
+
+		sed -i 's/\(.*\)/{"leader":"00047cam a22000370  4500","fields":[{"001":"\1"}] }/' ${currentfile} 
+
+		cat ${currentfile} | jq -nR   --arg BATCHUUID ${batchuuid} --argjson COUNTER ${counter} --argjson TOTAL ${numrecs} '
 				{"initialRecords": [inputs as $RECORD 
 				| {"record": $RECORD } ]}
-				| .id = $BATCHUUID |.recordsMetadata.last = false | .recordsMetadata.counter = $BATCHSIZE 
+				| .id = $BATCHUUID |.recordsMetadata.last = false | .recordsMetadata.counter = $COUNTER 
 				| .recordsMetadata.total = $TOTAL | .recordsMetadata.contentType = "MARC_JSON" ' > tmp_processfile
 	fi
 
-	echo "Posting batch"
+	echo "Posting batch. $counter records sent"
 	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d @tmp_processfile "${okapi_url}/change-manager/jobExecutions/${parentJobExecutionId}/records"
 }
 

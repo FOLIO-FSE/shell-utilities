@@ -52,17 +52,19 @@ post_records() {
 	total=$(($total + $batchsize))
 	batchuuid=$(uuidgen)
 
+	sed -i 's/\(.*\)/{"leader":"00047cam a22000370  4500","fields":[{"001":"\1"}] }/' ${currentfile} 
+
 	#create MARC file out of ids if file detected to consist of ids
 
 	if [[ ${idfile} == "yes" ]];then 
 		cat ${currentfile} | jq -nR   --arg BATCHUUID ${batchuuid} --argjson BATCHSIZE ${batchsize} --argjson TOTAL ${total} '
-				{"initialRecords": [inputs as $ID 
-				| select(($ID|length)>0) 
-				| {"record":{"leader":"00047cam a22000370  4500","fields":[{"001":$ID}]}}]}
+				{"initialRecords": [inputs as $RECORD 
+				| {"record": $RECORD } ]}
 				| .id = $BATCHUUID |.recordsMetadata.last = false | .recordsMetadata.counter = $BATCHSIZE 
 				| .recordsMetadata.total = $TOTAL | .recordsMetadata.contentType = "MARC_JSON" ' > tmp_processfile
 	fi
 
+	echo "Posting batch"
 	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d @tmp_processfile "${okapi_url}/change-manager/jobExecutions/${parentJobExecutionId}/records"
 }
 
@@ -98,14 +100,20 @@ echo "posting {\"id\": \"${jobProfileId}\", \"name\": \"${profileName}\", \"data
 
 apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${jobProfileInfo}" "${okapi_url}/change-manager/jobExecutions/${parentJobExecutionId}/jobProfile")
 
-sleep 5
+sleep 3
 
 for recordfile in $(ls);do
 	post_records ${recordfile} 
 	total_arr+=($total) # array needed to remember variable outside loop
 done
 
-#curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "{ \"id\": \"$(uuidgen)\", \"recordsMetadata\": { \"last\": true, \"counter\": \"${numrecs}\", \"total\": \"${numrecs}\", \"contentType\":\"MARC_JSON\" }, \"initialRecords\": []}" "${okapi_url}/change-manager/jobExecutions/${parentJobExecutionId}/jobProfile"
+finalizePost="{ \"id\": \"$(uuidgen)\", \"recordsMetadata\": { \"last\": true, \"counter\": \"${numrecs}\", \"total\": \"${numrecs}\", \"contentType\":\"MARC_JSON\" }, \"initialRecords\": []}"
+
+curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${finalizePost}" "${okapi_url}/change-manager/jobExecutions/${parentJobExecutionId}/records"
+
+echo "${finalizePost}" |jq .
+
+
 
 exit
 rm tmp_processfile

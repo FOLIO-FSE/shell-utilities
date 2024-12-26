@@ -40,7 +40,7 @@ rm -rf tmp_import
 mkdir tmp_import
 cp "${infile}" tmp_import
 cd tmp_import
-split -l 1000 "${infile}"
+split -l 5000 "${infile}"
 rm "${infile}"
 
 
@@ -95,12 +95,12 @@ if ! [[ $parentJobExecutionId =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4
 	exit
 fi
 
-echo "posting {\"id\": \"${jobProfileId}\", \"name\": \"${profileName}\", \"dataType\": \"MARC\"}"
+echo "posting {\"id\": \"${jobProfileId}\", \"name\": \"${profileName}\", \"dataType\": \"MARC\"} to  ${okapi_url}/change-manager/jobExecutions/${parentJobExecutionId}/jobProfile"
 
 
 apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${jobProfileInfo}" "${okapi_url}/change-manager/jobExecutions/${parentJobExecutionId}/jobProfile")
 
-sleep 3
+sleep 2
 
 for recordfile in $(ls);do
 	post_records ${recordfile} 
@@ -109,11 +109,8 @@ done
 
 finalizePost="{ \"id\": \"$(uuidgen)\", \"recordsMetadata\": { \"last\": true, \"counter\": \"${numrecs}\", \"total\": \"${numrecs}\", \"contentType\":\"MARC_JSON\" }, \"initialRecords\": []}"
 
+echo "POSTing ${finalizePost} to ${okapi_url}/change-manager/jobExecutions/${parentJobExecutionId}/records"
+
 curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${finalizePost}" "${okapi_url}/change-manager/jobExecutions/${parentJobExecutionId}/records"
 
-echo "${finalizePost}" |jq .
-
-
-
-exit
 rm tmp_processfile

@@ -40,7 +40,7 @@ rm -rf tmp_import
 mkdir tmp_import
 cp "${infile}" tmp_import
 cd tmp_import
-split -l 5000 "${infile}"
+split -l 1000 "${infile}"
 rm "${infile}"
 
 

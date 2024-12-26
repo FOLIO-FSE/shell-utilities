@@ -66,7 +66,7 @@ post_records() {
 				| .recordsMetadata.total = $TOTAL | .recordsMetadata.contentType = "MARC_JSON" ' > tmp_processfile
 	fi
 
-	echo "Posting batch. $counter records sent"
+	echo "Posting batch. $counter of $numrecs records sent"
 	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d @tmp_processfile "${okapi_url}/change-manager/jobExecutions/${parentJobExecutionId}/records"
 }
 
@@ -97,10 +97,10 @@ if ! [[ $parentJobExecutionId =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4
 	exit
 fi
 
-echo "posting {\"id\": \"${jobProfileId}\", \"name\": \"${profileName}\", \"dataType\": \"MARC\"} to  ${okapi_url}/change-manager/jobExecutions/${parentJobExecutionId}/jobProfile"
+echo "Posting job profile"
 
 
-apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${jobProfileInfo}" "${okapi_url}/change-manager/jobExecutions/${parentJobExecutionId}/jobProfile")
+curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${jobProfileInfo}" "${okapi_url}/change-manager/jobExecutions/${parentJobExecutionId}/jobProfile"
 
 sleep 2
 
@@ -111,7 +111,7 @@ done
 
 finalizePost="{ \"id\": \"$(uuidgen)\", \"recordsMetadata\": { \"last\": true, \"counter\": \"${numrecs}\", \"total\": \"${numrecs}\", \"contentType\":\"MARC_JSON\" }, \"initialRecords\": []}"
 
-echo "POSTing ${finalizePost} to ${okapi_url}/change-manager/jobExecutions/${parentJobExecutionId}/records"
+echo "Finalizing upload. FOLIO must still process records"
 
 curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${finalizePost}" "${okapi_url}/change-manager/jobExecutions/${parentJobExecutionId}/records"
 

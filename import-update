@@ -24,7 +24,7 @@ contentType="MARC_JSON"
 
 if [[ ${infile} =~ mrc$ ]]; then
 	contentType="MARC_RAW"
-	cat "${infile}" |tr $'\x1d' '\n' |sed '/^$/d' > tmp_marc_json
+	cat "${infile}" |tr $'\x1d' '\n' |sed "/^$/d;s/$/\x1d/" > tmp_marc_json
 	infile="tmp_marc_json"
 fi
 

@@ -58,7 +58,6 @@ post_records() {
 	if [[ ${idfile} == "yes" ]];then 
 
 		sed -i 's/\(.*\)/{"leader":"00047cam a22000370  4500","fields":[{"001":"\1"}] }/' ${currentfile} 
-		#sed -i 's/\(.*\)/{ "fields":[{"001":"\1"}] }/' ${currentfile} 
 
 		cat ${currentfile} | jq -nR   --arg BATCHUUID ${batchuuid} --argjson COUNTER ${counter} --argjson TOTAL ${numrecs} '
 				{"initialRecords": [inputs as $RECORD 
@@ -116,4 +115,5 @@ echo "Finalizing upload. FOLIO must still process records"
 
 curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${finalizePost}" "${okapi_url}/change-manager/jobExecutions/${parentJobExecutionId}/records"
 
-rm tmp_processfile
+cd ..
+rm -rf tmp_import

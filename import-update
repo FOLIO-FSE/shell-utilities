@@ -133,11 +133,11 @@ for recordfile in $(ls);do
         echo -en "Processing record $counter of $numrecs in $msg\r"
 done
 
-finalizePost="{ \"id\": \"$(uuidgen)\", \"recordsMetadata\": { \"last\": true, \"counter\": \"${numrecs}\", \"total\": \"${numrecs}\", \"contentType\":\"${contentType}\" }, \"initialRecords\": []}"
+finalizePost="{ \"id\": \"$(uuidgen)\", \"recordsMetadata\": { \"last\": true, \"counter\": ${numrecs}, \"total\": ${numrecs}, \"contentType\":\"${contentType}\" }, \"initialRecords\": []}"
 
 echo "Finalizing upload. FOLIO must still process records"
 
 curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${finalizePost}" "${okapi_url}/change-manager/jobExecutions/${parentJobExecutionId}/records"
 
 cd ..
-#rm -rf tmp_import tmp_marc_json
+rm -rf tmp_import tmp_marc_json

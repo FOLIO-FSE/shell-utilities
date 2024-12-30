@@ -1,5 +1,6 @@
 if [ -z $2 ];then 
 	echo "Usage: filetrim [datafile.tsv] [mapfile.json]"
+	exit
 else
 	datafile="${1}"
 	mapfile="${2}"

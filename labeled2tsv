@@ -29,13 +29,14 @@ clean_file() {
 
 labeled2tsv() {
 	# generate header
-	cat tmp_fields |tr '\n' '\t' > "${outfile}"
+	grep -i "[a-z0-9]" tmp_fields |tr '\n' '\t' > "${outfile}"
 
 	awk -v OUTFILE="${outfile}" -v RS="${RS}" -v ORS="\n" -v FS="\n" -v OFS="\t" '{
 		if (NR == FNR) { 
-			NUMFIELDS = NF
+			NUMFIELDS = NF - 1
+			print NUMFIELDS" fields were detected"
 
-			for (i = 1; i <= NF; i++ ) {
+			for (i = 1; i <= NUMFIELDS; i++ ) {
 				labels[$i] = i 
 				data[i] = "" 
 			} 
@@ -43,7 +44,7 @@ labeled2tsv() {
 		} else {
 			for (entry in data) { data[entry] = "" } # clear out data array
 
-			for (i=1; i<=NF; i++) {
+			for (i=1; i<=NUMFIELDS; i++) {
 				split($i, label_field, "\t")
 
 				label = label_field[1]

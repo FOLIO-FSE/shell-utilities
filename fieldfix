@@ -1,35 +1,108 @@
+args=("$@")
+
+infile="${args[0]}"
+
+fileroot=$(echo "${infile}" | sed 's/\.....\?$//')
+fileextension=$(echo "${infile}" | sed 's/.*\(\..*\)$/\1/')
+
+if [[ ${fileroot} == ${fileextension} ]];then fileextension="";fi
+
+outfile="${fileroot}_fixed${fileextension}"
+
+fixtype=$(echo "${args[1]}" |sed 's#/.*##')
+
+if [[ ${fixtype} == "regexrepl" ]];then
+	IFS='/' read -ra allargs <<< "${args[1]}"
+	arg1="${allargs[1]}"
+	arg2="${allargs[2]}"
+fi
+
+fieldlist=("${args[@]:2}")
+
+if [[ ! -f ${infile} ]];then 
+	echo
+	echo "${infile} not found}"
+	echo "Usage: fieldfix [filename] [process] [field1] [field2] [field3] ..."
+	echo
+	exit
+fi
+
+knownprocesses=("dateiso8" "regexrepl")
+
+for i in "${knownprocesses[@]}";do
+  if [[ $i == ${fixtype} ]];then valuefound=1;fi
+done
+
+if [[ -z $valuefound ]];then
+	echo
+	echo "Process type not found. Here is a list of known processes: ${knownprocesses[@]}"
+	echo "Usage: fieldfix [filename] [process] [field1] [field2] [field3] ..."
+echo
+	exit
+fi
+
+read -r -d '' awkscript << "ENDOFAWK"
 #!/usr/bin/awk -f
-#
 
-BEGIN{FS=OFS="\t" } 
-{
-if (NR == 1) {
-	for(i=1;i<=NF;i++) {
-		switch($i) {
-			case "PermanentCallNumber":
-				callNum = i
-				break
-			case "CallNumber":
-				callNumItem = i
-				break
-			}
-		}
-	}
-
-	if ($callNum == "") {
-		if ($callNumItem != "") {$callNum = $callNumItem} else {$callNum = " "}
-		}
-	$callNum = gensub(/^([A-Z]+) /, "\\1", 1, $callNum)
-	$callNum = gensub(/^([A-Z]+[0-9\\.]+) /, "\\1", 1, $callNum)
-	sub(/ /,"$i",$callNum)
-
-	for(i=1;i<=NF;i++) { printf("%s%s",$i,i==NF?RS:OFS) > FILENAME"_fixed" }
-
-	if(NR % 10000 == 0 ) {printf ("Processed %d items\r", NR) }
+BEGIN {
+	FS=OFS="\t"
+	split(FIELDLIST, fields, " ")
+	numfields=length(fields)
 }
 
-END { 
-	print NR " records were processed and copied to "FILENAME"_fixed"
-} 
+function dateiso8(bad_field) {
+	if ($bad_field ~ /[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]$/) {
+		$bad_field = substr($bad_field, 1, 4)"-"substr($bad_field, 5, 2)"-"substr($bad_field, 7, 2)
+	}
+}
+
+function regexrepl(bad_field) {
+	$bad_field = gensub(ARG1, ARG2, "1", $bad_field)
+}
+
+{
+	lineout=""
+
+	if (NR == 1) {
+		print $0 > OUTFILE
+
+		for (i = 1; i <= NF; i++) { 
+			# convert fieldnames to positional numbers
+			for (field = 1; field <= numfields; field++) {
+				compareheader=tolower($i)	
+				gsub(/[^a-z0-9]/, "", compareheader)
+
+				comparefield=tolower(fields[field])
+				gsub(/[^a-z0-9]/, "", comparefield)
+
+				if (compareheader == comparefield) {
+					fields[field] = i
+					print $i" will be fixed"
+				}
+			}
+		}
+
+	} else {
+		for (fixfield = 1; fixfield <= numfields; fixfield++) {
+			@FIXTYPE(fields[fixfield])
+		}
+
+		for(i=1;i<=NF;i++) { printf("%s%s",$i,i==NF?RS:OFS) > OUTFILE }
+
+		if (NR % 10000 == 0){ printf "Records processed: "NR"\r" }
+	}
+}
+
+END { print NR" records have been processed and sent to "OUTFILE }
+
+ENDOFAWK
+
+echo -e "${awkscript}" > tmp_fieldfixawk
+chmod 700 tmp_fieldfixawk
+
+awk -v FIELDLIST="${fieldlist}" -v FIXTYPE="${fixtype}" -v ARG1="${arg1}" -v ARG2="${arg2}" -v OUTFILE="${outfile}" -f tmp_fieldfixawk "${infile}"
 
 
+
+
+rm tmp_fieldfixawk

@@ -25,8 +25,11 @@ if [[ ! -f ${infile} ]];then
 	echo "${infile} not found"
 	echo "Usage: fieldfix [filename] [process] [field1] [field2] [field3] ..."
 	echo
-	echo "To use a the regexrepl process, follow the process name by the regex in single quotes,"
-	echo " e.g. fieldfix [filename] regexrepl'/searchexpr/replaceexpr/' [field1] ..."
+	echo "To use a the regexrepl process, follow the process name by the regex in single quotes"
+	echo "Use parentheses and double slashes for capture groups"
+	echo 
+	echo "e.g. fieldfix [filename] regexrepl'/searchexpr/replaceexpr/' [field1] ..."
+	echo "e.g. fieldfix [filename] regexrepl'/search(capturegroup1)/\\1/' [field1] ..."
 	echo
 	exit
 fi

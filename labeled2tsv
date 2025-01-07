@@ -29,7 +29,8 @@ clean_file() {
 
 labeled2tsv() {
 	# generate header
-	grep -i "[a-z0-9]" tmp_fields |tr '\n' '\t' > "${outfile}"
+	grep -i "[a-z0-9]" tmp_fields |tr '\n' '\t' |sed 's/\t$//' > "${outfile}"
+	echo "" >> "${outfile}"
 
 	awk -v OUTFILE="${outfile}" -v RS="${RS}" -v ORS="\n" -v FS="\n" -v OFS="\t" '{
 		if (NR == FNR) { 
@@ -60,7 +61,9 @@ labeled2tsv() {
 					}
 				}
 			}
+			if (FNR > 1) {
 			for (i=1; i<=NUMFIELDS; i++) { printf("%s%s",data[i],i==NUMFIELDS?ORS:OFS) >> OUTFILE }
+			}
 	
 			if ((NR % 1000) == 0) { printf ("%d records processed\r", NR) }
 		}

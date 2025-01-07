@@ -20,9 +20,13 @@ fi
 fieldlist=("${args[@]:2}")
 
 if [[ ! -f ${infile} ]];then 
+	if [[ ${#infile} -eq 0 ]];then infile="File";fi
 	echo
-	echo "${infile} not found}"
+	echo "${infile} not found"
 	echo "Usage: fieldfix [filename] [process] [field1] [field2] [field3] ..."
+	echo
+	echo "To use a the regexrepl process, follow the process name by the regex in single quotes,"
+	echo " e.g. fieldfix [filename] regexrepl'/searchexpr/replaceexpr/' [field1] ..."
 	echo
 	exit
 fi

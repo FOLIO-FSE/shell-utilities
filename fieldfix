@@ -61,7 +61,7 @@ function dateiso8(bad_field) {
 }
 
 function regexrepl(bad_field) {
-	$bad_field = gensub(ARG1, ARG2, "1", $bad_field)
+	$bad_field = gensub(ARG1, ARG2, "g", $bad_field)
 }
 
 {

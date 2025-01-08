@@ -1,6 +1,7 @@
 args=("$@")
 
 infile="${args[0]}"
+knownprocesses=("dateiso8" "regexrepl")
 
 fileroot=$(echo "${infile}" | sed 's/\.....\?$//')
 fileextension=$(echo "${infile}" | sed 's/.*\(\..*\)$/\1/')
@@ -9,42 +10,44 @@ if [[ ${fileroot} == ${fileextension} ]];then fileextension="";fi
 
 outfile="${fileroot}_fixed${fileextension}"
 
-fixtype=$(echo "${args[1]}" |sed 's#/.*##')
+fixfieldarr=("${args[@]:1}")
+numfix=${#fixfieldarr[@]}
 
-if [[ ${fixtype} == "regexrepl" ]];then
-	IFS='/' read -ra allargs <<< "${args[1]}"
-	arg1="${allargs[1]}"
-	arg2="${allargs[2]}"
-fi
+fixfields="${fixfieldarr[0]}"
 
-fieldlist=("${args[@]:2}")
+for (( i=1; i<numfix; i++ ));do
+	fixfields="${fixarr}$'\x1f'${fixfieldarr[i]}"
+done
+
+for (( i=0; i<numfix; i++ ));do
+	process="${fixfieldarr[i]/|*/}"
+	foundprocess=0
+
+	for j in ${knownprocesses[@]};do
+		if [[ ${j} == ${process} ]];then foundprocess=1;fi
+	done
+
+	if [[ $foundprocess -eq 0 ]]; then
+		echo "${process} not found. Known processes are: "
+		echo "${knownprocesses[@]}"
+		exit
+	fi
+done
 
 if [[ ! -f ${infile} ]];then 
 	if [[ ${#infile} -eq 0 ]];then infile="File";fi
 	echo
 	echo "${infile} not found"
-	echo "Usage: fieldfix [filename] [process] [field1] [field2] [field3] ..."
+	echo "Usage: fieldfix [filename] 'process1|field1|params' 'process2|field2|params' [up to 5 fields]"
 	echo
-	echo "To use a the regexrepl process, follow the process name by the regex in single quotes"
+	echo "For processes that accept multiple parameters, parameters should be subdelimited by forward slashes"
 	echo "Use parentheses and double slashes for capture groups"
 	echo 
-	echo "e.g. fieldfix [filename] regexrepl'/searchexpr/replaceexpr/' [field1] ..."
-	echo "e.g. fieldfix [filename] regexrepl'/search(capturegroup1)/\\\1/' [field1] ..."
+	echo "e.g. fieldfix [filename] 'dateiso|field1' 'dateiso8|field2'..."
+	echo "e.g. fieldfix [filename] 'regexrepl|field1|searchexpr/replaceexpr' 'dateiso8|field2'..."
+	echo "e.g. fieldfix [filename] 'regexrepl|field1|search(capturegroup1)/\\\1' 'dateiso8|field2' ..."
+	echo "e.g. fieldfix [filename] 'merge|field2|field2/field3/field4' 'dateiso8|field2'..."
 	echo
-	exit
-fi
-
-knownprocesses=("dateiso8" "regexrepl")
-
-for i in "${knownprocesses[@]}";do
-  if [[ $i == ${fixtype} ]];then valuefound=1;fi
-done
-
-if [[ -z $valuefound ]];then
-	echo
-	echo "Process type not found. Here is a list of known processes: ${knownprocesses[@]}"
-	echo "Usage: fieldfix [filename] [process] [field1] [field2] [field3] ..."
-echo
 	exit
 fi
 
@@ -53,8 +56,29 @@ read -r -d '' awkscript << "ENDOFAWK"
 
 BEGIN {
 	FS=OFS="\t"
-	split(FIELDLIST, fields, " ")
-	numfields=length(fields)
+	split(FIELDLIST, fixfields, "\t")
+	numfields=length(fixfields)
+
+	for (i = 1; i <= numfields; i++) {
+		fixprocess = fixfields[i]
+
+		# clear for each field
+		for (j = 1; j <= 3; j++) {
+			fixcomponents[j] = ""
+			param[j] = ""
+		}
+
+		split(fixprocess, fixcomponents, "|")
+
+		fixtype[i] = fixcomponents[1]
+		header[i] = fixcomponents[2]
+		params[i] = fixcomponents[3]
+
+		split(params[i], param, "/")
+		param1[i] = param[1]
+		param2[i] = param[2]
+		param3[i] = param[3]
+	}
 }
 
 function dateiso8(bad_field) {
@@ -73,25 +97,42 @@ function regexrepl(bad_field) {
 	if (NR == 1) {
 		print $0 > OUTFILE
 
-		for (i = 1; i <= NF; i++) { 
-			# convert fieldnames to positional numbers
-			for (field = 1; field <= numfields; field++) {
+		# convert fieldnames to positional numbers
+		for (field = 1; field <= numfields; field++) {
+			for (i = 1; i <= NF; i++) { 
 				compareheader=tolower($i)	
 				gsub(/[^a-z0-9]/, "", compareheader)
-
-				comparefield=tolower(fields[field])
+	
+				comparefield=tolower(header[field])
 				gsub(/[^a-z0-9]/, "", comparefield)
-
+	
 				if (compareheader == comparefield) {
-					fields[field] = i
+					header[field] = i
 					print $i" will be fixed"
 				}
 			}
 		}
 
+#		for (i = 1; i <= NF; i++) { 
+#			# convert fieldnames to positional numbers
+#			for (field = 1; field <= numfields; field++) {
+#				compareheader=tolower($i)	
+#				gsub(/[^a-z0-9]/, "", compareheader)
+#
+#				comparefield=tolower(fields[field])
+#				gsub(/[^a-z0-9]/, "", comparefield)
+#
+#				if (compareheader == comparefield) {
+#					fields[field] = i
+#					print $i" will be fixed"
+#				}
+#			}
+#		}
+
 	} else {
 		for (fixfield = 1; fixfield <= numfields; fixfield++) {
-			@FIXTYPE(fields[fixfield])
+			fixfunction=fixtype[fixfield]
+			@fixfunction(header[fixfield])
 		}
 
 		for(i=1;i<=NF;i++) { printf("%s%s",$i,i==NF?RS:OFS) > OUTFILE }
@@ -107,7 +148,7 @@ ENDOFAWK
 echo -e "${awkscript}" > tmp_fieldfixawk
 chmod 700 tmp_fieldfixawk
 
-awk -v FIELDLIST="${fieldlist}" -v FIXTYPE="${fixtype}" -v ARG1="${arg1}" -v ARG2="${arg2}" -v OUTFILE="${outfile}" -f tmp_fieldfixawk "${infile}"
+awk -v FIXFIELDS="${fixfields}" -v OUTFILE="${outfile}" -f tmp_fieldfixawk "${infile}"
 
 
 

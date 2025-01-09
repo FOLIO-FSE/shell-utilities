@@ -9,6 +9,7 @@ fileextension=$(echo "${infile}" | sed 's/.*\(\..*\)$/\1/')
 if [[ ${fileroot} == ${fileextension} ]];then fileextension="";fi
 
 outfile="${fileroot}_fixed${fileextension}"
+awkfile=".${fileroot}.awk"
 
 fixfieldarr=("${args[@]:1}")
 numfix=${#fixfieldarr[@]}
@@ -85,6 +86,9 @@ function dateiso8(bad_field) {
 	if ($bad_field ~ /[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]$/) {
 		$bad_field = substr($bad_field, 1, 4)"-"substr($bad_field, 5, 2)"-"substr($bad_field, 7, 2)
 	}
+	if ($bad_field == "NEVER") {
+		$bad_field = "2099-12-31"
+	}
 }
 
 function regexrepl(bad_field) {
@@ -112,23 +116,6 @@ function regexrepl(bad_field) {
 				}
 			}
 		}
-
-#		for (i = 1; i <= NF; i++) { 
-#			# convert fieldnames to positional numbers
-#			for (field = 1; field <= numfields; field++) {
-#				compareheader=tolower($i)	
-#				gsub(/[^a-z0-9]/, "", compareheader)
-#
-#				comparefield=tolower(fields[field])
-#				gsub(/[^a-z0-9]/, "", comparefield)
-#
-#				if (compareheader == comparefield) {
-#					fields[field] = i
-#					print $i" will be fixed"
-#				}
-#			}
-#		}
-
 	} else {
 		for (fixfield = 1; fixfield <= numfields; fixfield++) {
 			fixfunction=fixtype[fixfield]
@@ -145,12 +132,9 @@ END { print NR" records have been processed and sent to "OUTFILE }
 
 ENDOFAWK
 
-echo -e "${awkscript}" > tmp_fieldfixawk
-chmod 700 tmp_fieldfixawk
+echo -e "${awkscript}" > "${awkfile}"
+chmod 700 "${awkfile}"
 
-awk -v FIXFIELDS="${fixfields}" -v OUTFILE="${outfile}" -f tmp_fieldfixawk "${infile}"
+awk -v FIELDLIST="${fixfields}" -v OUTFILE="${outfile}" -f "${awkfile}" "${infile}"
 
-
-
-
-rm tmp_fieldfixawk
+rm "${awkfile}"

@@ -1,7 +1,7 @@
 args=("$@")
 
 infile="${args[0]}"
-knownprocesses=("dateiso8" "prefix" "repl")
+knownprocesses=("dateiso8" "prefix" "regexrepl" "repl")
 
 fileroot=$(echo "${infile}" | sed 's/\.....\?$//')
 fileextension=$(echo "${infile}" | sed 's/.*\(\..*\)$/\1/')
@@ -46,7 +46,7 @@ if [[ ! -f ${infile} ]];then
 	echo 
 	echo "e.g. fieldfix [filename] 'prefix|field1|.b' 'dateiso8|field2'..."
 	echo "e.g. fieldfix [filename] 'repl|field1|searchexpr/replaceexpr' 'dateiso8|field2'..."
-	echo "e.g. fieldfix [filename] 'repl|field1|search(capturegroup1)/\\\1' 'dateiso8|field2' ..."
+	echo "e.g. fieldfix [filename] 'regexrepl|field1|search(capturegroup1)/\\\1' 'dateiso8|field2' ..."
 	echo "e.g. fieldfix [filename] 'merge|field2|field2/field3/field4' 'dateiso8|field2'..."
 	echo
 	exit
@@ -95,8 +95,12 @@ function prefix(bad_field) {
 	$bad_field = param1[fixfield]""$bad_field
 }
 
-function repl(bad_field) {
+function regexrepl(bad_field) {
 	$bad_field = gensub(param1[fixfield], param2[fixfield], "g", $bad_field)
+}
+
+function repl(bad_field) {
+	sub(param1[fixfield], param2[fixfield], $bad_field)
 }
 
 {
@@ -110,6 +114,7 @@ function repl(bad_field) {
 			for (i = 1; i <= NF; i++) { 
 				compareheader=tolower($i)	
 				gsub(/[^a-z0-9]/, "", compareheader)
+				firstrow[compareheader] = i
 	
 				comparefield=tolower(header[field])
 				gsub(/[^a-z0-9]/, "", comparefield)

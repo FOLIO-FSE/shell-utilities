@@ -6,6 +6,10 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
+infile=mattypes.tsv
+
+if [[ ! -f ${infile} ]];then echo "Expected file ${infile} not found";exit;fi
+
 while read materialtype
 do
 
@@ -28,6 +32,6 @@ apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" 
 
 echo -e "${apicall}" |jq '.'
 
-done < mattypes
+done < ${infile}
 
 

@@ -11,6 +11,8 @@ okapi_token=$(cat okapi.token)
 infile="groups.tsv"
 dos2unix ${infile}
 
+if [[ ! -f ${infile} ]];then echo "Expected file ${infile} not found";exit;fi
+
 while IFS=$'\t' read code desc 
 do
 

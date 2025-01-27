@@ -17,7 +17,7 @@ numfix=${#fixfieldarr[@]}
 fixfields="${fixfieldarr[0]}"
 
 for (( i=1; i<numfix; i++ ));do
-	fixfields="${fixarr}$'\x1f'${fixfieldarr[i]}"
+	fixfields="${fixfields}"$'\x1f'"${fixfieldarr[i]}"
 done
 
 for (( i=0; i<numfix; i++ ));do
@@ -43,13 +43,12 @@ if [[ ! -f ${infile} ]];then
 	echo
 	echo "For processes that accept multiple parameters, parameters should be subdelimited by forward slashes"
 	echo "Use parentheses and double slashes for capture groups"
-	echo "Split multiple field replacements with @"
 	echo 
-	echo "e.g. fieldfix [filename] 'currency|field1@dateiso8|field2' ..."
-	echo "e.g. fieldfix [filename] 'prefix|field1|.b@dateiso8|field2'..."
-	echo "e.g. fieldfix [filename] 'repl|field1|searchexpr/replaceexpr@dateiso8|field2'..."
-	echo "e.g. fieldfix [filename] 'regexrepl|field1|search(capturegroup1)/\\\1@dateiso8|field2' ..."
-	echo "e.g. fieldfix [filename] 'merge|field2|field2/field3/field4@dateiso8|field2'..."
+	echo "e.g. fieldfix [filename] 'currency|field1' 'dateiso8|field2' ..."
+	echo "e.g. fieldfix [filename] 'prefix|field1|.b' 'dateiso8|field2'..."
+	echo "e.g. fieldfix [filename] 'repl|field1|searchexpr/replaceexpr' 'dateiso8|field2'..."
+	echo "e.g. fieldfix [filename] 'regexrepl|field1|search(capturegroup1)/\\\1' 'dateiso8|field2' ..."
+	echo "e.g. fieldfix [filename] 'merge|field2|field2/field3/field4' 'dateiso8|field2'..."
 	echo
 	exit
 fi
@@ -59,7 +58,7 @@ read -r -d '' awkscript << "ENDOFAWK"
 
 BEGIN {
 	FS=OFS="\t"
-	split(FIELDLIST, fixfields, "@")
+	split(FIELDLIST, fixfields, SFS)
 	numfields=length(fixfields)
 
 	for (i = 1; i <= numfields; i++) {
@@ -151,6 +150,6 @@ ENDOFAWK
 echo -e "${awkscript}" > "${awkfile}"
 chmod 700 "${awkfile}"
 
-awk -v FIELDLIST="${fixfields}" -v OUTFILE="${outfile}" -f "${awkfile}" "${infile}"
+awk -v FIELDLIST="${fixfields}" -v SFS=$'\x1f' -v OUTFILE="${outfile}" -f "${awkfile}" "${infile}"
 
 rm "${awkfile}"

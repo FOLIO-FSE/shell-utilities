@@ -1,7 +1,7 @@
 args=("$@")
 
 infile="${args[0]}"
-knownprocesses=("dateiso8" "prefix" "regexrepl" "repl")
+knownprocesses=("currency" "dateiso8" "prefix" "regexrepl" "repl")
 
 fileroot=$(echo "${infile}" | sed 's/\.....\?$//')
 fileextension=$(echo "${infile}" | sed 's/.*\(\..*\)$/\1/')
@@ -44,6 +44,7 @@ if [[ ! -f ${infile} ]];then
 	echo "For processes that accept multiple parameters, parameters should be subdelimited by forward slashes"
 	echo "Use parentheses and double slashes for capture groups"
 	echo 
+	echo "e.g. fieldfix [filename] 'currency|field1' 'dateiso8|field2' ..."
 	echo "e.g. fieldfix [filename] 'prefix|field1|.b' 'dateiso8|field2'..."
 	echo "e.g. fieldfix [filename] 'repl|field1|searchexpr/replaceexpr' 'dateiso8|field2'..."
 	echo "e.g. fieldfix [filename] 'regexrepl|field1|search(capturegroup1)/\\\1' 'dateiso8|field2' ..."
@@ -80,6 +81,11 @@ BEGIN {
 		param2[i] = param[2]
 		param3[i] = param[3]
 	}
+}
+
+function currency(bad_field) {
+	gsub(/[^0-9\.]/, "", $bad_field)
+	$bad_field = sprintf("%.2f", $bad_field)
 }
 
 function dateiso8(bad_field) {

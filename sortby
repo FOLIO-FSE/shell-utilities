@@ -1,0 +1,24 @@
+infile="${1}"
+sortfield="${2}"
+
+if [[ -z $sortfield ]];then
+	echo "Sorts by a column, either by column name or position"
+	echo "sortby [filename] [column]"
+	echo 
+fi
+
+fileroot=$(echo "${infile}" | sed 's/\.....\?$//')
+outfile="${fileroot}_sorted.tsv"
+
+firstline="$(head -1 ${infile})"
+
+if ! [[ "${sortfield}" =~ ^[0-9]+$ ]];then
+	# use a column header if given
+	sortfield=$(head -1 "${infile}" |tr "\t" "\n" |grep -n "^${sortfield}$" |sed 's/:.*//')
+fi
+
+head -1 "${infile}" > "${outfile}"
+tail -n +2 "${infile}" | sort -t$'\t' -k${sortfield} >> "${outfile}"
+
+echo "${infile} has been sorted except header row and output to ${outfile}"
+

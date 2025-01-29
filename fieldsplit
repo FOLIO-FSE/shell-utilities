@@ -1,0 +1,85 @@
+infile="${1}"
+fileroot=$(echo "${infile}" | sed 's/\.....\?$//')
+outfile="${fileroot}_split.tsv"
+
+idmatch="${2}"
+splitfield="${3}"
+
+idmatch=$(echo "${idmatch,,}" |tr -dc [a-z0-9])
+splitfield=$(echo "${splitfield,,}" |tr -dc [a-z0-9])
+
+if [[ -z ${splitfield} ]];then
+	echo "splitfield [filename] [id column] [field to split]"
+	echo "Splits on commas and semicolons"
+	echo
+	exit
+fi
+
+
+colheader=$(head -1 "${infile}")
+
+colkeys="${colheader,,}"
+colkeys="${colkeys//[^a-z0-9$'\t']/}"
+
+IFS=$'\t' read -r -a key_arr <<< "${colkeys}"
+array_len=${#key_arr[@]}
+
+
+IFS=$'\t' read -r -a key_arr <<< "${colkeys}"
+
+if [[ ! $idmatch =~ ^[0-9]*$ ]];then 
+	for (( i=0; i<$array_len; i++ ));do
+		if [[ ${key_arr[$i]} == $idmatch ]];then
+			found=1
+			idmatch=$(($i+1))
+			break
+		fi
+	done
+
+	if [[ found -eq 0 ]];then
+		echo "Your id column was not found. These are the available columns"
+		echo
+		head -1 "${infile}" |tr "\t" "\n" |grep -n .
+		exit
+	fi
+fi
+
+if [[ ! $splitfield =~ ^[0-9]*$ ]];then 
+	for (( i=0; i<$array_len; i++ ));do
+		if [[ ${key_arr[$i]} == $splitfield ]];then
+			found=1
+			splitfield=$(($i+1))
+			break
+		fi
+	done
+
+	if [[ found -eq 0 ]];then
+		echo "Your split field column was not found. These are the available columns"
+		echo
+		head -1 "${infile}" |tr "\t" "\n" |grep -n .
+		exit
+	fi
+fi
+
+read -r -d '' awkscript << "ENDOFAWK"
+#!/usr/bin/awk -f 
+{
+	split($SPLITFIELD, allentries, /[,;|]/ )
+
+	for(entry in allentries) {
+		nextval = allentries[entry]
+		sub(/^[ "]*/, "", nextval)
+		sub(/[ "]*$/, "", nextval)
+		print $IDFIELD, nextval > OUTFILE
+	}
+}
+
+ENDOFAWK
+
+echo -e "${awkscript}" > tmp_fieldsplit
+chmod 700 tmp_fieldsplit
+
+awk -v FS="\t" -v OFS="\t" -v SFS="[,;^|]" -v IDFIELD="${idmatch}" -v SPLITFIELD="${splitfield}" -v OUTFILE="${outfile}" -b -f tmp_fieldsplit "${infile}"
+
+echo "A two column file with ${2} in the first column and each instance of ${3} in the second has been sent to ${outfile}"
+rm tmp_fieldsplit

@@ -32,13 +32,15 @@ fiscalYears=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-T
 eval "$(echo ${ledgers} |jq -r '.ledgers[] | @sh "ledger[\(.code|tostring)]=\(.id|tostring)"')"
 eval "$(echo ${fiscalYears} |jq -r '.fiscalYears[] | @sh "fiscalYear[\(.code|tostring)]=\(.id|tostring)"')"
 
+acqUnitIds='"89008dcb-04e6-4749-8e78-9c2cd1ad8d14","172de4a1-84ed-4436-b69b-3d7b48c3c371"'
 
 ## load programs, split each line into array
 while IFS=$'\n' read -r line; do
         IFS=$'\t' read fundname fundcode externalAccount description allocated <<< ${line}
+        #IFS=$'\t' read fundname fundcode externalAccount allocated <<< ${line}
 
-	ledger=${ledger["CUL-Morningside"]} 
-	fiscalyear=${fiscalYear["FY2025"]} 
+	ledger=${ledger["CUL-HSL"]} 
+	fiscalyear=${fiscalYear["FYA2025"]} 
 
 	if [[ -z $fundcode ]];then fundcode="${fundname}";fi
 	if [[ -z $fundname ]];then fundname="${fundcode}";fi
@@ -52,7 +54,7 @@ while IFS=$'\n' read -r line; do
 
 	### build the fund
 
-	funddata="{\"fund\":{\"id\": \"${funduuid}\", \"fundStatus\":\"Active\",\"name\":\"${fundname}\",\"code\":\"${fundcode}\",\"description\": \"${description}\",\"ledgerId\":\"${ledger}\",\"externalAccountNo\":\"${externalAccount}\"}, \"groupIds\":[]}"
+	funddata="{\"fund\": { \"id\": \"${funduuid}\", \"fundStatus\":\"Active\",\"name\":\"${fundname}\",\"code\":\"${fundcode}\",\"description\": \"${description}\",\"ledgerId\":\"${ledger}\",\"externalAccountNo\":\"${externalAccount}\", \"acqUnitIds\": [${acqUnitIds}]}, \"groupIds\": [${groupIds}] }"
 
 	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${funddata}" "${okapi_url}/finance/funds"
 

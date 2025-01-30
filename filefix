@@ -372,13 +372,20 @@ BEGIN {
 
 	if (NF == numfields) { 
 		print $0 > outfile	
+		last0 = ""
 	} else {
 		if ((NF == numfields + 1) && (substr($0, length($0), 1) == "\t")) {
 			$0 = substr($0, 1, length($0) - 1)
+			last0 = ""
 			print $0 > outfile	
-		} else {
+		} 
+
+		if ((NF > numfields) && (substr($0, length($0), 1) != "\t")) {
 			badrecs++
 			print $0 > badfile
+		}
+		if (NF < numfields) {
+			last0 = $0
 		}
 	}
 	if (NR % 10000 == 0 ) {printf (".")}

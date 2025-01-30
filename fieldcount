@@ -1,0 +1,29 @@
+infile="${1}"
+
+if [[ ! -f ${infile} ]];then
+	tmp=$(mktemp)
+	infile=$tmp
+	cp /dev/stdin $infile
+fi
+
+firstline="$(head -1 ${infile})"
+
+cp "${infile}" tmp_outfile
+
+echo "${firstline}" | grep -q "|" && cat "${infile}" |tr '|' '\t' > tmp_outfile
+echo "${firstline}" | fgrep -q "^" && cat "${infile}" |tr '^' '\t' > tmp_outfile
+echo "${firstline}" | fgrep -q "," && csvformat -T "${infile}" > tmp_outfile
+
+numrecs=$(wc -l tmp_outfile |cut -d " " -f1)
+numfields=$(head -1 tmp_outfile |tr '\t' '\n' |grep -i "[a-z0-9]" |wc -l)
+
+echo
+echo "$numfields fields in $numrecs lines including header were detected."
+echo "Occurrences	Fields"
+
+while read -r occurrences fields;do
+	echo -e "        ${occurrences}\t   ${fields}"
+done <<< $(awk 'BEGIN{FS=OFS="\t"}{print NF}' tmp_outfile |sort |uniq -c |sort -k1nr)
+echo
+
+rm -f $tmp tmp_outfile

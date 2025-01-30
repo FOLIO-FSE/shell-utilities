@@ -10,7 +10,7 @@ splitfield=$(echo "${splitfield,,}" |tr -dc [a-z0-9])
 
 if [[ -z ${splitfield} ]];then
 	echo "splitfield [filename] [id column] [field to split]"
-	echo "Splits on commas and semicolons"
+	echo "Splits on commas, semicolons,or pipes"
 	echo
 	exit
 fi

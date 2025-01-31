@@ -41,7 +41,7 @@ eval "$(echo ${fiscalYears} |jq -r '.fiscalYears[] | @sh "fiscalYear[\(.code|tos
 
 ## load programs, split each line into array
 while IFS=$'\n' read -r line; do
-        IFS=$'\t' read fundname fundcode externalAccount description allocated <<< ${line}
+        #IFS=$'\t' read fundname fundcode externalAccount description allocated <<< ${line}
         IFS=$'\t' read fundname fundcode fundacqunit fundgroup externalAccount allocated <<< ${line}
 
 	ledger=${ledger["CUL-HSL"]} 
@@ -63,7 +63,7 @@ while IFS=$'\n' read -r line; do
 
 	if [[ -z $fundcode ]];then fundcode="${fundname}";fi
 	if [[ -z $fundname ]];then fundname="${fundcode}";fi
-	if [[ ! "${externalAccount}" =~ [^A-Za-z0-9] ]];then externalAccount="not configured";fi
+	if [[ ${#externalAccount} -lt 1 ]];then externalAccount="not configured";fi
 	if [[ -z ${allocated} ]];then allocated=0;fi
 
 	allocated=$(printf "%.2f" ${allocated//[^0-9\/.]/})

@@ -9,6 +9,8 @@ if [[ -z $3 ]];then
 	echo
 	echo "marc-query 260 a ^= 'Paris'"
 	echo "marc-query p_06 = 'a' leader (leader search)"
+	echo "marc-query 005.00_04 = '2021' (startpos_endpos)"
+	echo "marc-query 008.00_01 = 's' (startpos_endpos)"
 	echo "marc-query 650 ind2 = 7"
 	echo "marc-query 740 is present"
 	echo "marc-query 740 a is absent"
@@ -63,6 +65,15 @@ if [ "$#" -eq 3 ]; then
 	search1="${field}.${subfield} ${operator} ${value}"
 fi
 
+tag=${field:0:3}
+
+case ${tag} in
+	"005")
+		search1="${field} ${operator} ${value}"	;;
+	"008")
+		search1="${field} ${operator} ${value}"	;;
+esac
+
 IFS='' read -r -d '' fieldsearch << EndOfJSON
 {
 	"fieldsSearchExpression": "${search1}${search2}${search3}"
@@ -78,8 +89,10 @@ EndOfJSON
 
 data="${!searchtype}"
 
-apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/source-storage/stream/marc-record-identifiers")
 
+apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${data}" "${okapi_url}/source-storage/stream/marc-record-identifiers")
+echo ${data}
+echo ${apicall}
 echo -e "${apicall}" |jq -r .records[] > ids
 echo "$(jq -r '.records|length' <<< ${apicall}) records have been exported to \"ids\""
 

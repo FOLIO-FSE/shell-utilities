@@ -245,7 +245,7 @@ if [[ ${#cutfields} -gt 0 ]];then
 	
 	if [[ -z $dateformat ]]; then
 		cat tmp_datecheck |grep -o "\b[0|1]\?[0-9][/\-][0-3]\?[0-9][/\-][27-9][0-9]\b" > /dev/null && echo "Six digit date with trailing year detected." && dateformat="us-single"
-		cat tmp_datecheck |grep -o "\b[78-9][0-9][/\-][0-3]\?[0-9][/\-][0|1]\?[0-9]\b" > /dev/null && echo "Six digit date with leading year detected." && dateformat="6digit-leading"
+		cat tmp_datecheck |grep -o "\b[0-3]\?[0-9][/\-][0|1]\?[0-9][/\-][27-9][0-9]\b" > /dev/null && echo "Six digit UK date with trailing year detected." && dateformat="6digit-trailing-uk"
 		cat tmp_datecheck |grep -o "\b[78-9][0-9][/\-][0|1]\?[0-9][/\-][0-3]\?[0-9]\b" > /dev/null && echo "Six digit date with leading year detected." && dateformat="6digit-leading"
 	
 		cat tmp_datecheck |grep -o "\b[0-2][0-9][/\-][0-9][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null &&  dateformat="us"
@@ -377,6 +377,10 @@ function fix_dates() {
 			if (DATEFORMAT == "6digit-leading") { 
 				if (splitdate[1] < 30) { splitdate[1] = "20"splitdate[1] } else { splitdate[1] = "19"splitdate[1] }
 				$fixdate = sprintf("%04d-%02d-%02d", splitdate[1], splitdate[2], splitdate[3]) 
+			}
+			if (DATEFORMAT == "6digit-trailing-uk") { 
+				if (splitdate[3] < 30) { splitdate[3] = "20"splitdate[3] } else { splitdate[3] = "19"splitdate[3] }
+				$fixdate = sprintf("%04d-%02d-%02d", splitdate[3], splitdate[2], splitdate[1]) 
 			}
 			
 		} else {

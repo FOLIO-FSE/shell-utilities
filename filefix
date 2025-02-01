@@ -271,13 +271,26 @@ DOUBLE=$(echo -ne '\u201C\u201D')
 NBSP=$(echo -ne '\uc2a0\u00a0\ufeff')
 CONTROL=$(echo -ne '\u001b\u0007\u0001')
 
-echo "Scanning for and correcting invalid entries. Please be patient"
+echo -en "Analyzing ${infile}. Please be patient"
 
+while [ true ];do
+	echo -en "."
+	sleep 1
+done & 
+background_pid=$!
 
 for file in ${splitlist[@]};do 
 	fix_characters ${file} & 
+	pids[${file}]=$!
 done
-wait
+
+for pid in ${pids[*]}; do
+    wait $pid
+done
+
+disown $background_pid
+kill $background_pid 
+echo
 
 case $dateformat in
 	us)
@@ -404,15 +417,14 @@ function fix_dates() {
 			print $0 > badfile
 		}
 	}
-	if (NR % 2000 == 0 && FILENAME == "filefixaa") {printf "Records processed: %s\r", NR*5}
+	if (NR % 2000 == 0 && FILENAME == "filefixad") {printf "Records processed: %s\r", NR*5}
 }
 ENDOFAWK
 
 echo -e "${awkscript}" > tmp_filefixawk
 chmod 700 tmp_filefixawk
 
-echo
-echo "Fixing nulls, quotes and dates. Examining individual cells. Please be patient."
+echo "Performing corrections"
 
 for splitfile in ${splitlist[@]};do 
 	fix_nullsquotesdates ${splitfile} &
@@ -427,7 +439,6 @@ rm tmp_filefixawk
 
 numclean=$(wc -l ${finalfile} |cut -d " " -f1)
 
-echo
 echo "$numclean records have been output to ${finalfile}"
 
 if [[ -f ${errorfile} ]];then

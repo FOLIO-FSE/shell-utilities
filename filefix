@@ -222,10 +222,10 @@ echo "The following fields were detected in ${infile}"
 echo "${fieldnames}" |tr "\t" "\n" |grep -n . |column 
 echo
 echo "The following date containing fields were detected in ${infile}"
-echo "${fieldnames}" |tr "\t" "\n" |grep -ni date 
+echo "${fieldnames}" |tr "\t" "\n" |grep -ni date |sed '/[Yy][Ee][Aa][Rr]\|[Mm][Oo][Nn][Tt][Hh]\|[Dd][Aa][Yy]/d'
 echo
 
-datefields=$(echo "${fieldnames}" |tr "\t" "\n" |grep -ni date |sed 's/:.*//' |tr '\n' ' ')
+datefields=$(echo "${fieldnames}" |tr "\t" "\n" |grep -ni date |tr [A-Z] [a-z] | sed '/year\|month\|day/d; s/:.*//' |tr '\n' ' ')
 cutfields=$(echo "${datefields// /,}" | sed 's/^/-f/;s/,$//' |grep [0-9])
 
 if [[ ${#cutfields} -gt 0 ]];then
@@ -395,6 +395,8 @@ function fix_dates() {
 				if (splitdate[3] < 30) { splitdate[3] = "20"splitdate[3] } else { splitdate[3] = "19"splitdate[3] }
 				$fixdate = sprintf("%04d-%02d-%02d", splitdate[3], splitdate[2], splitdate[1]) 
 			}
+
+			if ($fixdate == "0000-00-00") { $fixdate = "" }
 			
 		} else {
 			$fixdate = ""

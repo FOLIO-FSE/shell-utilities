@@ -1,7 +1,15 @@
 filelist=("$@")
 infile="${filelist[0]}"
 
-rm -f *_bad filefixa*
+if [[ "${infile}" =~ \....$ ]];then
+	finalfile=$(echo "${infile}" |sed 's/\(.*\)\(\....$\)/\1_fixed.tsv/')
+else
+	finalfile="${infile}_fixed.tsv"
+fi
+
+errorfile="${infile}_error"
+rm -f "${finalfile}" "${errorfile}"
+rm -f filefix*_bad filefixa* 
 
 if [[ ${filelist[-1]} == "us-single" ]]; then
 	unset 'filelist[${#filelist[@]}-1]'
@@ -24,7 +32,6 @@ if [[ -z $1 ]];then
 else
 	infile=${1}
 fi
-
 
 fix_characters(){
 	local file=${1}
@@ -65,11 +72,11 @@ function fix_encoding(){
 	rm ${oldfile}
 }
 
-function fix_nullsquotes(){
+function fix_nullsquotesdates(){
 	local infile=${1}
 	local outfile="${1}_out"
 	local badfile="${1}_bad"
-	awk -v numfields=$numfields -v outfile="${outfile}" -v badfile="${badfile}" -f tmp_filefixawk ${infile}
+	awk -v numfields=$numfields -v outfile="${outfile}" -v badfile="${badfile}" -v DATEFIELDS="${datefields}" -f tmp_filefixawk ${infile}
 }
 
 function to_tsv(){
@@ -169,47 +176,12 @@ num_per_file=$(($numrecs / 5 + 1))
 split -l $num_per_file ${infile} filefix
 splitlist=(filefixaa filefixab filefixac filefixad filefixae)
 
-words=0
-
-head -50 filefixaa |grep -Pqoi "\b(apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t\/-]*[\/-][0-9][0-9]*[\/-][0-9][0-9]*\b" && words=1
-head -50 filefixaa |grep -Pqoi "\b[0-9\[0-9]*[\/-](apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t\/-]*[\/-][0-9][0-9]*\b" && words=2
-
-if [[ $words -gt 0 ]];then
-	echo
-	echo "Dates containing words detected"
-	echo
-
-	for splitfile in ${splitlist[@]};do 
-		words2numbers ${splitfile} ${words} & 
-	done
-	wait
-
-fi
-
-if [[ -z $dateformat ]]; then
-	head -50 filefixaa |grep -o "\b[0|1]\?[0-9][/\-][0-3]\?[0-9][/\-][27-9][0-9]\b" > /dev/null && echo "Six digit date with trailing year detected." && dateformat="us-single"
-	head -50 filefixaa |grep -o "\b[78-9][0-9][/\-][0-3]\?[0-9][/\-][0|1]\?[0-9]\b" > /dev/null && echo "Six digit date with leading year detected."
-
-	head -50 filefixaa |grep -o "\b[0-2][0-9][/\-][0-9][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null &&  dateformat="us"
-	head -50 filefixaa |grep -o "\b[0-9][/\-][23][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null &&  dateformat="us-single"
-	head -50 filefixaa |grep -o "\b[23][0-9][/\-][0-9][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null && dateformat="uk"
-	head -50 filefixaa |grep -o "\b[23][0-9][/\-][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null && dateformat="uk-single"
-	head -50 filefixaa |grep -o "\b[12][01239][0-9][0-9]\/[0-9][0-9]\/[0-9][0-9]\b" > /dev/null && dateformat="slashes"
-fi
-
-
-
-if [[ ${dateformat} == "uk" ]];then echo "UK dates detected. DD-MM-YYYY dates will be converted to YYYY-MM-DD";fi
-if [[ ${dateformat} == "uk-single" ]];then echo "UK dates with single digits detected. D-M-YYYY dates will be converted to YYYY-MM-DD";fi
-if [[ ${dateformat} == "us" ]];then echo "US dates detected. MM-DD-YYYY dates will be converted to YYYY-MM-DD";fi
-if [[ ${dateformat} == "us-single" ]];then echo "US dates with single digits detected. M-D-YYYY dates will be converted to YYYY-MM-DD";fi
-
-
-
+echo "Fixing encoding"
 for splitfile in ${splitlist[@]};do 
-	fix_encoding ${splitfile} & 
+	fix_encoding ${splitfile} &
 done
 wait
+
 firstline="$(head -1 filefixaa)"
 
 echo "${firstline}" | grep -q "|" && filetype="pipe"
@@ -287,6 +259,53 @@ read -r fieldnames < filefixaa
 fieldnames=$(tr -dc "[[A-Za-z0-9]]_	\-#." <<< "${fieldnames}")
 echo "The following fields were detected in ${infile}"
 echo "${fieldnames}" |tr "\t" "\n" |grep -n . |column 
+echo
+echo "The following date containing fields were detected in ${infile}"
+echo "${fieldnames}" |tr "\t" "\n" |grep -ni date 
+echo
+
+datefields=$(echo "${fieldnames}" |tr "\t" "\n" |grep -ni date |sed 's/:.*//' |tr '\n' ' ')
+cutfields=$(echo "${datefields// /,}" | sed 's/^/-f/;s/,$//' |grep [0-9])
+
+if [[ ${#cutfields} -gt 0 ]];then
+	head -50 filefixaa > tmp_datecheck1
+	cut ${cutfields} tmp_datecheck1 > tmp_datecheck 
+	 
+	words=0
+	
+	cat tmp_datecheck |grep -Pqoi "\b(apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t\/-]*[\/-][0-9][0-9]*[\/-][0-9][0-9]*\b" && words=1
+	cat tmp_datecheck |grep -Pqoi "\b[0-9\[0-9]*[\/-](apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t\/-]*[\/-][0-9][0-9]*\b" && words=2
+	
+	if [[ $words -gt 0 ]];then
+		echo
+		echo "Dates containing words detected"
+		echo
+	
+		for splitfile in ${splitlist[@]};do 
+			words2numbers ${splitfile} ${words} & 
+		done
+		wait
+	fi
+	
+	if [[ -z $dateformat ]]; then
+		cat tmp_datecheck |grep -o "\b[0|1]\?[0-9][/\-][0-3]\?[0-9][/\-][27-9][0-9]\b" > /dev/null && echo "Six digit date with trailing year detected." && dateformat="us-single"
+		cat tmp_datecheck |grep -o "\b[78-9][0-9][/\-][0-3]\?[0-9][/\-][0|1]\?[0-9]\b" > /dev/null && echo "Six digit date with leading year detected."
+	
+		cat tmp_datecheck |grep -o "\b[0-2][0-9][/\-][0-9][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null &&  dateformat="us"
+		cat tmp_datecheck |grep -o "\b[0-9][/\-][23][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null &&  dateformat="us-single"
+		cat tmp_datecheck |grep -o "\b[23][0-9][/\-][0-9][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null && dateformat="uk"
+		cat tmp_datecheck |grep -o "\b[23][0-9][/\-][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null && dateformat="uk-single"
+		cat tmp_datecheck |grep -o "\b[12][01239][0-9][0-9]\/[0-9][0-9]\/[0-9][0-9]\b" > /dev/null && dateformat="slashes"
+	fi
+	
+		cat tmp_datecheck |grep -o "augu-" > /dev/null && dateformat="us-single"
+	if [[ ${dateformat} == "uk" ]];then echo "UK dates detected. DD-MM-YYYY dates will be converted to YYYY-MM-DD";fi
+	if [[ ${dateformat} == "uk-single" ]];then echo "UK dates with single digits detected. D-M-YYYY dates will be converted to YYYY-MM-DD";fi
+	if [[ ${dateformat} == "us" ]];then echo "US dates detected. MM-DD-YYYY dates will be converted to YYYY-MM-DD";fi
+	if [[ ${dateformat} == "us-single" ]];then echo "US dates with single digits detected. M-D-YYYY dates will be converted to YYYY-MM-DD";fi
+	rm tmp_datecheck
+	rm tmp_datecheck1
+fi
 
 SINGLE=$(echo -ne '\u00B4\u2018\u2019')
 DOUBLE=$(echo -ne '\u201C\u201D')
@@ -295,38 +314,11 @@ CONTROL=$(echo -ne '\u001b\u0007\u0001')
 
 echo "Scanning for and correcting invalid entries. Please be patient"
 
+
 for file in ${splitlist[@]};do 
 	fix_characters ${file} & 
 done
 wait
-
-fix_dates(){
-	local file=${1}
-	local dateformat=${2}
-
-
-	case $dateformat in
-		us)
-			sed -i 's/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([89][0-9]\)\b/\119\2/g;s/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\1-\2/g;s/ \+-  -\( \+\)\?//g' ${file}	
-			;;
-		us-single)
-			sed -i -r -e 'sx([^0-9]|\b)([0-9][/\-])x\10\2xg;sx/([0-9][/\-])x/0\1xg' ${file}
-			sed -i  's/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([7-9][0-9]\)\b/\119\2/g;s/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([0-2][0-9]\)\b/\120\2/g;s/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\1-\2/g;s/ \+-  -\( \+\)\?//g;' ${file}
-			;;
-
-		uk)
-			sed -i 's/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([7-9][0-9]\)\b/\119\2/g;s/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\2-\1/g;s/ \+-  -\( \+\)\?//g;' ${file}
-			;;
-		uk-single)
-			sed -i -r -e 'sx([^0-9]|\b)([0-9][/\-])x\10\2xg;sx/([0-9][/\-])x/0\1xg' ${file}
-			sed -i 's/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([7-9][0-9]\)\b/\119\2/g;s/\b\([0-9][0-9][/\-][0-9][0-9][/\-]\)\([0-2][0-9]\)\b/\120\2/g;s/\b\([0-9][0-9]\)[/\-]\([0-9][0-9]\)[/\-]\([0-9][0-9][0-9][0-9]\)\b/\3-\2-\1/g;s/ \+-  -\( \+\)\?//g;' ${file} 
-			;;
-		slashes)
-			sed -i 's#\b\([12][1230][0-9][0-9]\)/\([0-9][0-9]\)/\([0-9][0-9]\)\b#\1-\2-\3#g' ${file}
-			;;
-	esac
-}
-
 
 case $dateformat in
 	us)
@@ -348,13 +340,6 @@ case $dateformat in
 		;;
 esac
 
-for file in ${splitlist[@]};do 
-
-	fix_dates ${file} ${dateformat} ${words} &
-done
-wait
-
-
 read -r -d '' awkscript << "ENDOFAWK"
 #!/usr/bin/awk -f
 
@@ -362,30 +347,88 @@ BEGIN {
 	FS=OFS="\t"
 	goodrecs=badrecs=0
 	current0=last0=""
+	split(DATEFIELDS, datefields, " ")
+}
+
+function fix_dates() {
+	for (datefield in datefields) {
+		fixdate = datefields[datefield]
+		# slashes to hyphens
+		gsub(/\//, "-", $fixdate)
+		# remove timestamps
+		sub(/ [0-9\.:]*$/, "", $fixdate)
+
+		arraylen = split($fixdate, splitdate,"-")
+
+		if (arraylen == 3) {
+			if (WORDS > 0) {
+				match1 = tolower(splitdate[1])
+				match2 = tolower(splitdate[2])
+
+				if (match1 ~ /[a-z]/) {
+					DATEFORMAT = "us-single"
+					gensub(/^jan.*/, "01", splitdate[1])
+					gensub(/^feb.*/, "02", splitdate[1])
+					gensub(/^mar.*/, "03", splitdate[1])
+					gensub(/^apr.*/, "04", splitdate[1])
+					gensub(/^may.*/, "05", splitdate[1])
+					gensub(/^jun.*/, "06", splitdate[1])
+					gensub(/^jul.*/, "07", splitdate[1])
+					gensub(/^aug.*/, "08", splitdate[1])
+					gensub(/^sep.*/, "09", splitdate[1])
+					gensub(/^oct.*/, "10", splitdate[1])
+					gensub(/^nov.*/, "11", splitdate[1])
+					gensub(/^dec.*/, "12", splitdate[1])
+				}
+				if (match2 ~ /[a-z]/) {
+					DATEFORMAT = "uk-single"
+					gensub(/^jan.*/, "01", splitdate[2])
+					gensub(/^feb.*/, "02", splitdate[2])
+					gensub(/^mar.*/, "03", splitdate[2])
+					gensub(/^apr.*/, "04", splitdate[2])
+					gensub(/^may.*/, "05", splitdate[2])
+					gensub(/^jun.*/, "06", splitdate[2])
+					gensub(/^jul.*/, "07", splitdate[2])
+					gensub(/^aug.*/, "08", splitdate[2])
+					gensub(/^sep.*/, "09", splitdate[2])
+					gensub(/^oct.*/, "10", splitdate[2])
+					gensub(/^nov.*/, "11", splitdate[2])
+					gensub(/^dec.*/, "12", splitdate[2])
+				}
+				
+			}
+
+			if (DATEFORMAT == "uk") { $fixdate = splitdate[3]"-"splitdate[2]"-"splitdate[1] }
+			if (DATEFORMAT == "uk-single") { 
+				if (splitdate[3] < 30) { splitdate[3] = "20"splitdate[3] } else { splitdate[3] = "19"splitdate[3] }
+				$fixdate = sprintf("%04d-%02d-%02d", splitdate[3], splitdate[2], splitdate[1]) 
+			}
+
+			if (DATEFORMAT == "us") { $fixdate = splitdate[3]"-"splitdate[1]"-"splitdate[2] }
+			if (DATEFORMAT == "us-single") { 
+				if (splitdate[3] < 30) { splitdate[3] = "20"splitdate[3] } else { splitdate[3] = "19"splitdate[3] }
+				$fixdate = sprintf("%04d-%02d-%02d", splitdate[3], splitdate[1], splitdate[2]) 
+			}
+			
+		} else {
+			$fixdate = ""
+		}
+	}
+
 }
 
 {
-	current0=last0
-	if (last0 != "" && NF < numfields) {
-		$0 = current0""FS""0
-	}
-
 	if (NF == numfields) { 
+		fix_dates()
 		print $0 > outfile	
-		last0 = ""
 	} else {
 		if ((NF == numfields + 1) && (substr($0, length($0), 1) == "\t")) {
 			$0 = substr($0, 1, length($0) - 1)
-			last0 = ""
+			fix_dates()
 			print $0 > outfile	
-		} 
-
-		if ((NF > numfields) && (substr($0, length($0), 1) != "\t")) {
+		} else {
 			badrecs++
 			print $0 > badfile
-		}
-		if (NF < numfields) {
-			last0 = $0
 		}
 	}
 	if (NR % 10000 == 0 ) {printf (".")}
@@ -395,40 +438,34 @@ ENDOFAWK
 echo -e "${awkscript}" > tmp_filefixawk
 chmod 700 tmp_filefixawk
 
-if [[ "${infile}" =~ \....$ ]];then
-	outfile=$(echo "${infile}" |sed 's/\(.*\)\(\....$\)/\1_fixed.tsv/')
-else
-	outfile="${infile}_fixed.tsv"
-fi
-badfile="${infile}_error"
 echo
-echo "Examining individual cells. Please be patient. Each dot is 10,000 records"
+echo "Fixing nulls, quotes and dates. Examining individual cells. Please be patient. Each dot is 10,000 records"
 
 for splitfile in ${splitlist[@]};do 
-	fix_nullsquotes ${splitfile} &
+	fix_nullsquotesdates ${splitfile} &
+	infile=${splitfile}
+	outfile="${splitfile}_out"
+	badfile="${splitfile}_bad"
+	awk -v numfields=$numfields -v outfile="${outfile}" -v badfile="${badfile}" -v DATEFIELDS="${datefields}" -v DATEFORMAT="${dateformat}" -v WORDS="${words}" -f tmp_filefixawk ${infile}
 done
 wait
 
-rm -f "${outfile}" "${badfile}"
-cat filefixaa_out filefixab_out filefixac_out filefixad_out filefixae_out >> "${outfile}"
-cat filefixaa_bad filefixab_bad filefixac_bad filefixad_bad filefixae_bad > "${badfile}" 2>/dev/null
+cat filefixa*_out >> "${finalfile}"
+cat filefixa*_bad > "${errorfile}" 2>/dev/null
 
-numclean=$(wc -l ${outfile} |cut -d " " -f1)
+rm -f filefixa*
+rm tmp_filefixawk
+
+numclean=$(wc -l ${finalfile} |cut -d " " -f1)
 
 echo
-echo "$numclean records have been output to ${outfile}"
+echo "$numclean records have been output to ${finalfile}"
 
-if [[ -f $badfile ]];then
-	numbad=$(wc -l "${infile}_error" |cut -d " " -f1)
-	echo "$numbad bad records were output to "${infile}_error
+if [[ -f ${errorfile} ]];then
+	numbad=$(wc -l "${errorfile}" |cut -d " " -f1)
+	echo "$numbad bad records were output to ${errorfile}"
 fi
 echo
-
-for splitfile in ${splitlist[@]};do 
-	rmfile="${splitfile}_out"
-	rm -f $splitfile $rmfile
-done
-rm tmp_filefixawk
 
 if [[ foundExcel -eq 1 ]];then
 	rm -f "${infile}"

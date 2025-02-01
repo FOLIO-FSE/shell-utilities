@@ -76,7 +76,7 @@ function fix_nullsquotesdates(){
 	local infile=${1}
 	local outfile="${1}_out"
 	local badfile="${1}_bad"
-	awk -v numfields=$numfields -v outfile="${outfile}" -v badfile="${badfile}" -v DATEFIELDS="${datefields}" -f tmp_filefixawk ${infile}
+	awk -v numfields=$numfields -v outfile="${outfile}" -v badfile="${badfile}" -v DATEFORMAT="${dateformat}" -v DATEFIELDS="${datefields}" -f tmp_filefixawk ${infile}
 }
 
 function to_tsv(){
@@ -252,12 +252,15 @@ if [[ ${#cutfields} -gt 0 ]];then
 		cat tmp_datecheck |grep -o "\b[23][0-9][/\-][0-9][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null && dateformat="uk"
 		cat tmp_datecheck |grep -o "\b[23][0-9][/\-][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null && dateformat="uk-single"
 		cat tmp_datecheck |grep -o "\b[12][01239][0-9][0-9]\/[0-9][0-9]\/[0-9][0-9]\b" > /dev/null && dateformat="slashes"
+		cat tmp_datecheck |grep -o "\b[12][01239][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*\b" > /dev/null && dateformat="numbers"
 	fi
 	
 	if [[ ${dateformat} == "uk" ]];then echo "UK dates detected. DD-MM-YYYY dates will be converted to YYYY-MM-DD";fi
 	if [[ ${dateformat} == "uk-single" ]];then echo "UK dates with single digits detected. D-M-YYYY dates will be converted to YYYY-MM-DD";fi
 	if [[ ${dateformat} == "us" ]];then echo "US dates detected. MM-DD-YYYY dates will be converted to YYYY-MM-DD";fi
 	if [[ ${dateformat} == "us-single" ]];then echo "US dates with single digits detected. M-D-YYYY dates will be converted to YYYY-MM-DD";fi
+	if [[ ${dateformat} == "numbers" ]];then echo "Numeric string detected -- will be converted to YYYY-MM-DD";fi
+
 	rm tmp_datecheck
 	rm tmp_datecheck1
 fi
@@ -293,6 +296,9 @@ case $dateformat in
 	slashes)
 		echo "Reformatting dates to YYYY-MM-DD"
 		;;
+	numbers)
+		echo "Reformatting numeric dates to YYYY-MM-DD"
+		;;
 esac
 
 read -r -d '' awkscript << "ENDOFAWK"
@@ -311,7 +317,9 @@ function fix_dates() {
 		# slashes to hyphens
 		gsub(/\//, "-", $fixdate)
 		# remove timestamps
+		if (DATEFORMAT == "numbers") { $fixdate = substr($fixdate,1,4)"-"substr($fixdate,5,2)"-"substr($fixdate,7,2) }
 		sub(/ [0-9\.:]*$/, "", $fixdate)
+
 
 		arraylen = split($fixdate, splitdate,"-")
 

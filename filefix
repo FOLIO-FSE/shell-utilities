@@ -404,7 +404,7 @@ function fix_dates() {
 			print $0 > badfile
 		}
 	}
-	if (NR % 10000 == 0 ) {printf (".")}
+	if (NR % 2000 == 0 && FILENAME == "filefixaa") {printf "Records processed: %s\r", NR*5}
 }
 ENDOFAWK
 
@@ -412,13 +412,10 @@ echo -e "${awkscript}" > tmp_filefixawk
 chmod 700 tmp_filefixawk
 
 echo
-echo "Fixing nulls, quotes and dates. Examining individual cells. Please be patient. Each dot is 10,000 records"
+echo "Fixing nulls, quotes and dates. Examining individual cells. Please be patient."
 
 for splitfile in ${splitlist[@]};do 
 	fix_nullsquotesdates ${splitfile} &
-	infile=${splitfile}
-	outfile="${splitfile}_out"
-	badfile="${splitfile}_bad"
 done
 wait
 

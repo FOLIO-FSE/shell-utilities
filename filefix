@@ -401,7 +401,6 @@ for splitfile in ${splitlist[@]};do
 	infile=${splitfile}
 	outfile="${splitfile}_out"
 	badfile="${splitfile}_bad"
-	awk -v numfields=$numfields -v outfile="${outfile}" -v badfile="${badfile}" -v DATEFIELDS="${datefields}" -v DATEFORMAT="${dateformat}" -v WORDS="${words}" -f tmp_filefixawk ${infile}
 done
 wait
 

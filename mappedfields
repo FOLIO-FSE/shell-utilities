@@ -1,0 +1,1 @@
+echo;echo -e "FOLIO code\tLegacy field" && jq -r '.data[] | del(select(.legacy_field == "")) |[.folio_field, .legacy_field]|@tsv' "${1}" |sort |sed '/Not mapped/Id' |column -t

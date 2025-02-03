@@ -27,7 +27,7 @@ else
 	cutfield=$(head -1 tmp_outfile |tr '\t' '\n' |egrep -in "(^|\t)${grepfield}(\t|$)" |head -1|sed 's/"//g'| sed 's/:.*//' |tr -d '\n')
 fi
 
-awk -v REGEX="${regex}" -v FIELD=${cutfield} 'BEGIN{FS=OFS="\t";NOT = 0}{
+head -1 tmp_outfile && awk -v REGEX="${regex}" -v FIELD=${cutfield} 'BEGIN{FS=OFS="\t";NOT = 0}{
 	if (substr(REGEX, length(REGEX), 1) == "!") { NOT = 1; REGEX = substr(REGEX, 1, length(REGEX) - 1) }
 	if ($FIELD ~ REGEX && NOT == 0) {print $0}
 	if ($FIELD !~ REGEX && NOT == 1) {print $0} 

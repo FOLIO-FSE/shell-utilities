@@ -1,3 +1,4 @@
+#!/usr/bin/bash
 auth 2>/dev/null || authn 2>/dev/null
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)

@@ -1,3 +1,4 @@
+#!/usr/bin/bash
 auth 2>/dev/null || authn 2>/dev/null
 # Creates location based on contents of tab delimited file
 #

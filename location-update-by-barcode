@@ -1,3 +1,4 @@
+#!/usr/bin/bash
 auth 2>/dev/null || authn 2>/dev/null
 # updates item and holdings record location based on barcode
 

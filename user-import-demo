@@ -1,3 +1,4 @@
+#!/usr/bin/bash
 auth 2>/dev/null || authn 2>/dev/null
 ### A couple gotchas -- users won't update if they're attached to a service point
 ### or have permissions assigned (this will apply only to staff)

@@ -1,3 +1,4 @@
+#!/usr/bin/bash
 auth 2>/dev/null || authn 2>/dev/null
 # useage ./permission-add "user_uuid" "new_permission"
 

@@ -1,3 +1,4 @@
+#!/usr/bin/bash
 edge_url=$(cat okapi.url |sed 's/okapi/edge/')
 edge_key=$(cat edge.key)
 

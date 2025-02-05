@@ -1,3 +1,4 @@
+#!/usr/bin/bash
 auth 2>/dev/null || authn 2>/dev/null
 ## takes a delimited file with user barcode in first column and note in the second
 

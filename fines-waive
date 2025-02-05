@@ -1,3 +1,4 @@
+#!/usr/bin/bash
 auth 2>/dev/null || authn 2>/dev/null
 #0cf-e4aa278110b7 expects fine amounts in column 1, patron uuid in column 2
 

@@ -1,3 +1,4 @@
+#!/usr/bin/bash
 auth 2>/dev/null || authn 2>/dev/null
 # replaces UUIDs with values if file is given, otherwise looks up matching UUIDs for string
 #

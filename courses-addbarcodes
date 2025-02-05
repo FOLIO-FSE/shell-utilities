@@ -1,3 +1,4 @@
+#!/usr/bin/bash
 auth 2>/dev/null || authn 2>/dev/null
 #
 # This program expect a list of course codes which it converts to course listing UUIDs

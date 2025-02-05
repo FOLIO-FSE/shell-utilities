@@ -1,3 +1,4 @@
+#!/usr/bin/bash
 auth 2>/dev/null || authn 2>/dev/null
 # Use this to resend records through the mapping rules. It will also trigger OAI-PMH but is slower
 # than instance-refresh if all that is needed is triggering OAI

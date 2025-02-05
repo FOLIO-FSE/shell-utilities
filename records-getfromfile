@@ -1,4 +1,6 @@
+#!/usr/bin/bash
 auth 2>/dev/null || authn 2>/dev/null
+
 SECONDS=1
 TIMEROFFSET=0
 tenant=$(cat tenant)

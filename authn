@@ -1,3 +1,4 @@
+#!/usr/bin/bash
 if [[ -z $okapi_url ]] && [[ ! -f okapi.url ]];then
         echo -n "Okapi URL: "
         read -r okapi_url

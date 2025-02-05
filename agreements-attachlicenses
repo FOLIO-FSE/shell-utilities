@@ -1,3 +1,4 @@
+#!/usr/bin/bash
 auth 2>/dev/null || authn 2>/dev/null
 # Script expects a delimited file with name of agreement in first column and name of license in second colum
 

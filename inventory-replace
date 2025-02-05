@@ -1,4 +1,7 @@
+#!/usr/bin/bash
 auth 2>/dev/null || authn 2>/dev/null
+SECONDS=1
+
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
@@ -41,6 +44,13 @@ numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 while mapfile -t -n ${batchsize} folio_recs && ((${#folio_recs[@]})); do
 	counter=$(($counter + ${#folio_recs[@]}))
+
+	if [[ $SECONDS -gt 500 ]]; then
+		auth 2>/dev/null || authn 2>/dev/null
+		okapi_token=$(cat okapi.token)
+		SECONDS=1
+	fi
+
 
 	echo "${folio_recs[@]}" | jq -nc  --arg LABEL "${label}" '[inputs] | del(.[].metadata) | { ($LABEL) : . } ' > tmp_batch
 

@@ -1,3 +1,4 @@
+#!/usr/bin/bash
 auth 2>/dev/null || authn 2>/dev/null
 # Creates materialtypes based on contents of single column file named mattypes containing material types
 #

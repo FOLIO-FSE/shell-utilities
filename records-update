@@ -49,11 +49,12 @@ fixrecord() {
 #		(if .volume != null then .volume = (.volume |sub(" *Acc.*"; "")) else . end)
 #		 ((.parsedRecord.content.fields[] | select(."008" != null) |."008") = "780615s19uu    xx a                eng d")               
 #		 ((.parsedRecord.content.fields[] | select(."008" != null) |."008") = $VALUE)               
+                 (.name as $name | .accounts += [{"name": $name,"accountNo": $VALUE,"paymentMethod":"Other","accountStatus":"Active","libraryCode":"-","libraryEdiCode":"-"}] ) 
 #                (.active = true ) 
 #                (.administrativeNotes += [$VALUE] ) 
 #                (.agreementContentTypes = [{"_delete": true, "contentType": {"value": $VALUE}}] ) 
 #                (.customFields.academicStatus = $VALUE) # single dropdown or text
-                (.erpCode = $VALUE ) 
+#                (.erpCode = $VALUE ) 
 #                (.fundDistributions[0].code = "ybpbl" ) 
 #		(.fund.ledgerId = "bdc5218a-e14c-41ea-8a9f-d7c9980d8b35")
 #                 (.groupIds += [$VALUE] ) 

@@ -22,7 +22,7 @@ rm -f ${errorfile}
 if [[ ${uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then echo ${uuid} > delete;fi
 
 if [[ ! -f ${deletefile} ]];then 
-	echo "This utility expects a file containing UUIDs named \"delete\";fi
+	echo "This utility expects a file containing UUIDs named \"delete\"";fi
 	exit
 fi
 

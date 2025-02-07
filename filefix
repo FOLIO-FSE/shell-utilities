@@ -330,12 +330,12 @@ BEGIN {
 function fix_dates() {
 	for (datefield in datefields) {
 		fixdate = datefields[datefield]
+
 		# slashes to hyphens
 		gsub(/\//, "-", $fixdate)
 		# remove timestamps
 		if (DATEFORMAT == "numbers") { $fixdate = substr($fixdate,1,4)"-"substr($fixdate,5,2)"-"substr($fixdate,7,2) }
 		sub(/ [0-9\.:]*$/, "", $fixdate)
-
 
 		arraylen = split($fixdate, splitdate,"-")
 
@@ -402,13 +402,13 @@ function fix_dates() {
 				$fixdate = sprintf("%04d-%02d-%02d", splitdate[3], splitdate[2], splitdate[1]) 
 			}
 
-			if ($fixdate == "0000-00-00") { $fixdate = "" }
+			# find zero value dates
+			if ($fixdate ~ /-00/) { $fixdate = "" }
 			
 		} else {
 			if (FNR != 1) { $fixdate = "" }
 		}
 	}
-
 }
 
 {

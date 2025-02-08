@@ -1,5 +1,0 @@
-mapfile -t filelist < <( ls -1 )
-
-for f in "${filelist[@]}";do 
-	mv "${f}" "${f//[^a-zA-Z0-9\._\-]}"
-done

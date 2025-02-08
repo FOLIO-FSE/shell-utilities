@@ -1,7 +1,7 @@
 args=("$@")
 
 infile="${args[0]}"
-knownprocesses=("currency" "dateiso8" "prefix" "regexrepl" "repl")
+knownprocesses=("currency" "dateiso8" "merge" "prefix" "regexrepl" "repl")
 
 fileroot=$(echo "${infile}" | sed 's/\.....\?$//')
 fileextension=$(echo "${infile}" | sed 's/.*\(\..*\)$/\1/')
@@ -43,12 +43,13 @@ if [[ ! -f ${infile} ]];then
 	echo
 	echo "For processes that accept multiple parameters, parameters should be subdelimited by forward slashes"
 	echo "Use parentheses and double slashes for capture groups"
+	echo "Split multiple field replacements with @"
 	echo 
 	echo "e.g. fieldfix [filename] 'currency|field1' 'dateiso8|field2' ..."
 	echo "e.g. fieldfix [filename] 'prefix|field1|.b' 'dateiso8|field2'..."
 	echo "e.g. fieldfix [filename] 'repl|field1|searchexpr/replaceexpr' 'dateiso8|field2'..."
 	echo "e.g. fieldfix [filename] 'regexrepl|field1|search(capturegroup1)/\\\1' 'dateiso8|field2' ..."
-	echo "e.g. fieldfix [filename] 'merge|field2|field2/field3/field4' 'dateiso8|field2'..."
+	echo "e.g. fieldfix [filename] 'merge|field2|field2/field3/field4|delimiter' 'dateiso8|field2'..."
 	echo
 	exit
 fi
@@ -75,7 +76,7 @@ BEGIN {
 		fixtype[i] = fixcomponents[1]
 		header[i] = fixcomponents[2]
 		params[i] = fixcomponents[3]
-
+		options[i] = fixcomponents[4]
 		split(params[i], param, "/")
 		param1[i] = param[1]
 		param2[i] = param[2]
@@ -95,6 +96,25 @@ function dateiso8(bad_field) {
 	if ($bad_field == "NEVER") {
 		$bad_field = "2099-12-31"
 	}
+}
+
+function merge(bad_field) {
+	# params precalculated earlier
+	mergecompare = tolower(params[fixfield])
+	delimiter = options[fixfield]
+
+	gsub(/[^a-z0-9\/]/, "", mergecompare)
+
+	num_merge = split(mergecompare, mergeparams, "/")
+
+	for (mergeparam = 1; mergeparam <= num_merge; mergeparam++) {
+		mergeheader = mergeparams[mergeparam]
+		mergefield = firstrow[mergeheader]
+		if ($mergefield != "") {
+			$bad_field = $bad_field"delimiter"$mergefield
+		}
+	}
+	$bad_field = substr($bad_field, 1, length($badfield) - 2)
 }
 
 function prefix(bad_field) {
@@ -124,7 +144,7 @@ function repl(bad_field) {
 	
 				comparefield=tolower(header[field])
 				gsub(/[^a-z0-9]/, "", comparefield)
-	
+
 				if (compareheader == comparefield) {
 					header[field] = i
 					print $i" will be fixed"

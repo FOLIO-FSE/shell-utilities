@@ -39,17 +39,17 @@ if [[ ! -f ${infile} ]];then
 	if [[ ${#infile} -eq 0 ]];then infile="File";fi
 	echo
 	echo "${infile} not found"
-	echo "Usage: fieldfix [filename] 'process1|field1|params' 'process2|field2|params' [up to 5 fields]"
+	echo "Usage: fieldfix [filename] 'process1|field1|params|options' 'process2|field2|params'"
 	echo
-	echo "For processes that accept multiple parameters, parameters should be subdelimited by forward slashes"
-	echo "Use parentheses and double slashes for capture groups"
-	echo "Split multiple field replacements with @"
+	echo "Multiple parameters or options should be subdelimited by forward slashes"
+	echo
+	echo "Use parentheses and triple slashes for capture groups"
 	echo 
 	echo "e.g. fieldfix [filename] 'currency|field1' 'dateiso8|field2' ..."
+	echo "e.g. fieldfix [filename] 'merge|field2|field2/field3/field4|delimiter' 'dateiso8|field2'..."
 	echo "e.g. fieldfix [filename] 'prefix|field1|.b' 'dateiso8|field2'..."
 	echo "e.g. fieldfix [filename] 'repl|field1|searchexpr/replaceexpr' 'dateiso8|field2'..."
 	echo "e.g. fieldfix [filename] 'regexrepl|field1|search(capturegroup1)/\\\1' 'dateiso8|field2' ..."
-	echo "e.g. fieldfix [filename] 'merge|field2|field2/field3/field4|delimiter' 'dateiso8|field2'..."
 	echo
 	exit
 fi

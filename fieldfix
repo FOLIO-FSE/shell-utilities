@@ -43,7 +43,7 @@ if [[ ! -f ${infile} ]];then
 	echo
 	echo "Multiple parameters or options should be subdelimited by forward slashes"
 	echo
-	echo "Use parentheses and triple slashes for capture groups"
+	echo "Use parentheses and double slashes for capture groups"
 	echo 
 	echo "e.g. fieldfix [filename] 'currency|field1' 'dateiso8|field2' ..."
 	echo "e.g. fieldfix [filename] 'merge|field2|field2/field3/field4|delimiter' 'dateiso8|field2'..."

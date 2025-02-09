@@ -1,6 +1,6 @@
 # FOLIO utilities
 
-DISCLAIMERS: This collection of lightweight self-contained utilities comes without any warranty or support. Used improperly, they can do enormous damage to FOLIO systems, so don't assume any individual function is safe for your purposes -- using it safely may require procedural and/or data prerequisites that you won't be warned about.
+DISCLAIMERS: This collection of lightweight self-contained utilities comes without any warranty or support. Used improperly, they can do enormous damage to FOLIO systems, so don't assume any individual function is safe for your purposes. There may be procedural or data prerequisites you won't be warned about, and changes to FOLIO itself might make methods that previously worked problematic.
 
 Some scripts allow you to do things FOLIO is not designed to support. Please be prudent and considerate so everyone gets the best experience and the FOLIO API remains as unlimited as possible.
 
@@ -22,7 +22,7 @@ API operations are allowed based on the permissions assigned to the user. If all
 
 In general, scripts should accept logical inputs for worflows that would call for their use -- for example,*item-get* doesn't care if you supply a barcode, HRID, or UUID since these are all logical inputs. If you supply no argument, it gives you a count of the items. *uuid-lookup* doesn't care if you're trying to find codes or names based on UUID or the other way around. *oai-harvest* with no arguments assumes you're checking to see if a record that was just modified gets output via OAI, but if it sees a date or UUID as an argument, it issues an incremental harvest from the date supplied or a GetRecord directive respectively. The best way to figure out what assumptions a script makes is to just look at it -- all of them are short. Replication of function reflects how common some operations are. *records-get locations* and *locations-get* achieve the same effect but reflect how often all locations are retrieved. 
 
-It's assumed the scripts will be your path so they can simply be called, though some require modification for specifics at hand. In scripts that use threads, it is recommended that you don't increase the number of threads unless your institution has its own cluster -- the values you see were determined experimentally to be the maximum safely useable on most shared tenants and need to account for regular use. The safe level may change as more libraries use the API themselves.
+It's assumed the scripts will be your path so they can simply be called, though some require modification for specifics at hand. In scripts that use threads, it is recommended that you don't increase the number of threads unless your institution has its own cluster -- the values you see were determined experimentally to be the maximum safely useable on most shared tenants and need to account for regular use. The safe level may change in different environments and as FOLIO evolves.
 
 
 

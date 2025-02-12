@@ -200,6 +200,7 @@ sed -i '
 1 s/\bbarcode[^\t]*i[^\t]*\b/item_barcode/i
 1 s/\bout[^\t]*date\b/out_date/i
 1 s/\bcharge[^\t]*date\b/out_date/i
+1 s/\bcheckoutdate\b/out_date/i
 1 s/\bdatecheckedout\b/out_date/i
 1 s/\bdue[^\t]*date\b/due_date/i
 1 s/\bcurrent[^\t]*due[^\t]*date\b/due_date/i
@@ -254,7 +255,6 @@ if [[ ${#cutfields} -gt 0 ]];then
 		cat tmp_datecheck |grep -o "\b[0-9][/\-][23][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null &&  dateformat="us-single"
 		cat tmp_datecheck |grep -o "\b[23][0-9][/\-][0-9][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null && dateformat="uk"
 		cat tmp_datecheck |grep -o "\b[23][0-9][/\-][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null && dateformat="uk-single"
-		cat tmp_datecheck |grep -o "\b[0-2][0-9][/\-][23][0-9][/\-][12][0-9]\b" > /dev/null && dateformat="ydm-single"
 		cat tmp_datecheck |grep -o "\b[12][01239][0-9][0-9]\/[0-9][0-9]\/[0-9][0-9]\b" > /dev/null && dateformat="slashes"
 		cat tmp_datecheck |grep -o "\b[12][01239][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*\b" > /dev/null && dateformat="numbers"
 	fi
@@ -263,7 +263,6 @@ if [[ ${#cutfields} -gt 0 ]];then
 	if [[ ${dateformat} == "uk-single" ]];then echo "UK dates with single digits detected. D-M-YYYY dates will be converted to YYYY-MM-DD";fi
 	if [[ ${dateformat} == "us" ]];then echo "US dates detected. MM-DD-YYYY dates will be converted to YYYY-MM-DD";fi
 	if [[ ${dateformat} == "us-single" ]];then echo "US dates with single digits detected. M-D-YYYY dates will be converted to YYYY-MM-DD";fi
-	if [[ ${dateformat} == "ydm-single" ]];then echo "YDM dates with single digits detected. YYYY-DD-MM dates will be converted to YYYY-MM-DD";fi
 	if [[ ${dateformat} == "numbers" ]];then echo "Numeric string detected -- will be converted to YYYY-MM-DD";fi
 
 	rm tmp_datecheck
@@ -393,12 +392,6 @@ function fix_dates() {
 					if (splitdate[3] < 30) { splitdate[3] = "20"splitdate[3] } else { splitdate[3] = "19"splitdate[3] }
 				}
 				$fixdate = sprintf("%04d-%02d-%02d", splitdate[3], splitdate[1], splitdate[2]) 
-			}
-			if (DATEFORMAT == "ydm-single") { 
-				if (length(splitdate[3]) == 2) {
-					if (splitdate[1] < 30) { splitdate[1] = "20"splitdate[1] } else { splitdate[1] = "19"splitdate[1] }
-				}
-				$fixdate = sprintf("%04d-%02d-%02d", splitdate[1], splitdate[3], splitdate[2]) 
 			}
 
 			if (DATEFORMAT == "6digit-leading") { 

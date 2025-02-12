@@ -66,15 +66,21 @@ BEGIN{FS=OFS="\t";counter = 0;badrecs = 0;datesep = "-" }
 		gsub("/", "-", $out_date)
 		gsub("\"", "", $due_date)
 		gsub("/", "-", $due_date)
-		gsub("\"", "", $renewal_count)
+
+		if (renewal_count > 0) {
+			gsub("[^0-9]", "", $renewal_count)
+			renewal_value = $renewal_count
+		} else {
+			renewal_value = 0
+		}
 	
 		gsub(/"/, "", $0)
 	
 		counter++
 		$out_date = fixdate($out_date) # 
 		$due_date = fixdate($due_date) # 
-		
-		print $item_barcode, $patron_barcode, $out_date, $due_date, $renewal_count, "Checked out" >> "open_loans.tsv" 
+
+		print $item_barcode, $patron_barcode, $out_date, $due_date, renewal_value, "Checked out" >> "open_loans.tsv" 
 	
 		if (counter % 100 == 0) {
 			printf "%s records\r", counter

@@ -8,18 +8,6 @@
 
 # Be sure to change separator for date (usually dash or slash) 
 
-function fixdate(value)
-{
-	gsub(/ .*/, "", value)
-	
-	if (value ~ /^[0-9]*-[0-9]*-[0-9]*$/) {
-		split(value, datearr, datesep)
-		retval = sprintf("%04d-%02d-%02d", datearr[3], datearr[1], datearr[2])
-	} else {retval = ""}
-
-	return retval
-
-}
 
 BEGIN{FS=OFS="\t";counter = 0;badrecs = 0;datesep = "-" }
 
@@ -77,8 +65,6 @@ BEGIN{FS=OFS="\t";counter = 0;badrecs = 0;datesep = "-" }
 		gsub(/"/, "", $0)
 	
 		counter++
-		$out_date = fixdate($out_date) # 
-		$due_date = fixdate($due_date) # 
 
 		print $item_barcode, $patron_barcode, $out_date, $due_date, renewal_value, "Checked out" >> "open_loans.tsv" 
 	

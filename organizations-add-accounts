@@ -1,0 +1,59 @@
+#!/usr/bin/bash
+auth 2>/dev/null || authn 2>/dev/null
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+SECONDS=0
+
+counter=1
+
+infile="org_account.tsv"
+dos2unix infile
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+
+while IFS=$'\n' read -r line;do
+	line=$(echo "${line}" |tr "\t" "^" | tr -d '"')
+	IFS='^' read -r org_code account_num account_name <<< ${line}
+
+	goodrecord=0
+
+	# makes sure first and last name are populated
+	if [[ ${account_num} !=  "" ]] ;then goodrecord=1;fi
+	if [[ -z ${account_name} ]] ;then account_name=${org_code};fi
+
+
+	if [[ $goodrecord == "0" ]];then 
+		echo "No account number found for ${code}"
+		continue
+	fi
+
+	account="$(jq --arg NAME "${account_name}" --arg NUMBER "${account_num}" '{"name": $NAME, "accountNo": $NUMBER, "payment": "Other", "accountStatus": "Active", "libraryCode": "-", "libraryEdiCode": "-",}'
+
+	organization=$(curl -G -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" --data-urlencode "query=code==${code}" "${okapi_url}/organizations/organizations" |jq '.organizations[] | del(.metadata)')
+
+	updated_organization=$(jq -c --argjson ACCOUNT "${account}"".accounts += [\"${account}\"]" <<< ${organization})
+	org_uuid=$(jq -r .id <<< ${updated_organization})
+
+	if [[ ! ${org_uuid} =~ [a-f] ]];then
+		echo "No organization found for ${code}"
+		goodrecord=0
+	fi
+
+	if [[ ${goodrecord} -eq 1 ]];then
+		curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_organization}" "${okapi_url}/organizations-storage/organizations/${org_uuid}"
+	fi
+
+	echo "Processing $code -- record $counter of $numrecs"
+
+        if [[ $SECONDS -gt 500 ]]; then
+                auth 2>/dev/null || authn 2>/dev/null
+                okapi_token=$(cat okapi.token)
+                SECONDS=1
+        fi
+
+
+	counter=$((counter + 1))
+done < ${infile}
+

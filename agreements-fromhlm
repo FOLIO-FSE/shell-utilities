@@ -4,14 +4,25 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
+SECONDS=1
+counter=0
+
 rm -f agreement.log
-rm -f packages.log
 
 infile="agreements.tsv"
 
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
 
 while IFS=$'\t' read -r name package_id vendor_id;do 
-	echo "Processing ${name}"
+	if [[ $SECONDS -gt 500 ]]; then
+		auth 2>/dev/null || authn 2>/dev/null
+		okapi_token=$(cat okapi.token)
+		SECONDS=1
+	fi
+
+	counter=$(($counter + 1))
+	echo "Processing ${name} -- record $counter of $numrecs"
 	keyname=$(tr -dc [a-z0-9] <<< ${name,,})
 	package_id="${vendor_id}-${package_id}"
 
@@ -26,13 +37,9 @@ while IFS=$'\t' read -r name package_id vendor_id;do
 	agreement_uuid=$(jq -r .id <<< ${apicall})
 
 	echo "${apicall}" >> agreement.log
-	echo "${apicall}"
-	echo "Creating agreement line"
 	agreement_line=$(jq -n --arg PACKAGE ${package_id} --arg AGREEMENT ${agreement_uuid} '{"type":"external","authority":"ekb-package","reference":$PACKAGE,"owner":$AGREEMENT}')
-	echo "${agreement_line}"
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement_line}" "${okapi_url}/erm/entitlements")
-	echo "${apicall}"
-	echo "${apicall}" >> packages.log
+	echo "${apicall}" >> agreement.log
 	counter=$((counter + 1))
 done < ${infile}
 

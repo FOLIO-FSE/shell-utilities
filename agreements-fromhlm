@@ -40,7 +40,6 @@ while IFS=$'\t' read -r name package_id vendor_id;do
 	agreement_line=$(jq -n --arg PACKAGE ${package_id} --arg AGREEMENT ${agreement_uuid} '{"type":"external","authority":"ekb-package","reference":$PACKAGE,"owner":$AGREEMENT}')
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement_line}" "${okapi_url}/erm/entitlements")
 	echo "${apicall}" >> agreement.log
-	counter=$((counter + 1))
 done < ${infile}
 
 

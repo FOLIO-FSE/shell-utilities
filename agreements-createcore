@@ -11,12 +11,13 @@ infile="agreements.tsv"
 
 echo "Automatically link to packages in HLM with same name as agreement? (y/n)"
 read answer
+answer=${answer:0:1}
 
-if [[ ${answer,,} == "y" ]];then 
+if [[ ${answer,,} == "y" ]] ;then 
 	hlm="yes"
 	echo "Retrieving packages for HLM comparison"
 	records-get packages
-	all_packages="$(<packages.json)"
+	all_packages="$(sort -u packages.json)"
 fi
 
 create_agreement() {
@@ -28,7 +29,7 @@ IFS='' read -r -d '' agreement << EndOfAgreement
       "startDate": "${start_date}"
     }
   ],
-  "name": ${name},
+  "name": "${name}",
   "agreementStatus": "active",
   "orgs": [],
   "alternateNames": [],
@@ -88,7 +89,7 @@ while IFS=$'\n' read -r line;do
 	if [[ ${renewalPriority} =~ [a-zA-Z] ]];then agreement=$(echo "${agreement}" | jq ".renewalPriority = { \"value\": \"${renewalPriority}\" } ");fi
 	if [[ ${altname,,} =~ [0-9a-z]  ]]; then altname=$(echo ${altname} |jq -aRs .);agreement=$(echo "${agreement}" | jq ".alternateNames += [{ \"_delete\" : false, \"name\" : ${altname} }]");fi
 	if [[ ${end_date} =~ [12][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] ]];then agreement=$(echo "${agreement}" | jq ".periods += [{ \"endDate\": \"${end_date}\", \"periodStatus\": \"current\" }]");fi
-	
+echo "${agreement}"	
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement}" "${okapi_url}/erm/sas")
 	agreement_uuid=$(jq -r .id <<< ${apicall})
 
@@ -98,10 +99,10 @@ echo "${apicall}" >> agreement.log
 	
 	if [[ $hlm == "yes" ]];then
 		package_id=$(jq -r --arg NAME "${matchname}" 'select(.attributes.name == $NAME) |.id' <<< "${all_packages}")
-
 		if [[ ${#package_id} -gt 1 ]];then
 			echo "Creating agreement line"
 			agreement_line=$(create_agreementline)
+			echo "${agreement_line}"
 			apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement_line}" "${okapi_url}/erm/entitlements")
 			echo "${apicall}"
 			echo "${apicall}" >> packages.log

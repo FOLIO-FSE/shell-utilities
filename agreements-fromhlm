@@ -1,0 +1,39 @@
+#!/usr/bin/bash
+auth 2>/dev/null || authn 2>/dev/null
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+rm -f agreement.log
+rm -f packages.log
+
+infile="agreements.tsv"
+
+
+while IFS=$'\t' read -r name package_id vendor_id;do 
+	echo "Processing ${name}"
+	keyname=$(tr -dc [a-z0-9] <<< ${name,,})
+	package_id="${vendor_id}-${package_id}"
+
+	# agreement uuid -- needs to be global
+        namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
+        uuid=$(uuid -v 5  ${namespace} ${okapi_url}:agreements:${keyname})
+
+	start_date=$(date -I)
+	agreement=$(jq -n --arg START ${start_date} --arg NAME "${name}" --arg UUID ${uuid} '{"periods":[{"startDate":$START}],"name":$NAME,"agreementStatus":"active","orgs":[],"alternateNames":[],"outwardRelationships":[],"inwardRelationships":[],"linkedLicenses":[],"id":$UUID}')
+
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement}" "${okapi_url}/erm/sas")
+	agreement_uuid=$(jq -r .id <<< ${apicall})
+
+	echo "${apicall}" >> agreement.log
+	echo "${apicall}"
+	echo "Creating agreement line"
+	agreement_line=$(jq -n --arg PACKAGE ${package_id} --arg AGREEMENT ${agreement_uuid} '{"type":"external","authority":"ekb-package","reference":$PACKAGE,"owner":$AGREEMENT}')
+	echo "${agreement_line}"
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${agreement_line}" "${okapi_url}/erm/entitlements")
+	echo "${apicall}"
+	echo "${apicall}" >> packages.log
+	counter=$((counter + 1))
+done < ${infile}
+
+

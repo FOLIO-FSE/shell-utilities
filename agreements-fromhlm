@@ -7,6 +7,30 @@ okapi_token=$(cat okapi.token)
 SECONDS=1
 counter=0
 
+echo
+echo "##########################################################"
+echo "This program expects to work with an Excel export from HLM"
+echo "containing PackageName, PackageID, and VendorID columns."
+echo "##########################################################"
+echo
+
+cp "${1}" tmp_hlm.xlsx
+filefix tmp_hlm.xlsx
+rm tmp_hlm.xlsx
+mv tmp_hlm.xlsx_fixed.tsv tmp_hlm.tsv
+
+header=$(head -1 tmp_hlm.tsv | tr '\t' '\n' |grep -n .)
+
+PackageName=$(echo "${header}" |grep -i PackageName |sed 's/:.*//')
+PackageID=$(echo "${header}" |grep -i PackageID |sed 's/:.*//')
+VendorID=$(echo "${header}" |grep -i VendorID |sed 's/:.*//')
+
+if [[ -z $PackageName ]];then echo "PackageName header not detected";exit;fi
+if [[ -z $PackageID ]];then echo "PackageID header not detected";exit;fi
+if [[ -z $VendorID ]];then echo "VendorID header not detected";exit;fi
+
+cut -f${PackageName},${PackageID},${VendorID} tmp_hlm.tsv |tail -n +3 > agreements.tsv
+
 rm -f agreement.log
 
 infile="agreements.tsv"

@@ -37,16 +37,8 @@ if [[ ${use_deterministic_uuids} == "yes" ]];then
 	eval "$(echo ${all_organizations} |jq -r '. | @sh "organization_dict[\(.id|tostring)]=\(.|tostring)"')"
 else
 # load organizations into scalar array keyed by downcased name
-	eval "$(echo ${all_organizations} |jq -r '. | @sh "organization_dict[\(.code|tostring|ascii_downcase)]=\(.|tostring)"')"
+eval "$(echo ${all_organizations} |jq -r '. | @sh "organization_dict[\(.code|tostring|ascii_downcase|gsub("[^0-9a-z]"; ""))]=\(.|tostring)"')"
 	
-	echo "Normalizing Organization keys"
-	
-	# normalize keys
-	for key in "${!organization_dict[@]}";do
-	        newkey=${key//[^a-z0-9]/}
-	        organization_dict[${newkey}]=${organization_dict["${key}"]}
-	done
-
 fi
 }
 
@@ -60,8 +52,6 @@ while IFS=$'\n' read line;do
 	line=$(echo "${line}" | tr -d '"' | tr "\t" "^")
 	IFS='^' read -r code alias <<< ${line}
 
-	alias=$(echo -n "${alias}" |jq -aRs)
-
 	if [[ ${use_deterministic_uuids} == "yes" ]];then 
 		uuid=$(uuid -v 5  8405ae4d-b315-42e1-918a-d1919900cf3f "${okapi_url}:organizations:${code}")
 		organization="${organization_dict[$uuid]}"
@@ -71,7 +61,8 @@ while IFS=$'\n' read line;do
 		uuid=$(echo ${organization} |jq -r .id)
 	fi
 
-	updated_org=$(echo ${organization} | jq ".aliases += [ {\"value\": ${alias} }]")
+	updated_org=$(echo ${organization} | jq --arg ALIAS "${alias}" '.aliases += [ {"value": $ALIAS }]')
+	organization_dict[$code]="${updated_org}"
 
 	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_org}" ${okapi_url}/organizations-storage/organizations/${uuid})
 

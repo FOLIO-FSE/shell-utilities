@@ -14,6 +14,8 @@ echo "containing PackageName, PackageID, and VendorID columns."
 echo "##########################################################"
 echo
 
+if [[ ! "${1}" =~ xlsx ]];then echo "File does not appear to be an excel file";echo;exit;fi
+
 cp "${1}" tmp_hlm.xlsx
 filefix tmp_hlm.xlsx
 rm tmp_hlm.xlsx

@@ -1,7 +1,7 @@
 args=("$@")
 
 infile="${args[0]}"
-knownprocesses=("currency" "dateiso8" "merge" "prefix" "regexrepl" "repl")
+knownprocesses=("currency" "dateiso8" "merge" "prefix" "regexrepl" "repl" "suffix")
 
 fileroot=$(echo "${infile}" | sed 's/\.....\?$//')
 fileextension=$(echo "${infile}" | sed 's/.*\(\..*\)$/\1/')
@@ -127,6 +127,10 @@ function regexrepl(bad_field) {
 
 function repl(bad_field) {
 	sub(param1[fixfield], param2[fixfield], $bad_field)
+}
+
+function suffix(bad_field) {
+	$bad_field = $bad_field""param1[fixfield]
 }
 
 {

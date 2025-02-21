@@ -15,7 +15,7 @@ numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 while IFS=$'\n' read -r line;do
 	line=$(echo "${line}" |tr "\t" "^" | tr -d '"')
-	IFS='^' read -r org_code account_num account_name <<< ${line}
+	IFS='^' read -r org_code account_name account_num accounting_code <<< ${line}
 
 	goodrecord=0
 
@@ -29,7 +29,7 @@ while IFS=$'\n' read -r line;do
 		continue
 	fi
 
-	account="$(jq --arg NAME "${account_name}" --arg NUMBER "${account_num}" '{"name": $NAME, "accountNo": $NUMBER, "payment": "Other", "accountStatus": "Active", "libraryCode": "-", "libraryEdiCode": "-",}'
+	account="$(jq --arg NAME "${account_name}" --arg ACCOUNT_NUMBER "${account_num}" --arg ACCOUNT_CODE "${account_code}" '{"name": $NAME, "accountNo": $ACCOUNT_NUMBER, "payment": "Other", "accountStatus": "Active", "libraryCode": "-", "appSystemNo": $ACCOUNT_CODE, "libraryEdiCode": "-",}'
 
 	organization=$(curl -G -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" --data-urlencode "query=code==${code}" "${okapi_url}/organizations/organizations" |jq '.organizations[] | del(.metadata)')
 

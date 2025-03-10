@@ -111,7 +111,7 @@ function merge(bad_field) {
 		mergeheader = mergeparams[mergeparam]
 		mergefield = firstrow[mergeheader]
 		if ($mergefield != "") {
-			$bad_field = $bad_field"delimiter"$mergefield
+			$bad_field = $bad_field""delimiter""$mergefield
 		}
 	}
 	$bad_field = substr($bad_field, 1, length($badfield) - 2)

@@ -1,0 +1,42 @@
+#!/usr/bin/bash
+auth 2>/dev/null || authn 2>/dev/null
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+infile="fund-group.tsv"
+SECONDS=0
+COUNTER=0
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+declare -A group
+
+echo "Retrieving groups"
+
+eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/finance/groups?query=cql.allRecords=1&limit=1000" |jq -r '.groups[] | @sh "group[\(.name|tostring|ascii_downcase |gsub("[^0-9a-z]"; ""))]=\(.id|tostring)"')"
+
+while IFS=$'\t' read -r fundcode fundgroup; do
+	COUNTER=$(($COUNTER + 1))
+	echo "Processing ${fundcode} -- record $COUNTER of $numrecs"
+
+	if [[ $SECONDS -gt 500 ]]; then
+		auth 2>/dev/null || authn 2>/dev/null
+		okapi_token=$(cat okapi.token)
+		SECONDS=1
+	fi
+
+	fund=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/finance/funds?query=code==${fundcode}" |jq '.funds[0]|del(.metadata)|{ "fund": . }')
+	fundId=$(jq -r '.fund.id' <<< "${fund}")
+
+	fundgroup=$(echo "${fundgroup}" |tr [A-Z] [a-z] |tr -dc [0-9a-z])
+	groupId=${group[${fundgroup}]}
+
+	if [[ ${groupId} =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]];then
+		fund=$(jq --arg GROUP ${groupId} '.groupIds += [ $GROUP ] ' <<< "${fund}")
+	fi
+
+	curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${fund}" "${okapi_url}/finance/funds/${fundId}"
+
+
+done < "${infile}"

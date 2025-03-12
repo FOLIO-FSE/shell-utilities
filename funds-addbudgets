@@ -1,0 +1,47 @@
+#!/usr/bin/bash
+auth 2>/dev/null || authn 2>/dev/null
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+infile="fund-budget.tsv"
+SECONDS=0
+COUNTER=0
+
+fiscalYear="FY2025"
+ledger="CUL-HSL"
+
+originalFY="${fiscalYear}"
+
+# use codes, not names
+fiscalYear=$(echo "${fiscalYear}" |tr '[A-Z]' '[a-z]' |tr -dc '[0-9a-z]')
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+declare -A fiscalYear_arr
+
+eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/finance/fiscal-years?query=cql.allRecords=1%20sortby%20value&limit=100" |jq -r '.fiscalYears[] | @sh "fiscalYear_arr[\(.code|tostring|ascii_downcase |gsub("[^0-9a-z]"; ""))]=\(.id|tostring)"')"
+
+while IFS=$'\t' read -r fundcode allocation; do
+	COUNTER=$(($COUNTER + 1))
+	echo "Processing ${fundcode} -- record $COUNTER of $numrecs"
+
+	fiscalYearId=${fiscalYear_arr[$fiscalYear]}
+	allocation=$(echo ${allocation} |tr -dc '[0-9\.]')
+
+	if [[ $SECONDS -gt 500 ]]; then
+		auth 2>/dev/null || authn 2>/dev/null
+		okapi_token=$(cat okapi.token)
+		SECONDS=1
+	fi
+
+	fund=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/finance/funds?query=code==${fundcode}" |jq '.funds[0]|del(.metadata)')
+	funduuid=$(jq -r '.id' <<< "${fund}")
+
+	budgetuuid=$(uuidgen)
+
+	budgetdata="{\"fiscalYearId\":\"${fiscalYearId}\",\"budgetStatus\":\"Active\",\"allowableExpenditure\":100,\"allowableEncumbrance\":100,\"allocated\":\"${allocation}\",\"fundId\":\"${funduuid}\",\"name\":\"${fundcode}-${originalFY}\",\"id\":\"${budgetuuid}\"}"
+
+	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${budgetdata}" "${okapi_url}/finance/budgets"
+
+done < "${infile}"

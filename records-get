@@ -324,7 +324,11 @@ fi
 
 if [[ -z $jqexpr ]];then jqexpr="jq -c \".${rec_type}[] | del(.metadata)\"";fi
 
-num_records=$(curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&${limitOrPerPage}=${num_retrieved}" |jq -r .${totalRecords})
+if [[ $limitOrPerPage == "limit" ]];then
+	num_records=$(curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&${limitOrPerPage}=0" |jq -r .${totalRecords})
+else
+	num_records=$(curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&${limitOrPerPage}=${num_retrieved}" |jq -r .${totalRecords})
+fi
 
 for (( offset=0; offset<=$num_records; ));do
 	if [[ $SECONDS -gt 500 ]]; then

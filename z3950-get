@@ -1,0 +1,10 @@
+#!/usr/bin/bash
+uuid=$(echo ${1} |tr "." "-" |tr -dc [^a-f0-9\-])
+
+domain=$(cat okapi.url | sed 's/.*okapi-\([^\.]*\).*/\1/')
+
+curl -s -X GET "https://z3950.folio.ebsco.com/${domain}?version=1.1&operation=searchRetrieve&query=id=${uuid}&maximumRecords=1&recordSchema=opac" |xmlstarlet fo
+
+echo "https://z3950.folio.ebsco.com/${domain}?version=1.1&operation=searchRetrieve&query=id=${uuid}&maximumRecords=1&recordSchema=opac"
+
+

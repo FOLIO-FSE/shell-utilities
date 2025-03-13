@@ -4,6 +4,8 @@ records-get mattypes
 records-get loantypes
 records-get holdingstypes
 
+echo
+echo "Retrieving reference data"
 jq -r '[.id, .code]|@tsv' locations.json > location.tsv
 jq -r '[.id, .name]|@tsv' mattypes.json > mattype.tsv
 jq -r '[.id, .name]|@tsv' loantypes.json > loantype.tsv
@@ -15,7 +17,11 @@ echo -e "id\thrid\tholdingtype\tinstanceId\tlocation\tcallNumber\tpublic_notes\t
 echo -e "id\thrid\tholdingsId\tlocation\tmattype\tloantype\tbarcode\tstatus\tcallNumber\tcheckin_notes\tcheckout_notes\tpublic_notes\tstaff_notes\tadministrativeNotes" > items.tsv
 
 echo
-echo "Extracting holdings records. Please be patient"
+echo "Extracting instance Ids for use with data export."
+pv inventory.json |jq -r .instanceId > instanceIds.csv
+
+echo
+echo "Extracting holdings records."
 
 delim=$'\t'
 subdelim='; '
@@ -43,7 +49,7 @@ pv inventory.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	' >> holdings.tsv 
 
 echo
-echo "Extracting item records. Please be patient"
+echo "Extracting item records."
 pv inventory.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	if (.items != null) then
 		.items[]
@@ -81,5 +87,13 @@ rm mattype.tsv
 rm loantype.tsv
 rm holdingtype.tsv
 
-echo "Holdings are in holdings.tsv and items are in items.tsv"
+echo "Instance IDs are exported to instanceIds.csv"
+numrecs=$(wc -l instanceIds.csv |cut -d " " -f1)
+
+if [[ $numrecs -gt 500000 ]];then 
+	echo "Large instance file with $numrecs records detected"
+	echo "Splitting into smaller files is recommended"
+fi
+echo "Holdings records have been exported to holdings.tsv"
+echo "Item records have been exported to items.tsv"
 echo

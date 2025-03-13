@@ -1,0 +1,85 @@
+records-get inventory
+records-get locations
+records-get mattypes 
+records-get loantypes
+records-get holdingstypes
+
+jq -r '[.id, .code]|@tsv' locations.json > location.tsv
+jq -r '[.id, .name]|@tsv' mattypes.json > mattype.tsv
+jq -r '[.id, .name]|@tsv' loantypes.json > loantype.tsv
+jq -r '[.id, .name]|@tsv' holdingstypes.json > holdingtype.tsv
+
+
+echo -e "id\thrid\tholdingtype\tinstanceId\tlocation\tcallNumber\tpublic_notes\tstaff_notes\tadministrativeNotes\tholdingsStatements\tholdingsStatementsForIndexes\tholdingsStatementsForSupplements\tdiscoverySuppress" > holdings.tsv
+
+echo -e "id\thrid\tholdingtype\tlocation\tmattype\tloantype\tbarcode\tstatus\tcallNumber\tcheckin_notes\tcheckout_notes\tpublic_notes\tstaff_notes\tadministrativeNotes" > items.tsv
+
+echo
+echo "Extracting holdings records. Please be patient"
+
+delim=$'\t'
+subdelim='; '
+
+pv inventory.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
+	if (.holdingsRecords != null) then
+		.holdingsRecords[]
+		else empty
+		end |
+	[
+	"\(.id)" // "",
+	"\(.hrid)" // "",
+	"\(.holdingsTypeId)" // "",
+	"\(.instanceId)" // "",
+	"\(.effectiveLocationId)" // "",
+	"\(.callNumber)" // "",
+	"\([ .holdingsStatements[] |select(.statement!=null) | .statement ] |join($subdelim))" // "",
+	"\([ .holdingsStatementsForIndexes[] |select(.statement!=null) | .statement ] |join($subdelim))" // "",
+	"\([ .holdingsStatementsForSupplements[] |select(.statement!=null) | .statement ] |join($subdelim))" // "",
+	"\([ .notes[] |select(.staffOnly==false) | .note ] |join($subdelim))" // "",
+	"\([ .notes[] |select(.staffOnly==true) | .note ] |join($subdelim))" // "",
+	"\( .administrativeNotes |join($subdelim))" // "",
+	"\(.discoverySuppress)" // false
+	] |join($delim)
+	' >> holdings.tsv 
+
+echo
+echo "Extracting item records. Please be patient"
+pv inventory.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
+	if (.items != null) then
+		.items[]
+		else empty
+		end |
+	[
+	"\(.id)" // "",
+	"\(.hrid)" // "",
+	"\(.holdingsRecordId)" // "",
+	"\(.effectiveLocationId)" // "",
+	"\(.materialTypeId)" // "",
+	"\(.permanentLoanTypeId)" // "",
+	"\(.barcode)" // "",
+	"\(.status.name)" // "",
+	"\(.effectiveCallNumberComponents.callNumber)" // "",
+	"\([ .circulationNotes[] |select(.noteType=="Check in") | .note ] |join($subdelim))" // "",
+	"\([ .circulationNotes[] |select(.noteType=="Check out") | .note ] |join($subdelim))" // "",
+	"\([ .notes[] |select(.staffOnly==false) | .note ] |join($subdelim))" // "",
+	"\([ .notes[] |select(.staffOnly==true) | .note ] |join($subdelim))" // "",
+	"\( .administrativeNotes |join($subdelim))" // "",
+	"\(.discoverySuppress)" // false
+	] |join($delim)
+	' >> items.tsv 
+echo
+echo "Converting UUIDs to human readable values"
+echo
+value-mapper holdings.tsv
+value-mapper items.tsv
+
+mv items_fixed.tsv items.tsv
+mv holdings_fixed.tsv holdings.tsv
+
+rm location.tsv
+rm mattype.tsv
+rm loantype.tsv
+rm holdingtype.tsv
+
+echo "Holdings are in holdings.tsv and items are in items.tsv"
+echo

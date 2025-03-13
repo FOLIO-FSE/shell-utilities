@@ -12,7 +12,7 @@ jq -r '[.id, .name]|@tsv' holdingstypes.json > holdingtype.tsv
 
 echo -e "id\thrid\tholdingtype\tinstanceId\tlocation\tcallNumber\tpublic_notes\tstaff_notes\tadministrativeNotes\tholdingsStatements\tholdingsStatementsForIndexes\tholdingsStatementsForSupplements\tdiscoverySuppress" > holdings.tsv
 
-echo -e "id\thrid\tholdingtype\tlocation\tmattype\tloantype\tbarcode\tstatus\tcallNumber\tcheckin_notes\tcheckout_notes\tpublic_notes\tstaff_notes\tadministrativeNotes" > items.tsv
+echo -e "id\thrid\tholdingsId\tlocation\tmattype\tloantype\tbarcode\tstatus\tcallNumber\tcheckin_notes\tcheckout_notes\tpublic_notes\tstaff_notes\tadministrativeNotes" > items.tsv
 
 echo
 echo "Extracting holdings records. Please be patient"

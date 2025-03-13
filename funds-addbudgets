@@ -8,7 +8,7 @@ infile="fund-budget.tsv"
 SECONDS=0
 COUNTER=0
 
-fiscalYear="FY2025"
+fiscalYear="FYA2025"
 ledger="CUL-HSL"
 
 originalFY="${fiscalYear}"
@@ -38,9 +38,11 @@ while IFS=$'\t' read -r fundcode allocation; do
 	fund=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/finance/funds?query=code==${fundcode}" |jq '.funds[0]|del(.metadata)')
 	funduuid=$(jq -r '.id' <<< "${fund}")
 
-	budgetuuid=$(uuidgen)
+	budgetname="${fundcode}-${originalFY}"
 
-	budgetdata="{\"fiscalYearId\":\"${fiscalYearId}\",\"budgetStatus\":\"Active\",\"allowableExpenditure\":100,\"allowableEncumbrance\":100,\"allocated\":\"${allocation}\",\"fundId\":\"${funduuid}\",\"name\":\"${fundcode}-${originalFY}\",\"id\":\"${budgetuuid}\"}"
+	budgetuuid=$(uuid -v 5  8405ae4d-b315-42e1-918a-d1919900cf3f ${okapi_url}:budgets:${budgetname})
+
+	budgetdata="{\"fiscalYearId\":\"${fiscalYearId}\",\"budgetStatus\":\"Active\",\"allowableExpenditure\":100,\"allowableEncumbrance\":100,\"allocated\":\"${allocation}\",\"fundId\":\"${funduuid}\",\"name\":\"${budgetname}\",\"id\":\"${budgetuuid}\"}"
 
 	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${budgetdata}" "${okapi_url}/finance/budgets"
 

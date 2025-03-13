@@ -120,7 +120,7 @@ for (( i=0 ; i <= ${#column_headers[@]} - 1; i++)); do
 
 		done < "tmpcols/col_${columncounter}"
 
-		echo -e "      Mapped entries: ${mappedvals}"
+		echo -e "      Mapped entries: ${mappedvals}                   "
 		echo -e "      Unmapped entries: ${unmappedvals}\n"
 		echo -e  "${finalcol}" > "tmpcols/col_${columncounter}"
 	

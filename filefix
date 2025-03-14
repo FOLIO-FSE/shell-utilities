@@ -225,7 +225,7 @@ echo "The following fields were detected in ${infile}"
 echo "${fieldnames}" |tr "\t" "\n" |grep -n . |column 
 echo
 echo "The following date containing fields were detected in ${infile}"
-echo "${fieldnames}" |tr "\t" "\n" |grep -ni date |sed '/[Yy][Ee][Aa][Rr]\|[Mm][Oo][Nn][Tt][Hh]\|[Dd][Aa][Yy]\|[Nn][Oo][Tt][Ee]/d'
+echo "${fieldnames}" |tr "\t" "\n" |grep -ni "[^p]date" |sed '/[Yy][Ee][Aa][Rr]\|[Mm][Oo][Nn][Tt][Hh]\|[Dd][Aa][Yy]\|[Nn][Oo][Tt][Ee]/d'
 echo
 
 datefields=$(echo "${fieldnames}" |tr "\t" "\n" |grep -ni date |tr [A-Z] [a-z] | sed '/year\|month\|day\|note/d; s/:.*//' |tr '\n' ' ')

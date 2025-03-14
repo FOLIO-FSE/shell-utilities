@@ -7,7 +7,15 @@ okapi_token=$(cat okapi.token)
 
 agreement_uuid=$(tr -dc [0-9a-f\-] <<< $1)
 
-apicall=$(curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/sas/${agreement_uuid}")
+if [[ ${agreement_uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+	entitlement_uuid=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/entitlements?filters=owner==${agreement_uuid}" |jq -r '.[0]?.id')
 
-echo $apicall
+	if [[ ${entitlement_uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+		payload="{\"id\":\"${agreement_uuid}\",\"items\":[{\"id\":\"${entitlement_uuid}\",\"_delete\":true}]}"
+		curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${payload}" "${okapi_url}/erm/sas/${agreement_uuid}"
+	fi
+fi
+
+curl -s -w '\n' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/erm/sas/${agreement_uuid}"
+
 

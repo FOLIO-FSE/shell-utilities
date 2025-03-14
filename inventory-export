@@ -1,8 +1,15 @@
-records-get inventory
+echo "Retrieving holdings and items"
+records-get holdings
+records-get items
 records-get locations
 records-get mattypes 
 records-get loantypes
 records-get holdingstypes
+
+echo "Extracting instance ids from holdings"
+pv holdings.json |jq -r .instanceId |sort -u > instanceIds.csv
+
+echo "Instance ids have been copied to instanceIds.csv. Upload these to the default Data Export instance profile to extract MARC records"
 
 echo
 echo "Retrieving reference data"
@@ -26,11 +33,7 @@ echo "Extracting holdings records."
 delim=$'\t'
 subdelim='; '
 
-pv inventory.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
-	if (.holdingsRecords != null) then
-		.holdingsRecords[]
-		else empty
-		end |
+pv holdings.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	[
 	"\(.id)" // "",
 	"\(.hrid)" // "",
@@ -50,11 +53,7 @@ pv inventory.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 
 echo
 echo "Extracting item records."
-pv inventory.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
-	if (.items != null) then
-		.items[]
-		else empty
-		end |
+pv items.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	[
 	"\(.id)" // "",
 	"\(.hrid)" // "",

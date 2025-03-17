@@ -8,8 +8,8 @@ namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
 object_type=$1
 strip=$2
 
-infile="infile"
-outfile="outfile"
+infile="ids"
+outfile="uuids"
 
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 rm -f ${outfile}
@@ -41,4 +41,5 @@ while mapfile -t -n 100 ids && ((${#ids[@]})); do
 	rm tmp_uuid.*
 done < ${infile}
 
-
+echo 
+echo "File has been processed and output written to uuids"

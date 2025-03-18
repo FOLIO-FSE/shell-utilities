@@ -1,20 +1,29 @@
 #!/usr/bin/bash
 auth 2>/dev/null || authn 2>/dev/null
-SECONDS=1
-
+# retrieves item and holdings data associated with
+# an instance
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-rec_type=$1
-search_for=$2
+idtype=${1}
 
-if [[ ${search_for} == "" ]]; then search_for="cql.allRecords=1";fi
-query="&query=${search_for}"
+case ${idtype} in
+	"instances"):
+		good=1;;
+	"holdings"):
+		good=1;;
+	*):
+		echo "You must select instances or holdings"
+		exit
+esac
+	
 
+echo "Retrieving all ids. Please be patient"
 
-curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/record-bulk/ids?recordType=INSTANCE${query}&limit=100000000" |jq -r .ids[].id > uuids
+curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/search/${idtype}/ids?query=cql.allRecords=1" |pv |jq -r .ids[].id > ids
 
-echo "$(wc -l uuids) ids were output to \"uuids\""
-
-
+echo 
+numrecs=$(wc -l ids |cut -d " " -f1)
+echo "${numrecs} ids have been exported to ids"
+echo

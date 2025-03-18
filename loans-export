@@ -1,0 +1,41 @@
+echo "Retrieving loans"
+records-get loans 'status.name=Open'
+records-get servicepoints
+
+echo "Retrieving reference data"
+jq -r '[.id, .code]|@tsv' servicepoints.json > servicePoint.tsv
+jq -r '[.id, .name]|@tsv' addresstypes.json > addressType.tsv
+
+
+echo -e "userid\titemId\tloanDate\tdueDate\taction\titemStatus\trenewalCount\tservicePoint" > loans.tsv
+
+echo
+echo "Extracting loans records."
+
+delim=$'\t'
+subdelim='; '
+
+pv loans.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
+	[
+	"\(.userId)" // "",
+	"\(.itemId)" // "",
+	"\(.loanDate)" // "",
+	"\(.dueDate)" // "",
+	"\(.action)" // "",
+	"\(.itemStatus)" // "",
+	.renewalCount // 0,
+	"\(.checkoutServicePointId)" // ""
+	] |join($delim)
+	' >> loans.tsv 
+
+echo
+echo "Converting UUIDs to human readable values"
+echo
+value-mapper loans.tsv
+
+mv loans_fixed.tsv loans.tsv
+
+rm servicePoint.tsv
+
+echo "Loan records have been exported to loans.tsv"
+echo

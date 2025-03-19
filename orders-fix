@@ -28,6 +28,9 @@ cat "${infile}" |jq -c '.compositePoLines[] |= if .details==null then .details={
 	# remove invalid characters from PO number
 	if .poNumber != null then .poNumber = (.poNumber|gsub("[^a-zA-Z0-9]"; "")) else . end |
 
+	# set subscription for ongoing orders
+	if .orderType=="Ongoing" then (.ongoing.isSubscription = true | .ongoing.manualRenewal = false) else . end |
+
 	# populated rest of fund object if fundId is correct
 	walk(
 	if type == "object" and .fundId 

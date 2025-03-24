@@ -1,0 +1,42 @@
+echo "Retrieving orders, polines, and reference data"
+records-get orders
+records-get polines
+records-get organizations
+
+echo
+echo "Retrieving reference data"
+jq -r '[.id, .code]|@tsv' organizations.json > vendor.tsv
+jq -r '[.id, .name]|@tsv' mattypes.json > mattype.tsv
+
+
+echo -e "id\tpoNumber\torderType\tvendor\tworkflowStatus\tapproved\tbillTo\tmanualPo\tnotes" > orders.tsv
+
+echo
+echo "Extracting order records."
+
+delim=$'\t'
+subdelim='; '
+
+pv orders.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
+	[
+	"\(.id)" // "",
+	"\(.poNumber)" // "",
+	"\(.orderType)" // "",
+	"\(.vendor)" // "",
+	"\(.workflowStatus)" // "",
+	"\(.approved)" // "",
+	"\(.manualPo)" // "",
+	"\(.notes|join(";")|gsub("\\n"; ";")|gsub("\\t"; "     "))" // ""
+	] |join($delim)
+	' >> orders.tsv 
+
+echo
+echo "Converting UUIDs to human readable values"
+echo
+value-mapper orders.tsv
+
+mv orders_fixed.tsv orders.tsv
+
+rm vendor.tsv
+echo "Order records have been exported to orders.tsv"
+echo

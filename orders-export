@@ -6,13 +6,13 @@ records-get organizations
 echo
 echo "Retrieving reference data"
 jq -r '[.id, .code]|@tsv' organizations.json > vendor.tsv
-jq -r '[.id, .name]|@tsv' mattypes.json > mattype.tsv
 
 
 echo -e "id\tpoNumber\torderType\tvendor\tworkflowStatus\tapproved\tbillTo\tmanualPo\tnotes" > orders.tsv
+echo -e "id\tpoLineNumber\tpurchaseOrderId\tcheckinItems\tcost.listUnitPrice\tcost.poLineEstimatedPrice\tcost.quantityPhysical\tcost.quantityElectronic\tinstanceId\ttitleOrPackage\tisPackage\torderFormat\paymentStatus\tvendorDetail.referenceNumbers" > polines.tsv
 
 echo
-echo "Extracting order records."
+echo "Extracting order records and polines."
 
 delim=$'\t'
 subdelim='; '
@@ -31,6 +31,27 @@ pv orders.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	' >> orders.tsv 
 
 echo
+
+pv polines.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
+	[
+	"\(.id)" // "",
+	"\(.poLineNumber)" // "",
+	"\(.purchaseOrderId)" // "",
+	"\(.checkinItems)" // "",
+	"\(.cost.listUnitPrice)" // "",
+	"\(.cost.poLineEstimatedPrice)" // "",
+	"\(.cost.quantityPhysical)" // "",
+	"\(.cost.quantityElectronic)" // "",
+	"\(.instanceId)" // "",
+	"\(.titleOrPackage)" // "",
+	"\(.isPackage)" // "",
+	"\(.orderFormat)" // "",
+	"\(.paymentStatus)" // "",
+	"\(.vendorDetail.referenceNumbers|join(";"))" // ""
+	] |join($delim)
+	' >> polines.tsv 
+
+echo
 echo "Converting UUIDs to human readable values"
 echo
 value-mapper orders.tsv
@@ -39,4 +60,5 @@ mv orders_fixed.tsv orders.tsv
 
 rm vendor.tsv
 echo "Order records have been exported to orders.tsv"
+echo "PO lines have been exported to polines.tsv"
 echo

@@ -10,30 +10,18 @@ declare -A dept_dict
 declare -A term_dict
 
 default_coursetype='2780a114-ca01-4356-afd8-0f4ae648c5f4'
-default_term='2024 Full year'
-default_dept='University of Canterbury'
+default_term='PlaceholderTerm'
+default_dept='migration'
+
 
 # get list of course departments and populate array using name as key with uuid as value
-eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/coursereserves/departments?limit=1000" |  jq -r '.departments[] | @sh "dept_dict[\(.name|tostring|ascii_downcase)]=\(.id|tostring)"')"
+eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/coursereserves/departments?limit=1000" |  jq -r '.departments[] | @sh "dept_dict[\(.name|tostring|ascii_downcase |gsub("[^0-9a-z]"; ""))]=\(.id|tostring)"')"
 
 # get list of course terms and populate array using name as key with uuid as value
-eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/coursereserves/terms?limit=1000" |  jq -r '.terms[] | @sh "term_dict[\(.name|tostring|ascii_downcase)]=\(.id|tostring)"')"
-
-# normalize department and term keys
-echo "Normalizing Department and Term keys"
-
-for key in "${!dept_dict[@]}";do
-	newkey=$(tr -dc [a-z0-9] <<< "${key}")
-	dept_dict[${newkey}]=${dept_dict["${key}"]}
-done
-
-for key in "${!term_dict[@]}";do
-	newkey=$(tr -dc [a-z0-9] <<< "${key}")
-	term_dict[${newkey}]=${term_dict["${key}"]}
-done
+eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/coursereserves/terms?limit=1000" |  jq -r '.terms[] | @sh "term_dict[\(.name|tostring|ascii_downcase |gsub("[^0-9a-z]"; ""))]=\(.id|tostring)"')"
 
 #while IFS=$'\t' read -r dept courseNumber courseName term;do
-while IFS=$'\t' read -r courseNumber courseName term;do
+while IFS=$'\t' read -r courseNumber courseName dept;do
 
 if [[ -z ${dept} ]];then dept="${default_dept}";fi
 if [[ -z ${term} ]];then term="${default_term}";fi

@@ -1,4 +1,5 @@
 #!/usr/bin/bash
+
 auth 2>/dev/null || authn 2>/dev/null
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
@@ -23,6 +24,13 @@ eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant:
 
 #while IFS=$'\t' read -r dept courseNumber courseName term;do
 while IFS=$'\t' read -r courseNumber courseName dept;do
+	if [[ $SECONDS -gt 500 ]]; then
+		auth 2>/dev/null || authn 2>/dev/null
+		okapi_token=$(cat okapi.token)
+		SECONDS=1
+		OFFSET=$(($OFFSET + 1))
+		TIMER=$(($OFFSET * 500 + $SECONDS))
+	fi
 
 if [[ -z ${dept} ]];then dept="${default_dept}";fi
 if [[ -z ${term} ]];then term="${default_term}";fi
@@ -77,15 +85,6 @@ echo -e "${apicall}"
 
 apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${course}" "${okapi_url}/coursereserves/courses")
 echo -e "${apicall}" 
-
-if [[ $SECONDS -gt 500 ]]; then
-	auth 2>/dev/null || authn 2>/dev/null
-	okapi_token=$(cat okapi.token)
-	SECONDS=1
-	OFFSET=$(($OFFSET + 1))
-	TIMER=$(($OFFSET * 500 + $SECONDS))
-fi
-											        fi
 
 done < "${infile}"
 

@@ -3,51 +3,49 @@ auth 2>/dev/null || authn 2>/dev/null
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
+SECONDS=0
+
+infile="courseNumber-instructor.tsv"
 
 declare -A course_dict
 namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
 
 apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/coursereserves/courses?limit=100000")
 
-eval "$(echo ${apicall} |  jq -r '.courses[] | @sh "course_dict[\(.courseNumber|tostring|ascii_downcase)]=\(.courseListingId|tostring)"')"
-
-echo "Normalizing Course Listing Id keys"
-# normalize keys
-counter=0
-
-for key in "${!course_dict[@]}";do
-	newkey=$(tr -dc [a-z0-9] <<< "${key}")
-	course_dict[${newkey}]=${course_dict["${key}"]}
-        if (( $counter % 10 == 0 ));then
-                printf "%s keys normalized\r" $counter
-        fi
-        counter=$(($counter + 1))
-done
-
-echo "$counter keys normalized"
+eval "$(echo ${apicall} |  jq -r '.courses[] | @sh "course_dict[\(.courseNumber|tostring|ascii_downcase |gsub("[^0-9a-z]"; ""))]=\(.id|tostring)"')"
 
 while IFS=$'\t' read -r courseNumber instructorName;do
+	if [[ $SECONDS -gt 500 ]]; then
+		auth 2>/dev/null || authn 2>/dev/null
+		okapi_token=$(cat okapi.token)
+		SECONDS=1
+		OFFSET=$(($OFFSET + 1))
+		TIMER=$(($OFFSET * 500 + $SECONDS))
+	fi
 
-instructorId=$(uuid -v 5  ${namespace} ${okapi_url}:instructors:${instructorName})
-instructorId=$(uuid -v 5 )
+# instructor=$(echo "${instructorName}" | tr -dc '[A-Za-z0-9]' |tr '[A-Z]' '[a-z]')
+# instructorId=$(uuid -v 5  ${namespace} ${okapi_url}:instructors:${instructor})  
+# 
+# can't use same UUID for instructors
 
+instructorId=$(uuidgen)
 courseNumber=$(tr -dc "[0-9a-z]" <<< ${courseNumber,,})
 listingId=${course_dict[${courseNumber}]}
 
+courseListingId=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/coursereserves/courses/${listingId}" |jq -r .courseListingId)
 
 
 IFS='' read -r -d '' instructor << EndOfInstructor
 {
-"id": "${instructorId}",
+"courseListingId": "${courseListingId}",
 "name": "${instructorName}",
-"courseListingId": "${listingId}"
+"id": "${instructorId}"
 }
 EndOfInstructor
 
-apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${instructor}" "${okapi_url}/coursereserves/courselistings/${listingId}/instructors")
-echo -e "${apicall}" 
 
-done < courseNumber-instructor.tsv
+curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${instructor}" "${okapi_url}/coursereserves/courselistings/${courseListingId}/instructors"
+done < "${infile}"
 
 
 

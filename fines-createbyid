@@ -94,7 +94,7 @@ while IFS=$'\n' read -r line; do
 
 	if [[ -z $patron_barcode ]];then patron_barcode="${patron_identifier}";fi
 
-	if [[ -z $assessdate ]];then finetype="${finetype} assessed ${assesdate}";fi
+	if [[ $assessdate =~ [0-9] ]];then finetype="${finetype} assessed ${assessdate}";fi
 	if [[ -z $finetype ]];then finetype="Migration";fi
 	if [[ item_barcode != "" ]];then finetype="${finetype} Item: ${item_barcode}. ${notes}";fi
 

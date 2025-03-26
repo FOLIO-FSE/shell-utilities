@@ -64,13 +64,16 @@ fi
 read -r -d '' awkscript << "ENDOFAWK"
 #!/usr/bin/awk -f 
 {
+print $SPLITFIELD
 	split($SPLITFIELD, allentries, /[,;|]/ )
 
 	for(entry in allentries) {
 		nextval = allentries[entry]
 		sub(/^[ "]*/, "", nextval)
 		sub(/[ "]*$/, "", nextval)
-		print $IDFIELD, nextval > OUTFILE
+		if (nextval ~ /[a-zA-Z0-9]/) {
+			print $IDFIELD, nextval > OUTFILE
+		}
 	}
 }
 

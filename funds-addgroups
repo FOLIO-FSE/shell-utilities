@@ -11,10 +11,13 @@ COUNTER=0
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 declare -A group
+declare -A fund
 
-echo "Retrieving groups"
+echo "Retrieving funds and groups"
+records-get funds
 
 eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/finance/groups?query=cql.allRecords=1&limit=1000" |jq -r '.groups[] | @sh "group[\(.name|tostring|ascii_downcase |gsub("[^0-9a-z]"; ""))]=\(.id|tostring)"')"
+eval "$(cat funds.json |jq -r '@sh "fund[\(.code|tostring|ascii_downcase |gsub("[^0-9a-z]"; ""))]=\(.id|tostring)"')"
 
 while IFS=$'\t' read -r fundcode fundgroup; do
 	COUNTER=$(($COUNTER + 1))
@@ -26,13 +29,14 @@ while IFS=$'\t' read -r fundcode fundgroup; do
 		SECONDS=1
 	fi
 
-	fund=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/finance/funds?query=code==${fundcode}" |jq '.funds[0]|del(.metadata)|{ "fund": . }')
-	fundId=$(jq -r '.fund.id' <<< "${fund}")
+	fundcode=$(echo "${fundcode,,}" |tr -dc '[0-9a-z]')
+	fundId=${fund[$fundcode]}
 
 	fundgroup=$(echo "${fundgroup}" |tr [A-Z] [a-z] |tr -dc [0-9a-z])
 	groupId=${group[${fundgroup}]}
 
-	if [[ ${groupId} =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]];then
+	if [[ ${groupId} =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]] && [[ ${fundId} =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]];then
+		fund=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/finance/funds/${fundId}")
 		fund=$(jq --arg GROUP ${groupId} '.groupIds += [ $GROUP ] ' <<< "${fund}")
 	fi
 
@@ -40,3 +44,5 @@ while IFS=$'\t' read -r fundcode fundgroup; do
 
 
 done < "${infile}"
+
+rm funds.json

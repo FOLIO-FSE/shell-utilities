@@ -1,0 +1,128 @@
+#!/usr/bin/bash
+auth 2>/dev/null || authn 2>/dev/null
+#0cf-e4aa278110b7 expects fine amounts in column 1, patron uuid in column 2
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+SECONDS=1
+
+fines_file="fines.tsv"
+legacySystem="Voyager"
+logfile="feefine.log"
+num_retrieved=1000
+rm -f ${logfile}
+
+sed -i 's/"//g' "${fines_file}"
+
+# FeeFine owner must be defined in /settings/users/owners
+fine_owner="f6d332ae-e85e-4024-ba2f-5593ca9bf47e"
+
+id=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/owners/${fine_owner}" |jq -r .id)
+if [[ $id != "${fine_owner}" ]];then echo "Fine owner not located. Exiting program";exit;fi
+
+# FeeFine type should be defined in /settings/users/feefinestable
+feeFineType="Migrated fine"
+
+function fetch_batch() {
+	local offset=$1
+	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?query=cql.allRecords=1&limit=${num_retrieved}&offset=$offset" |jq -c ".users[]"  > "tmp_users.${t}"
+}
+
+declare -A user_dict 
+
+create_fine() {
+
+patron_barcode=${patron_barcode//[^0-9A-Za-z\-]/}
+
+#fineamount=${fineamount//[^0-9\.]}
+fineamount=$(echo "scale=2;${fineamount//[^0-9\.]/}/100" |bc) 
+item_charge=${item_charge//[^0-9\.]/}
+processing_fee=${processing_fee//[^0-9\.]/}
+billing_fee=${billing_fee//[^0-9\.]/}
+
+feeFineId=$(uuid)
+fineId=$(uuid)
+actionId=$(uuid)
+
+IFS='' read -r -d '' fine << EndOfJSON
+{
+  "ownerId": "${fine_owner}",
+  "feeFineId": "${feeFineId}",
+  "paymentStatus":{"name":"Outstanding"},
+  "status":{"name":"Open"},
+  "amount": "${fineamount}",
+  "remaining": "${fineamount}",
+  "feeFineType": "${feeFineType}",
+  "id": "${fineId}",
+  "userId": "${userid}"
+}
+EndOfJSON
+
+IFS='' read -r -d '' action << EndOfJSON
+{
+  "dateAction":"$(date -Is)",
+  "typeAction":"${finetype}",
+  "accountId": "${fineId}",
+  "amountAction": "${fineamount}",
+  "balance":"${fineamount}",
+  "transactionInformation":"",
+  "comments": "Fine migrated from ${legacySystem}. ${notes} ",
+  "notify":false,
+  "id": "${actionId}",
+  "userId": "${userid}"
+}
+EndOfJSON
+}
+
+counter=1
+badbarcodes=0
+
+numloans=$(cat ${fines_file} |wc -l)
+item_barcode=""
+
+while IFS=$'\n' read -r line; do
+	line=$(tr "\t" "^" <<< "${line}")
+	# required fields: patron_barcode fine_amount
+	#
+	#IFS=$'^' read -r patron_barcode item_charge item_barcode fee_assess_date fineamount <<< "${line}"
+	#
+	#IFS=$'^' read -r patron_identifier fineamount patron_barcode item_identifier item_barcode outdate duedate notes  <<< "${line}"
+	IFS=$'^' read -r patron_barcode finetype item_barcode fineamount assessdate notes  <<< "${line}"
+	
+	userid=$(uuid -v 5  8405ae4d-b315-42e1-918a-d1919900cf3f ${okapi_url}:users:${patron_barcode})
+
+	if [[ -z $patron_barcode ]];then patron_barcode="${patron_identifier}";fi
+
+	if [[ -z $assessdate ]];then finetype="${finetype} assessed ${assesdate}";fi
+	if [[ -z $finetype ]];then finetype="Migration";fi
+	if [[ item_barcode != "" ]];then finetype="${finetype} Item: ${item_barcode}. ${notes}";fi
+
+        if [[ $SECONDS -gt 500 ]]; then
+                auth 2>/dev/null || authn 2>/dev/null
+                okapi_token=$(cat okapi.token)
+                SECONDS=1
+        fi
+
+	echo -en "Processing record $counter of ${numloans}.\r"
+
+
+
+if [[ ${fineamount} =~ [1-9] ]];then
+	create_fine
+
+	account_data=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${fine}" "${okapi_url}/accounts")
+	echo -e "${account_data//$'\n'/ }" >> ${logfile}
+
+	feefine_data=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${action}" "${okapi_url}/feefineactions")
+	
+	echo -e "${feefine_data//$'\n'/ }" >> ${logfile}
+fi
+
+counter=$(($counter + 1))
+
+done < ${fines_file}
+echo 
+echo "Processing completed"
+
+echo "Server responses are output to ${logfile}"

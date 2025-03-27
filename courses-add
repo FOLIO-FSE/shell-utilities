@@ -10,17 +10,19 @@ infile="courses.tsv"
 
 declare -A dept_dict
 declare -A term_dict
+declare -A coursetype_dict
 
-default_coursetype='2780a114-ca01-4356-afd8-0f4ae648c5f4'
-default_term='PlaceholderTerm'
+default_coursetype='default'
+default_term='Spring 2025'
 default_dept='migration'
 
 
 # get list of course departments and populate array using name as key with uuid as value
 eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/coursereserves/departments?limit=1000" |  jq -r '.departments[] | @sh "dept_dict[\(.name|tostring|ascii_downcase |gsub("[^0-9a-z]"; ""))]=\(.id|tostring)"')"
 
-# get list of course terms and populate array using name as key with uuid as value
+# get list of course terms/types and populate array using name as key with uuid as value
 eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/coursereserves/terms?limit=1000" |  jq -r '.terms[] | @sh "term_dict[\(.name|tostring|ascii_downcase |gsub("[^0-9a-z]"; ""))]=\(.id|tostring)"')"
+eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/coursereserves/coursetypes?limit=1000" |  jq -r '.courseTypes[] | @sh "coursetype_dict[\(.name|tostring|ascii_downcase |gsub("[^0-9a-z]"; ""))]=\(.id|tostring)"')"
 
 #while IFS=$'\t' read -r dept courseNumber courseName term;do
 while IFS=$'\t' read -r courseNumber courseName dept;do
@@ -34,9 +36,11 @@ while IFS=$'\t' read -r courseNumber courseName dept;do
 
 if [[ -z ${dept} ]];then dept="${default_dept}";fi
 if [[ -z ${term} ]];then term="${default_term}";fi
+if [[ -z ${coursetype} ]];then coursetype="${default_coursetype}";fi
 
 term=$(tr -dc [a-z0-9] <<< "${term,,}")
 dept=$(tr -dc [a-z0-9] <<< "${dept,,}")
+coursetype=$(tr -dc [a-z0-9] <<< "${coursetype,,}")
 
 #courseNumber="${dept} ${courseNumber}"
 #dept=$(tr -dc "[0-9a-z]" <<< ${dept,,})
@@ -44,6 +48,7 @@ dept=$(tr -dc [a-z0-9] <<< "${dept,,}")
 
 departmentId=${dept_dict[${dept}]}
 termId=${term_dict[${term}]}
+coursetypeId=${coursetype_dict[${coursetype}]}
 
 external=''
 registrar=''

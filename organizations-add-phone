@@ -26,14 +26,13 @@ eval "$(echo ${cat_types} |jq -r '.categories[] | @sh "category_dict[\(.value|to
 
 while IFS=$'\n' read line;do
 	if [[ $SECONDS -gt 500 ]]; then
-        	./auth 2>/dev/null
+		auth 2>/dev/null || authn 2>/dev/null
 		okapi_token=$(cat okapi.token)
 		SECONDS=1
 	fi
 
 	line=$(echo "${line}" | tr -d '"' | tr "\t" "^")
-	IFS='^' read -r code phone type categories <<< ${line}
-	#IFS='^' read -r code type phone <<< ${line}
+	IFS='^' read -r code type phone <<< ${line}
 
 	if [[ $use_deterministic_uuids == "yes" ]];then
        		uuid=$(uuid -v 5  8405ae4d-b315-42e1-918a-d1919900cf3f "${okapi_url}:organizations:${code}")

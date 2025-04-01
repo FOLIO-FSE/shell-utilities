@@ -8,8 +8,10 @@ SECONDS=0
 filename="org_address.tsv"
 use_deterministic_uuids="yes"
 #use_deterministic_uuids="no"
+defaultprimary=true # true or false
 
 declare -A category_dict
+declare -A uuid_dict
 
 dos2unix ${filename}
 
@@ -19,7 +21,7 @@ counter=0
 
 cat_types=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/categories?query=cql.allRecords=1%20sortby%20value&limit=2000")
 
-eval "$(echo ${cat_types} |jq -r '.categories[] | @sh "category_dict[\(.value|tostring)]=\(.id|tostring)"')"
+eval "$(echo ${cat_types} |jq -r '.categories[] | @sh "category_dict[\(.value|tostring|ascii_downcase |gsub("[^0-9a-z]"; ""))]=\(.id|tostring)"')"
 
 while IFS=$'\n' read line;do
 	if [[ $SECONDS -gt 500 ]]; then
@@ -29,35 +31,42 @@ while IFS=$'\n' read line;do
 	fi
 
 	line=$(echo "${line}" | tr -d '"' | tr "\t" "^")
-	IFS='^' read -r code category1 category2 category3 category4 line1 line2 line3 lin4 line5 city state zip country <<< ${line}
+	IFS='^' read -r code category1 category2 category3 category4 line1 line2 line3 line4 line5 city state zip country <<< ${line}
 
-	if [[ "${category1}" == "Y" ]];then category1="Orders" else category1="";fi
-	if [[ "${category3}" == "Y" ]];then category2="Payments" else category2="";fi
-	if [[ "${category4}" == "Y" ]];then category3="Returns" else category3="";fi
-	if [[ "${category2}" == "Y" ]];then category4="Claims" else category4="";fi
+	if [[ "${category1}" == "Y" ]];then category1="Orders";else category1="";fi
+	if [[ "${category2}" == "Y" ]];then category2="Payments";else category2="";fi
+	if [[ "${category3}" == "Y" ]];then category3="Returns";else category3="";fi
+	if [[ "${category4}" == "Y" ]];then category4="Claims";else category4="";fi
 
-	if [[ "${line3}" =~ [a-zA-Z0-9] ]];then line2="${line2}, ${line3};fi
-	if [[ "${line4}" =~ [a-zA-Z0-9] ]];then line2="${line2}, ${line4};fi
-	if [[ "${line5}" =~ [a-zA-Z0-9] ]];then line2="${line2}, ${line5};fi
+	category1=$(echo "${category1}" |tr [A-Z] [a-z] |tr -dc [0-9a-z])
+	category2=$(echo "${category2}" |tr [A-Z] [a-z] |tr -dc [0-9a-z])
+	category3=$(echo "${category3}" |tr [A-Z] [a-z] |tr -dc [0-9a-z])
+	category4=$(echo "${category4}" |tr [A-Z] [a-z] |tr -dc [0-9a-z])
 
-	if [[ $user_deterministic_uuids == "yes" ]];then 
-		organization=$(uuid -v 5  8405ae4d-b315-42e1-918a-d1919900cf3f "${okapi_url}:organizations:${code}")
+	if [[ "${line3}" =~ [a-zA-Z0-9] ]];then line2="${line2}, ${line3}";fi
+	if [[ "${line4}" =~ [a-zA-Z0-9] ]];then line2="${line2}, ${line4}";fi
+	if [[ "${line5}" =~ [a-zA-Z0-9] ]];then line2="${line2}, ${line5}";fi
+
+	if [[ $use_deterministic_uuids == "yes" ]];then 
+		uuid=$(uuid -v 5  8405ae4d-b315-42e1-918a-d1919900cf3f "${okapi_url}:organizations:${code}")
+		organization=$(curl -G -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations/organizations/${uuid}") 
 	else
-		organization=$(curl -G -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" --data-urlencode "query=code=${code}" "${okapi_url}/organizations/organizations") 
+		organization=$(curl -G -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" --data-urlencode "query=code=${code}" "${okapi_url}/organizations/organizations" | .organizations[] ) 
+		uuid=$(echo "${organization}" |jq -r .id)
 	fi
 
+	if [[ ${uuid_dict[$uuid]} == 1 ]];then primary="false";else primary=${defaultprimary};fi
 
-	if [[ "${organization}" =~ [0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]* ]];then
-		address="{\"isPrimary\":false,\"addressLine1\":\"${line1}\",\"addressLine2\":\"${line2}\",\"city\":\"${city}\",\"stateRegion\":\"${state}\",\"zipCode\":\"${zip}\", \"country\": \"${country}\", \"categories\" : []}"	
+	if [[ "${uuid}" =~ [0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]* ]];then
+		address="{\"isPrimary\":${defaultprimary},\"addressLine1\":\"${line1}\",\"addressLine2\":\"${line2}\",\"city\":\"${city}\",\"stateRegion\":\"${state}\",\"zipCode\":\"${zip}\", \"country\": \"${country}\", \"categories\" : []}"	
 
-		if [[ $category1 =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT1 ${category_dict["${category1}"]} '(.categories += ["$CAT1"])');fi
-		if [[ $category2 =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT2 ${category_dict["${category2}"]} '(.categories += ["$CAT2"])');fi
-		if [[ $category3 =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT3 ${category_dict["{$category3}"]} '(.categories += ["$CAT3"])');fi
-		if [[ $category4 =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT4 ${category_dict["${category4}"]} '(.categories += ["$CAT4"])');fi
+		if [[ $category1 =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT1 ${category_dict["${category1}"]} '(.categories += [$CAT1])');fi
+		if [[ $category2 =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT2 ${category_dict["${category2}"]} '(.categories += [$CAT2])');fi
+		if [[ $category3 =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT3 ${category_dict["${category3}"]} '(.categories += [$CAT3])');fi
+		if [[ $category4 =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT4 ${category_dict["${category4}"]} '(.categories += [$CAT4])');fi
 
-		updated_org=$(echo "${organization}" |jq --argjson ADDRESS "${address}" '.organizations[] | del(.metadata) |  (.addresses = .addresses + [ $ADDRESS ])')
+		updated_org=$(echo "${organization}" |jq --argjson ADDRESS "${address}" 'del(.metadata) |  (.addresses = .addresses + [ $ADDRESS ])')
 
-		uuid=$(echo "${updated_org}" |jq -r .id)
 	
 		if [[ "${uuid}" =~ [0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]* ]];then
 			apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_org}" ${okapi_url}/organizations-storage/organizations/${uuid})

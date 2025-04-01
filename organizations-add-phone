@@ -3,34 +3,52 @@ auth 2>/dev/null || authn 2>/dev/null
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
+SECONDS=0
 
-declare -A organization_dict
+declare -A category_dict
+declare -A uuid_dict
+
+
+use_deterministic_uuids="yes"
+#use_deterministic_uuids="no"
+defaultprimary=true # true or false
 
 filename="org_phone.tsv"
+dos2unix ${filename}
 
 numrecs=$(wc -l ${filename} |cut -d " " -f1)
 
 counter=0
 
+cat_types=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations-storage/categories?query=cql.allRecords=1%20sortby%20value&limit=2000")
+
+eval "$(echo ${cat_types} |jq -r '.categories[] | @sh "category_dict[\(.value|tostring|ascii_downcase |gsub("[^0-9a-z]"; ""))]=\(.id|tostring)"')"
+
 while IFS=$'\n' read line;do
+	if [[ $SECONDS -gt 500 ]]; then
+        	./auth 2>/dev/null
+		okapi_token=$(cat okapi.token)
+		SECONDS=1
+	fi
+
 	line=$(echo "${line}" | tr -d '"' | tr "\t" "^")
 	IFS='^' read -r code phone type categories <<< ${line}
+	#IFS='^' read -r code type phone <<< ${line}
 
-	organization=$(curl -G -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" --data-urlencode "query=code=${code}" "${okapi_url}/organizations/organizations") 
+	if [[ $use_deterministic_uuids == "yes" ]];then
+       		uuid=$(uuid -v 5  8405ae4d-b315-42e1-918a-d1919900cf3f "${okapi_url}:organizations:${code}")
+       		organization=$(curl -G -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations/organizations/${uuid}")
+	else
+		organization=$(curl -G -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" --data-urlencode "query=code=${code}" "${okapi_url}/organizations/organizations" | .organizations[] )
+		uuid=$(echo "${organization}" |jq -r .id)
+	fi
 
+	if [[ "${uuid}" =~ [0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]* ]];then
+		phone="{ \"phoneNumber\" : \"${phone}\", \"type\": \"${type}\", \"isPrimary\" : ${defaultprimary}, \"categories\" : [${categories}] }"	
 
-	if [[ "${organization}" =~ [0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]* ]];then
-		if [[ $categories =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f] ]];then
-			categories=$(sed 's/^/"/' <<< $categories)
-			categories=$(sed 's/$/"/' <<< $categories)
-			categories=$(sed 's/,/","/g' <<< $categories)
-		fi
-	
-		phone="{ \"phoneNumber\" : \"${phone}\", \"type\": \"${type}\", \"isPrimary\" : false, \"categories\" : [${categories}] }"	
-
-		updated_org=$(echo "${organization}" |jq --argjson PHONE "${phone}" '.organizations[] | del(.metadata) | .phoneNumbers += [ $PHONE ]')
-		uuid=$(echo "${updated_org}" |jq -r .id)
+		updated_org=$(echo "${organization}" |jq --argjson PHONE "${phone}" 'del(.metadata) | .phoneNumbers += [ $PHONE ]')
         fi
+
 	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_org}" ${okapi_url}/organizations-storage/organizations/${uuid})
 
 	counter=$((counter + 1))

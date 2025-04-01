@@ -42,11 +42,15 @@ while IFS=$'\n' read line;do
 		uuid=$(echo "${organization}" |jq -r .id)
 	fi
 
-	if [[ ${uuid_dict[$uuid]} == 1 ]];then primary="false";else primary=${defaultprimary};fi
+	if [[ ${uuid_dict[$uuid]} -eq 1 ]];then primary="false";else primary=${defaultprimary};fi
 	uuid_dict[$uuid]=1
 
 	if [[ "${uuid}" =~ [0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]* ]];then
-		phone="{ \"phoneNumber\" : \"${phone}\", \"type\": \"${type}\", \"isPrimary\" : ${primary}, \"categories\" : [${categories}] }"	
+		if [[ -z ${type} ]];then
+			phone="{ \"phoneNumber\" : \"${phone}\", \"isPrimary\" : ${primary}, \"categories\" : [${categories}] }"	
+		else
+			phone="{ \"phoneNumber\" : \"${phone}\", \"type\": \"${type}\", \"isPrimary\" : ${primary}, \"categories\" : [${categories}] }"	
+		fi
 
 		updated_org=$(echo "${organization}" |jq --argjson PHONE "${phone}" 'del(.metadata) | .phoneNumbers += [ $PHONE ]')
         fi

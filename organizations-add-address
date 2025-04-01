@@ -58,7 +58,7 @@ while IFS=$'\n' read line;do
 	if [[ ${uuid_dict[$uuid]} == 1 ]];then primary="false";else primary=${defaultprimary};fi
 
 	if [[ "${uuid}" =~ [0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]* ]];then
-		address="{\"isPrimary\":${defaultprimary},\"addressLine1\":\"${line1}\",\"addressLine2\":\"${line2}\",\"city\":\"${city}\",\"stateRegion\":\"${state}\",\"zipCode\":\"${zip}\", \"country\": \"${country}\", \"categories\" : []}"	
+		address="{\"isPrimary\":${primary},\"addressLine1\":\"${line1}\",\"addressLine2\":\"${line2}\",\"city\":\"${city}\",\"stateRegion\":\"${state}\",\"zipCode\":\"${zip}\", \"country\": \"${country}\", \"categories\" : []}"	
 
 		if [[ $category1 =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT1 ${category_dict["${category1}"]} '(.categories += [$CAT1])');fi
 		if [[ $category2 =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT2 ${category_dict["${category2}"]} '(.categories += [$CAT2])');fi

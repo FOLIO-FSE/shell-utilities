@@ -13,23 +13,35 @@ okapi_token=$(cat okapi.token)
 
 infile=course_barcode
 logfile=course_addbarcodes.log
-dos2unix "${infile}"
+dos2unix "${infile}" 
 
 sort -u "${infile}" > tmp_courses_addbarcodes
-mv tmp_courses_addbarcodes 
+mv tmp_courses_addbarcodes "${infile}"
+
+if [[ ${infile} == "course_barcode" ]];then idType="barcode";fi
 
 declare -A dict_courses
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 # get list of course departments and populate array using name as key with uuid as value
  
-eval "$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/coursereserves/courses?limit=100000" |  jq -r '.courses[] | @sh "dict_courses[\(.courseNumber|tostring)]=\(.courseListingId|tostring)"')"
+eval "$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/coursereserves/courses?limit=100000" |  jq -r '.courses[] | @sh "dict_courses[\(.courseNumber|tostring|ascii_downcase |gsub("[^0-9a-z]"; ""))]=\(.courseListingId|tostring)"')"
 
 counter=0
 found=0
 notfound=0
 
 while IFS=$'\t' read -r courseNumber barcode;do
+	courseNumber=$(tr -dc "[0-9a-z]" <<< ${courseNumber,,})
+	listingId=${dict_courses[${courseNumber}]}
+
+	if [[ $SECONDS -gt 500 ]]; then
+		auth 2>/dev/null || authn 2>/dev/null
+		okapi_token=$(cat okapi.token)
+		SECONDS=1
+		OFFSET=$(($OFFSET + 1))
+		TIMER=$(($OFFSET * 500 + $SECONDS))
+	fi
 
 counter=$(($counter + 1))
 
@@ -47,7 +59,6 @@ IFS='' read -r -d '' item << EndOfItem
 EndOfItem
 
 apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${item}" "${okapi_url}/coursereserves/courselistings/${courseListingId}/reserves")
-echo -e "${apicall}" 
 
 echo ${apicall} |tr "\n" " " |sed 's/$/\n/' >> ${logfile}
 
@@ -57,7 +68,11 @@ else
 	notfound=$(($notfound + 1))
 fi
 
-echo -en "Processing record $counter of $numrecs. Barcodes added: $found -- Failures: $notfound\r"
+TIME=$TIMER;msg="$TIMER seconds"
+if [[ $TIMER -gt 60 ]];then TIME=$(($TIMER/60));msg="$TIME minutes";fi
+if [[ $TIMER -gt 3600 ]];then TIME=$(($TIMER/3600));msg="$TIME hours";fi
+
+echo -en "Processing record $counter of $numrecs in $msg. Barcodes added: $found -- Failures: $notfound\r"
 
 done < ${infile}
 

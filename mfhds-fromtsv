@@ -51,6 +51,7 @@ function build_mfhd() {
 	sub(/HOLDINGSID/, holdId, text_mfhd)
 
 	if (marc852 > 0) { 
+		if (NR == 1) { next }
 		$marc852 = gensub(alma_subfield, SFS"\\\1", "g", $marc852)
 		sub(not_delim, "", $marc852)
 		text_852 = text_852""$marc852 
@@ -117,7 +118,7 @@ function build_mfhd() {
 		gsub(/^1\.[1-9]?[0-9] /, "", $libHas)
 		gsub(/;1\.[1-9]?[0-9] /, "", $libHas)
 		split($libHas, statements, ";") 
-		for (statement in statements) { text_852 = text_852""FS"=866    "SFS"a"statements[statement]
+		for (statement in statements) { text_mfhd = text_852""FS"=866    "SFS"a"statements[statement]
 		}
 	}
 
@@ -370,7 +371,7 @@ function build_mfhd() {
 	}
 
 	if (emptyCall == 0) {
-		callNum = $callNumPos
+		if (callNumPos > 0) {callNum = $callNumPos}
 		if (callNumFallback > 0 && length($callNumPos) == 0) {callNum = $callNumFallback}
 	} else {
 		if (NR == 1) { callNum = "callNum" } else { callNum = "" }

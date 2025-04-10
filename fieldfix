@@ -90,7 +90,7 @@ function currency(bad_field) {
 }
 
 function dateiso8(bad_field) {
-	if ($bad_field ~ /[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]$/) {
+	if ($bad_field ~ /^[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]/) {
 		$bad_field = substr($bad_field, 1, 4)"-"substr($bad_field, 5, 2)"-"substr($bad_field, 7, 2)
 	}
 	if ($bad_field == "NEVER") {

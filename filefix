@@ -337,7 +337,7 @@ function fix_dates() {
 		# slashes to hyphens
 		gsub(/\//, "-", $fixdate)
 		# remove timestamps
-		if (DATEFORMAT == "numbers") { $fixdate = substr($fixdate,1,4)"-"substr($fixdate,5,2)"-"substr($fixdate,7,2) }
+		if (DATEFORMAT == "numbers" && NR > 1) { $fixdate = substr($fixdate,1,4)"-"substr($fixdate,5,2)"-"substr($fixdate,7,2) }
 		sub(/ [0-9\.:]*$/, "", $fixdate)
 
 		arraylen = split($fixdate, splitdate,"-")

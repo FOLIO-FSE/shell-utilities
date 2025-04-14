@@ -25,7 +25,7 @@ echo -e "id\thrid\tholdingsId\tlocation\tmattype\tloantype\tbarcode\tstatus\tcal
 
 echo
 echo "Extracting instance Ids for use with data export."
-pv inventory.json |jq -r .instanceId > instanceIds.csv
+pv holdings.json |jq -r .instanceId > instanceIds.csv
 
 echo
 echo "Extracting holdings records."

@@ -17,7 +17,6 @@ query="query=${search_for}"
 # endpoints with different behaviors use different defaults
 num_retrieved=1000
 sortby="%20sortby%20id"
-idtype="id"
 totalRecords="totalRecords"
 accept="application/json"
 
@@ -25,12 +24,20 @@ offset=0
 page=1
 limitOrPerPage="limit"
 PageOrOffset="offset"
+startUUID="00000000-0000-0000-0000-000000000000"
 
 function fetch_batch() {
 	local offset=$1
 	local t=$2
+	local idOffset
 
-	curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${limitOrPerPage}=${num_retrieved}&${PageOrOffset}=${!PageOrOffset}&${query}${sortby}" |eval "${jqexpr}"  > "tmp_${rec_type}.${t}"
+	if [[ $limitbyid == "yes" ]];then
+		idOffset=$(($num_retrieved * $t))
+		curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?query=id>${startUUID}%20sortBy%20id&limit=${num_retrieved}&offset=${idOffset}" |eval "${jqexpr}"  > "tmp_${rec_type}.${t}"
+	else
+		curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${limitOrPerPage}=${num_retrieved}&${PageOrOffset}=${!PageOrOffset}&${query}${sortby}" |eval "${jqexpr}"  > "tmp_${rec_type}.${t}"
+	fi
+
 }
 
 case $rec_type in
@@ -146,6 +153,7 @@ case $rec_type in
 "groups")
 	endpoint="groups";;
 "holdings")
+	limitbyid="yes"
 	rec_type="holdingsRecords"
 	endpoint="holdings-storage/holdings";;
 "holdingstypes")
@@ -181,6 +189,7 @@ case $rec_type in
 	rec_type="instanceRelationshipTypes"
 	endpoint="instance-relationship-types";;
 "instances")
+	limitbyid="yes"
 	endpoint="instance-storage/instances";;
 "institutions")
 	rec_type="locinsts"
@@ -196,6 +205,7 @@ case $rec_type in
 	accept="text/plain"
 	endpoint="inventory-view/instances";;
 "items")
+	limitbyid="yes"
 	endpoint="item-storage/items";;
 "invoices")
 	endpoint="invoice/invoices";;
@@ -312,6 +322,7 @@ case $rec_type in
 "usergroups")
 	endpoint="groups";;
 "users")
+	limitbyid="yes"
 	endpoint="users";;
 "vouchers")
 	endpoint="voucher/vouchers";;
@@ -320,6 +331,7 @@ case $rec_type in
 esac
 
 rm -f ${rec_type}
+
 
 if [[ $erm == "yes" ]];then
 	num_retrieved="1"
@@ -350,8 +362,11 @@ for (( offset=0; offset<=$num_records; ));do
 		fi
 	done
 	wait
-		
-	cat tmp_${rec_type}.* >> ${filename}
+	
+	nextbatch=$(cat tmp_${rec_type}.*)
+	startUUID=$(echo "${nextbatch}" |sed 's/.*"id":"\([^"]*\).*/\1/' |sort |tail -1)
+
+	echo -e "${nextbatch}" >> ${filename}
 	rm tmp_${rec_type}.*
 
 	if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s          \r" $offset $num_records;fi

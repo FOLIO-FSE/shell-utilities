@@ -30,11 +30,19 @@ function fetch_batch() {
 	local offset=$1
 	local t=$2
 	local idOffset
+	local compositeSearch
 
-	if [[ $limitbyid == "yes" && ${search_for} == "cql.allRecords=1" ]];then
+	if [[ $limitbyid == "yes" && "${sortby}" == "%20sortby%20id" ]];then
 		idOffset=$(($num_retrieved * $t))
 		idQuery=id>${startUUID}
-		curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?query=id>${startUUID}%20sortBy%20id&limit=${num_retrieved}&offset=${idOffset}" |eval "${jqexpr}"  > "tmp_${rec_type}.${t}"
+
+		if [[ "${search_for}" == "cql.allRecords=1" ]];then
+			compositeSearch="id>${startUUID}"
+		else
+			compositeSearch="${search_for}%20and%20id>${startUUID}"
+		fi
+
+		curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?query=${compositeSearch}%20sortBy%20id&limit=${num_retrieved}&offset=${idOffset}" |eval "${jqexpr}"  > "tmp_${rec_type}.${t}"
 	else
 		curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${limitOrPerPage}=${num_retrieved}&${PageOrOffset}=${!PageOrOffset}&${query}${sortby}" |eval "${jqexpr}"  > "tmp_${rec_type}.${t}"
 	fi

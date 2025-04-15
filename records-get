@@ -34,7 +34,7 @@ function fetch_batch() {
 
 	if [[ $limitbyid == "yes" ]];then
 		idOffset=$(($num_retrieved * $t))
-		idQuery=id>${startUUID}
+		idQuery="id>${startUUID}"
 
 		if [[ "${search_for}" == "cql.allRecords=1" ]];then
 			compositeSearch="id>${startUUID}"

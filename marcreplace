@@ -9,7 +9,8 @@ if [[ -z $1 ]];then
 	echo
 	echo "To prepend specify '^', e.g. marcreplace [filename] [marcfield] ^ '[replaceexpression]'"
 	echo "To suffix specify '$', e.g. marcreplace [filename] [marcfield] $ '[replaceexpression]'"
-	echo "To trim trailing spaces from 001/004, specify only filename, e.g. marcreplace [filename]"
+	echo "To remove all spaces from 001/004, specify only filename, e.g. marcreplace [filename]"
+	echo
 
 	exit
 else
@@ -90,7 +91,8 @@ function fix_field(){
 
 	## trim 001/004 if no arguments given
 	if (TAG == "" && marc_tag ~ /00[14]/) {
-		sub(" +"FS, FS, new_field_content)
+		#sub(" +"FS, FS, new_field_content)
+		gsub(/ */, "", new_field_content)
 		new_field_length = length(new_field_content)
 	}
 

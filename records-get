@@ -31,8 +31,9 @@ function fetch_batch() {
 	local t=$2
 	local idOffset
 
-	if [[ $limitbyid == "yes" ]];then
+	if [[ $limitbyid == "yes" && $search_for == "cql.allRecords=1 "]];then
 		idOffset=$(($num_retrieved * $t))
+		idQuery=id>${startUUID}
 		curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?query=id>${startUUID}%20sortBy%20id&limit=${num_retrieved}&offset=${idOffset}" |eval "${jqexpr}"  > "tmp_${rec_type}.${t}"
 	else
 		curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${limitOrPerPage}=${num_retrieved}&${PageOrOffset}=${!PageOrOffset}&${query}${sortby}" |eval "${jqexpr}"  > "tmp_${rec_type}.${t}"

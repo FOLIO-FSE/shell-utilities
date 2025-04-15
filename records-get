@@ -32,7 +32,7 @@ function fetch_batch() {
 	local idOffset
 	local compositeSearch
 
-	if [[ $limitbyid == "yes" && "${sortby}" == "%20sortby%20id" ]];then
+	if [[ $limitbyid == "yes" ]];then
 		idOffset=$(($num_retrieved * $t))
 		idQuery=id>${startUUID}
 
@@ -314,8 +314,8 @@ case $rec_type in
 	endpoint="service-points-users";;
 "srs")
 	rec_type="records"
-	query="recordType=MARC_BIB&state=ACTUAL&sortby=id"
-	sortby=""
+	limitbyid="yes"
+	query="recordType=MARC_BIB&state=ACTUAL"
 	endpoint="source-storage/records";;
 "statcodes")
 	rec_type="statisticalCodes"

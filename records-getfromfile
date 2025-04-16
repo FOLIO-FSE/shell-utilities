@@ -27,9 +27,10 @@ if [[ $# -eq 0 ]]; then echo "You must enter a record type";exit;fi
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 printrecords(){
-	cat tmp_records.${rec_type}.* | jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo) |del(.metadata)" >>  "${rec_type}.json"
-
-	rm -f tmp_records.${rec_type}.*
+	if [[ -f tmp_records.${rec_type}.0 ]];then
+		cat tmp_records.${rec_type}.* | jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo) |del(.metadata)" >>  "${rec_type}.json"
+		rm -f tmp_records.${rec_type}.*
+	fi
 }
 
 getbatch() {
@@ -172,8 +173,6 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 		printrecords
 	fi
 
-	echo "${records}" |jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo) |del(.metadata)" >>  "${rec_type}.json"
-
         if [[ $SECONDS -gt 500 ]]; then
 		TIMER=$(($TIMEROFFSET * 500 + $SECONDS))
                 auth 2>/dev/null || authn 2>/dev/null
@@ -189,6 +188,8 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
         echo -en "Processing record $counter of $numrecs in $msg in $(($counter/$SECONDS)) recs/sec          \r"
 
 done < ${infile}
+
+printrecords
 
 echo "$numrecs records have been exported to \"${rec_type}.json\"                      "
 

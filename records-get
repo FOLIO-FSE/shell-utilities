@@ -349,7 +349,7 @@ if [[ $erm == "yes" ]];then
 	jqexpr="jq -c '.[] | del(.metadata)'"
 fi
 
-if [[ -z $jqexpr ]];then jqexpr="jq -c \".${rec_type}[] | del(.metadata)\"";fi
+if [[ -z $jqexpr ]];then jqexpr="jq -c --arg REC_TYPE "${rec_type}" '.[\$REC_TYPE][] | del(.metadata)'";fi
 
 if [[ $limitOrPerPage == "limit" ]];then
 	num_records=$(curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&${limitOrPerPage}=0" |jq -r .${totalRecords})

@@ -37,8 +37,6 @@ fixrecord() {
 	local updated_record
 	local apicall
 
-	value=""
-
 	if [[ ${recordtype} == "source-storage/records" ]];then 
 		apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${uuid}/formatted?idType=INSTANCE" |jq .)
 		uuid=$(echo ${apicall} |jq -r .id)
@@ -60,18 +58,17 @@ fixrecord() {
 #                (.erpCode = $VALUE ) 
 #                (.fundDistributions[0].code = "ybpbl" ) 
 #		(.fund.ledgerId = "bdc5218a-e14c-41ea-8a9f-d7c9980d8b35")
-#                 (.groupIds += [$VALUE] ) 
+#                (.groupIds += [$VALUE] ) 
 #                (.materialTypeId = $VALUE ) 
 #                (.notes |= .+ [{"holdingsNoteTypeId": "b160f13a-ddba-4053-b9c4-60ec5ea45d56", "staffOnly": false, "note": $VALUE}]) 
 #                (.permanentLoanTypeId = $VALUE)
 #                (.permanentLocationId = $VALUE) 
-                (.servicePointIds += [ $VALUE ] ) 
+#                (.servicePointIds += [ $VALUE ] ) 
 #                (.statisticalCodeIds += [ $VALUE ] ) 
 #		 (.electronicAccess = ($VALUE|fromjson))                
 #                (.statusId = $VALUE)
 #                (.temporaryLoanType = {"id": $VALUE} ) # UUID, must use items-inventory
 #                (.temporaryLocation = {"id": $VALUE} ) # UUID, must use items-inventory
-
 		|del(.metadata)
 ')
 	#updated_record=${apicall//$pattern/$replace}

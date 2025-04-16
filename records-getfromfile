@@ -190,6 +190,6 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 
 done < ${infile}
 
-echo "$num_records records have been exported to \"${rec_type}.json\"                      "
+echo "$numrecs records have been exported to \"${rec_type}.json\"                      "
 
 

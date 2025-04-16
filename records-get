@@ -42,9 +42,9 @@ function fetch_batch() {
 			compositeSearch="${search_for}%20and%20id>${startUUID}"
 		fi
 
-		curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?query=${compositeSearch}%20sortBy%20id&limit=${num_retrieved}&offset=${idOffset}" |eval "${jqexpr}"  > "tmp_${rec_type}.${t}"
+		curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?query=${compositeSearch}%20sortBy%20id&limit=${num_retrieved}&offset=${idOffset}" |eval "${jqexpr}" > "tmp_${rec_type}.${t}"
 	else
-		curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${limitOrPerPage}=${num_retrieved}&${PageOrOffset}=${!PageOrOffset}&${query}${sortby}" |eval "${jqexpr}"  > "tmp_${rec_type}.${t}"
+		curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${limitOrPerPage}=${num_retrieved}&${PageOrOffset}=${!PageOrOffset}&${query}${sortby}" |eval "${jqexpr}" > "tmp_${rec_type}.${t}"
 	fi
 
 }
@@ -372,10 +372,10 @@ for (( offset=0; offset<=$num_records; ));do
 	done
 	wait
 	
-	nextbatch=$(cat tmp_${rec_type}.*)
-	startUUID=$(echo "${nextbatch}" |sed 's/.*"id":"\([^"]*\).*/\1/' |sort |tail -1)
+	nextbatch="$(cat tmp_${rec_type}.*)"
+	startUUID=$(echo "${nextbatch}" |jq -r .id |sort |tail -1)
 
-	echo -e "${nextbatch}" >> ${filename}
+	echo "${nextbatch}" >> ${filename}
 	rm tmp_${rec_type}.*
 
 	if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s          \r" $offset $num_records;fi

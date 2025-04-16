@@ -1,10 +1,14 @@
 echo "Retrieving loans"
 records-get loans 'status.name=Open'
+echo "Retrieving fines"
+records-get fines 'balance>0.1'
+echo "Retrieving manual blocks"
+records-get manualblocks
 records-get servicepoints
 
 echo "Retrieving reference data"
 jq -r '[.id, .code]|@tsv' servicepoints.json > servicePoint.tsv
-jq -r '[.id, .name]|@tsv' addresstypes.json > addressType.tsv
+jq -r '[.id, .feefineType]|@tsv' feefines.json > feeFines.tsv
 
 
 echo -e "userid\titemId\tloanDate\tdueDate\taction\titemStatus\trenewalCount\tservicePoint" > loans.tsv
@@ -33,9 +37,42 @@ echo "Converting UUIDs to human readable values"
 echo
 value-mapper loans.tsv
 
-mv loans_fixed.tsv loans.tsv
+echo -e "userid\tfineType\tamountAction\tbalance\ttransactionInformation" > fines.tsv
+
+echo
+echo "Extracting fine records."
+
+pv fines.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
+	[
+	"\(.userId)" // "",
+	"\(.typeAction)" // "",
+	"\(.amountAction)" // "",
+	"\(.balance)" // "",
+	"\(.transactionInformation)" // ""
+	] |join($delim)
+	' >> fines.tsv 
+
+echo
+echo -e "userid\tdescription\tstaffInformation\tpatronMessage\tblockBorrowing\tblockRenewals\tblockRequests" > manualblocks.tsv
+
+echo "Extracting manual blocks."
+
+pv manualblocks.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
+	[
+	"\(.userId)" // "",
+	"\(.desc)" // "",
+	"\(.staffInformation)" // "",
+	"\(.patronMessage)" // "",
+	"\(.borrowing)" // "",
+	"\(.renewals)" // "",
+	"\(.requests)" // ""
+	] |join($delim)
+	' >> manualblocks.tsv 
 
 rm servicePoint.tsv
 
+echo
 echo "Loan records have been exported to loans.tsv"
+echo "Fine records have been exported to fines.tsv"
+echo "Manual blocks have been exported to manualblocks.tsv"
 echo

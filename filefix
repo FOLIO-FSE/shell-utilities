@@ -76,7 +76,7 @@ function fix_nullsquotesdates(){
 	local infile=${1}
 	local outfile="${1}_out"
 	local badfile="${1}_bad"
-	awk -v numfields=$numfields -v outfile="${outfile}" -v badfile="${badfile}" -v DATEFORMAT="${dateformat}" -v DATEFIELDS="${datefields}" -f tmp_filefixawk ${infile}
+	awk -v numfields=$numfields -v outfile="${outfile}" -v badfile="${badfile}" -v DATEFORMAT="${dateformat}" -v WORDS="${words}" -v DATEFIELDS="${datefields}" -f tmp_filefixawk ${infile}
 }
 
 function to_tsv(){
@@ -345,40 +345,39 @@ function fix_dates() {
 
 		if (arraylen == 3) {
 			if (WORDS > 0) {
-				match1 = tolower(splitdate[1])
-				match2 = tolower(splitdate[2])
+				splitdate[1] = tolower(splitdate[1])
+				splitdate[2] = tolower(splitdate[2])
 
-				if (match1 ~ /[a-z]/) {
+				if (splitdate[1] ~ /[a-z]/) {
 					DATEFORMAT = "us-single"
-					gensub(/^jan.*/, "01", splitdate[1])
-					gensub(/^feb.*/, "02", splitdate[1])
-					gensub(/^mar.*/, "03", splitdate[1])
-					gensub(/^apr.*/, "04", splitdate[1])
-					gensub(/^may.*/, "05", splitdate[1])
-					gensub(/^jun.*/, "06", splitdate[1])
-					gensub(/^jul.*/, "07", splitdate[1])
-					gensub(/^aug.*/, "08", splitdate[1])
-					gensub(/^sep.*/, "09", splitdate[1])
-					gensub(/^oct.*/, "10", splitdate[1])
-					gensub(/^nov.*/, "11", splitdate[1])
-					gensub(/^dec.*/, "12", splitdate[1])
+					gsub(/^jan.*/, "01", splitdate[1])
+					gsub(/^feb.*/, "02", splitdate[1])
+					gsub(/^mar.*/, "03", splitdate[1])
+					gsub(/^apr.*/, "04", splitdate[1])
+					gsub(/^may.*/, "05", splitdate[1])
+					gsub(/^jun.*/, "06", splitdate[1])
+					gsub(/^jul.*/, "07", splitdate[1])
+					gsub(/^aug.*/, "08", splitdate[1])
+					gsub(/^sep.*/, "09", splitdate[1])
+					gsub(/^oct.*/, "10", splitdate[1])
+					gsub(/^nov.*/, "11", splitdate[1])
+					gsub(/^dec.*/, "12", splitdate[1])
 				}
-				if (match2 ~ /[a-z]/) {
+				if (splitdate[2] ~ /[a-z]/) {
 					DATEFORMAT = "uk-single"
-					gensub(/^jan.*/, "01", splitdate[2])
-					gensub(/^feb.*/, "02", splitdate[2])
-					gensub(/^mar.*/, "03", splitdate[2])
-					gensub(/^apr.*/, "04", splitdate[2])
-					gensub(/^may.*/, "05", splitdate[2])
-					gensub(/^jun.*/, "06", splitdate[2])
-					gensub(/^jul.*/, "07", splitdate[2])
-					gensub(/^aug.*/, "08", splitdate[2])
-					gensub(/^sep.*/, "09", splitdate[2])
-					gensub(/^oct.*/, "10", splitdate[2])
-					gensub(/^nov.*/, "11", splitdate[2])
-					gensub(/^dec.*/, "12", splitdate[2])
+					gsub(/^jan.*/, "01", splitdate[2])
+					gsub(/^feb.*/, "02", splitdate[2])
+					gsub(/^mar.*/, "03", splitdate[2])
+					gsub(/^apr.*/, "04", splitdate[2])
+					gsub(/^may.*/, "05", splitdate[2])
+					gsub(/^jun.*/, "06", splitdate[2])
+					gsub(/^jul.*/, "07", splitdate[2])
+					gsub(/^aug.*/, "08", splitdate[2])
+					gsub(/^sep.*/, "09", splitdate[2])
+					gsub(/^oct.*/, "10", splitdate[2])
+					gsub(/^nov.*/, "11", splitdate[2])
+					gsub(/^dec.*/, "12", splitdate[2])
 				}
-				
 			}
 
 			if (DATEFORMAT == "uk") { $fixdate = splitdate[3]"-"splitdate[2]"-"splitdate[1] }

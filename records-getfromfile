@@ -12,6 +12,7 @@ infile="uuids"
 batchsize=50
 accept="application/json"
 dos2unix "${infile}"
+rm -f ${rec_type}.json
 
 jq_replace=".${rec_type}[]"
 queryseparator="?"
@@ -25,13 +26,24 @@ if [[ $# -eq 0 ]]; then echo "You must enter a record type";exit;fi
 
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
+printrecords(){
+	cat tmp_records.${rec_type}.* | jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo) |del(.metadata)" >>  "${rec_type}.json"
+
+	rm -f tmp_records.${rec_type}.*
+}
+
+getbatch() {
+	local querystring="${1}"
+	local seq=${2}
+
+	curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${querystring}&limit=${batchsize}" > tmp_records.${rec_type}.${seq}
+}
+
 getrecord() {
 	local uuid=${1}
 	local seq=${2}
 
 	curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}${queryseparator}${querystring}${uuid}${poststring}" > tmp_records.${rec_type}.${seq}
-curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}${queryseparator}${querystring}${uuid}${poststring}"
-
 }
 
 case $rec_type in
@@ -42,7 +54,6 @@ case $rec_type in
 "authorities")
 	endpoint="authority-storage/authorities";;
 "authorities-srs")
-	batchsize=10
 	indivrecord=1
 	querystring=""
 	poststring="/formatted?idType=AUTHORITY"
@@ -96,7 +107,6 @@ case $rec_type in
 "organizations")
 	endpoint="organizations-storage/organizations";;
 "parsedrecords")
-	batchsize=10
 	indivrecord=1
 	querystring="externalId="
 	jq_replace=".relatedRecordVersion=0"
@@ -117,7 +127,6 @@ case $rec_type in
 "servicepoints")
 	endpoint="service-points";;
 "srs")
-	batchsize=10
 	indivrecord=1
 	querystring="externalId="
 	jq_replace=".sourceRecords[]"
@@ -136,13 +145,23 @@ esac
 
 
 rm -f ${rec_type}.json
+t=0
+
+if [[ $indivrecord -eq 1 ]];then batchsize=10;fi
 
 while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 	counter=$(($counter + ${#ids[@]}))
 	idstring="${ids[@]}"
 	if [[ $indivrecord -ne 1 ]];then
 		querystring="query=id=${idstring// /${querydelim}}"
-		records=$(curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${querystring}&limit=${batchsize}")
+		getbatch "${querystring}" ${t} &
+		t=$(($t + 1))
+
+		if [[ $t -eq 4 ]];then
+			wait
+			t=0
+			printrecords
+		fi
 	else
 		seq=0
 		for uuid in "${ids[@]}";do
@@ -150,8 +169,7 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 			seq=$(($seq + 1))
 		done
 		wait
-		records=$(cat tmp_records.${rec_type}.*)
-		rm -f tmp_records.${rec_type}.*
+		printrecords
 	fi
 
 	echo "${records}" |jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo) |del(.metadata)" >>  "${rec_type}.json"

@@ -12,7 +12,6 @@ infile="uuids"
 batchsize=50
 accept="application/json"
 dos2unix "${infile}"
-rm -f ${rec_type}.json
 
 jq_replace=".${rec_type}[]"
 queryseparator="?"
@@ -143,7 +142,6 @@ case $rec_type in
 *)
 	echo "Record type not found.";exit;;
 esac
-
 
 rm -f ${rec_type}.json
 t=0

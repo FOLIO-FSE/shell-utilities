@@ -13,6 +13,7 @@ rm -f ${filename}
 
 if [[ ${search_for} == "" ]]; then search_for="cql.allRecords=1";fi
 query="query=${search_for}"
+id_type="id"
 
 # endpoints with different behaviors use different defaults
 num_retrieved=1000
@@ -209,7 +210,8 @@ case $rec_type in
 	endpoint="inventory/items";;
 "inventory")
 	rec_type="instances"
-	id_type=".instanceId"
+	limitbyid="yes"
+	id_type="instanceId"
 	num_retrieved=200
 	accept="text/plain"
 	endpoint="inventory-view/instances";;
@@ -373,8 +375,7 @@ for (( offset=0; offset<=$num_records; ));do
 	wait
 	
 	nextbatch="$(cat tmp_${rec_type}.*)"
-	startUUID=$(echo "${nextbatch}" |jq -r .id |sort |tail -1)
-
+	startUUID=$(echo "${nextbatch}" |jq -r ".${id_type}" |sort |tail -1)
 	echo "${nextbatch}" >> ${filename}
 	rm tmp_${rec_type}.*
 

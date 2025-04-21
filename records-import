@@ -7,8 +7,8 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 workingdir=$(pwd)
-profileName="Default - Create SRS MARC Authority"
-#profileName="Default - Create instance and SRS MARC Bib"
+profileName="Update Instances 999i"
+#profileName="Default - Create SRS MARC Authority"
 
 logfile="${workingdir}/dataimport_errors.json"
 summaryfile="$(pwd)/summaryfile.log"

@@ -77,6 +77,8 @@ function fix_encoding(){
 			iconv -f utf-16le -t utf-8 -c ${oldfile} -o ${fixedfile};;
 		latin1|iso-8859-1)
 			iconv -f latin1 -t utf-8 -c ${oldfile} -o ${fixedfile};;
+		iso-8859-15)
+			iconv -f latin1 -t iso-8859-15 -c ${oldfile} -o ${fixedfile};;
 		*)	
 			iconv -f utf-8 -t utf-8 -c ${oldfile} -o ${fixedfile};;
 	esac

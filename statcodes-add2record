@@ -33,7 +33,7 @@ printf "Processing record %s of %s\r" $counter, $numrecs
 record=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}-storage/${recordtype}s/${record_uuid}")
 
 stat1_uuid="${statcode_dict[${stat1}]}"
-if [[ ${stat2_uuid} ~ [a-f0-9] ]];then stat2_uuid="${statcode_dict[${stat2}]}";fi
+if [[ ${stat2_uuid} =~ [a-f0-9] ]];then stat2_uuid="${statcode_dict[${stat2}]}";fi
 
 if [[ ${stat1_uuid} =~ [a-z0-9] ]];then record=$(echo "${record}" | jq ".statisticalCodeIds = [\"${stat1_uuid}\"]");fi
 if [[ ${stat2_uuid} =~ [a-z0-9] ]];then record=$(echo "${record}" | jq ".statisticalCodeIds += [\"${stat2_uuid}\"]");fi

@@ -6,12 +6,9 @@ okapi_token=$(cat okapi.token)
 SECONDS=0
 
 declare -A category_dict
-declare -A uuid_dict
-
 
 use_deterministic_uuids="yes"
 #use_deterministic_uuids="no"
-defaultprimary=true # true or false
 
 filename="org_phone.tsv"
 dos2unix ${filename}
@@ -32,7 +29,7 @@ while IFS=$'\n' read line;do
 	fi
 
 	line=$(echo "${line}" | tr -d '"' | tr "\t" "^")
-	IFS='^' read -r code type phone <<< ${line}
+	IFS='^' read -r code phone <<< ${line}
 
 	if [[ $use_deterministic_uuids == "yes" ]];then
        		uuid=$(uuid -v 5  8405ae4d-b315-42e1-918a-d1919900cf3f "${okapi_url}:organizations:${code}")
@@ -42,8 +39,8 @@ while IFS=$'\n' read line;do
 		uuid=$(echo "${organization}" |jq -r .id)
 	fi
 
-	if [[ ${uuid_dict[$uuid]} -eq 1 ]];then primary="false";else primary=${defaultprimary};fi
-	uuid_dict[$uuid]=1
+	num_phones=$(echo "${organization}" |jq -r '.phoneNumbers|length')
+	if [[ $num_phones -eq 0 ]];then primary="true";else primary="false";fi
 
 	if [[ "${uuid}" =~ [0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]* ]];then
 		if [[ -z ${type} ]];then
@@ -60,5 +57,6 @@ while IFS=$'\n' read line;do
 	counter=$((counter + 1))
 	echo "Processing $code -- record $counter of $numrecs"
 	echo "${apicall}"
+	sleep 1
 done < ${filename}
 

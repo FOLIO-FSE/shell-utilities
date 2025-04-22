@@ -68,7 +68,15 @@ function fix_encoding(){
 	local oldfile="${1}old"
 	local fixedfile="${1}"
 	cp ${fixedfile} "${1}old"
-	iconv -f utf-8 -t utf-8 -c ${oldfile} -o ${fixedfile}
+	
+	local filetype=$(file -i "${oldfile}" |sed 's/.*charset=//')
+
+	case ${filetype} in
+		utf-16le)
+			iconv -f utf-16le -t utf-8 -c ${oldfile} -o ${fixedfile};;
+		*)	
+			iconv -f utf-8 -t utf-8 -c ${oldfile} -o ${fixedfile};;
+	esac
 	rm ${oldfile}
 }
 
@@ -229,7 +237,7 @@ echo
 echo "The following date containing fields were detected in ${infile}"
 echo "${fieldnames}" |tr "\t" "\n" |grep -ni "[^p]date" |sed '/[Yy][Ee][Aa][Rr]\|[Mm][Oo][Nn][Tt][Hh]\|[Dd][Aa][Yy]\|[Nn][Oo][Tt][Ee]/d'
 echo
-echo "${fieldnames}" |tr "\t" "\n" |grep -ni "[^p]date\|^date" |sed '/[Yy][Ee][Aa][Rr]\|[Mm][Oo][Nn][Tt][Hh]\|[Dd][Aa][Yy]\|[Nn][Oo][Tt][Ee]/d'
+echo "${fieldnames}" |tr "\t" "\n" |grep -ni "[^p]date\|^date\|^fecha" |sed '/[Yy][Ee][Aa][Rr]\|[Mm][Oo][Nn][Tt][Hh]\|[Dd][Aa][Yy]\|[Nn][Oo][Tt][Ee]/d'
 
 datefields=$(echo "${fieldnames}" |tr "\t" "\n" |grep -ni date |tr [A-Z] [a-z] | sed '/year\|month\|day\|note/d; s/:.*//' |tr '\n' ' ')
 cutfields=$(echo "${datefields// /,}" | sed 's/^/-f/;s/,$//' |grep [0-9])

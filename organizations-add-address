@@ -8,10 +8,8 @@ SECONDS=0
 filename="org_address.tsv"
 use_deterministic_uuids="yes"
 #use_deterministic_uuids="no"
-defaultprimary=true # true or false
 
 declare -A category_dict
-declare -A uuid_dict
 
 dos2unix ${filename}
 
@@ -55,18 +53,18 @@ while IFS=$'\n' read line;do
 		uuid=$(echo "${organization}" |jq -r .id)
 	fi
 
-	if [[ ${uuid_dict[$uuid]} -eq 1 ]];then primary="false";else primary=${defaultprimary};fi
-	uuid_dict[$uuid]=1
+	num_addresses=$(echo "${organization}" |jq -r '.addresses|length')
+        if [[ $num_addresses -eq 0 ]];then primary="true";else primary="false";fi
 
 	if [[ "${uuid}" =~ [0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]* ]];then
-		address="{\"isPrimary\":${defaultprimary},\"addressLine1\":\"${line1}\",\"addressLine2\":\"${line2}\",\"city\":\"${city}\",\"stateRegion\":\"${state}\",\"zipCode\":\"${zip}\", \"country\": \"${country}\", \"categories\" : []}"	
+		address="{\"isPrimary\":${primary},\"addressLine1\":\"${line1}\",\"addressLine2\":\"${line2}\",\"city\":\"${city}\",\"stateRegion\":\"${state}\",\"zipCode\":\"${zip}\", \"country\": \"${country}\", \"categories\" : []}"	
 
 		if [[ $category1 =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT1 ${category_dict["${category1}"]} '(.categories += [$CAT1])');fi
 		if [[ $category2 =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT2 ${category_dict["${category2}"]} '(.categories += [$CAT2])');fi
 		if [[ $category3 =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT3 ${category_dict["${category3}"]} '(.categories += [$CAT3])');fi
 		if [[ $category4 =~ [a-zA-Z] ]];then address=$(echo "${address}" |jq --arg CAT4 ${category_dict["${category4}"]} '(.categories += [$CAT4])');fi
 
-		updated_org=$(echo "${organization}" |jq --argjson ADDRESS "${address}" 'del(.metadata) |  (.addresses = .addresses + [ $ADDRESS ])')
+		updated_org=$(echo "${organization}" |jq --argjson ADDRESS "${address}" 'del(.metadata) |  (.addresses += [ $ADDRESS ])')
 
 	
 		if [[ "${uuid}" =~ [0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]* ]];then
@@ -79,6 +77,7 @@ while IFS=$'\n' read line;do
 
 	counter=$((counter + 1))
 	echo "Processing $code -- record $counter of $numrecs"
+	sleep 1
 
 done < ${filename}
 

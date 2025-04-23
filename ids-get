@@ -7,6 +7,9 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 idtype=${1}
+query=${2}
+
+if [[ ${query} == "" ]]; then query="cql.allRecords=1";fi
 
 case ${idtype} in
 	"instances"):
@@ -17,11 +20,10 @@ case ${idtype} in
 		echo "You must select instances or holdings"
 		exit
 esac
-	
 
 echo "Retrieving all ids. Please be patient"
 
-curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/search/${idtype}/ids?query=cql.allRecords=1" |pv |jq -r .ids[].id > ids
+curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/search/${idtype}/ids?query=${query}" |pv |jq -r .ids[].id > ids
 
 echo 
 numrecs=$(wc -l ids |cut -d " " -f1)

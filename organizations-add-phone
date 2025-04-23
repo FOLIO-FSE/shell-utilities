@@ -31,6 +31,8 @@ while IFS=$'\n' read line;do
 	line=$(echo "${line}" | tr -d '"' | tr "\t" "^")
 	IFS='^' read -r code phone <<< ${line}
 
+	if [[ ${lastcode} == ${code} ]];then sleep 1;fi
+
 	if [[ $use_deterministic_uuids == "yes" ]];then
        		uuid=$(uuid -v 5  8405ae4d-b315-42e1-918a-d1919900cf3f "${okapi_url}:organizations:${code}")
        		organization=$(curl -G -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations/organizations/${uuid}")
@@ -56,7 +58,7 @@ while IFS=$'\n' read line;do
 
 	counter=$((counter + 1))
 	echo "Processing $code -- record $counter of $numrecs"
+	lastcode=${code}
 	echo "${apicall}"
-	sleep 1
 done < ${filename}
 

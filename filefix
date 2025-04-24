@@ -250,16 +250,20 @@ cutfields=$(echo "${datefields// /,}" | sed 's/^/-f/;s/,$//' |grep [0-9])
 if [[ ${#cutfields} -gt 0 ]];then
 	head -50 filefixaa > tmp_datecheck1
 	cut ${cutfields} tmp_datecheck1 > tmp_datecheck 
+	sed -i 's/,//g' tmp_datecheck
 	 
 	words=0
 	
 	cat tmp_datecheck |grep -Pqoi "\b(apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t\/-]*[\/-][0-9][0-9]*[\/-][0-9][0-9]*\b" && words=1
 	cat tmp_datecheck |grep -Pqoi "\b[0-9\[0-9]*[\/-](apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t\/-]*[\/-][0-9][0-9]*\b" && words=2
+
+	cat tmp_datecheck |grep -Pqoi "\b(apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t]* [0-9][0-9]* [0-9][0-9]*\b" && words=3
+	cat tmp_datecheck |grep -Pqoi "[0-9\[0-9]* (apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t]* [0-9][0-9]*\b" && words=4
 	
 	if [[ $words -gt 0 ]];then
 		echo
 		echo "Dates containing words detected"
-		echo
+		echo 
 	fi
 	
 	if [[ -z $dateformat ]]; then
@@ -334,6 +338,8 @@ case $dateformat in
 		;;
 esac
 
+if [[ $words -gt 2 ]];then dateformat="us-single";fi
+
 read -r -d '' awkscript << "ENDOFAWK"
 #!/usr/bin/awk -f
 
@@ -352,6 +358,10 @@ function fix_dates() {
 		gsub(/\//, "-", $fixdate)
 		# remove timestamps
 		if (DATEFORMAT == "numbers" && NR > 1) { $fixdate = substr($fixdate,1,4)"-"substr($fixdate,5,2)"-"substr($fixdate,7,2) }
+
+		if (WORDS == 3){split($fixdate, tempdate, " ");$fixdate = tempdate[1]"-"tempdate[2]"-"tempdate[3];gsub(/,/, "", $fixdate)}
+		if (WORDS == 4){split($fixdate, tempdate, " ");$fixdate = tempdate[2]"-"tempdate[1]"-"tempdate[3];gsub(/,/, "", $fixdate)}
+
 		sub(/ [0-9\.:]*$/, "", $fixdate)
 
 		arraylen = split($fixdate, splitdate,"-")

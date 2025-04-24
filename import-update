@@ -5,42 +5,36 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-infile="${1}"
 
-profileName="ZKB Items, update on UUID"
-profileName="Inventory Single Record - Default Create Instance"
+#profileName="ZKB Items, update on UUID"
+#profileName="ZKB Instances, match on 001 UUID"
+profileName="Inventory Single Record - Default Update Instance"
 
-if [[ "${profileName,,}" =~ "uuid" ]]; then infile="uuids";fi
-if [[ "${profileName,,}" =~ "barcode" ]]; then infile="barcodes";fi
+#contentType="MARC_JSON"
+contentType="MARC_RAW"
 
-if [[ ! -f "${infile}" ]];then echo "You must supply a file named \"${infile}\""; exit;fi
+if [[ "${1,,}" =~ [a-z] ]]; then infile="${1}";fi
+if [[ ! -f "${infile}" ]];then echo "You must supply a filename"; exit;fi
 
-echo "Matching on file named \"${infile}\""
+if [[ $contentType != contentType="MARC_JSON" ]];then 
+	cat ${infile} |tr $'\x1d' '\n' |sed -r '/^.{,5}$/d' > tmp_batchfile
+	numrecs=$(wc -l tmp_batchfile |cut -d " " -f1)
+	sed -i "s/$/${RS}/" tmp_batchfile
+	infile=tmp_batchfile
+else
+	idfile="yes"
+	numrecs=$(wc -l ${infile} |cut -d " " -f1)
+fi
+
 
 batch=0
 counter=0
 SECONDS=0
 OFFSET=0 
-contentType="MARC_JSON"
 
-if [[ ${infile} =~ mrc$ ]]; then
-	contentType="MARC_RAW"
-	cat "${infile}" |tr $'\x1d' '\n' |sed "/^$/d;s/$/\x1d/" > tmp_marc_json
-	infile="tmp_marc_json"
-fi
-
-numrecs=$(wc -l ${infile} |cut -f1 -d " ")
 echo "${numrecs} records detected"
 
 total_arr=() # needed to remember variable from loop
-
-idfile=$(head -1 "${infile}" |wc -c)
-
-if [[ ${idfile} -lt 38 ]];then 
-	idfile="yes"
-	dos2unix "${infile}"
-	echo "Identifier file of ${infile} detected. Building ${contentType} objects"
-fi
 
 user_id=$(cat okapi.token |base64 -di 2>/dev/null |jq -r 'select(.user_id != null) |.user_id' 2>/dev/null)
 
@@ -51,30 +45,27 @@ fi
 
 rm -rf tmp_import
 mkdir tmp_import
-cp "${infile}" tmp_import
+cp ${infile} tmp_import
 cd tmp_import
-split -l 1000 "${infile}"
-rm "${infile}"
-
+split -l 1000 tmp_batchfile
+sed -ri '/^.{,24}$/d' x*
+rm ${infile}
 
 ####################################
 
 post_records() {
 	currentfile="${1}"
 	batchsize=$(wc -l ${currentfile} |cut -f1 -d " ")
-	
 	counter=$(($counter + $batchsize))
-	batchuuid=$(uuidgen)
+	batchuuid="$(uuidgen)"
 
 	#create MARC file out of ids if file detected to consist of ids
-
 	if [[ ${idfile} == "yes" ]];then sed -i 's/\(.*\)/{"leader":"00047cam a22000370  4500","fields":[{"001":"\1"}] }/' ${currentfile};fi
 
-	cat ${currentfile} | jq -nR   --arg BATCHUUID ${batchuuid} --arg CONTENTTYPE ${contentType} --argjson COUNTER ${counter} --argjson TOTAL ${numrecs} '
-			{"initialRecords": [inputs as $RECORD 
-			| {"record": $RECORD } ]}
-			| .id = $BATCHUUID |.recordsMetadata.last = false | .recordsMetadata.counter = $COUNTER 
-			| .recordsMetadata.total = $TOTAL | .recordsMetadata.contentType = $CONTENTTYPE ' > tmp_processfile
+	cat ${currentfile} | jq -nR   --arg BATCHUUID ${batchuuid} --arg CONTENTTYPE ${contentType} --arg COUNTER ${counter} --arg TOTAL ${numrecs} ' {"initialRecords": [inputs as $RECORD 
+		| {"record": $RECORD } ]}
+		|.id = $BATCHUUID |.recordsMetadata.last = false | .recordsMetadata.counter = $COUNTER
+		| .recordsMetadata.total = $TOTAL | .recordsMetadata.contentType = $CONTENTTYPE ' > tmp_processfile
 
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d @tmp_processfile "${okapi_url}/change-manager/jobExecutions/${parentJobExecutionId}/records")
 	echo ${counter}
@@ -134,11 +125,13 @@ for recordfile in $(ls);do
         echo -en "Processing record $counter of $numrecs in $msg\r"
 done
 
-finalizePost="{ \"id\": \"$(uuidgen)\", \"recordsMetadata\": { \"last\": true, \"counter\": ${numrecs}, \"total\": ${numrecs}, \"contentType\":\"${contentType}\" }, \"initialRecords\": []}"
+id="$(uuidgen)"
+
+finalizePost="$(jq -nc --arg ID "${id}" --arg COUNTER ${counter} --arg TOTAL ${numrecs} --arg CONTENTTYPE "${contentType}" '.id = $ID | .recordsMetadata.last = true | .recordsMetadata.counter = $COUNTER | .recordsMetadata.total = $TOTAL | .recordsMetadata.contentType = $CONTENTTYPE | .initialRecords = []')"
 
 echo "Finalizing upload. FOLIO must still process records"
 
 curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${finalizePost}" "${okapi_url}/change-manager/jobExecutions/${parentJobExecutionId}/records"
 
 cd ..
-rm -rf tmp_import tmp_marc_json
+rm -rf tmp_import tmp_batchfile

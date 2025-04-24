@@ -435,6 +435,7 @@ function fix_dates() {
 			if (FNR != 1) { $fixdate = "" }
 		}
 	}
+if ($fixdate == ""){print "blanked date" > bad_dates}
 }
 
 {
@@ -473,6 +474,11 @@ rm tmp_filefixawk
 
 numclean=$(wc -l ${finalfile} |cut -d " " -f1)
 
+if [[ -f bad_dates ]];then
+	echo "Blank dates have been identified. Examining date fields for anomalies recommended"
+	rm bad_dates
+fi
+
 echo "$numclean records have been output to ${finalfile}"
 
 if [[ -f ${errorfile} ]];then
@@ -490,3 +496,4 @@ foundExcel=0
 for file in "${filelist[@]}";do
 	fix_file "${file}"
 done
+

@@ -34,8 +34,6 @@ OFFSET=0
 
 echo "${numrecs} records detected"
 
-total_arr=() # needed to remember variable from loop
-
 user_id=$(cat okapi.token |base64 -di 2>/dev/null |jq -r 'select(.user_id != null) |.user_id' 2>/dev/null)
 
 if ! [[ $user_id =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]]; then
@@ -54,21 +52,17 @@ rm ${infile}
 ####################################
 
 post_records() {
-	currentfile="${1}"
-	batchsize=$(wc -l ${currentfile} |cut -f1 -d " ")
-	counter=$(($counter + $batchsize))
 	batchuuid="$(uuidgen)"
 
 	#create MARC file out of ids if file detected to consist of ids
-	if [[ ${idfile} == "yes" ]];then sed -i 's/\(.*\)/{"leader":"00047cam a22000370  4500","fields":[{"001":"\1"}] }/' ${currentfile};fi
+	if [[ ${idfile} == "yes" ]];then sed -i 's/\(.*\)/{"leader":"00047cam a22000370  4500","fields":[{"001":"\1"}] }/' ${recordfile};fi
 
-	cat ${currentfile} | jq -nR   --arg BATCHUUID ${batchuuid} --arg CONTENTTYPE ${contentType} --arg COUNTER ${counter} --arg TOTAL ${numrecs} ' {"initialRecords": [inputs as $RECORD 
+	cat ${recordfile} | jq -nR   --arg BATCHUUID ${batchuuid} --arg CONTENTTYPE ${contentType} --arg COUNTER ${counter} --arg TOTAL ${numrecs} ' {"initialRecords": [inputs as $RECORD 
 		| {"record": $RECORD } ]}
 		|.id = $BATCHUUID |.recordsMetadata.last = false | .recordsMetadata.counter = $COUNTER
 		| .recordsMetadata.total = $TOTAL | .recordsMetadata.contentType = $CONTENTTYPE ' > tmp_processfile
 
-	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d @tmp_processfile "${okapi_url}/change-manager/jobExecutions/${parentJobExecutionId}/records")
-	echo ${counter}
+		apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d @tmp_processfile "${okapi_url}/change-manager/jobExecutions/${parentJobExecutionId}/records")
 }
 
 #####################################
@@ -106,8 +100,9 @@ apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -
 sleep 2
 
 for recordfile in $(ls);do
-	counter=$(post_records ${recordfile})
-	total_arr+=($total) # array needed to remember variable outside loop
+	batchsize=$(wc -l ${recordfile} |cut -f1 -d " ")
+	counter=$(($counter + $batchsize))
+	post_records 
 
         if [[ $SECONDS -gt 500 ]]; then
                 auth 2>/dev/null || authn 2>/dev/null

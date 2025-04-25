@@ -85,13 +85,6 @@ function fix_encoding(){
 	rm ${oldfile}
 }
 
-function fix_nullsquotesdates(){
-	local infile=${1}
-	local outfile="${1}_out"
-	local badfile="${1}_bad"
-	awk -v numfields=$numfields -v outfile="${outfile}" -v badfile="${badfile}" -v DATEFORMAT="${dateformat}" -v WORDS="${words}" -v DATEFIELDS="${datefields}" -f tmp_filefixawk ${infile}
-}
-
 function to_tsv(){
 	local file="${1}"
 
@@ -435,7 +428,7 @@ function fix_dates() {
 			if (FNR != 1) { $fixdate = "" }
 		}
 	}
-if ($fixdate == ""){print "blanked date" > bad_dates}
+if ($fixdate == ""){print "blanked date" > "bad_dates"}
 }
 
 {
@@ -462,7 +455,7 @@ chmod 700 tmp_filefixawk
 echo "Performing corrections"
 
 for splitfile in ${splitlist[@]};do 
-	fix_nullsquotesdates ${splitfile} &
+	awk -v numfields=$numfields -v outfile="${splitfile}_out" -v badfile="${splitfile}_bad" -v DATEFORMAT="${dateformat}" -v WORDS="${words}" -v DATEFIELDS="${datefields}" -f tmp_filefixawk ${splitfile} &
 done
 wait
 

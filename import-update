@@ -6,12 +6,12 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 
-#profileName="ZKB Items, update on UUID"
+profileName="ZKB items 001 match"
 #profileName="ZKB Instances, match on 001 UUID"
-profileName="Inventory Single Record - Default Update Instance"
+#profileName="Inventory Single Record - Default Update Instance"
 
-#contentType="MARC_JSON"
-contentType="MARC_RAW"
+contentType="MARC_JSON"
+#contentType="MARC_RAW"
 
 if [[ "${1,,}" =~ [a-z] ]]; then infile="${1}";fi
 if [[ ! -f "${infile}" ]];then echo "You must supply a filename"; exit;fi
@@ -24,6 +24,8 @@ if [[ $contentType != contentType="MARC_JSON" ]];then
 else
 	idfile="yes"
 	numrecs=$(wc -l ${infile} |cut -d " " -f1)
+	sed -i 's/"//g' ${infile}
+	sed -i 's/\(.*\)/"\1"/g' ${infile}
 fi
 
 

@@ -79,6 +79,8 @@ jobProfileId=$(echo "${jobProfileInfo}" |jq -r .id)
 if ! [[ $jobProfileId =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]]; then
 	echo "No valid profile found. Exiting."
 	exit
+else
+	echo "Profile ID obtained for profile: ${profileName}"
 fi
 
 
@@ -94,7 +96,7 @@ if ! [[ $parentJobExecutionId =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4
 	exit
 fi
 
-echo "Posting job profile"
+echo "Posting job execution $parentJobExecutionId"
 
 
 apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${jobProfileInfo}" "${okapi_url}/change-manager/jobExecutions/${parentJobExecutionId}/jobProfile")

@@ -1,0 +1,10 @@
+#!/usr/bin/bash
+auth 2>/dev/null || authn 2>/dev/null
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+echo -e "id\tstatus\tfilename\tcompleted"
+
+curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/metadata-provider/jobExecutions?query=statusAny=COMMITTED&statusAny=ERROR&statusAny=CANCELLED&profileIdNotAny=d0ebb7b0-2f0f-11eb-adc1-0242ac120002&profileIdNotAny=91f9b8d6-d80e-4727-9783-73fb53e3c786&excludeJobProfileName=Bulk%20operations%20data%20import%20job%20profile-*&fileNameNotAny==No%20file%20name&limit=1000&sortBy=completed_date,desc&subordinationTypeNotAny=COMPOSITE_PARENT" |jq -r '.jobExecutions[] | [.id, .status, .fileName, .completedDate ]|@tsv'
+

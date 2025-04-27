@@ -6,8 +6,5 @@ okapi_token=$(cat okapi.token)
 
 jobexecution_id=$(tr -dc "[0-9a-f\-]" <<< $1)
 
-apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-export/job-executions?query=status=(COMPLETED%20OR%20COMPLETED_WITH_ERRORS%20OR%20FAIL)%20sortBy%20completedDate/sort.descending&limit=25" |jq -r ".jobExecutions[] |select(.id == \"${jobexecution_id}\")")
+curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/change-manager/jobExecutions/${jobexecution_id}"
 
-file_id=$(echo ${apicall} |jq -r '.exportedFiles[0].fileId')
-
-echo ${apicall}

@@ -1,7 +1,7 @@
 infile="${1}"
 dos2unix "${infile}"
 
-if [[ -z ${infile} ]];then echo "You must supply a file name of barcodes";fi
+if [[ -z ${infile} ]];then echo "You must supply a file name ";fi
 
 fileroot=$(echo "${infile}" | sed 's/\.....\?$//')
 
@@ -15,7 +15,7 @@ BEGIN {
 
 	if(length("а") != 2) {
 		badawk = 1
-		printf("Your version of awk does not support marc-frombarcodes -- you need a version that supports the -b switch\\n")
+		printf("Your version of awk does not support marc-fromids -- you need a version that supports the -b switch\\n")
 		exit
 	}
 }

@@ -100,6 +100,10 @@ case $rec_type in
 "circ-loans")
 	endpoint="circulation/loans"
 	rec_type="loans";;
+"circnotices")
+	endpoint="audit-data/circulation/logs"
+	query="query=action==Send"
+	rec_type="logRecords" ;;
 "composite-orders")
 	rec_type="purchaseOrders"
 	endpoint="orders/composite-orders" ;;
@@ -262,7 +266,7 @@ case $rec_type in
 	endpoint="material-types";;
 "notes")
 	endpoint="notes";;
-"notices")
+"schedulednotices")
 	rec_type="scheduledNotices"
 	endpoint="scheduled-notice-storage/scheduled-notices";;
 "orderprefixes")

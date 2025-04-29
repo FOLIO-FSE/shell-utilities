@@ -1,0 +1,12 @@
+#!/usr/bin/bash
+auth 2>/dev/null || authn 2>/dev/null
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+url -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/specification-storage/specifications?family=MARC&profile=bibliographic&include=all&limit=500" |jq . > marcspecs.json
+
+echo "MARC specifications have been output to marcspecs.json"
+
+

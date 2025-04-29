@@ -24,6 +24,7 @@ accept="application/json"
 offset=0
 page=1
 limitOrPerPage="limit"
+startlimit=0
 PageOrOffset="offset"
 startUUID="00000000-0000-0000-0000-000000000000"
 
@@ -262,6 +263,13 @@ case $rec_type in
 "mappingprofiles")
 	rec_type="mappingProfiles"
 	endpoint="data-import-profiles/mappingProfiles";;
+"marcspecs")
+	rec_type="specifications"
+	query="family=MARC&profile=bibliographic&include=all"
+	startlimit=1000
+	sortby=""
+	num_retrieved=500
+	endpoint="specification-storage/specifications";;
 "mtypes")
 	endpoint="material-types";;
 "notes")
@@ -346,7 +354,7 @@ case $rec_type in
 "vouchers")
 	endpoint="voucher/vouchers";;
 *)
-	echo "Record type '${recordtype}' not found. Supported types are accounts, acqunits, addresstypes, agreements, agreements-picklists, agreements-suppl, authorities, authorities-srs, batch-groups, boundwiths, budgets, campuses, categories, circ-loans, circlog, composite-orders, contacts, coursedepartments, courselistings, courses, coursetypes, departments, eholdings, entitlements expense-classes, feefines, feefineactions, fiscalyears, fund-expense, fund-groups, funds, groups, holdings, holdingstypes, holdings-srs, identifiertypes, importjobs, inhouse,  interfaces, instance-relationships, instancerelationshiptypes, instances, institutions, items, inventory, inventory-items, invoices, invoice-lines, exportjobs, ledgers, libraries, licenses, licenses-picklists, licenses-terms, locations, loantypes, loan-history, loans, manualblocks, mappingprofiles, mattypes, mtypes, notes, notices, orderprefixes, orderlines, orders, organizations, permissions, permissionusers, polines, preceedingsucceeding, receivinghistory, requestprefs, requests, schedulednotices, servicepoints, servicepointsusers, srs, statcodes, tags, templates, transactions, usergroups, users, vouchers.";exit;;
+	echo "Record type '${recordtype}' not found. Supported types are accounts, acqunits, addresstypes, agreements, agreements-picklists, agreements-suppl, authorities, authorities-srs, batch-groups, boundwiths, budgets, campuses, categories, circ-loans, circlog, composite-orders, contacts, coursedepartments, courselistings, courses, coursetypes, departments, eholdings, entitlements expense-classes, feefines, feefineactions, fiscalyears, fund-expense, fund-groups, funds, groups, holdings, holdingstypes, holdings-srs, identifiertypes, importjobs, inhouse,  interfaces, instance-relationships, instancerelationshiptypes, instances, institutions, items, inventory, inventory-items, invoices, invoice-lines, exportjobs, ledgers, libraries, licenses, licenses-picklists, licenses-terms, locations, loantypes, loan-history, loans, manualblocks, mappingprofiles, marcspecs, mattypes, mtypes, notes, notices, orderprefixes, orderlines, orders, organizations, permissions, permissionusers, polines, preceedingsucceeding, receivinghistory, requestprefs, requests, schedulednotices, servicepoints, servicepointsusers, srs, statcodes, tags, templates, transactions, usergroups, users, vouchers.";exit;;
 esac
 
 rm -f ${rec_type}
@@ -362,7 +370,7 @@ fi
 if [[ -z $jqexpr ]];then jqexpr="jq -c --arg REC_TYPE "${rec_type}" '.[\$REC_TYPE][] | del(.metadata)'";fi
 
 if [[ $limitOrPerPage == "limit" ]];then
-	num_records=$(curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&${limitOrPerPage}=0" |jq -r .${totalRecords})
+	num_records=$(curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&${limitOrPerPage}=${startlimit}" |jq -r .${totalRecords})
 else
 	num_records=$(curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&${limitOrPerPage}=${num_retrieved}" |jq -r .${totalRecords})
 fi

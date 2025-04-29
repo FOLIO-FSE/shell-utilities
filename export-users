@@ -9,7 +9,7 @@ jq -r '[.id, .group]|@tsv' usergroups.json > patronGroup.tsv
 jq -r '[.id, .name]|@tsv' addresstypes.json > addressType.tsv
 
 
-echo -e "id\tusername\texternalSystemId\tbarcode\tactive\ttype\tpatronGroup\tlastName\tfirstname\tmiddleName\tphone\tmobilePhone\texpirationDate\taddress1.country\taddress1.line1\taddress1.line2\taddress1.city\taddress1.region\taddress1.postalCode\taddressType\taddress1.primaryAddress\taddress2.country\taddress2.line1\taddress2.line2\taddress2.city\trddress2.region\taddress2.postalCode\taddressType\taddress2.primaryAddress" > users.tsv
+echo -e "id\tusername\texternalSystemId\tbarcode\tactive\ttype\tpatronGroup\tfirstName\tmiddleName\tlastName\tphone\tmobilePhone\texpirationDate\taddress1.country\taddress1.line1\taddress1.line2\taddress1.city\taddress1.region\taddress1.postalCode\taddressType\taddress1.primaryAddress\taddress2.country\taddress2.line1\taddress2.line2\taddress2.city\trddress2.region\taddress2.postalCode\taddressType\taddress2.primaryAddress" > users.tsv
 
 echo
 echo "Extracting user records."
@@ -26,6 +26,12 @@ pv users.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	"\(.active)" // "",
 	"\(.type)" // "",
 	"\(.patronGroup)" // "",
+	"\(.personal.firstName)" // "",
+	"\(.personal.middleName)" // "",
+	"\(.personal.lastName)" // "",
+	"\(.personal.email)" // "",
+	"\(.personal.phone)" // "",
+	"\(.personal.mobilePhone)" // "",
 	"\(.expirationDate)" // "",
 	"\(.addresses[0] |select(.countryId!=null) | .countryId)" // "",
 	"\(.addresses[0] |select(.addressLine1!=null) | .addressLine1)" // "",

@@ -1,12 +1,14 @@
 #!/usr/bin/bash
 auth 2>/dev/null || authn 2>/dev/null
-
+# retrieves item and holdings data associated with
+# an instance
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-url -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/specification-storage/specifications?family=MARC&profile=bibliographic&include=all&limit=500" |jq . > marcspecs.json
+tag=$(sed 's/[^0-9]//g' <<< ${1})
 
-echo "MARC specifications have been output to marcspecs.json"
+curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/specification-storage/specifications?family=MARC&profile=bibliographic&include=all&limit=500" |jq . > marcspecs.json
 
+echo "MARC specs have been output to marcspecs.json"
 

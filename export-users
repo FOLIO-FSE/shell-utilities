@@ -48,7 +48,7 @@ pv users.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	"\(.addresses[1] |select(.addressType!=null) | .addressType)" // "",
 	"\(.addresses[1] |select(.primaryAddress!=null) | .primaryAddress)" // ""
 	] |join($delim)
-	' >> users.tsv 
+	' |sed 's/\bnull\b//g' >> users.tsv 
 
 echo
 echo "Converting UUIDs to human readable values"

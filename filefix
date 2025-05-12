@@ -433,7 +433,7 @@ if ($fixdate == ""){print "blanked date" > "bad_dates"}
 
 {
 	if (NF == numfields) { 
-		fix_dates()
+		if (NR != 1){ fix_dates() }
 		print $0 > outfile	
 	} else {
 		if ((NF == numfields + 1) && (substr($0, length($0), 1) == "\t")) {

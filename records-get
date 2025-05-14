@@ -71,6 +71,7 @@ case $rec_type in
 	endpoint="erm/custprops"
 	erm="yes";;
 "authorities")
+	startlimit=1000
 	endpoint="authority-storage/authorities";;
 "authorities-source")
 	rec_type="authoritySourceFiles"

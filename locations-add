@@ -14,10 +14,10 @@ declare -A dict_campuses
 declare -A dict_libraries
 declare -A dict_institutions
 
-institution_default="CU"
-campus_default="Morningside"
-library_default="Lehman"
-servicepoint_default="Migration"
+institution_default="ADNU"
+campus_default="ADNU-BC"
+library_default="JOBL"
+servicepoint_default="JOBL Circ-1"
 
 # get list of institutions with code as key and uuid as value
 eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/location-units/institutions?limit=1000" |  jq -r '.locinsts[] | @sh "dict_institutions[\(.code|tostring|ascii_downcase)]=\(.id|tostring)"')"
@@ -66,6 +66,7 @@ do
 	library_default=$(tr -dc [a-z0-9] <<< "${library_default,,}")
 	servicepoint_default=$(tr -dc [a-z0-9] <<< "${servicepoint_default,,}")
 
+
 	if [[ -z ${institution} ]];then 
 		institutionId=${dict_institutions[${institution_default}]}
 	else
@@ -103,7 +104,7 @@ do
 	else
 		servicePointId=${dict_servicepoints[${compareservicepoint}]}
 
-		if [[ ! ${servicepointId} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+		if [[ ! ${servicePointId} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
 			servicePointId=${dict_servicepoints[${servicepoint_default}]}
 		fi
 	fi

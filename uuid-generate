@@ -4,6 +4,10 @@
 # object type is budgets, holdings, items, instances, authorities, srs_records_bib, srs_records_holdingsrecord, srs_records_auth, srs_records_edifact, raw_records, parsed_records, loans, requests, fees_fines, users, permissions_users, request_preference, orders, po_lines, organizations, edifact, course, course_listing, instructor, reserve 
 
 okapi_url=$(cat okapi.url)
+tenant=$(cat tenant)
+
+seed="tenant" # tenant or okapi_url
+
 namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
 object_type=$1
 identifier=$2
@@ -14,5 +18,5 @@ if [[ ${strip} == "strip" ]];then
 	identifier="${identifier:0:-1}"
 fi
 
-echo "uuid -v 5  ${namespace} ${okapi_url}:${object_type}:${identifier}"
-uuid -v 5  ${namespace} ${okapi_url}:${object_type}:${identifier}
+echo "uuid -v 5  ${namespace} ${!seed}:${object_type}:${identifier}"
+uuid -v 5  ${namespace} ${!seed}:${object_type}:${identifier}

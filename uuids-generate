@@ -1,15 +1,19 @@
 # The name is constructed as OKAPI_URL:OBJECT_TYPE_NAME:LEGACY_IDENTIFIER
 # e.g. https://okapi-bugfest-juniper.folio.ebsco.com:items:i3696836
+# e.g. fs00009000:items:i3696836
 #
 # object type is instances, holdings, items, etc
 
 okapi_url=$(cat okapi.url)
+tenant=$(cat tenant)
 namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
 object_type=$1
 strip=$2
 
 infile="ids"
 outfile="uuids"
+
+seed="tenant" # tenant or okapi_url
 
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 rm -f ${outfile}
@@ -24,7 +28,7 @@ uuid_generate() {
 	fi
 
 	fileno=$(printf "%03d" $fileno)
-	uuid -v 5  ${namespace} ${okapi_url}:${object_type}:${identifier} > "tmp_uuid.${fileno}"
+	uuid -v 5  ${namespace} ${!seed}:${object_type}:${identifier} > "tmp_uuid.${fileno}"
 }
 
 while mapfile -t -n 100 ids && ((${#ids[@]})); do

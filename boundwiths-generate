@@ -1,6 +1,11 @@
 okapi_url=$(cat okapi.url)
+tenant=$(cat tenant)
+seed="tenant" # tenant or okapi_url
+
 namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
 strip=$1
+
+if [[ $1 == "deterministic" || $2 == "deterministic" ]];then generate="yes";fi
 
 infile="boundwiths_needuuids.tsv"
 outfile="boundwiths.json"
@@ -13,15 +18,16 @@ boundwith_generate() {
 	local itemid=${2}
 	local fileno=${3}
 	local record
-	local bwid=$(uuidgen)
+
+	if [[ -z $bwid ]];then bwid=$(uuidgen);fi
 	
 	if [[ ${strip} == "strip" ]];then
 		itemid="${itemid/./}"
 		itemid="${itemid:0:-1}"
 	fi
 
-	holdid=$(uuid -v 5  ${namespace} ${okapi_url}:holdings:${holdid})
-	itemid=$(uuid -v 5  ${namespace} ${okapi_url}:items:${itemid})
+	holdid=$(uuid -v 5  ${namespace} ${!seed}:holdings:${holdid})
+	itemid=$(uuid -v 5  ${namespace} ${!seed}:items:${itemid})
 
 	record="{\"id\": \"${bwid}\", \"holdingsRecordId\": \"${holdid}\", \"itemId\": \"${itemid}\"}"
 

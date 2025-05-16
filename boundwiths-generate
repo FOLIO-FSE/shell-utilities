@@ -5,7 +5,12 @@ seed="tenant" # tenant or okapi_url
 namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
 strip=$1
 
-if [[ $1 == "deterministic" || $2 == "deterministic" ]];then generate="yes";fi
+if [[ $1 == "deterministic" || $2 == "deterministic" ]];then 
+	generate="yes"
+	echo "Deterministic UUIDs will be created for for boundwith IDs"
+else
+	echo "Deterministic UUIDs will NOT be created for for boundwith IDs"
+fi
 
 infile="boundwiths_needuuids.tsv"
 outfile="boundwiths.json"

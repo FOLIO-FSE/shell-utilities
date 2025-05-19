@@ -11,5 +11,5 @@ if [[ -z $jobexecution_id ]];then
 	exit
 fi
 
-curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/metadata-provider/jobLogEntries/${jobexecution_id}?limit=100&order=asc"
+curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/metadata-provider/jobLogEntries/${jobexecution_id}?limit=10000" | jq -r '.entries[].relatedInstanceInfo.error' |sort |uniq -c |sort -k1nr
 

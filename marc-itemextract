@@ -1,5 +1,3 @@
-# sirsi was inadvertantly modified to accommodate NALIS -- must be modified
-
 knownsystems=("absysnet" "destiny" "eos" "janium" "koha" "lc2" "opals" "sierra" "sirsi" "softlink" "tlc" "virtua" "wms")
 
 if [[ -z $2 ]];then

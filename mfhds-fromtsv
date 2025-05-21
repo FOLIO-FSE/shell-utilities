@@ -247,6 +247,10 @@ function build_mfhd() {
 					location=i
 					printf ("Location found in "$i"\\n")
 					break
+				case "permanentlocation":
+					location=i
+					printf ("Location found in "$i"\\n")
+					break
 				case "locationcode":
 					location=i
 					printf ("Location found in "$i"\\n")

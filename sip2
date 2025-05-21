@@ -22,6 +22,7 @@ AS=holdItems
 AT=overdueItems
 AU=chargedItems
 AV=fineItems
+AY=sequence number of message
 BD=homeAddress
 BE=emailAddress
 BF=homePhoneNumber
@@ -54,5 +55,5 @@ CN=loginUserId
 CO=loginPassword
 CP=locationCode
 
-
+echo "ssh -vvv ${edge}@${endpoint}" 
 ssh "${edge}@${endpoint}" -f

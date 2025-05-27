@@ -9,7 +9,7 @@ jq -r '[.id, .group]|@tsv' usergroups.json > patronGroup.tsv
 jq -r '[.id, .name]|@tsv' addresstypes.json > addressType.tsv
 
 
-echo -e "id\tusername\texternalSystemId\tbarcode\tactive\ttype\tpatronGroup\tfirstName\tmiddleName\tlastName\tphone\tmobilePhone\texpirationDate\taddress1.country\taddress1.line1\taddress1.line2\taddress1.city\taddress1.region\taddress1.postalCode\taddressType\taddress1.primaryAddress\taddress2.country\taddress2.line1\taddress2.line2\taddress2.city\taddress2.region\taddress2.postalCode\taddressType\taddress2.primaryAddress" > users.tsv
+echo -e "id\tusername\texternalSystemId\tbarcode\tactive\ttype\tpatronGroup\tfirstName\tmiddleName\tlastName\temail\tphone\tmobilePhone\texpirationDate\taddress1.country\taddress1.line1\taddress1.line2\taddress1.city\taddress1.region\taddress1.postalCode\taddressType\taddress1.primaryAddress\taddress2.country\taddress2.line1\taddress2.line2\taddress2.city\taddress2.region\taddress2.postalCode\taddressType\taddress2.primaryAddress" > users.tsv
 
 echo
 echo "Extracting user records."
@@ -33,20 +33,22 @@ pv users.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	"\(.personal.phone)" // "",
 	"\(.personal.mobilePhone)" // "",
 	"\(.expirationDate)" // "",
-	"\(.addresses[0] |select(.countryId!=null) | .countryId)" // "",
-	"\(.addresses[0] |select(.addressLine1!=null) | .addressLine1)" // "",
-	"\(.addresses[0] |select(.addressLine2!=null) | .addressLine2)" // "",
-	"\(.addresses[0] |select(.city!=null) | .city)" // "",
-	"\(.addresses[0] |select(.postalCode!=null) | .postalCode)" // "",
-	"\(.addresses[0] |select(.addressType!=null) | .addressType)" // "",
-	"\(.addresses[0] |select(.primaryAddress!=null) | .primaryAddress)" // "",
-	"\(.addresses[1] |select(.countryId!=null) | .countryId)" // "",
-	"\(.addresses[1] |select(.addressLine1!=null) | .addressLine1)" // "",
-	"\(.addresses[1] |select(.addressLine2!=null) | .addressLine2)" // "",
-	"\(.addresses[1] |select(.city!=null) | .city)" // "",
-	"\(.addresses[1] |select(.postalCode!=null) | .postalCode)" // "",
-	"\(.addresses[1] |select(.addressType!=null) | .addressType)" // "",
-	"\(.addresses[1] |select(.primaryAddress!=null) | .primaryAddress)" // ""
+	"\(.personal.addresses[0]? |select(.countryId!=null) | .countryId)" // "",
+	"\(.personal.addresses[0]? |select(.addressLine1!=null) | .addressLine1)" // "",
+	"\(.personal.addresses[0]? |select(.addressLine2!=null) | .addressLine2)" // "",
+	"\(.personal.addresses[0]? |select(.city!=null) | .city)" // "",
+	"\(.personal.addresses[0]? |select(.region!=null) | .region)" // "",
+	"\(.personal.addresses[0]? |select(.postalCode!=null) | .postalCode)" // "",
+	"\(.personal.addresses[0]? |select(.addressType!=null) | .addressType)" // "",
+	"\(.personal.addresses[0]? |select(.primaryAddress!=null) | .primaryAddress)" // "",
+	"\(.personal.addresses[1]? |select(.countryId!=null) | .countryId)" // "",
+	"\(.personal.addresses[1]? |select(.addressLine1!=null) | .addressLine1)" // "",
+	"\(.personal.addresses[1]? |select(.addressLine2!=null) | .addressLine2)" // "",
+	"\(.personal.addresses[1]? |select(.city!=null) | .city)" // "",
+	"\(.personal.addresses[1]? |select(.region!=null) | .region)" // "",
+	"\(.personal.addresses[1]? |select(.postalCode!=null) | .postalCode)" // "",
+	"\(.personal.addresses[1]? |select(.addressType!=null) | .addressType)" // "",
+	"\(.personal.addresses[1]? |select(.primaryAddress!=null) | .primaryAddress)" // ""
 	] |join($delim)
 	' |sed 's/\bnull\b//g' >> users.tsv 
 

@@ -11,8 +11,10 @@ infile="agreementnames" # expects agreement names to be exactly the same as pack
 outfile="packages.log"
 rm -f ${outfile}
 
+#get agreement list from FOLIO
 echo "Retrieving agreements"
 records-get agreements
+#get package list from eHoldings/HLM
 echo "Retrieving packages"
 records-get packages
 
@@ -33,7 +35,7 @@ EndOfAgreementLine
 echo "${agreementline}"
 }
 
-
+#read infile agreement list, compare against eHoldings package list
 while IFS=$'\n' read -r agreement_name;do 
 	echo "Processing ${agreement_name}"
 	package_id=$(jq -r --arg NAME "${agreement_name}" 'select(.attributes.name == $NAME) |.id' <<< "${all_packages}")

@@ -25,11 +25,11 @@ function check_fields() {
 	gsub(subfield_9, subfield_0, $0)	
 
 	## normalize high ascii chars if coded as utf8
-	if (utf8 == "a") { 
-		if (match($0, BAD_CHAR_REGEX) > 1) {
-			$0 = substr($0, 1, 9)" "substr($0, 11)
-		}
-	}
+	#if (utf8 == "a") { 
+	#	if (match($0, BAD_CHAR_REGEX) > 1) {
+	#		$0 = substr($0, 1, 9)" "substr($0, 11)
+	#	}
+	#}
 	## Look for null identifiers
 	if (match($0, BAD_SUBFIELD_REGEX) > 1) {
 			badsubfields = 1

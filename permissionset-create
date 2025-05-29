@@ -6,7 +6,14 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-permissionName="read-only"
+permissionName=${1}
+permissions="${2}"
+
+if [[ -z ${permissions} ]];then
+	echo "You must supply a permission name and a set of permissions enclosed in brackets"
+	echo "permissionset-create yourpermission '[\"permission1\", \"permission2\"]"
+	exit
+fi
 
 IFS='' read -r -d '' permissionset << EndOfPermission
 
@@ -15,11 +22,12 @@ IFS='' read -r -d '' permissionset << EndOfPermission
   "displayName" : "${permissionName}",
   "id" : "$(uuidgen)",
   "tags" : [ ],
-  "subPermissions" : [ ],
+  "subPermissions" : ${permissions},
   "mutable" : true,
   "visible" : true
 
 }
 EndOfPermission
+
 
 curl --http1.1 -w '\n'  POST -H "Content-type: application/json" -H "x-okapi-tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${permissionset}" "${okapi_url}/perms/permissions"

@@ -292,7 +292,7 @@ case $rec_type in
 	rec_type="purchaseOrders";;
 "organizations")
 	endpoint="organizations-storage/organizations"
-	query="query=%28status%3D%3D%22Active%22%29"
+	query="query=%28status%3C%3E%22Nothing%22%29"
 	;;
 "packages")
 	rec_type="data"

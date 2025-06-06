@@ -36,6 +36,7 @@ echo
 echo "Converting UUIDs to human readable values"
 echo
 value-mapper loans.tsv
+mv loans_fixed.tsv loans.tsv
 
 echo -e "userid\tfineType\tamountAction\tbalance\ttransactionInformation" > fines.tsv
 

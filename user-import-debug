@@ -1,0 +1,13 @@
+#!/usr/bin/bash
+auth 2>/dev/null || authn 2>/dev/null
+
+inputFile="users.json"
+
+while IFS='' read -r record; do
+	payload="{\"users\": [${record}],\"totalRecords\": 1, \"deactivateMissingUsers\": false, \"updateOnlyPresentFields\": true}"
+	
+	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${payload}" "${okapi_url}/user-import"
+
+done < ${inputFile}
+
+

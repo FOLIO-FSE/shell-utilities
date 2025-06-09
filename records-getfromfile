@@ -111,6 +111,9 @@ case $rec_type in
 	querystring="externalId="
 	jq_replace=".relatedRecordVersion=0"
 	endpoint="change-manager/parsedRecords";;
+"permissionusers")
+	jq_replace=".permissionUsers[]"
+	endpoint="perms/users";;
 "polines")
 	jq_replace=".poLines[]"
 	endpoint="orders-storage/po-lines";;

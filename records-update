@@ -36,44 +36,48 @@ fixrecord() {
 	local value="${3}"
 	local updated_record
 	local apicall
+	local copyvalue="no" # set to yes only when copying where target uuid is field1 and source uuid is field2 (to/from)
 
 	if [[ ${recordtype} == "source-storage/records" ]];then 
 		apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${uuid}/formatted?idType=INSTANCE" |jq .)
 		uuid=$(echo ${apicall} |jq -r .id)
+		
 	else
-		apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}" |jq .)
+		apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}") # get target record
+
+		if [[ ${copyvalue} == "yes" ]];then 
+			value=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${value}" | jq -r .permanentLocationId ) # extract value from source record
+		fi
 	fi
-
-# Unrem the appropriate updated_record expression for your task
- 
+	
+	# Unrem the appropriate updated_record expression for your task
 	updated_record=$(echo "${apicall}"  |jq -r --arg VALUE "${value}" '
-#		(if .volume != null then .volume = (.volume |sub(" *Acc.*"; "")) else . end)
-#		 ((.parsedRecord.content.fields[] | select(."008" != null) |."008") = "780615s19uu    xx a                eng d")               
-#		 ((.parsedRecord.content.fields[] | select(."008" != null) |."008") = $VALUE)               
-#                (.name as $name | .accounts += [{"name": $name,"accountNo": $VALUE,"paymentMethod":"Other","accountStatus":"Active","libraryCode":"-","libraryEdiCode":"-"}] ) 
-#                (.active = true ) 
-#                (.administrativeNotes += [$VALUE] ) 
-#                (.agreementContentTypes = [{"_delete": true, "contentType": {"value": $VALUE}}] ) 
-#                (.customFields.academicStatus = $VALUE) # single dropdown or text
-#                (.erpCode = $VALUE ) 
-#                (.fundDistributions[0].code = "ybpbl" ) 
-#		(.fund.ledgerId = "bdc5218a-e14c-41ea-8a9f-d7c9980d8b35")
-#                (.groupIds += [$VALUE] ) 
-#                (.materialTypeId = $VALUE ) 
-#                (.notes |= .+ [{"holdingsNoteTypeId": "b160f13a-ddba-4053-b9c4-60ec5ea45d56", "staffOnly": false, "note": $VALUE}]) 
-#                (.permanentLoanTypeId = $VALUE)
-#                (.permanentLocationId = $VALUE) 
-#                (.servicePointIds += [ $VALUE ] ) 
-#                (.statisticalCodeIds += [ $VALUE ] ) 
-#		 (.electronicAccess = ($VALUE|fromjson))                
-#                (.statusId = $VALUE)
-#                (.temporaryLoanType = {"id": $VALUE} ) # UUID, must use items-inventory
-#                (.temporaryLocation = {"id": $VALUE} ) # UUID, must use items-inventory
-		|del(.metadata)
-')
-	#updated_record=${apicall//$pattern/$replace}
-	apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_record}" "${okapi_url}/${recordtype}/${uuid}")
-
+	#		(if .volume != null then .volume = (.volume |sub(" *Acc.*"; "")) else . end)
+	#		 ((.parsedRecord.content.fields[] | select(."008" != null) |."008") = "780615s19uu    xx a                eng d")               
+	#		 ((.parsedRecord.content.fields[] | select(."008" != null) |."008") = $VALUE)               
+	#                (.name as $name | .accounts += [{"name": $name,"accountNo": $VALUE,"paymentMethod":"Other","accountStatus":"Active","libraryCode":"-","libraryEdiCode":"-"}] ) 
+	#                (.active = true ) 
+	#                (.administrativeNotes += [$VALUE] ) 
+	#                (.agreementContentTypes = [{"_delete": true, "contentType": {"value": $VALUE}}] ) 
+	#                (.customFields.academicStatus = $VALUE) # single dropdown or text
+	#                (.erpCode = $VALUE ) 
+	#                (.fundDistributions[0].code = "ybpbl" ) 
+	#		(.fund.ledgerId = "bdc5218a-e14c-41ea-8a9f-d7c9980d8b35")
+	#                (.groupIds += [$VALUE] ) 
+	#                (.materialTypeId = $VALUE ) 
+	#                (.notes |= .+ [{"holdingsNoteTypeId": "b160f13a-ddba-4053-b9c4-60ec5ea45d56", "staffOnly": false, "note": $VALUE}]) 
+	#                (.permanentLoanTypeId = $VALUE)
+	#                (.permanentLocationId = $VALUE) 
+	#                (.servicePointIds += [ $VALUE ] ) 
+	#                (.statisticalCodeIds += [ $VALUE ] ) 
+	#		 (.electronicAccess = ($VALUE|fromjson))                
+	#                (.statusId = $VALUE)
+	#                (.temporaryLoanType = {"id": $VALUE} ) # UUID, must use items-inventory
+	#                (.temporaryLocation = {"id": $VALUE} ) # UUID, must use items-inventory
+			|del(.metadata)
+	')
+		#updated_record=${apicall//$pattern/$replace}
+		apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_record}" "${okapi_url}/${recordtype}/${uuid}")
 	echo "${apicall}" |grep -i [a-z] >> "tmp_records.${fileno}"
 
 }
@@ -171,7 +175,7 @@ while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
 	for line in "${lines[@]}";do
 		IFS=$'\t' read -r uuid value <<< "${line}"
 		
-		fixrecord "${uuid}" "${seq}" "${value}" &
+		fixrecord "${uuid}" "${seq}" "${value}" 
 
 		counter=$(($counter + 1))
 		seq=$(($seq + 1))

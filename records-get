@@ -278,9 +278,9 @@ case $rec_type in
 	endpoint="material-types";;
 "notes")
 	endpoint="notes";;
-"schedulednotices")
-	rec_type="scheduledNotices"
-	endpoint="scheduled-notice-storage/scheduled-notices";;
+"oai")
+	rec_type="requestMetadataCollection"
+	endpoint="oai/request-metadata";;
 "orderprefixes")
 	rec_type="prefixes"
 	endpoint="orders/configuration/prefixes";;

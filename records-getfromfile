@@ -148,18 +148,22 @@ esac
 
 rm -f ${rec_type}.json
 t=0
+lastset=0
 
 if [[ $indivrecord -eq 1 ]];then batchsize=10;fi
 
 while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 	counter=$(($counter + ${#ids[@]}))
 	idstring="${ids[@]}"
+
+	[[ ${#ids[@]} -lt $((${batchsize} - 1)) ]] && lastset=1
+	
 	if [[ $indivrecord -ne 1 ]];then
 		querystring="query=id=${idstring// /${querydelim}}"
 		getbatch "${querystring}" ${t} &
 		t=$(($t + 1))
 
-		if [[ $t -eq 4 ]];then
+		if [[ $t -eq 4 || $lastset -eq 1 ]];then
 			wait
 			t=0
 			printrecords

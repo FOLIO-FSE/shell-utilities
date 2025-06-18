@@ -11,10 +11,10 @@ if [[ -z $jobexecution_id ]];then
 	exit
 fi
 
-apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/metadata-provider/jobLogEntries/${jobexecution_id}?limit=10000" | jq -r '.entries[]')
+apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/metadata-provider/jobLogEntries/${jobexecution_id}?limit=10000" | jq -c '.entries[]')
 
 echo "Errors:" 
-echo "${apicall}" | jq '.entries[].error|fromjson|.errors[].message'|sed 's/\\n.*//' |sort |uniq -c |sort -k1nr
+echo "${apicall}" | jq -c 'select(.error != "") |.error|fromjson|.errors[].message'|sed 's/\\n.*//' |tr -d '"' |sort |uniq -c |sort -k1nr
 
 echo "${apicall}" |jq -r 'select(.sourceRecordActionStatus=="DISCARDED") |.incomingRecordId' > discarded_ids
 echo "Discarded ids have been sent to 'discarded_ids'"

@@ -19,3 +19,6 @@ echo "${apicall}" | jq -c 'select(.error != "") |.error|fromjson|.errors[].messa
 echo "${apicall}" |jq -r 'select(.sourceRecordActionStatus=="DISCARDED") |.incomingRecordId' > discarded_ids
 echo "Discarded ids have been sent to 'discarded_ids'"
 
+echo "${apicall}" > diresults.json
+echo "Full results have been sent to 'diresults.json'"
+

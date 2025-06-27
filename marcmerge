@@ -36,6 +36,11 @@ BEGIN {
 	printf "%s", "tag999\\ttag001\\ttag907a\\ttitle\\tpubdata\\tedition\\tpagination\\n" > MERGEREPORT
 	printf "%s\\n\\n", "Creating ids for source file. Please be patient."
 
+	MERGEMAP = "merged_map.tsv"
+	NOTMERGEMAP = "not_merged_map.tsv"
+	printf "mergeId\\toriginal_999i\\tnew_999i\\t001\\t907a\\n" > MERGEMAP
+	printf "mergeId\\t999i\\t001\\t907a\\n" > NOTMERGEMAP
+
 
       if (length("а") != 2) {
                 badawk = 1
@@ -329,14 +334,17 @@ if (directory_check == 0) {
 				printf "%s%s\\n", "(source)", outstring > "merged_records.tsv"
 				printf "%s\\n", outstring > MERGEREPORT
 				print $0 > MERGEFILE
+				printf mergeId"\\t"source_999i[mergeId]"\\t"tag999i"\\t"tag001"\\t"tag907a"\\n" > MERGEMAP
 			} else {
 				printf "%s\\n", outstring > MERGEREPORT
 				print $0 > MERGEFILE
+				printf mergeId"\\t"source_999i[mergeId]"\\t"tag999i"\\t"tag001"\\t"tag907a"\\n" > MERGEMAP
 			}
 		} else { 
 			not_merged_records++
 			printf "%s\\n", outstring > NOTMERGEREPORT
 			print $0 > NOTMERGEFILE
+			printf mergeId"\\t"tag999i"\\t"tag001"\\t"tag907a"\\n" > NOTMERGEMAP
 		}
 		if (NR % 1000 == 0) {
 			printf "Merged records: %s Not merged records: %s\\r", merged_records, not_merged_records
@@ -346,8 +354,7 @@ if (directory_check == 0) {
 
 
 }
-END { printf "Merged records: %s Not merged records: %s. Reports can be found in merged_records.tsv and not_merged_records.tsv. \\nFiles can be found in merged_records.mrc and not_merged_records.mrc\\n\\n", merged_records, not_merged_records }
-
+END { printf "\\n\\nProcessing complete. Reports can be found in merged_records.tsv and not_merged_records.tsv.\\nMaps of merge activity can be found in merged_map.tsv and not_merged_map.tsv \\nFiles can be found in merged_records.mrc and not_merged_records.mrc\\n\\n" }
 ENDOFAWK
 
 echo -e "${awkscript}" > tmp_checkmarc

@@ -123,7 +123,7 @@ function extract_tags() {
 			getvarfield()
 			tag086 = varfield
 			tag086 = extract_subfield("a")
-			gsub(/[:punct:][:space:]/, "", tag086)
+			gsub(/[[:punct:][:space:]]/, "", tag086)
 			tag086 = tag086"_"
 		}
 		if (marc_tag == "100" || marc_tag == "110" || marc_tag == "111" || marc_tag == "130") {
@@ -336,7 +336,7 @@ if (directory_check == 0) {
 	}
 }
 
-if (NR % 10000 == 0){ printf "Records processed: "NR"\\r" }
+if (NR % 1000 == 0){ printf "Records processed: "NR"\\r" }
 
 }
 END { print NR" MARC records have been processed.\\n\\nReports can be found in merged_records.tsv and not_merged_records.tsv. \\nFiles can be found in merged_records.mrc and not_merged_records.mrc\\n\\n" }

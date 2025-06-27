@@ -338,13 +338,15 @@ if (directory_check == 0) {
 			printf "%s\\n", outstring > NOTMERGEREPORT
 			print $0 > NOTMERGEFILE
 		}
-	printf "Merged records: %s Not merged records: %s\\r", merged_records, not_merged_records
+		if (NR % 1000 == 0) {
+			printf "Merged records: %s Not merged records: %s\\r", merged_records, not_merged_records
+		}
 	}
 }
 
 
 }
-END { print "\\n\\nProcessing complete. Reports can be found in merged_records.tsv and not_merged_records.tsv. \\nFiles can be found in merged_records.mrc and not_merged_records.mrc\\n\\n" }
+END { printf "Merged records: %s Not merged records: %s. Reports can be found in merged_records.tsv and not_merged_records.tsv. \\nFiles can be found in merged_records.mrc and not_merged_records.mrc\\n\\n", merged_records, not_merged_records }
 
 ENDOFAWK
 

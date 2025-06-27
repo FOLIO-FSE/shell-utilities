@@ -1,0 +1,352 @@
+sourcefile="${1}"
+mergefile="${2}"
+
+if [[ -z "${mergefile}" ]];then
+	echo
+	echo "You must supply a source file and a merge file"
+	echo
+	echo "Usage: marcmerge [sourcefile] [mergefile]"
+	echo 
+	exit
+fi
+
+echo
+echo "Starting processing. Please wait"
+echo
+
+read -r -d '' awkscript << "ENDOFAWK"
+#!/usr/bin/awk -f 
+
+BEGIN { 
+	subfield_regex=SFS"."
+	subb=SFS"b"
+	subb=SFS"c"
+	subp=SFS"p"
+	subn=SFS"n"
+	subfielda = ".*"SFS"a([^"SFS"]*).*"
+	subfieldp = ".*"SFS"p([^"SFS"]*).*"
+	subfieldn = ".*"SFS"n([^"SFS"]*).*"
+	validdate="^[^0-9]*([0-9][0-9][0-9][0-9])[^0-9].*"
+	MERGEREPORT = "merged_records.tsv"
+	MERGEFILE = "merged_records.mrc"
+	NOTMERGEREPORT = "not_merged_records.tsv"
+	NOTMERGEFILE = "not_merged_records.mrc"
+	
+	printf "%s", "tag999\\ttag001\\ttag907a\\ttitle\\tpubdata\\tedition\\tpagination\\n" > MERGEREPORT
+
+
+      if (length("а") != 2) {
+                badawk = 1
+                printf("Your version of awk does not support  -- you need a version that supports the -b switch\\n")
+                exit
+      }
+}
+
+function extract_subfield(subfield) {
+	subregex = ".*"SFS""subfield"([^"SFS"]*).*"
+
+	getvarfield()
+	retvalue = varfield
+	retvalue = gensub(subregex, "\\\1", "1", retvalue)
+	return retvalue
+}
+
+function extractsubfields() {
+	# still needs to be written
+	fixedfield = substr(record_content, starting_pos + 1, field_length - 1)
+}
+
+function longest_number(getstring) {
+	longest_num = ""
+	max_len = 0
+	startpos = 1
+
+	while (match(substr(getstring, startpos), /[[:digit:]]+/)) {
+		num = substr(getstring, startpos + RSTART - 1, RLENGTH)
+		if (RLENGTH > max_len) {
+			max_len = RLENGTH
+			longest_num = num
+		}
+		startpos = startpos + RSTART + RLENGTH - 1
+	}
+	return longest_num
+}
+
+function getfixedfield() {
+	fixedfield = substr(record_content, starting_pos + 1, field_length - 1)
+}
+
+function getvarfield() {
+	varfield = substr(record_content, starting_pos + 3, field_length - 4)
+}
+
+function extract_tags() {
+	for (d_iter=1; d_iter<=directory_length; d_iter=d_iter+12) {
+		marc_tag = substr(directory, d_iter, 3)
+		field_length = substr(directory, d_iter + 3, 4) + 0
+		starting_pos = substr(directory, d_iter + 7, 5) + 0
+
+		if (marc_tag == "001") {
+			getfixedfield()
+			tag001 = fixedfield
+		}
+
+		if (marc_tag == "007") {
+			getfixedfield()
+			tag007 = fixedfield
+			if (tag007 ~ /^cr/){ format="e"}
+		}
+
+		if (marc_tag == "008") {
+			gooddate = 0
+			getfixedfield()
+			tag008 = fixedfield
+
+			date008 = substr(tag008, 12, 4)
+
+			if (date008 ~ /[12][0-9][0-9][0-9]/) {
+				gooddate = 1
+				pubdate = date008"_"
+			}
+
+			if (gooddate == 0){ 
+				date008 = substr(tag008, 8, 4)
+				if (date008 ~ /[12][0-9][0-9][0-9]/) {
+					gooddate = 1
+					pubdate = date008"_"
+				}
+			} 
+
+		}
+
+		if (marc_tag == "086") {
+			getvarfield()
+			tag086 = varfield
+			tag086 = extract_subfield("a")
+			gsub(/[:punct:][:space:]/, "", tag086)
+			tag086 = tag086"_"
+		}
+		if (marc_tag == "100" || marc_tag == "110" || marc_tag == "111" || marc_tag == "130") {
+			tagme = extract_subfield("a")
+			gsub(/[[:punct:][:space:]]/, "", tagme)
+			tagme = tolower(substr(tagme, 1, 5)"_")
+		}
+		if (marc_tag == "245" && tag245 == "") {
+			getvarfield()
+			tag245 = varfield
+			title = tag245
+			gsub(subfield_regex, " ", title)
+
+			gsub(/&/, "", tag245)
+			tag245a = extract_subfield("a")
+			gsub(/^a /, "", tag245a)
+			gsub(/^an /, "", tag245a)
+			gsub(/^the /, "", tag245a)
+		
+			if (tag245 ~ subb) { tag245b = gensub(subfieldb, "\\\1", "1", tag245) }
+			if (tag245 ~ subp) { tag245p = gensub(subfieldp, "\\\1", "1", tag245) }
+			if (tag245 ~ subn) { tag245n = gensub(subfieldn, "\\\1", "1", tag245) }
+			tag245 = tag245a""tag245b""tag245p
+			gsub(/[[:punct:][:space:]]/, "", tag245)
+			tag245 = substr(tag245, 1, 70)"_"
+			tag245 = tolower(tag245"_")
+		}
+		if (marc_tag == "250") {
+			getvarfield()
+			edition = varfield
+			gsub(subfield_regex, " ", edition)
+
+			tag250 = extract_subfield("a")
+			check250 = longest_number(tag250)
+
+			if (! check250 ~ /[1-9]/) {
+				tag250 = substr(tolower(gensub(subfielda, "\\\1", "1", tag250)), 1, 3)
+				sub(/fir/, "1", tag250)
+				sub(/sec/, "2", tag250)
+				sub(/thi/, "3", tag250)
+				sub(/fou/, "4", tag250)
+				sub(/fif/, "5", tag250)
+				sub(/six/, "6", tag250)
+				sub(/sev/, "7", tag250)
+				sub(/eig/, "8", tag250)
+				sub(/nin/, "9", tag250)
+				sub(/ten/, "10", tag250)
+			} else {
+				tag250 = check250
+			}
+			tag250 = tag250"_"
+		}
+		if (marc_tag == "260") {
+			getvarfield()
+			tag260 = varfield
+			pubdata = tag260
+			gsub(subfield_regex, " ", pubdata)
+
+			if (tag260 ~ subb) { tag260b = extract_subfield("b") }
+			if (tag260 ~ subc) { tag260c = extract_subfield("c") }
+
+			tag260b = tolower(substr(tag260b, 1, 5))
+			gsub(/[[:punct:][:space:]]/, "", tag260b)
+
+			if (gooddate == 0) {
+				date260 = gensub(validdate, "\\\1", "1", tag260c)
+
+				if (date260 ~ /[0-9][0-9][0-9][0-9]/) { 
+					gsub(/^[0-9]/, "", date260)
+					date260 = substr(date260, 1, 4)
+					gooddate = 2 
+					pubdate = date260"_"
+				}
+			}
+		}
+		if (marc_tag == "264") {
+			tag264 = varfield
+			pubdata = tag264
+			gsub(subfield_regex, " ", pubdata)
+
+			if (tag264 ~ subb) { tag264b = extract_subfield("b") }
+			if (tag264 ~ subc) { tag264c = extract_subfield("c") }
+
+			publisher = tag264b
+			pubdate = tag264c
+			year = tag264c
+
+			tag264b = tolower(substr(tag264b, 1, 5))
+			gsub(/[[:punct:][:space:]]/, "", tag264b)
+
+			if (gooddate != 1 ) {
+				tag264c = gensub(validdate, "\\\1", "1", tag264c)
+
+				if (tag264c ~ /[0-9][0-9][0-9][0-9]/) { 
+					gsub(/^[0-9]/, "", tag264c)
+					tag264c = substr(tag264c, 1, 4)
+					pubdate = tag264c
+					pubdate = pubdate"_"
+				}
+			} 
+		}
+		if (marc_tag == "300") {
+			getvarfield()
+			tag300 = varfield
+			pagination = tag300
+			gsub(subfield_regex, " ", pagination)
+			tag300 = extract_subfield("a")
+			tag300 = longest_number(tag300)"_"
+		}
+
+		if (marc_tag == "880") {
+			getvarfield()
+			tag880 = varfield
+			subtag=substr(tag880, 3, 3)
+
+			switch(subtag) {
+				case "100":
+					tagme = gensub(subfielda, "\\\1", "1", tag880)
+					gsub(/[[:punct:][:space:]]/, "", tagme)
+					break
+				case "110":
+					tagme = gensub(subfielda, "\\\1", "1", tag880)
+					gsub(/[[:punct:][:space:]]/, "", tagme)
+					break
+				case "111":
+					tagme = gensub(subfielda, "\\\1", "1", tag880)
+					gsub(/[[:punct:][:space:]]/, "", tagme)
+					break
+				case "130":
+					tagme = gensub(subfielda, "\\\1", "1", tag880)
+					gsub(/[[:punct:][:space:]]/, "", tagme)
+					break
+				case "245":
+					tag245a = gensub(subfielda, "\\\1", "1", tag880)
+					if (tag880 ~ subb) { tag245b = gensub(subfieldb, "\\\1", "1", tag880) }
+					if (tag880 ~ subp) { tag245p = gensub(subfieldp, "\\\1", "1", tag880) }
+					tag245 = tag245a""tag245b""tag245p
+					gsub(/[[:punct:][:space:]]/, "", tag245)
+					tag245 = substr(tag245, 1, 70)"_"
+					break
+				default:
+					break	
+			}
+		}
+
+		if (marc_tag == "907") {
+			tag907a = extract_subfield("a")
+		}
+
+		if (marc_tag == "999") {
+			tag999i = extract_subfield("i")
+		}
+	}
+}
+
+function pad(checkstring, neededlength) {
+	checkstring = substr(checkstring, 1, neededlength)
+    
+	if (length(checkstring) < neededlength) {
+		num_underscores = neededlength - length(checkstring);
+		for (i = 0; i < num_underscores; i++) { checkstring = checkstring"_" }
+	}
+	return checkstring
+}
+
+{
+
+leader=substr($0,1,24)
+baseaddress=substr(leader,13, 5) + 0
+directory=substr($0,25, baseaddress - 25)
+directory_length=length(directory) 
+directory_check=(directory_length % 12)
+record_content=substr($0, baseaddress + 1)
+bib_mattype=substr(leader, 7, 1)
+holdings_type=substr(leader, 8, 1)
+
+tag001=tag008=tag245=tag245a=tag245b=tag245p=tag250=tag260=tag264=tag264b=tag264c=date260=date264=tag907a=tag999i=""
+tag250="1_"
+tagme=pubdate=tag300=tag086="_"
+title=pubdata=edition=pagination=tag001=""
+format="p"
+
+if (directory_check == 0) {
+	record_type = substr(leader, 7, 1)
+	extract_tags()
+	mergeId = tag245""tagme""tag264b""pubdate""tag250""tag300""tag086""format
+
+	outstring = tag999i"\\t"tag001"\\t"tag907a"\\t"title"\\t"pubdata"\\t"edition"\\t"pagination
+
+	if (NR == FNR) {
+		source_record[mergeId] = outstring
+		source_999i[mergeId] = tag999i
+	} else {
+		if (source_record[mergeId]) {
+			sub(tag999i, source_999i[mergeId], $0)
+
+			if (mergeId != lastMergeId) {
+				lastMergeId = mergeId
+				printf "%s%s\\n", "(source)", outstring > "merged_records.tsv"
+				printf "%s\\n", outstring > MERGEREPORT
+				print $0 > MERGEFILE
+			} else {
+				printf "%s\\n", outstring > MERGEREPORT
+				print $0 > MERGEFILE
+			}
+		} else { 
+			printf "%s\\n", outstring > NOTMERGEREPORT
+			print $0 > NOTMERGEFILE
+		}
+	}
+}
+
+if (NR % 10000 == 0){ printf "Records processed: "NR"\\r" }
+
+}
+END { print NR" MARC records have been processed.\\n\\nReports can be found in merged_records.tsv and not_merged_records.tsv. \\nFiles can be found in merged_records.mrc and not_merged_records.mrc\\n\\n" }
+
+ENDOFAWK
+
+echo -e "${awkscript}" > tmp_checkmarc
+chmod 700 tmp_checkmarc
+
+awk -v RS=$'\x1d' -v ORS=$'\x1d' -v SFS=$'\x1f' -v FS=$'\x1e' -v OFS=$'\x1e' -b -f tmp_checkmarc "${sourcefile}" "${mergefile}"
+echo
+
+rm -f tmp_checkmarc

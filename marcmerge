@@ -34,7 +34,7 @@ BEGIN {
 	NOTMERGEFILE = "not_merged_records.mrc"
 	
 	printf "%s", "tag999\\ttag001\\ttag907a\\ttitle\\tpubdata\\tedition\\tpagination\\n" > MERGEREPORT
-	printf "%s\\n\\n", "Creating ids for source file. Please be patient"
+	printf "%s\\n\\n", "Creating ids for source file. Please be patient."
 
 
       if (length("а") != 2) {
@@ -321,7 +321,7 @@ if (directory_check == 0) {
 		if (NR % 1000 == 0){ printf "Source IDs created: "NR"\\r" }
 	} else {
 		if (source_record[mergeId]) {
-			sub(tag999i, source_999i[mergeId], $0)
+			if (tag999i != "") { sub(tag999i, source_999i[mergeId], $0) }
 			merged_records++
 
 			if (mergeId != lastMergeId) {

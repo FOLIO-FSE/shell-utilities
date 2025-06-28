@@ -20,28 +20,20 @@ read -r -d '' awkscript << "ENDOFAWK"
 BEGIN { 
 	merged_records=not_merged_records=0
 	subfield_regex=SFS"."
-	subb=SFS"b"
-	subb=SFS"c"
-	subp=SFS"p"
-	subn=SFS"n"
-	subfielda = ".*"SFS"a([^"SFS"]*).*"
-	subfieldb = ".*"SFS"b([^"SFS"]*).*"
-	subfieldp = ".*"SFS"p([^"SFS"]*).*"
-	subfieldn = ".*"SFS"n([^"SFS"]*).*"
-	validdate="^[^0-9]*([0-9][0-9][0-9][0-9])[^0-9].*"
+	validdate="^[^0-9]*([0-9][0-9][0-9][0-9])[^0-9]"
 	MERGEREPORT = "merged_records.tsv"
 	MERGEFILE = "merged_records.mrc"
 	NOTMERGEREPORT = "not_merged_records.tsv"
 	NOTMERGEFILE = "not_merged_records.mrc"
 	
-	printf "%s", "mergeId\\ttag999\\ttag001\\ttag907a\\ttitle\\tpubdata\\tedition\\tpagination\\n" > MERGEREPORT
+	printf "%s", "mergeId\\ttag999\\ttag001\\ttag907a\\ttitle\\tpubdata\\tedition\\tpagination\\trecordType\\n" > MERGEREPORT
 	printf "%s", "mergeId\\ttag001\\ttag907a\\ttitle\\tpubdata\\tedition\\tpagination\\n" > NOTMERGEREPORT
 	printf "%s\\n\\n", "Creating ids for source file. Please be patient."
 
 
       if (length("а") != 2) {
                 badawk = 1
-                printf("Your version of awk does not support  -- you need a version that supports the -b switch\\n")
+                printf("Your version of awk does not support marcmerge  -- you need a version that supports the -b switch\\n")
                 exit
       }
 }
@@ -54,11 +46,6 @@ function extract_subfield(subfield) {
 		retvalue = ""
 	}
 	return retvalue
-}
-
-function extractsubfields() {
-	# still needs to be written
-	fixedfield = substr(record_content, starting_pos + 1, field_length - 1)
 }
 
 function longest_number(getstring) {
@@ -99,7 +86,7 @@ function extract_tags() {
 		if (marc_tag == "007") {
 			getfixedfield()
 			tag007 = fixedfield
-			if (tag007 ~ /^cr/){ format="e"}
+			if (substr(tag007, 1, 2) == "cr"){ format="e"}
 		}
 
 		if (marc_tag == "008") {
@@ -146,11 +133,12 @@ function extract_tags() {
 			gsub(/&/, "", tag245)
 			tag245a = extract_subfield("a")
 			tag245b = extract_subfield("b")
+			tag245h = extract_subfield("h")
 			tag245p = extract_subfield("p")
 			tag245n = extract_subfield("n")
-			gsub(/^a /, "", tag245a)
-			gsub(/^an /, "", tag245a)
-			gsub(/^the /, "", tag245a)
+			sub(/^(a |an |the )/, "", tag245a)
+
+			if (match(/electronic/, 245h)){ format="e"}
 		
 			tag245 = tag245a""tag245b""tag245p
 			gsub(/[[:punct:][:space:]]/, "", tag245)
@@ -166,7 +154,6 @@ function extract_tags() {
 			check250 = longest_number(tag250)
 
 			if (! check250 ~ /[1-9]/) {
-				tag250 = substr(tolower(gensub(subfielda, "\\\1", "1", tag250)), 1, 3)
 				sub(/fir/, "1", tag250)
 				sub(/sec/, "2", tag250)
 				sub(/thi/, "3", tag250)
@@ -187,14 +174,13 @@ function extract_tags() {
 			tag260 = varfield
 			pubdata = tag260
 			gsub(subfield_regex, " ", pubdata)
-
-			if (tag260 ~ subb) { tag260b = extract_subfield("b") }
-			if (tag260 ~ subc) { tag260c = extract_subfield("c") }
+			tag260b = extract_subfield("b")
 
 			tag260b = tolower(substr(tag260b, 1, 5))
 			gsub(/[[:punct:][:space:]]/, "", tag260b)
 
 			if (gooddate == 0) {
+				tag260c = extract_subfield("c")
 				date260 = gensub(validdate, "\\\1", "1", tag260c)
 
 				if (date260 ~ /[0-9][0-9][0-9][0-9]/) { 
@@ -206,21 +192,20 @@ function extract_tags() {
 			}
 		}
 		if (marc_tag == "264") {
+			getvarfield()
 			tag264 = varfield
 			pubdata = tag264
 			gsub(subfield_regex, " ", pubdata)
 
-			if (tag264 ~ subb) { tag264b = extract_subfield("b") }
-			if (tag264 ~ subc) { tag264c = extract_subfield("c") }
+			tag264b = extract_subfield("b")
 
 			publisher = tag264b
-			pubdate = tag264c
-			year = tag264c
 
 			tag264b = tolower(substr(tag264b, 1, 5))
 			gsub(/[[:punct:][:space:]]/, "", tag264b)
 
 			if (gooddate != 1 ) {
+				tag264c = extract_subfield("c")
 				tag264c = gensub(validdate, "\\\1", "1", tag264c)
 
 				if (tag264c ~ /[0-9][0-9][0-9][0-9]/) { 
@@ -247,25 +232,25 @@ function extract_tags() {
 
 			switch(subtag) {
 				case "100":
-					tagme = gensub(subfielda, "\\\1", "1", tag880)
+					tagme = extract_subfield("a")
 					gsub(/[[:punct:][:space:]]/, "", tagme)
 					break
 				case "110":
-					tagme = gensub(subfielda, "\\\1", "1", tag880)
+					tagme = extract_subfield("a")
 					gsub(/[[:punct:][:space:]]/, "", tagme)
 					break
 				case "111":
-					tagme = gensub(subfielda, "\\\1", "1", tag880)
+					tagme = extract_subfield("a")
 					gsub(/[[:punct:][:space:]]/, "", tagme)
 					break
 				case "130":
-					tagme = gensub(subfielda, "\\\1", "1", tag880)
+					tagme = extract_subfield("a")
 					gsub(/[[:punct:][:space:]]/, "", tagme)
 					break
 				case "245":
-					tag245a = gensub(subfielda, "\\\1", "1", tag880)
-					if (tag880 ~ subb) { tag245b = gensub(subfieldb, "\\\1", "1", tag880) }
-					if (tag880 ~ subp) { tag245p = gensub(subfieldp, "\\\1", "1", tag880) }
+					tag245a =  extract_subfield("a")
+					tag245b =  extract_subfield("b")
+					tag245p =  extract_subfield("p")
 					tag245 = tag245a""tag245b""tag245p
 					gsub(/[[:punct:][:space:]]/, "", tag245)
 					tag245 = substr(tag245, 1, 70)"_"
@@ -285,16 +270,6 @@ function extract_tags() {
 			tag999i = extract_subfield("i")
 		}
 	}
-}
-
-function pad(checkstring, neededlength) {
-	checkstring = substr(checkstring, 1, neededlength)
-    
-	if (length(checkstring) < neededlength) {
-		num_underscores = neededlength - length(checkstring);
-		for (i = 0; i < num_underscores; i++) { checkstring = checkstring"_" }
-	}
-	return checkstring
 }
 
 {
@@ -319,7 +294,6 @@ if (directory_check == 0) {
 	extract_tags()
 	mergeId = tag245""tagme""tag264b""pubdate""tag250""tag300""tag086""format
 
-
 	if (NR == FNR) {
 		outstring = mergeId"\\t"tag999i"\\t"tag001"\\t"tag907a"\\t"title"\\t"pubdata"\\t"edition"\\t"pagination
 		source_record[mergeId] = outstring
@@ -332,8 +306,8 @@ if (directory_check == 0) {
 
 			if (mergeId != lastMergeId) {
 				lastMergeId = mergeId
-				printf "%s%s\\tSOURCE RECORD\\n", "", outstring > "merged_records.tsv"
-				printf "%s\\n", outstring > MERGEREPORT
+				printf "%s\\tSOURCE\\n", source_record[mergeId] > "merged_records.tsv"
+				printf "%s\\tMERGE\\n", outstring > MERGEREPORT
 				print $0 > MERGEFILE
 			} else {
 				printf "%s\\n", outstring > MERGEREPORT

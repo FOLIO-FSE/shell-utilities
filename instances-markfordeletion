@@ -1,0 +1,90 @@
+#!/usr/bin/bash
+auth 2>/dev/null || authn 2>/dev/null
+SECONDS=1
+TIMER=1
+# Supply without a uuid to delete all of many record types
+# 
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+deletetype=$1
+uuid=$(echo "$2" |tr -dc [a-f0-9\-])
+
+singlerecord=yes
+deletefile="delete"
+batchsize=10
+outfile=delete_${deletetype}.log
+errorfile=error_${deletetype}.log
+rm -f ${outfile}
+rm -f ${errorfile}
+
+if [[ ${uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then echo ${uuid} > delete;fi
+
+if [[ ! -f ${deletefile} ]];then 
+	echo "This utility expects a file containing UUIDs named \"delete\""
+	exit
+fi
+
+sed -i 's/[^a-f0-9\-]//g' ${deletefile}
+
+numrecs=$(wc -l ${deletefile} |cut -d " " -f1)
+errors=0
+SECONDS=1
+
+delete_record() {
+
+	local uuid=${1//[^0-9a-z\-]/}
+	local seq=$2
+	local apicall=$(curl -sI -w '%{http_code}' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/inventory/instances/${uuid}/mark-deleted")
+	apicall=${apicall:(-3)}
+
+	echo "${apicall} ${uuid}" >> "tmp_log.${seq}"
+}
+
+
+counter=0
+
+uuid=${2//[^0-9a-f\-]}
+
+if [[ ${uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+	echo ${uuid} > ${deletefile}
+fi
+
+while mapfile -t -n ${batchsize} uuids && ((${#uuids[@]})); do
+
+        if [[ $SECONDS -gt 500 ]]; then
+                auth 2>/dev/null || authn 2>/dev/null
+                okapi_token=$(cat okapi.token)
+                SECONDS=1
+                OFFSET=$(($OFFSET + 1))
+                TIMER=$(($OFFSET * 500 + $SECONDS))
+        else
+                if [[ $OFFSET -eq 0 ]];then TIMER=$SECONDS;fi
+        fi
+
+	seq=0
+	for uuid in ${uuids[@]};do
+		delete_record ${uuid} ${seq} &
+		seq=$(($seq + 1))
+		counter=$(($counter + 1))
+	done
+
+	wait
+	cat tmp_log.* >> ${outfile}
+	rm tmp_log.*
+
+        	msg="$TIMER seconds"
+
+        	if [[ $TIMER -gt 60 ]];then TIME=$(($TIMER/60));msg="$TIME minutes";fi
+        	if [[ $TIMER -gt 3600 ]];then TIME=$(($TIMER/3600));msg="$TIME hours";fi
+
+        	echo -en "Processing record $counter of $numrecs in $msg in $(($counter/$TIMER)) recs/sec          \r"
+done < ${deletefile}
+
+echo "Done processing $counter $recordtype records. See $outfile for details."
+num_errors=$(grep -v "^204" ${outfile} |grep " " |wc -l)
+
+if [[ num_errors -ne 0 ]];then grep -v "^204" ${outfile} |grep " " > ${errorfile};echo "$num_errors errors were output to ${errorfile}";fi
+
+

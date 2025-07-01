@@ -13,6 +13,8 @@ strip=$2
 infile="ids"
 outfile="uuids"
 
+dos2unix ids
+
 seed="tenant" # tenant or okapi_url
 
 numrecs=$(wc -l ${infile} |cut -d " " -f1)

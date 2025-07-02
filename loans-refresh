@@ -15,57 +15,7 @@ echo "Setting status to Available"
 
 infile=loan_uuids
 
-jq -r .id items.json > ${infile}
+jq -c '.status.name="Available"' items.json > tmp.json
+mv tmp.json
 
-infile=loan_uuids
-outfile=loan_update.log
-searchtype="id"
-batchsize=50
-jq_replace='.items[].status.name="Available" '
-querydelim="%20or%20${searchtype}="
-endpoint="${okapi_url}/item-storage/items?query="
-
-rm -f ${outfile}
-SECONDS=1
-
-counter=0
-numrecs=$(wc -l ${infile} |cut -d " " -f1)
-
-while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
-	counter=$(($counter + ${#ids[@]}))
-
-	if [[ $SECONDS -gt 500 ]]; then
-		auth 2>/dev/null || authn 2>/dev/null
-		okapi_token=$(cat okapi.token)
-		SECONDS=1
-		OFFSET=$(($OFFSET + 1))
-	fi
-
-	TIMER=$(($OFFSET * 500 + $SECONDS))
-
-	# break array into space separated string
-	idstring="${ids[@]}"
-	querystring="id=${idstring// /${querydelim}}"
-
-	records=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}${querystring}&limit=${batchsize}" )
-
-	if [[ -n ${jq_replace} ]];then
-		updated_records=$(echo "${records}" |jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo)")
-	fi
-
-	if [[ -n ${string_replace} ]];then
-		updated_records=$(echo "${records}" |sed ${string_replace} | jq -c 'del(.totalRecords) |del(.resultInfo)')
-	fi
-
-
-	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_records}" "${okapi_url}/item-storage/batch/synchronous?upsert=true" >> ${outfile}
-
-	TIME=$TIMER;msg="$SECONDS seconds"
-	if [[ $TIMER -gt 60 ]];then TIME=$(bc <<< "scale=1;$TIMER/60");msg="$TIME minutes";fi
-	if [[ $TIMER -gt 3600 ]];then TIME=$(bc <<< "scale=1;$TIMER/3600");msg="$TIME hours     ";fi
-
-	echo -en "Processing record $counter of $numrecs in $msg\r"
-
-done < ${infile}
-
-echo "Set ${numrecs} records to Available status. Output was written to ${outfile}"
+inventory-replace items

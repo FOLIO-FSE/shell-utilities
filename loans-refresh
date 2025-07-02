@@ -26,7 +26,7 @@ querydelim="%20or%20${searchtype}="
 endpoint="${okapi_url}/item-storage/items?query="
 
 rm -f ${outfile}
-SECONDS=0
+SECONDS=1
 
 counter=0
 numrecs=$(wc -l ${infile} |cut -d " " -f1)

@@ -6,6 +6,8 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
+SECONDS=1
+
 echo "Retrieving records requring update"
 records-get items 'status.name=="Aged%20to%20lost"%20or%20status.name=="Checked%20out"%20or%20status.name=="In%20transit"%20or%20status.name=="Paged"'
 

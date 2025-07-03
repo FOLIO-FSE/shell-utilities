@@ -1,17 +1,64 @@
 #!/usr/bin/bash
 auth 2>/dev/null || authn 2>/dev/null
-# retrieves item and holdings data associated with
-# an instance
+
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
+infile="uuids"
+outfile="ecs-holdings.tsv"
+SECONDS=1
+batchsize=10
 
-search=${1}
 
-if [[ ${search} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
-        instance_uuid=${search}
+if [[ ${1} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+	echo ${1} > uuids
+else
+	if [[ ! -f uuids ]];then
+		echo "You must supply a uuid or file of uuids"
+		exit
+	fi        
 fi
 
-if [[ ${instance_uuid} != "" ]];then
-	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/search/instances/facets?facet=holdings.tenantId&query=id=${instance_uuid}" |jq -r '.facets."holdings.tenantId"'
-fi
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+getrecord() {
+  local uuid=${1}
+  local seq=${2}
+	local apicall
+
+  apicall=$(curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/search/instances/facets?facet=holdings.tenantId&query=id==${uuid}" |jq -c '.facets."holdings.tenantId"')
+
+	echo -e "${uuid}\t${apicall}" > tmp_records.ecs.${seq}
+}
+
+while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
+	counter=$(($counter + ${#ids[@]}))
+	[[ ${#ids[@]} -lt $((${batchsize} - 1)) ]] && lastset=1
+
+	seq=0
+	for uuid in "${ids[@]}";do
+		getrecord "${uuid}" "${seq}" &
+		seq=$(($seq + 1))
+	done
+	wait
+
+	if [[ $SECONDS -gt 500 ]]; then
+		TIMER=$(($TIMEROFFSET * 500 + $SECONDS))
+		auth 2>/dev/null || authn 2>/dev/null
+		okapi_token=$(cat okapi.token)
+		SECONDS=1
+	fi
+
+	TIME=$TIMER;msg="$TIMER seconds"
+	if [[ $TIMER -gt 60 ]];then TIME=$(($TIMER/60));msg="$TIME minutes";fi
+	if [[ $TIMER -gt 3600 ]];then TIME=$(($TIMER/3600));msg="$TIME hours";fi
+	echo -en "Processing record $counter of $numrecs in $msg in $(($counter/$SECONDS)) recs/sec\r"
+
+	if [[ -f tmp_records.ecs.0 ]];then
+		cat tmp_records.ecs.* >> ${outfile}
+		rm -f tmp_records.ecs.*
+	fi
+
+done < ${infile}
+echo
+echo "$numrecs records have been exported to ${outfile}"

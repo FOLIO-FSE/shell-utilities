@@ -10,6 +10,7 @@ SECONDS=1
 TIMEROFFSET=0
 batchsize=10
 
+rm -f ${outfile}
 
 if [[ ${1} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
 	echo ${1} > uuids

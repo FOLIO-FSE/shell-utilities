@@ -64,7 +64,7 @@ fixrecord() {
 	#                (.fundDistributions[0].code = "ybpbl" ) 
 	#		(.fund.ledgerId = "bdc5218a-e14c-41ea-8a9f-d7c9980d8b35")
 	#                (.groupIds += [$VALUE] ) 
-	                (.itemDamagedStatusId = "54d1dd76-ea33-4bcb-955b-6b29df4f7930" ) 
+	#                (.itemDamagedStatusId = "54d1dd76-ea33-4bcb-955b-6b29df4f7930" ) 
 	#                (.materialTypeId = $VALUE ) 
 	#                (.notes |= .+ [{"holdingsNoteTypeId": "b160f13a-ddba-4053-b9c4-60ec5ea45d56", "staffOnly": false, "note": $VALUE}]) 
 	#                (.permanentLoanTypeId = $VALUE)

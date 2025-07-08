@@ -1,0 +1,48 @@
+#!/usr/bin/bash
+auth 2>/dev/null || authn 2>/dev/null
+# userId needs to be in column1, itemUUID in column2, pickupUUID in column3
+# For manual work, a dual user/item file containing barcodes can be used
+# creating a file following the pattern https://domain.folio.ebsco.com/requests/?layer=create&itemBarcode=[item_barcode]&userBarcode=[user_barcode]
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+requests_file="requests.tsv"
+logfile="requests.log"
+rm -f ${logfile}
+
+SECONDS=1
+
+numrecs=$(wc -l ${requests_file} |cut -d " " -f1
+
+build_requests() {
+
+IFS='' read -r -d '' request << EndOfJSON
+{
+  "requestDate": "${isoTimestamp}", #"$(date -Is)"
+  "pickupLocationId": "${pickupLocation}",
+}
+EndOfJSON
+
+}
+
+counter=0
+
+while IFS=$'\n' read -r userUUID itemUUID pickupLocation; do
+
+	if [[ $SECONDS -gt 500 ]]; then
+		auth 2>/dev/null || authn 2>/dev/null
+		okapi_token=$(cat okapi.token)
+		SECONDS=1
+	fi
+
+	request_data=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${request}" "${okapi_url}/patron/account/{userUUID}/item/{itemUUID}/hold")
+	echo -e "${request_data//$'\n'/ }" >> ${logfile}
+
+counter=$(($counter + 1))
+
+done < ${requests_file}
+echo 
+echo "Processing completed"
+

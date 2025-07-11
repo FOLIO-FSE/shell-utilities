@@ -184,11 +184,12 @@ while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
 	wait
 
         if [[ $SECONDS -gt 500 ]]; then
-		TIMER=$(($TIMER + $SECONDS))
+								TIMER=$(($TIMER + $SECONDS))
                 auth 2>/dev/null || authn 2>/dev/null
-		okapi_token=$(cat okapi.token)
+								okapi_token=$(cat okapi.token)
                 SECONDS=1
         fi
+				if [[ $TIMER -eq 0 ]];then TIMER=$SECONDS;fi
 
         TIME=$TIMER;msg="$TIMER seconds"
         if [[ $TIMER -gt 60 ]];then TIME=$(bc <<< "scale=1;$TIMER/60");msg="$TIME minutes";fi

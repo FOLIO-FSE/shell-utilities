@@ -17,7 +17,7 @@ case ${entityType^^} in
 			entityType="HOLDINGS";;
 	"AU"):
 			entityType="AUTHORITY";;
-	"*"):
+	*):
 			echo "You must enter instance, holdings, or authority"
 			echo
 			exit
@@ -32,10 +32,6 @@ jobId=$(jq -r .id <<< "${apicall}")
 echo "${apicall}" |jq -c .
 
 echo
-check_status() {
-echo "${okapi_url}/search/resources/jobs/${jobId}"
-	status=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/search/resources/jobs/${jobId}" |jq -r ".status")
-}
 
 status="IN_PROGRESS"
 echo -n "Waiting for job to complete"
@@ -44,7 +40,8 @@ while [[ ${status} == "IN_PROGRESS" ]];do
 	sleep 5
 	echo -n "."
 	if [[ $SECONDS -gt 500 ]];then auth 2>/dev/null || authn 2>/dev/null; SECONDS=0;fi
-	check_status
+
+	status=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/search/resources/jobs/${jobId}" |jq -r ".status")
 done
 
 curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/search/resources/jobs/${jobId}/ids" |jq -r '.ids[].id' |pv > ids.csv

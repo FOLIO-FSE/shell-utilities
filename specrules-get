@@ -4,12 +4,18 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-specification="$1"
-
-if [[ ${specification} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
-	curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/specification-storage/specifications/${specification}/rules" |jq .
+if [[ ${1} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+	uuid=${1}
 else
-	echo "You must supply a UUID"
+	echo "You must enter a valid UUID. To list all specifications uuids, use marcspecs-get"
+	exit
+	echo
 fi
+
+curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/specification-storage/specifications/${uuid}/rules" |jq -c '.rules[] |del(.metadata)' > specrules.json
+
+echo 
+echo "Output has been sent to specrules.json"
+echo
 
 

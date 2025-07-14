@@ -1,0 +1,22 @@
+#!/usr/bin/bash
+auth 2>/dev/null || authn 2>/dev/null
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+if ! [[ ${1} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ && ${2} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+	echo "You must specify a specification UUID and a rule UUID"
+	exit
+	echo
+fi
+
+specUUID=${1}
+ruleUUID=${2}
+
+specrule='{ "enabled": false }'
+
+curl --http1.1 -s -w '\n' -X PATCH -H "Content-type: application/json" -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${specrule}" "${okapi_url}/specification-storage/specifications/${specUUID}/rules/${ruleUUID}"
+
+echo
+
+

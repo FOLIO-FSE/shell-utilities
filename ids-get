@@ -27,13 +27,13 @@ if [[ -z ${cqlQuery} ]]; then cqlQuery="id=*";fi
 
 query=$(jq -cn --arg QUERY "${cqlQuery}" --arg ENTITYTYPE ${entityType} '{ "query": $QUERY, "entityType": $ENTITYTYPE }')
 
-curl -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${query}" "${okapi_url}/search/resources/jobs"
-echo ${apicall}
-
+apicall=$(curl -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${query}" "${okapi_url}/search/resources/jobs")
 jobId=$(jq -r .id <<< "${apicall}")
 echo "${apicall}" |jq -c .
+
 echo
 check_status() {
+echo "${okapi_url}/search/resources/jobs/${jobId}"
 	status=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/search/resources/jobs/${jobId}" |jq -r ".status")
 }
 
@@ -47,8 +47,7 @@ while [[ ${status} == "IN_PROGRESS" ]];do
 	check_status
 done
 
-
-curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/search/resources/jobs/${jobId}/ids"  |jq -r '.ids[].id' |pv > ids.csv
+curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/search/resources/jobs/${jobId}/ids" |jq -r '.ids[].id' |pv > ids.csv
 
 echo "Ids have been sent to ids.csv"
 echo

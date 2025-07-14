@@ -10,6 +10,7 @@ if [[ ${specification} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]]
 	curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/specification-storage/specifications/${specification}/fields" |jq -c '.fields[]|del(.metadata)' > specfields.json
 else
 	echo "You must supply a UUID"
+	exit
 fi
 
 echo 

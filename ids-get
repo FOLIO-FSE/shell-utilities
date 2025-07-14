@@ -5,27 +5,50 @@ auth 2>/dev/null || authn 2>/dev/null
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
+SECONDS=1
 
-idtype=${1}
-query=${2}
+entityType=${1:0:2}
+cqlQuery=${2}
 
-if [[ ${query} == "" ]]; then query="cql.allRecords=1";fi
-
-case ${idtype} in
-	"instances"):
-		good=1;;
-	"holdings"):
-		good=1;;
-	*):
-		echo "You must select instances or holdings"
-		exit
+case ${entityType^^} in
+	"IN"):
+			entityType="INSTANCE";;
+	"HO"):
+			entityType="HOLDINGS";;
+	"AU"):
+			entityType="AUTHORITY";;
+	"*"):
+			echo "You must enter instance, holdings, or authority"
+			echo
+			exit
 esac
 
-echo "Retrieving all ids. Please be patient"
+if [[ -z ${cqlQuery} ]]; then cqlQuery="id=*";fi
 
-curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/search/${idtype}/ids?query=${query}" |pv |jq -r .ids[].id > ids
+query=$(jq -cn --arg QUERY "${cqlQuery}" --arg ENTITYTYPE ${entityType} '{ "query": $QUERY, "entityType": $ENTITYTYPE }')
 
-echo 
-numrecs=$(wc -l ids |cut -d " " -f1)
-echo "${numrecs} ids have been exported to ids"
+curl -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${query}" "${okapi_url}/search/resources/jobs"
+echo ${apicall}
+
+jobId=$(jq -r .id <<< "${apicall}")
+echo "${apicall}" |jq -c .
+echo
+check_status() {
+	status=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/search/resources/jobs/${jobId}" |jq -r ".status")
+}
+
+status="IN_PROGRESS"
+echo -n "Waiting for job to complete"
+
+while [[ ${status} == "IN_PROGRESS" ]];do
+	sleep 5
+	echo -n "."
+	if [[ $SECONDS -gt 500 ]];then auth 2>/dev/null || authn 2>/dev/null; SECONDS=0;fi
+	check_status
+done
+
+
+curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/search/resources/jobs/${jobId}/ids"  |jq -r '.ids[].id' |pv > ids.csv
+
+echo "Ids have been sent to ids.csv"
 echo

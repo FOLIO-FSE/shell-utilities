@@ -1,3 +1,5 @@
+# sirsi was inadvertantly modified to accommodate NALIS -- must be modified
+
 knownsystems=("absysnet" "destiny" "eos" "janium" "koha" "lc2" "opals" "sierra" "sirsi" "softlink" "tlc" "virtua" "wms")
 
 if [[ -z $2 ]];then
@@ -615,15 +617,6 @@ function extract_identifiers() {
 
 			tag004 = substr(record_content, starting_pos, field_length - 1)
 			gsub(/^ *+| +$/, "", tag004)
-		}
-		if (substr(directory, i, 3) == "008") {
-
-			field_length = substr(directory, i + 3, 4) + 0
-			starting_pos = substr(directory, i + 7, 5) 
-
-			bib_subtype = substr(record_content, starting_pos + 24, 1)
-			gsub(/[^a-z]/, "", bib_subtype)
-			bib_mattype = bib_mattype""bib_subtype
 		}
 
 		if (bibno == "") {

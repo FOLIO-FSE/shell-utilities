@@ -113,7 +113,7 @@ if (rectype == "bib") {
 	if ( found245 == 0 && foundbad == 0){ print $0 > "bad_missing245_"rectype"_"FILEROOT;bad245++;bad245text = " (245: "bad245")";foundbad = 1 }
 }
 
-if ( good_tag == 0 && foundbad == 0) { print $0 > "bad_nonumeric_tag_"rectype"_"FILEROOT;badtag++;badtagtext = " (Nonnumeric tags: "badtag")";foundbad = 1 }
+if ( good_tag == 0 && foundbad == 0) { " (Valid records with nonnumeric tags: "badtag")" }
 
 if ( goodrec == 1 && badsubfields == 1){ goodrecs++;badsubfieldtotal++;badsubfieldstext = " (Bad subfields: "badsubfieldtotal")";foundbad = 1; print $0 > "tmp_"rectype"_badsubfields.mrc" }
 

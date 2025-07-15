@@ -25,9 +25,10 @@ function check_fields() {
 	gsub(subfield_9, subfield_0, $0)	
 
 	## Look for null identifiers
-	if (match($0, BAD_SUBFIELD_REGEX) > 1) {
-			badsubfields = 1
-	}
+	if (index($0, BAD_SUBFIELD_REGEX1) > 0) { badsubfields = 1 }
+
+	## Look for invalid subfields
+	if (index($0, BAD_SUBFIELD_REGEX2) > 0) { badsubfields = 1 }
 
 	if (directory ~ /[^0-9A-Z]/){directory_check = 1;good_directory = 0}
 
@@ -175,9 +176,10 @@ process_file() {
 	echo 
 
 	# null identifiers
-	bad_subfield_regex=$'\x1f'[0az]$'\x1e'
+	bad_subfield_regex1=$'\x1f'[0az]$'\x1e'
+	bad_subfield_regex2=$'\x1f'[^0a-z]'
 
-	awk -v RS=$'\x1d' -v ORS=$'\x1d' -v FS=$'\x1e' -v SFS=$'\x1f' -v FILEROOT="${fileroot}" -v BAD_SUBFIELD_REGEX=${bad_subfield_regex} -b -f tmp_checkmarc "${marcfile}"
+	awk -v RS=$'\x1d' -v ORS=$'\x1d' -v FS=$'\x1e' -v SFS=$'\x1f' -v FILEROOT="${fileroot}" -v BAD_SUBFIELD_REGEX1=${bad_subfield_regex1} -v BAD_SUBFIELD_REGEX2=${bad_subfield_regex2} -b -f tmp_checkmarc "${marcfile}"
 	sleep 1
 	
 	ls bad_*"${fileroot}" 2> /dev/null

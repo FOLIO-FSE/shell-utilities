@@ -8,16 +8,14 @@ SECONDS=0
 
 while IFS=$'\t' read -r name description;do
 
-deptid=$(uuidgen)
-
-IFS='' read -r -d '' newDept << EndOfDept
-
 if [[ $SECONDS -gt 500 ]]; then
 	auth 2>/dev/null || authn 2>/dev/null
 	okapi_token=$(cat okapi.token)
 	SECONDS=0
 fi
+deptid=$(uuidgen)
 
+IFS='' read -r -d '' newDept << EndOfDept
 {
 "id": "${deptid}",
 "name": "${name}",

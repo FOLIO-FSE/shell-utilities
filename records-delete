@@ -43,14 +43,16 @@ delete_record() {
 }
 
 case $deletetype in
+"accounts")
+	recordtype="accounts";;
 "authorities")
 	singlerecord="yes"
 	batchsize=10
 	recordtype="authority-storage/authorities";;
 "boundwiths")
-        recordtype="inventory-storage/bound-with-parts";;
+	recordtype="inventory-storage/bound-with-parts";;
 "budgets")
-        recordtype="finance/budgets";;
+	recordtype="finance/budgets";;
 "calendars")
 	recordtype="calendar/calendars";;
 "campuses")

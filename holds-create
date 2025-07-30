@@ -1,0 +1,77 @@
+#!/usr/bin/bash
+auth 2>/dev/null || authn 2>/dev/null
+SECONDS=1
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+defaultServicePointId="2f22cc05-66b8-47c6-ab49-0f7611949f52"
+
+holds_file="holds.tsv"
+logfile="holds.log"
+rm -f ${logfile}
+
+sed -i 's/"//g' "${holds_file}"
+uuid_regex='^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+
+create_hold() {
+IFS='' read -r -d '' hold << EndOfJSON
+{
+		"id":"$(uuidgen)",
+    "requestDate": "${date_requested}",
+    "pickupLocationId": "${service_point}"
+}
+EndOfJSON
+
+curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${hold}" "${okapi_url}/patron/account/${user_id}/item/${item_id}/hold"
+
+}
+loaded=0
+notloaded=0
+
+counter=1
+
+while IFS=$'\t' read -r user_barcode item_barcode date_requested service_point;do
+	if [[ $SECONDS -gt 500 ]]; then
+		auth 2>/dev/null || authn 2>/dev/null
+		okapi_token=$(cat okapi.token)
+		SECONDS=1
+	fi
+
+	[[ ! ${date_requested} =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] && date_requested=$(date +'%Y-%m-%d')
+	[[ -z ${service_point} ]] && service_point=${defaultServicePointId}
+
+	user_id=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?query=barcode==${user_barcode}" |jq -r '.users[0].id')
+
+	item_id=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/inventory/items?query=barcode==${item_barcode}" |jq -r '.items[0].id')
+  counter=$(($counter+ 1))
+
+	[[ $item_id =~ ${uuid_regex} && $user_id =~ ${uuid_regex} ]] && loadthis=1
+
+	if [[ $item_id == "null" ]];then
+		echo "Item ${item_barcode} not found" |tee -a ${logfile}
+		loadthis=0
+	fi
+	if [[ $user_id == "null" ]];then
+		echo "User ${user_barcode} not found" |tee -a ${logfile}
+		loadthis=0
+	fi
+
+	if [[ $loadthis -eq 1 ]];then
+		loaded=$((loaded + 1))
+		create_hold
+	else
+		notloaded=$((notloaded + 1))
+	fi
+
+ echo "Records loaded: $loaded Records not loaded: $notloaded Current user: ${user_barcode} Current item: ${item_barcode}";
+
+counter=$(($counter + 1))
+
+done < ${holds_file}
+echo 
+echo "Processing completed"
+
+echo "Problem values were output to ${logfile}"
+

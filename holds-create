@@ -18,9 +18,9 @@ uuid_regex='^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-f
 create_hold() {
 IFS='' read -r -d '' hold << EndOfJSON
 {
-		"id":"$(uuidgen)",
-    "requestDate": "${date_requested}",
-    "pickupLocationId": "${service_point}"
+	"id":"$(uuidgen)",
+	"requestDate": "${date_requested}",
+	"pickupLocationId": "${service_point}"
 }
 EndOfJSON
 

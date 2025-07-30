@@ -277,6 +277,7 @@ case $rec_type in
 "mtypes")
 	endpoint="material-types";;
 "notes")
+	sortby=""
 	endpoint="notes";;
 "oai")
 	rec_type="requestMetadataCollection"
@@ -334,6 +335,9 @@ case $rec_type in
 "servicepointsusers")
 	rec_type="servicePointsUsers"
 	endpoint="service-points-users";;
+"sourcerecords")
+	rec_type="sourceRecords"
+	endpoint="source-storage/source-records";;
 "srs")
 	rec_type="records"
 	limitbyid="yes"
@@ -358,7 +362,7 @@ case $rec_type in
 "vouchers")
 	endpoint="voucher/vouchers";;
 *)
-	echo "Record type '${recordtype}' not found. Supported types are accounts, acqunits, addresstypes, agreements, agreements-picklists, agreements-suppl, authorities, authorities-srs, batch-groups, boundwiths, budgets, campuses, categories, circ-loans, circlog, composite-orders, contacts, coursedepartments, courselistings, courses, coursetypes, departments, eholdings, entitlements expense-classes, feefines, feefineactions, fiscalyears, fund-expense, fund-groups, funds, groups, holdings, holdingstypes, holdings-srs, identifiertypes, importjobs, inhouse,  interfaces, instance-relationships, instancerelationshiptypes, instances, institutions, items, inventory, inventory-items, invoices, invoice-lines, exportjobs, ledgers, libraries, licenses, licenses-picklists, licenses-terms, locations, loantypes, loan-history, loans, manualblocks, mappingprofiles, marcspecs, matchprofiles, mattypes, mtypes, notes, notices, orderprefixes, orderlines, orders, organizations, permissions, permissionusers, polines, preceedingsucceeding, receivinghistory, requestprefs, requests, schedulednotices, servicepoints, servicepointsusers, srs, statcodes, tags, templates, transactions, usergroups, users, vouchers.";exit;;
+	echo "Record type '${recordtype}' not found. Supported types are accounts, acqunits, addresstypes, agreements, agreements-picklists, agreements-suppl, authorities, authorities-srs, batch-groups, boundwiths, budgets, campuses, categories, circ-loans, circlog, composite-orders, contacts, coursedepartments, courselistings, courses, coursetypes, departments, eholdings, entitlements expense-classes, feefines, feefineactions, fiscalyears, fund-expense, fund-groups, funds, groups, holdings, holdingstypes, holdings-srs, identifiertypes, importjobs, inhouse,  interfaces, instance-relationships, instancerelationshiptypes, instances, institutions, items, inventory, inventory-items, invoices, invoice-lines, exportjobs, ledgers, libraries, licenses, licenses-picklists, licenses-terms, locations, loantypes, loan-history, loans, manualblocks, mappingprofiles, marcspecs, matchprofiles, mattypes, mtypes, notes, notices, orderprefixes, orderlines, orders, organizations, permissions, permissionusers, polines, preceedingsucceeding, receivinghistory, requestprefs, requests, schedulednotices, servicepoints, servicepointsusers, sourcerecords, srs, statcodes, tags, templates, transactions, usergroups, users, vouchers.";exit;;
 esac
 
 rm -f ${rec_type}
@@ -368,7 +372,8 @@ if [[ $erm == "yes" ]];then
 	num_retrieved="1"
 	query="stats=true"
 	limitOrPerPage="perPage"
-	jqexpr="jq -c '.[] | del(.metadata)'"
+	#jqexpr="jq -c '.[] | del(.metadata)'"
+	jqexpr="jq -c '.'"
 fi
 
 if [[ -z $jqexpr ]];then jqexpr="jq -c --arg REC_TYPE "${rec_type}" '.[\$REC_TYPE][] | del(.metadata)'";fi

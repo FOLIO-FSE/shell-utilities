@@ -5,6 +5,7 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 search="${1,,}"
+limit=5000
 
 if [[ ${search} == "" ]];then echo "You must supply some input";exit;fi
 
@@ -19,6 +20,9 @@ function showmatches() {
 	case $matchtype in
 	"acquisitionsUnits")
 		endpoint="acquisitions-units/units";;
+	"authoritySourceFiles")
+		limit=50
+		endpoint="authority-source-files";;
 	"addressTypes")
 		endpoint="addresstypes"
 		jq=".${matchtype}[] | select((.addressType  |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"${matchtype}\", .id, .addressType ] |@tsv";;
@@ -130,7 +134,7 @@ function showmatches() {
 	fi
 		
 
-	output=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?query=cql.allRecords=1&limit=5000" \
+	output=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?query=cql.allRecords=1&limit=${limit}" \
 		|jq -r "${jq}") 
 		echo -e "${output}" |grep [a-z] && echo
 
@@ -138,9 +142,9 @@ function showmatches() {
 }
 
 
-echo "Downloading data for  acq units, address types, call number types, cancellation reasons, categories, contributor types, course departments, course types, courses, expense classes, fee/fine owners, fiscal years, finance-groups, funds, holdings note types, holdings record sources, holdings types, identifier types, instance formats, instance note types, instance relationship types, instance statuses, instance types, item damaged statuses, item material types, item note types, ledgers, loan policies, loan types, locations, location institutions, location campuses, location libraries, lost item fee policies, note types, organization types, overdue fine policies, patron notice policies, service points, statcodes, and usergroups"
+echo "Downloading data for  acq units, address types, authority source files, call number types, cancellation reasons, categories, contributor types, course departments, course types, courses, expense classes, fee/fine owners, fiscal years, finance-groups, funds, holdings note types, holdings record sources, holdings types, identifier types, instance formats, instance note types, instance relationship types, instance statuses, instance types, item damaged statuses, item material types, item note types, ledgers, loan policies, loan types, locations, location institutions, location campuses, location libraries, lost item fee policies, note types, organization types, overdue fine policies, patron notice policies, service points, statcodes, and usergroups"
 
-rec_array=("acquisitionsUnits" "addressTypes" "callNumberTypes" "cancellationReasons" "categories" "contributorTypes" "courseDepartments" "courseTerms" "courseTypes" "departments" "expenseClasses" "feefineowners" "fiscalYears" "finance-groups" "funds" "holdingsNoteTypes" "holdingsRecordsSources" "holdingsTypes" "identifierTypes" "instanceFormats" "instanceNoteTypes" "instanceRelationshipTypes" "instanceStatuses" "instanceTypes" "itemDamageStatuses" "itemNoteTypes" "ledgers" "loanPolicies" "loantypes" "locations" "locinsts" "loccamps" "loclibs" "lostItemFeePolicies" "mtypes" "noteTypes" "organizationTypes" "overdueFinePolicies" "patronNoticePolicies" "servicepoints" "statisticalCodes" "usergroups")
+rec_array=("acquisitionsUnits" "addressTypes" "authoritySourceFiles" "callNumberTypes" "cancellationReasons" "categories" "contributorTypes" "courseDepartments" "courseTerms" "courseTypes" "departments" "expenseClasses" "feefineowners" "fiscalYears" "finance-groups" "funds" "holdingsNoteTypes" "holdingsRecordsSources" "holdingsTypes" "identifierTypes" "instanceFormats" "instanceNoteTypes" "instanceRelationshipTypes" "instanceStatuses" "instanceTypes" "itemDamageStatuses" "itemNoteTypes" "ledgers" "loanPolicies" "loantypes" "locations" "locinsts" "loccamps" "loclibs" "lostItemFeePolicies" "mtypes" "noteTypes" "organizationTypes" "overdueFinePolicies" "patronNoticePolicies" "servicepoints" "statisticalCodes" "usergroups")
 
 counter=1
 for rec_type in "${rec_array[@]}";do

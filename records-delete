@@ -22,7 +22,7 @@ rm -f ${errorfile}
 if [[ ${uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then echo ${uuid} > delete;fi
 
 if [[ ! -f ${deletefile} ]];then 
-	echo "This utility expects a file containing UUIDs named \"delete\""
+	echo "This utility expects a file containing UUIDs named \"delete\"";fi
 	exit
 fi
 
@@ -43,16 +43,12 @@ delete_record() {
 }
 
 case $deletetype in
-"accounts")
-	recordtype="accounts";;
 "authorities")
 	singlerecord="yes"
 	batchsize=10
 	recordtype="authority-storage/authorities";;
 "boundwiths")
-	recordtype="inventory-storage/bound-with-parts";;
-"budgets")
-	recordtype="finance/budgets";;
+        recordtype="inventory-storage/bound-with-parts";;
 "calendars")
 	recordtype="calendar/calendars";;
 "campuses")
@@ -74,6 +70,8 @@ case $deletetype in
 "departments")
 	recordtype="departments";;
 "feefineactions")
+	recordtype="feefineactions";;
+"fines")
 	recordtype="feefineactions";;
 "funds")
 	recordtype="finance/funds";;
@@ -111,8 +109,6 @@ case $deletetype in
 	recordtype="loan-types";;
 "locations")
 	recordtype="locations";;
-"manualblocks")
-	recordtype="manualblocks";;
 "mattypes")
 	recordtype="material-types";;
 "notes")
@@ -162,7 +158,7 @@ case $deletetype in
 	batchsize=5
 	recordtype="bl-users/by-id";;
 *)
-	echo "Record type '${deletetype}' not found. Supported types are boundwiths, budgets, campuses, contacts, coursedepartments, courselistings, coursetypes, departments, feefineactions, funds, groups, holdings, instances, instance-types, institutions, items, libraries, licenses, loan history, loans, loantypes, locations, manualblocks, mattypes, notes, notices, organizations, requests, schedulednotices, servicepoints, srs, tags, templates, transactions, usergroups, users, users-safe. Objects with attached records will need specialized delete routines"
+	echo "Record type '${deletetype}' not found. Supported types are boundwiths, campuses, contacts, coursedepartments, courselistings, coursetypes, departments, feefineactions, funds, groups, holdings, instances, instance-types, institutions, items, libraries, licenses, loan history, loans, loantypes, locations, mattypes, notes, notices, organizations, requests, schedulednotices, servicepoints, srs, tags, templates, transactions, usergroups, users, users-safe. Objects with attached records will need specialized delete routines"
 	exit;;
 esac
 

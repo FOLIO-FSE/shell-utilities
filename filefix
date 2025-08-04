@@ -206,14 +206,14 @@ head -50 filefixaa |grep -o "\b[1-9]\.[0-9]\+E+[0-9]\+\b" > /dev/null && echo "W
 if [[ ${filecontent} == "loan" ]];then
 sed -i '
 1 s/[^0-9A-Za-z_#)(\.\t\-]//g
-1 s/\bp[^\t]*barcode\b/patron_barcode/i
+1 s/\b[up][^\t]*barcode\b/patron_barcode/i
 1 s/\bbarcode[^\t]*p[^\t]*\b/patron_barcode/i
 1 s/\bi[^\t]*barcode\b/item_barcode/i
 1 s/\bbarcode[^\t]*i[^\t]*\b/item_barcode/i
 1 s/\bout[^\t]*date\b/out_date/i
 1 s/\bcharge[^\t]*date\b/out_date/i
 1 s/\bcheckedout\b/out_date/i
-1 s/\bcheckoutdate\b/out_date/i
+1 s/\bcheckout[^\t]*date\b/out_date/i
 1 s/\bdatecheck.?.?out\b/out_date/i
 1 s/\bdatecheckout\b/out_date/i
 1 s/\bdue[^\t]*date\b/due_date/i

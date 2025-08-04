@@ -7,10 +7,12 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 fines_file="fines.tsv"
-legacySystem="Sirsi"
+legacySystem=""
 logfile="feefine.log"
 num_retrieved=1000
 rm -f ${logfile}
+
+deterministic_uuids="yes"
 
 sed -i 's/"//g' "${fines_file}"
 
@@ -28,7 +30,48 @@ function fetch_batch() {
 	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?query=cql.allRecords=1&limit=${num_retrieved}&offset=$offset" |jq -c ".users[]"  > "tmp_users.${t}"
 }
 
+retrieve_users() {
+	echo "Retrieving user records"
+	all_users=""
+	num_records=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?limit=0" |jq -r .totalRecords)
+	
+	for (( offset=0; offset<=$num_records; ));do
+		for ((t=0; t<=4; t=$(($t + 1)) )); do
+			if [[ $offset -le $num_records ]];then 
+				fetch_batch $offset &
+				offset=$(($offset + $num_retrieved))
+			fi
+		done
+		wait
+			
+		cat tmp_users.* >> tmp_users
+		rm tmp_users.*
+	
+		if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset $num_records;fi
+	done
+	
+	# load user uuids into scalar array keyed by barcode 
+	echo "Loading ids. Please be patient           "
+	
+	cat tmp_users | jq -r .barcode > tmp_barcodes
+	cat tmp_users | jq -r .id > tmp_ids
+	
+	counter=0
+	
+	while IFS=$'\n' read -r barcode && IFS=$'\n' read -r id <&3; do
+	        counter=$(($counter+ 1))
+	        if [[ $((counter % 1000)) == 0 ]];then echo -en "Records loaded: $counter                 \r";fi
+			
+	        user_dict["${barcode}"]="${id}"
+	done < tmp_barcodes 3< tmp_ids
+	
+	echo "$counter records loaded                          "
+	
+	eval "$(cat tmp_users |jq -r 'select(.barcode != null) | @sh "user_dict[\(.barcode|tostring)]=\(.id|tostring)"')"
+}
 declare -A user_dict 
+
+if [[ ${deterministic_uuids} != "yes" ]];then retrieve_users;fi
 
 create_fine() {
 
@@ -64,50 +107,13 @@ IFS='' read -r -d '' action << EndOfJSON
   "amountAction": "${fineamount}",
   "balance":"${fineamount}",
   "transactionInformation":"",
-  "comments": "Migrated fine: ${legacySystem}. ${notes} ",
+  "comments": "Migrated fine: ${legacySystem}. ${notes} assessed ${due_date}",
   "notify":false,
   "id": "${actionId}",
   "userId": "${userid}"
 }
 EndOfJSON
 }
-
-echo "Retrieving user records"
-all_users=""
-num_records=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?limit=0" |jq -r .totalRecords)
-
-for (( offset=0; offset<=$num_records; ));do
-	for ((t=0; t<=4; t=$(($t + 1)) )); do
-		if [[ $offset -le $num_records ]];then 
-			fetch_batch $offset &
-			offset=$(($offset + $num_retrieved))
-		fi
-	done
-	wait
-		
-	cat tmp_users.* >> tmp_users
-	rm tmp_users.*
-
-	if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset $num_records;fi
-done
-
-# load user uuids into scalar array keyed by barcode 
-echo "Loading ids. Please be patient           "
-
-cat tmp_users | jq -r .barcode > tmp_barcodes
-cat tmp_users | jq -r .id > tmp_ids
-
-counter=0
-
-while IFS=$'\n' read -r barcode && IFS=$'\n' read -r id <&3; do
-        counter=$(($counter+ 1))
-        if [[ $((counter % 1000)) == 0 ]];then echo -en "Records loaded: $counter                 \r";fi
-        user_dict["${barcode}"]="${id}"
-done < tmp_barcodes 3< tmp_ids
-
-echo "$counter records loaded                          "
-
-eval "$(cat tmp_users |jq -r 'select(.barcode != null) | @sh "user_dict[\(.barcode|tostring)]=\(.id|tostring)"')"
 
 counter=1
 badbarcodes=0
@@ -122,14 +128,21 @@ while IFS=$'\n' read -r line; do
 	#IFS=$'^' read -r patron_barcode item_charge item_barcode fee_assess_date fineamount <<< "${line}"
 	#
 	#IFS=$'^' read -r patron_identifier fineamount patron_barcode item_identifier item_barcode out_date due_date notes  <<< "${line}"
-	IFS=$'^' read -r patron_barcode item_barcode fineamount notes  <<< "${line}"
+	IFS=$'^' read -r patron_barcode item_barcode fineamount assess_date due_date  <<< "${line}"
 	
 	if [[ -z $patron_barcode ]];then patron_barcode="${patron_identifier}";fi
-	if [[ item_barcode != "" ]];then notes=" Item: ${item_barcode}. ${notes}";fi
+	if [[ item_barcode != "" ]];then notes=" Item: ${item_barcode} ${notes}";fi
 	if [[ out_date != "" ]];then notes="${notes}. Checkout date:  ${out_date}";fi
+	if [[ assess_date != "" ]];then notes="${notes}. Assessed:  ${out_date}";fi
 	if [[ due_date != "" ]];then notes="${notes}. Due date:  ${due_date}";fi
 
 	echo -en "Processing record $counter of ${numloans}. Bad barcodes found: ${badbarcodes}\r"
+
+	if [[ ${deterministic_uuids} == "yes" ]];then 
+		if [[ ${patron_barcode} =~ [a-zA-Z0-9] ]];then
+			user_dict[${patron_barcode}]=$(uuid -v 5  8405ae4d-b315-42e1-918a-d1919900cf3f fs00001247:users:${patron_barcode})
+		fi
+	fi	
 
 
 if [[ ! -z ${user_dict[${patron_barcode}]} ]];then

@@ -16,6 +16,6 @@ echo "Setting status to Available"
 infile=loan_uuids
 
 jq -c '.status.name="Available"' items.json > tmp.json
-mv tmp.json
+mv tmp.json items.json
 
 inventory-replace items

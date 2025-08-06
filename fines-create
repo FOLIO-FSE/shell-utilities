@@ -109,7 +109,7 @@ IFS='' read -r -d '' action << EndOfJSON
   "amountAction": "${fineamount}",
   "balance":"${fineamount}",
   "transactionInformation":"",
-  "comments": "Migrated fine: ${legacySystem}. ${notes} assessed ${due_date}",
+  "comments": "Migrated fine: ${legacySystem}. ${notes}",
   "notify":false,
   "id": "${actionId}",
   "userId": "${userid}"
@@ -137,13 +137,14 @@ while IFS=$'\n' read -r line; do
 	#IFS=$'^' read -r patron_barcode item_charge item_barcode fee_assess_date fineamount <<< "${line}"
 	#
 	#IFS=$'^' read -r patron_identifier fineamount patron_barcode item_identifier item_barcode out_date due_date notes  <<< "${line}"
-	IFS=$'^' read -r patron_barcode item_barcode fineamount assess_date due_date  <<< "${line}"
+	IFS=$'^' read -r patron_barcode item_barcode fineamount assess_date in_date  <<< "${line}"
 
 	if [[ -z $patron_barcode ]];then patron_barcode="${patron_identifier}";fi
 	if [[ item_barcode != "" ]];then tmp_notes=" Item: ${item_barcode} ${notes}";fi
 	if [[ out_date != "" ]];then tmp_notes="${notes}. Checkout date:  ${out_date}";fi
 	if [[ assess_date != "" ]];then tmp_notes="${notes}. Assessed:  ${out_date}";fi
 	if [[ due_date != "" ]];then tmp_notes="${notes}. Due date:  ${due_date}";fi
+	if [[ in_date != "" ]];then tmp_notes="${notes}. Checkin date:  ${in_date}";fi
 
 	echo -en "Processing record $counter of ${numloans}. Bad barcodes found: ${badbarcodes}\r"
 
@@ -154,7 +155,7 @@ while IFS=$'\n' read -r line; do
 	fi	
 
 
-if [[ ! -z ${user_dict[${patron_barcode}]} ]];then
+if [[ ${user_dict[${patron_barcode}] =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]];then
 	userid=${user_dict[${patron_barcode}]}
 	create_fine
 	account_data=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${fine}" "${okapi_url}/accounts")

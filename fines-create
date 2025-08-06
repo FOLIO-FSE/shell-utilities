@@ -14,7 +14,8 @@ SECONDS=1
 
 rm -f ${logfile}
 
-deterministic_uuids="yes"
+uuids_in_source="no"
+generate_uuids="no"
 
 sed -i 's/"//g' "${fines_file}"
 
@@ -73,7 +74,7 @@ retrieve_users() {
 }
 declare -A user_dict 
 
-if [[ ${deterministic_uuids} != "yes" ]];then retrieve_users;fi
+if [[ ${uuids_in_source} != "yes" && ${generate_uuids} != "yes" ]];then retrieve_users;fi
 
 create_fine() {
 
@@ -148,10 +149,13 @@ while IFS=$'\n' read -r line; do
 
 	echo -en "Processing record $counter of ${numloans}. Bad barcodes found: ${badbarcodes}\r"
 
-	if [[ ${deterministic_uuids} == "yes" ]];then 
+	if [[ ${generate_uuids} == "yes" ]];then 
 		if [[ ${patron_barcode} =~ [a-zA-Z0-9] ]];then
 			user_dict[${patron_barcode}]=$(uuid -v 5  8405ae4d-b315-42e1-918a-d1919900cf3f fs00001247:users:${patron_barcode})
 		fi
+	fi	
+	if [[ ${uuids_in_source} == "yes" ]];then 
+		user_dict[${patron_barcode}]=${patron_barcode})
 	fi	
 
 

@@ -155,7 +155,7 @@ while IFS=$'\n' read -r line; do
 		fi
 	fi	
 	if [[ ${uuids_in_source} == "yes" ]];then 
-		user_dict[${patron_barcode}]=${patron_barcode})
+		user_dict[${patron_barcode}]=${patron_barcode}
 	fi	
 
 

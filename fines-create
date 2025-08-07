@@ -103,7 +103,6 @@ IFS='' read -r -d '' fine << EndOfJSON
   "userId": "${userid}"
 }
 EndOfJSON
-echo ${fine}
 
 IFS='' read -r -d '' action << EndOfJSON
 {
@@ -119,7 +118,6 @@ IFS='' read -r -d '' action << EndOfJSON
   "userId": "${userid}"
 }
 EndOfJSON
-echo ${action}
 }
 
 counter=1

@@ -5,12 +5,12 @@ records-get mattypes
 jq -r '[.id, .code]|@tsv' locations.json > location.tsv
 jq -r '[.id, .name]|@tsv' mattypes.json > mattype.tsv
 
-echo -e "call_num\ttitle\tbarcode\tlocation\tmattype\tstatus" > item_report.tsv
+echo -e "call_num\ttitle\tbarcode\tlocation\tmattype\tstatus\tsuppress" > item_report.tsv
 
 cat inventory.json |jq -r --arg delim $'\x1f' '
 	.instance.title as $title |
 	if (.items != null) then
-		.items[]
+		.items[] 
 		else empty
 		end |
 	[
@@ -19,9 +19,10 @@ cat inventory.json |jq -r --arg delim $'\x1f' '
 	"\(.barcode)" // "no barcode",
 	"\(.effectiveLocationId)" // "",
 	"\(.materialTypeId)" // "",
-	"\(.status.name)" // ""
+	"\(.status.name)" // "",
+	"\(.discoverySuppress)" // ""
 	] |join($delim)
-	' | tr $'\x1f' '\t' |sort >> item_report.tsv 
+	' | tr $'\x1f' '\t' |sed 's/^ *//;s/ *\t */\t/g' |sort >> item_report.tsv 
 
 value-mapper item_report.tsv
 

@@ -4,19 +4,35 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-if ! [[ ${1} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ && ${2} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
-	echo "You must specify a specification UUID and a rule UUID"
-	exit
-	echo
-fi
-
-specUUID=${1}
-ruleUUID=${2}
-
 specrule='{ "enabled": false }'
 
-curl --http1.1 -s -w '\n' -X PATCH -H "Content-type: application/json" -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${specrule}" "${okapi_url}/specification-storage/specifications/${specUUID}/rules/${ruleUUID}"
+function disable_rule() {
+	specUUID=${1}
+	ruleUUID=${2}
 
-echo
+	curl --http1.1 -s -w '\n' -X PATCH -H "Content-type: application/json" -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${specrule}" "${okapi_url}/specification-storage/specifications/${specUUID}/rules/${ruleUUID}"
+}
+
+if ! [[ ${1} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ && ${2} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+	echo "No specification nor rule UUIDs were specified"
+	echo "Specification UUID is expected as first argument and rule UUID is expected as second argument"
+	echo
+	echo "Performing default behavior of disabling warnings for undefined fields and subfields"
+	echo
+	marcrules=$(curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/specification-storage/specifications?limit=500&query=family=MARC&profile=bibliographic&include=all")
+	
+	undefinedSubfield=$(echo "${marcrules}" | jq -r '.specifications[] |select(.title == "MARC Bibliographic Specification") |.rules[] |select(.code=="undefinedSubfield") | .id')
+	undefinedField=$(echo "${marcrules}" | jq -r '.specifications[] |select(.title == "MARC Bibliographic Specification") |.rules[] |select(.code=="undefinedField") | .id')
+	undefinedIndicatorCode=$(echo "${marcrules}" | jq -r '.specifications[] |select(.title == "MARC Bibliographic Specification") |.rules[] |select(.code=="undefinedIndicatorCode") | .id')
+
+	specUUID=$(echo "${marcrules}" | jq -r '.specifications[] |select(.title == "MARC Bibliographic Specification") |.id')
+
+	disable_rule ${specUUID} ${undefinedSubfield}
+	disable_rule ${specUUID} ${undefinedField}
+	disable_rule ${specUUID} ${undefinedIndicatorCode}
+else
+	disable_rule ${1} ${2}
+fi
+
 
 

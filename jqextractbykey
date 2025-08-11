@@ -8,6 +8,7 @@ if [[ -z ${3} ]];then
 	echo "Usage: jqextractbykey [jsonfile] [valuefile] [jsonkey]"
 	echo
 	echo "Example: jqextractbykey myfile.json ids .id"
+	exit
 else
 	jsonfile="${1}"
 	valuefile="${2}"

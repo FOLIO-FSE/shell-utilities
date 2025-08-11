@@ -1,0 +1,19 @@
+#!/usr/bin/bash
+
+if [[ -z ${3} ]];then
+	echo "Extracts records from a JSON file using a matching file with values for a specified key"
+	echo "Output is to stdout"
+	echo "JSON key must be specified in jq syntax"
+	echo
+	echo "Usage: jqextractbykey [jsonfile] [valuefile] [jsonkey]"
+	echo
+	echo "Example: jqextractbykey myfile.json ids .id"
+else
+	jsonfile="${1}"
+	valuefile="${2}"
+	jsonkey="${3}"
+fi
+
+	pv "${valuefile}" |jq -R . > "tmp_vals"
+
+jq --slurpfile all_values tmp_vals --arg KEY "${jsonkey}" 'select(.[$KEY] as $matchval | $all_values |index($matchval)) ' "${jsonfile}"

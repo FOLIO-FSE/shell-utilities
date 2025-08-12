@@ -19,6 +19,7 @@ queryseparator="?"
 querydelim="%20or%20id=="
 
 SECONDS=1
+TIMER=1
 
 if [[ ! -f ${infile} ]]; then echo "This script cannot find input file ${infile}";exit;fi
 if [[ $# -eq 0 ]]; then echo "You must enter a record type";exit;fi
@@ -42,7 +43,6 @@ getbatch() {
 getrecord() {
 	local uuid=${1}
 	local seq=${2}
-
 	curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}${queryseparator}${querystring}${uuid}${poststring}" > tmp_records.${rec_type}.${seq}
 }
 
@@ -131,8 +131,15 @@ case $rec_type in
 	endpoint="service-points";;
 "srs")
 	indivrecord=1
-	querystring="externalId="
 	jq_replace=".sourceRecords[]"
+
+	if [[ $2 != "srs" ]];then
+		querystring="externalId="
+	else
+		querystring="/"
+		queryseparator=""
+		jq_replace="."
+	fi
 	endpoint="source-storage/source-records";;
 "statcodes")
 	endpoint="statistical-codes";;

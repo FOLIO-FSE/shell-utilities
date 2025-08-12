@@ -155,6 +155,8 @@ case $recordtype in
 "servicepoints")
 	recordtype="service-points";;
 "srs")
+	batchsize=5
+	operation="PUT"
 	recordtype="source-storage/records"
         ;;
 "tags")
@@ -183,17 +185,17 @@ while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
 	done
 	wait
 
-        if [[ $SECONDS -gt 500 ]]; then
-								TIMER=$(($TIMER + $SECONDS))
-                auth 2>/dev/null || authn 2>/dev/null
-								okapi_token=$(cat okapi.token)
-                SECONDS=1
-        fi
-				if [[ $TIMER -lt 500 ]];then TIMER=$SECONDS;fi
+  if [[ $SECONDS -gt 500 ]]; then
+		TIMER=$(($TIMER + $SECONDS))
+    auth 2>/dev/null || authn 2>/dev/null
+		okapi_token=$(cat okapi.token)
+    SECONDS=1
+  fi
+	if [[ $TIMER -lt 500 ]];then TIMER=$SECONDS;fi
 
-        TIME=$TIMER;msg="$TIMER seconds"
-        if [[ $TIMER -gt 60 ]];then TIME=$(bc <<< "scale=1;$TIMER/60");msg="$TIME minutes";fi
-        if [[ $TIMER -gt 3600 ]];then TIME=$(bc <<< "scale=1;$TIMER/3600");msg="$TIME hours     ";fi
+  TIME=$TIMER;msg="$TIMER seconds"
+  if [[ $TIMER -gt 60 ]];then TIME=$(bc <<< "scale=1;$TIMER/60");msg="$TIME minutes";fi
+  if [[ $TIMER -gt 3600 ]];then TIME=$(bc <<< "scale=1;$TIMER/3600");msg="$TIME hours     ";fi
 
 	echo -en "Processing record $counter of $numrecs in $msg\r"
 

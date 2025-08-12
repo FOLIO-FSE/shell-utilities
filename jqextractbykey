@@ -17,4 +17,6 @@ fi
 
 	cat "${valuefile}" |jq -R . > "tmp_vals"
 
-jq --slurpfile all_values tmp_vals --arg KEY "${jsonkey}" 'select(.[$KEY] as $matchval | $all_values |index($matchval)) ' "${jsonfile}"
+jq -c --slurpfile all_values tmp_vals --arg KEY "${jsonkey}" 'select(.[$KEY] as $matchval | $all_values |index($matchval)) ' "${jsonfile}"
+
+rm tmp_vals

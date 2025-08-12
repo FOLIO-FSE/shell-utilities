@@ -1,7 +1,8 @@
 #!/usr/bin/bash
 auth 2>/dev/null || authn 2>/dev/null
 SECONDS=1
-TIMER=0
+TIMER=1
+OFFSET=0
 
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
@@ -186,10 +187,11 @@ while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
 	wait
 
   if [[ $SECONDS -gt 500 ]]; then
-		TIMER=$(($TIMER + $SECONDS))
+		TIMER=$(($TIMEROFFSET * 500 + $SECONDS))
     auth 2>/dev/null || authn 2>/dev/null
 		okapi_token=$(cat okapi.token)
     SECONDS=1
+		TIMEROFFSET=$(($TIMEROFFSET + 1))
   fi
 	if [[ $TIMER -lt 500 ]];then TIMER=$SECONDS;fi
 

@@ -187,19 +187,22 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 		printrecords
 	fi
 
-        if [[ $SECONDS -gt 500 ]]; then
-		TIMER=$(($TIMEROFFSET * 500 + $SECONDS))
-                auth 2>/dev/null || authn 2>/dev/null
-		okapi_token=$(cat okapi.token)
-                SECONDS=1
-        fi
+    if [[ $SECONDS -gt 500 ]]; then
+			TIMER=$(($TIMEROFFSET * 500 + $SECONDS))
+     	auth 2>/dev/null || authn 2>/dev/null
+			okapi_token=$(cat okapi.token)
+      SECONDS=1
+			TIMEROFFSET=$(($TIMEROFFSET + 1))
+    fi
 
-        TIME=$TIMER;msg="$TIMER seconds"
+    if [[ $TIMER -lt 500 ]]; then TIMER=$SECONDS;fi
 
-        if [[ $TIMER -gt 60 ]];then TIME=$(($TIMER/60));msg="$TIME minutes";fi
-        if [[ $TIMER -gt 3600 ]];then TIME=$(($TIMER/3600));msg="$TIME hours";fi
+    TIME=$TIMER;msg="$TIMER seconds"
 
-        echo -en "Processing record $counter of $numrecs in $msg in $(($counter/$TIMER)) recs/sec          \r"
+    if [[ $TIMER -gt 60 ]];then TIME=$(($TIMER/60));msg="$TIME minutes";fi
+    if [[ $TIMER -gt 3600 ]];then TIME=$(($TIMER/3600));msg="$TIME hours";fi
+
+    echo -en "Processing record $counter of $numrecs in $msg in $(($counter/$TIMER)) recs/sec          \r"
 
 done < ${infile}
 

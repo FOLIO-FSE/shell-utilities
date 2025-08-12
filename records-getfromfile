@@ -132,6 +132,7 @@ case $rec_type in
 "srs")
 	indivrecord=1
 	jq_replace=".sourceRecords[]"
+	endpoint="source-storage/source-records"
 
 	if [[ $2 != "srs" ]];then
 		querystring="externalId="
@@ -139,8 +140,9 @@ case $rec_type in
 		querystring="/"
 		queryseparator=""
 		jq_replace="."
+		endpoint="source-storage/records"
 	fi
-	endpoint="source-storage/source-records";;
+	;;
 "statcodes")
 	endpoint="statistical-codes";;
 "tags")

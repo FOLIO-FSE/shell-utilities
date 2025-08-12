@@ -52,15 +52,13 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 
 	batch=$(echo "${batch}" |jq -c ".conditions.ids = [ \"${idstring}\" ] | .conditions.idType = \"${idType}\" ")
 
-	echo "${batch}" > fat
-
         counter=$(($counter + ${#ids[@]}))
 
         printf "Processing record %s of %s \r" $counter $numrecs
 
-	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${batch}" "${okapi_url}/source-storage/batch/parsed-records/fetch" |jq -c '.records[]' >> "${outfile}"
+	curl --http1.1 -s -w '\n' -X POST -H "Content-Type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${batch}" "${okapi_url}/source-storage/batch/parsed-records/fetch" |jq -c '.records[]' >> "${outfile}"
 
 done < ${infile}
 
-        print "Processed %s records. Output has been sent to ${outfile} " $counter $numrecs
+print "Processed %s records. Output has been sent to ${outfile} " $counter $numrecs
 

@@ -3,7 +3,7 @@
 if [[ -z ${3} ]];then
 	echo "Maps values in a two column tab delimited file into a JSON document based on key matchpointy"
 	echo "Use the not keyword to select records that do not match"
-	echo "Output is to stdout"
+	echo
 	echo "JSON key must be specified in jq syntax"
 	echo
 	echo "Usage: jqmap [jsonfile] [mapfile] [jsonkey]"

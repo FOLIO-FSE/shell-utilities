@@ -4,11 +4,11 @@ if [[ -z ${3} ]];then
 	echo "Maps values in a two column tab delimited file into a JSON document based on key matchpointy"
 	echo "Use the not keyword to select records that do not match"
 	echo
-	echo "JSON key must be specified in jq syntax"
+	echo "Only simple keys are supported, not objects"
 	echo
-	echo "Usage: jqmap [jsonfile] [mapfile] [jsonkey]"
+	echo "Usage: jqinsert [jsonfile] [mapfile] [matchkey] [newkey]
 	echo
-	echo "Example: jqmap myfile.json id_barcode .barcode"
+	echo "Example: jqinsert items.json item_status itemDamagedStatusId"
 	echo
 	exit
 else

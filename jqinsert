@@ -31,13 +31,32 @@ jq -rRn '
 pv  ${json_file} | jq -c --argfile key_value tmp_map --arg MATCHKEY "${matchkey}" --arg NEWKEY "${newkey}" '
 	(if .[$MATCHKEY] != null then ($key_value[.[$MATCHKEY]] // null) else null end) as $value
 		| if $value != null and ($value | test("^[\\[{]")) then
-			(. + { ($NEWKEY): ($value | fromjson) })
-    else if $value != null then
-			(. + { ($NEWKEY): $value }) 
+		($value | fromjson) as $parsed
+			| if has($NEWKEY) then
+			 if (.[$NEWKEY] | type) == "array" then
+				.[$NEWKEY] += [$parsed]
+			 elif (.[$NEWKEY] | type) == "object" and ($parsed | type) == "object" then
+				.[$NEWKEY] += $parsed
+			 else
+				. + { ($NEWKEY): $parsed }
+			 end
+		  else
+			 . + { ($NEWKEY): $parsed }
+		  end
+	 else if $value != null then
+		if has($NEWKEY) then
+		  if (.[$NEWKEY] | type) == "array" then
+			 .[$NEWKEY] += [$value]
+		  else
+			 . + { ($NEWKEY): $value }
+		  end
 		else
-      .
-    end
+		  . + { ($NEWKEY): $value }
 		end
+	 else
+		.
+	 end
+  end
 ' > ${outfile}
 
 rm tmp_map

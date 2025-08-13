@@ -4,11 +4,11 @@ if [[ -z ${3} ]];then
 	echo "Maps values in a two column tab delimited file into a JSON document based on key matchpointy"
 	echo "Use the not keyword to select records that do not match"
 	echo
-	echo "Only simple keys are supported, not objects"
+	echo "JSON key must be specified in jq syntax"
 	echo
-	echo "Usage: jqinsert [jsonfile] [mapfile] [matchkey] [newkey]
+	echo "Usage: jqmap [jsonfile] [mapfile] [jsonkey]"
 	echo
-	echo "Example: jqinsert items.json item_status itemDamagedStatusId"
+	echo "jqinsert items.json item_status itemDamagedStatusId"
 	echo
 	exit
 else
@@ -28,9 +28,16 @@ jq -rRn '
 	)
 ' ${map_file} > tmp_map
 
-pv  ${json_file} | jq --argfile key_value tmp_map --arg MATCHKEY "${matchkey}" --arg NEWKEY "${newkey}" '
+pv  ${json_file} | jq -c --argfile key_value tmp_map --arg MATCHKEY "${matchkey}" --arg NEWKEY "${newkey}" '
 	(if .[$MATCHKEY] != null then ($key_value[.[$MATCHKEY]] // null) else null end) as $value
-	| if $value != null then (. + { ($NEWKEY): $value }) else . end
+		| if $value != null and ($value | test("^[\\[{]")) then
+			(. + { ($NEWKEY): ($value | fromjson) })
+    else if $value != null then
+			(. + { ($NEWKEY): $value }) 
+		else
+      .
+    end
+		end
 ' > ${outfile}
 
 rm tmp_map

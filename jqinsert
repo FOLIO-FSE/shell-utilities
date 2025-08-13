@@ -1,0 +1,38 @@
+#!/usr/bin/bash
+
+if [[ -z ${3} ]];then
+	echo "Maps values in a two column tab delimited file into a JSON document based on key matchpointy"
+	echo "Use the not keyword to select records that do not match"
+	echo
+	echo "JSON key must be specified in jq syntax"
+	echo
+	echo "Usage: jqmap [jsonfile] [mapfile] [jsonkey]"
+	echo
+	echo "Example: jqmap myfile.json id_barcode .barcode"
+	echo
+	exit
+else
+	json_file="${1}"
+	map_file="${2}"
+	matchkey="${3}"
+	newkey="${4}"
+	fileroot=$(echo "${json_file}" | sed 's/\.....\?$//')
+	outfile="${fileroot}_remapped.json"
+fi
+
+jq -rRn '
+	 reduce inputs as $line ({};
+		($line | split("\t") | .[0]) as $key |
+		($line | split("\t") | .[1]) as $value |
+		. + { ($key): $value }
+	)
+' ${map_file} > tmp_map
+echo "jq --argfile key_value tmp_map --arg MATCHKEY ${jsonkey} --arg NEWKEY ${newkey}"
+pv  ${json_file} | jq --argfile key_value tmp_map --arg MATCHKEY ${jsonkey} --arg NEWKEY "${newkey}" '
+	$key_value[.[$MATCKEY]] as $value
+	| if $value != null then (. + { ($NEWKEY) : $value }) else . end
+' > ${outfile}
+
+rm tmp_map
+echo "A remapped file has been sent to ${outfile}"
+echo

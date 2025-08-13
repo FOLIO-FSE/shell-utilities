@@ -27,10 +27,10 @@ jq -rRn '
 		. + { ($key): $value }
 	)
 ' ${map_file} > tmp_map
-echo "jq --argfile key_value tmp_map --arg MATCHKEY ${jsonkey} --arg NEWKEY ${newkey}"
-pv  ${json_file} | jq --argfile key_value tmp_map --arg MATCHKEY ${jsonkey} --arg NEWKEY "${newkey}" '
-	$key_value[.[$MATCKEY]] as $value
-	| if $value != null then (. + { ($NEWKEY) : $value }) else . end
+
+pv  ${json_file} | jq --argfile key_value tmp_map --arg MATCHKEY "${matchkey}" --arg NEWKEY "${newkey}" '
+	(if .[$MATCHKEY] != null then ($key_value[.[$MATCHKEY]] // null) else null end) as $value
+	| if $value != null then (. + { ($NEWKEY): $value }) else . end
 ' > ${outfile}
 
 rm tmp_map

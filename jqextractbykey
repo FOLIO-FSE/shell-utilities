@@ -2,12 +2,14 @@
 
 if [[ -z ${3} ]];then
 	echo "Extracts records from a JSON file using a matching file with values for a specified key"
+	echo "Use the not keyword to select records that do not match"
 	echo "Output is to stdout"
 	echo "JSON key must be specified in jq syntax"
 	echo
 	echo "Usage: jqextractbykey [jsonfile] [valuefile] [jsonkey]"
 	echo
 	echo "Example: jqextractbykey myfile.json ids .id"
+	echo "Example: jqextractbykey myfile.json ids .id not"
 	exit
 else
 	jsonfile="${1}"

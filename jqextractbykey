@@ -17,6 +17,10 @@ fi
 
 	cat "${valuefile}" |jq -R . > "tmp_vals"
 
-jq -c --slurpfile all_values tmp_vals --arg KEY "${jsonkey}" 'select(.[$KEY] as $matchval | $all_values |index($matchval)) ' "${jsonfile}"
+if [[ ${4} == "not" ]];then
+	jq -c --slurpfile all_values tmp_vals --arg KEY "${jsonkey}" 'select(.[$KEY] | IN($all_values[]) |not) ' "${jsonfile}"
+else
+	jq -c --slurpfile all_values tmp_vals --arg KEY "${jsonkey}" 'select(.[$KEY] | IN($all_values[])) ' "${jsonfile}"
+fi
 
 rm tmp_vals

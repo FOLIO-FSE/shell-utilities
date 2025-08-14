@@ -1,0 +1,141 @@
+infile="${1}"
+outfile="items_withholdid.tsv"
+
+if [[ -z ${infile} ]];then echo "You must supply a file name for a tab delimited file\nYou will need to modify the fields in the awk script to match the headers of your input file";fi
+
+
+
+read -r -d '' awkscript << "ENDOFAWK"
+#!/usr/bin/awk -f 
+{
+	sub("\r", "", $NF)
+	if (NR == 1) {
+
+		for(i=1;i<=NF;i++) {
+			compareheader=tolower($i)
+			gsub(/[^a-z0-9]/, "", compareheader)
+
+			switch(compareheader) {
+				case "bibno":
+					bibId=i
+					printf ("Bib ID found in "$i"\\n")
+					break
+				case "bibid":
+					bibId=i
+					printf ("Bib ID found in "$i"\\n")
+					break
+				case "mmsid":
+					bibId=i
+					printf ("Bib ID found in "$i"\\n")
+					break
+				case "recordbibliographic":
+					bibId=i
+					printf ("Bib ID found in "$i"\\n")
+					break
+				case "recordbiblio":
+					bibId=i
+					printf ("Bib ID found in "$i"\\n")
+					break
+				case "loc":
+					location=i
+					printf ("Location found in "$i"\\n")
+					break
+				case "location":
+					location=i
+					printf ("Location found in "$i"\\n")
+					break
+				case "permanentlocation":
+					location=i
+					printf ("Location found in "$i"\\n")
+					break
+				case "locationcode":
+					location=i
+					printf ("Location found in "$i"\\n")
+					break
+				case "callmarc":
+					callNumPos=i
+					printf ("Call number found in "$i"\\n")
+					break
+				case "call":
+					callNumPos=i
+					printf ("Call number found in "$i"\\n")
+					break
+				case "callno":
+					callNumPos=i
+					printf ("Call number found in "$i"\\n")
+					break
+				case "callnumber":
+					callNumPos=i
+					printf ("Call number found in "$i"\\n")
+					break
+				case "callnumtype":
+					callType=i
+					printf ("Call number type found in "$i"\\n")
+					break
+				case "calltype":
+					callType=i
+					printf ("Call number type found in "$i"\\n")
+					break
+				case "callnumbertype":
+					callType=i
+					printf ("Call number type found in "$i"\\n")
+					break
+				case "callitem":
+					callNumPos=i
+					printf ("Call number found in "$i"\\n")
+					break
+				case "callprefix":
+					callPrefix=i
+					printf ("Call number prefix found in "$i"\\n")
+					break
+				case "callsuffix":
+					callSuffix=i
+					printf ("Call number suffix found in "$i"\\n")
+					break
+				case "callbibliographic":
+					callNumFallback=i
+					printf ("Call number fallback found in "$i"\\n")
+					break
+				case "bibcall":
+					callNumFallback=i
+					printf ("Call number fallback found in "$i"\\n")
+					break
+				case "callbiblio":
+					callNumFallback=i
+					printf ("Call number fallback found in "$i"\\n")
+					break
+				case "callnonmarc":
+					callNumFallback=i
+					printf ("Call number fallback found in "$i"\\n")
+					break
+			}
+		}
+		if (! callNumPos && ! callNumFallback ) {  emptyCall = 1 } else { emptyCall = 0 }
+		if (! callNumPos && callNumFallback > 0 ) { callNumPos = callNumFallback; callNumFallback = "" }
+	}
+
+	if (emptyCall == 0) {
+		if (callNumPos > 0) {callNum = $callNumPos}
+		if (callNumFallback > 0 && length($callNumPos) == 0) {callNum = $callNumFallback}
+	} else {
+		if (NR == 1) { callNum = "callNum" } else { callNum = "" }
+	}
+	holdId = $bibId""$location""callNum; gsub(/[^a-zA-Z0-9]/, "", holdId)
+	if (NR==1){holdId = "holdid"}
+
+	printf "%s\\t%s\\n", $0, holdId > OUTFILE
+}
+END { 
+	if (badawk != 1) {
+		printf ("Records processed: %d sent to %s\\n\\n", NR, OUTFILE)
+	}
+}
+
+ENDOFAWK
+
+echo -e "${awkscript}" > tmp_itemsaddholdid
+chmod 700 tmp_itemsaddholdid
+
+awk -v OFS=$'\t' -v FS='\t' -v OUTFILE="${outfile}" -f tmp_itemsaddholdid "${infile}"
+
+rm -f tmp_itemsaddholdid

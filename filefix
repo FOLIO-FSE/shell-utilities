@@ -431,7 +431,7 @@ function fix_dates() {
 			if ($fixdate ~ /-00/) { $fixdate = "" }
 			
 		} else {
-			if (FNR != 1) { $fixdate = "" }
+			if (NR != 1 || FILENAME != "filefixaa") { $fixdate = "" }
 		}
 	}
 if ($fixdate == ""){print "blanked date" > "bad_dates"}

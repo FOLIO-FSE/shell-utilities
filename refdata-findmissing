@@ -40,7 +40,7 @@ esac
 
 if [[ ! -f "${infile}" ]];then echo "Sourcefile ${infile} not found. Exiting.";exit;fi
 
-echo "The following columns were found. Enter the column header containing location"
+echo "The following columns were found. Enter the column header containing ${datatype}"
 echo
 head -1 "${infile}" |tr "\t" "\n"
 echo

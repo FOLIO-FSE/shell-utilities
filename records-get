@@ -61,6 +61,7 @@ case $rec_type in
 	rec_type="addressTypes"
 	endpoint="addresstypes";;
 "agreements")
+	jqexpr="jq -c '.'"
 	rec_type="results"
 	endpoint="erm/sas"
 	erm="yes";;
@@ -240,6 +241,7 @@ case $rec_type in
 "licenses")
 	endpoint="licenses/licenses"
 	query="sort=name%3Bdesc"
+	jqexpr="jq -c '.[] | del(.metadata)'"
 	erm="yes";;
 "licenses-picklists")
 	endpoint="licenses/refdata"
@@ -372,8 +374,6 @@ if [[ $erm == "yes" ]];then
 	num_retrieved="1"
 	query="stats=true"
 	limitOrPerPage="perPage"
-	#jqexpr="jq -c '.[] | del(.metadata)'"
-	jqexpr="jq -c '.'"
 fi
 
 if [[ -z $jqexpr ]];then jqexpr="jq -c --arg REC_TYPE "${rec_type}" '.[\$REC_TYPE][] | del(.metadata)'";fi

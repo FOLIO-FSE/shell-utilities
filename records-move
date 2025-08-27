@@ -17,7 +17,7 @@ if [[ ${recordtype} == "items" ]];then
 	to_record="toHoldingsRecordId"
 	list_ids="itemIds"
 	outfile="moveitems.json"
-	command="movitems"
+	command="moveitems"
 fi
 
 if [[ ${recordtype} == "holdings" ]];then

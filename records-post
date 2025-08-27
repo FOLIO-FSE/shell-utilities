@@ -133,6 +133,12 @@ case $recordtype in
 	recordtype="manualblocks";;
 "mattypes")
 	recordtype="material-types";;
+"moveholdings")
+	batchsize=6
+	recordtype="inventory/holdings/move";;
+"moveitems")
+	batchsize=6
+	recordtype="inventory/items/move";;
 "nature-of-content")
 	recordtype="nature-of-content-terms";;
 "notices")

@@ -6,6 +6,8 @@ okapi_token=$(cat okapi.token)
 
 declare -A packages_dict
 
+### Be sure tenant eHoldings is fully configured and connected to library HLM
+
 
 infile="agreementnames" # expects agreement names to be exactly the same as package names
 outfile="packages.log"

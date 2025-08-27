@@ -1,0 +1,62 @@
+#!/bin/bash
+
+infile=${1}
+recordtype=${2}
+if [[ -z ${infile} ]]; then 
+	echo "Usage: records-move [filename] [holdings|items]";exit
+echo "Item or Holdings UUIDs are expected in the first column and Holdings UUIDs are expected in the second column"
+echo
+fi
+
+if [[ ${recordtype} != "holdings" && ${recordtype} != "items" ]]; then
+	echo "Usage: records-move [filename] [holdings|items]";exit
+	echo
+fi
+
+if [[ ${recordtype} == "items" ]];then
+	to_record="toHoldingsRecordId"
+	list_ids="itemIds"
+	outfile="moveitems.json"
+	command="movitems"
+fi
+
+if [[ ${recordtype} == "holdings" ]];then
+	to_record="toInstanceId"
+	list_ids="holdingsRecordIds"
+	outfile="moveholdings.json"
+	command="moveholdings"
+fi
+
+rm -f ${outfile}
+
+awk -F'\t' -v TO_RECORD="${to_record}" -v LIST_IDS="${list_ids}" -v OUTFILE="${outfile}" '
+{
+  # Group itemIds by holdingsId
+  if (length(items[$2]) == 0) {
+    items[$2] = $1
+  } else {
+    items[$2] = items[$2] "," $1
+  }
+	if (NR % 10000 == 0){ printf "Records analyzed: "NR"\r" }
+}
+END {
+	print ""
+	counter=1
+  for (h in items) {
+    split(items[h], id_array, ",")
+    printf "{ \""TO_RECORD"\": \"%s\", \""LIST_IDS"\": [", h >> OUTFILE
+    for (i = 1; i <= length(id_array); i++) {
+      printf "\"%s\"", id_array[i] >> OUTFILE
+      if (i < length(id_array)) {
+        printf ", " >> OUTFILE
+      }
+    }
+    print "] }" >> OUTFILE
+		if (counter % 10000 == 0){ printf "Records created: "counter"\r" }
+		counter++
+  }
+}
+' "${infile}"
+echo
+
+records-post ${command}

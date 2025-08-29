@@ -13,11 +13,17 @@ statementsfile="${1}"
 holdingsfromitemsfile="${2}"
 outfile="holdings_merged.json"
 
-# Create a lookup map from file1: key = .formerIds[1], value = .holdingsStatements
-jq -c '
-	select(.formerIds[1] != null and .permanentLocationId != null and .holdingsStatements != null) |
-	{ ((.formerIds[1] + "|" + .permanentLocationId)): .holdingsStatements }
-' "${statementsfile}" | jq -s 'add' |pv >  holdings_map.json
+jq -s '
+  reduce .[] as $item (
+    {};
+    if ($item.formerIds[1] != null and $item.permanentLocationId != null and $item.holdingsStatements != null) then
+      ($item.formerIds[1] + "|" + $item.permanentLocationId) as $key |
+      .[$key] = (.[$key] // []) + $item.holdingsStatements
+    else
+      .
+    end
+  )
+' "${statementsfile}" |pv > holdings_map.json
 
 # Merge holdingsStatements into file2 where .formerIds[1] matches
 jq -c --argfile map holdings_map.json '

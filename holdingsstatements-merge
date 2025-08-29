@@ -1,0 +1,33 @@
+#!/bin/bash
+
+if [[ -z $2 ]];then
+	echo
+	echo "Merges holdings statements from one object file into a second object file lacking them based on matching formerIdentifiers[1] (bibId)"
+	echo "Usage: holdingsstatements-merge [holdingsstatementsfile] [lackingholdingsstatementsfile]
+	echo
+	exit
+fi
+	
+
+statementsfile="${1}"
+holdingsfromitemsfile="${2}"
+outfile="holdings_merged.json"
+
+# Create a lookup map from file1: key = .formerIds[1], value = .holdingsStatements
+jq -c '
+  select(.formerIds[1] != null and .holdingsStatements != null) |
+  { (.formerIds[1]): .holdingsStatements }
+' "$file1" | jq -s 'add' |pv >  holdings_map.json
+
+# Merge holdingsStatements into file2 where .formerIds[1] matches
+jq -c --argfile map holdings_map.json '
+  .formerIds[1] as $key |
+  if $key != null and ($map[$key] != null) then
+    . + { holdingsStatements: $map[$key] }
+  else
+    .
+  end
+' "${holdingsfromitemsfile}" |pv > "${outfile}"
+
+echo "File ${outfile} contains holdings statements from ${statementsfile} merged into ${holdingsfromitemsfile} based on matching bib Ids"
+rm holdings_map

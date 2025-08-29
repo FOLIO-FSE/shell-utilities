@@ -30,4 +30,4 @@ jq -c --argfile map holdings_map.json '
 ' "${holdingsfromitemsfile}" |pv > "${outfile}"
 
 echo "File ${outfile} contains holdings statements from ${statementsfile} merged into ${holdingsfromitemsfile} based on matching bib Ids"
-rm holdings_map
+rm holdings_map.json

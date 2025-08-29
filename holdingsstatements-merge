@@ -15,18 +15,21 @@ outfile="holdings_merged.json"
 
 # Create a lookup map from file1: key = .formerIds[1], value = .holdingsStatements
 jq -c '
-  select(.formerIds[1] != null and .holdingsStatements != null) |
-  { (.formerIds[1]): .holdingsStatements }
+	select(.formerIds[1] != null and .permanentLocationId != null and .holdingsStatements != null) |
+	{ ((.formerIds[1] + "|" + .permanentLocationId)): .holdingsStatements }
 ' "${statementsfile}" | jq -s 'add' |pv >  holdings_map.json
 
 # Merge holdingsStatements into file2 where .formerIds[1] matches
 jq -c --argfile map holdings_map.json '
-  .formerIds[1] as $key |
-  if $key != null and ($map[$key] != null) then
-    . + { holdingsStatements: $map[$key] }
-  else
-    .
-  end
+	.formerIds[1] as $fid |
+	.permanentLocationId as $loc |
+	($fid + "|" + $loc) as $key |
+
+	if $key != null and ($map[$key] != null) then
+    	. + { holdingsStatements: $map[$key] }
+  	else
+   	 .
+	end
 ' "${holdingsfromitemsfile}" |pv > "${outfile}"
 
 echo "File ${outfile} contains holdings statements from ${statementsfile} merged into ${holdingsfromitemsfile} based on matching bib Ids"

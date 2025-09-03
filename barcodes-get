@@ -6,9 +6,26 @@ okapi_token=$(cat okapi.token)
 SECONDS=1
 OFFSET=0
 
+searchtype=${1}
 infile=barcodes
-outfile=items.json
 
+case ${searchtype} in
+	items)
+		endpoint="${okapi_url}/item-storage/items?query="
+		jqexpr=".items[]"
+		outfile=items.json
+		;;
+	users)
+		endpoint="${okapi_url}/users?query="
+		jqexpr=".users[]"
+		outfile=users.json
+		;;
+	*)
+		echo "You must enter users or items"
+		exit
+	;;
+esac
+	
 dos2unix ${infile}
 
 case ${infile} in
@@ -21,9 +38,7 @@ esac
 
 batchsize=50
 
-
 querydelim="%20or%20barcode=="
-endpoint="${okapi_url}/item-storage/items?query="
 
 rm -f ${outfile}
 
@@ -34,10 +49,10 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 
         if [[ $SECONDS -gt 500 ]]; then
                 auth 2>/dev/null || authn 2>/dev/null
-		okapi_token=$(cat okapi.token)
+								okapi_token=$(cat okapi.token)
                 SECONDS=1
-		OFFSET=$(($OFFSET + 1))
-		TIMER=$(($OFFSET * 500 + $SECONDS))
+								OFFSET=$(($OFFSET + 1))
+								TIMER=$(($OFFSET * 500 + $SECONDS))
         fi
 
 	counter=$(($counter + ${#ids[@]}))
@@ -46,7 +61,7 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 	idstring="${ids[@]}"
 	querystring="barcode==${idstring// /${querydelim}}"
 
-	records=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}${querystring}&limit=${batchsize}" |jq -c .items[])
+	records=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${endpoint}${querystring}&limit=${batchsize}" |jq -c ${jqexpr})
 
 	echo "${records}" >> ${outfile}
 

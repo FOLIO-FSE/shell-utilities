@@ -1,0 +1,60 @@
+#!/usr/bin/awk -f
+
+BEGIN {
+    RS="\n\n"; FS="\n"; ORS="\n\n"
+}
+
+{
+    n_004 = 0
+    delete f004
+    delete f004_pos
+    f001_line = ""
+    f001_index = -1
+
+    # First pass: collect 004 fields and their positions, and locate 001
+    for (i = 1; i <= NF; i++) {
+        if ($i ~ /^=004/) {
+            n_004++
+            f004[n_004] = $i
+            f004_pos[n_004] = i
+        }
+        if ($i ~ /^=001/) {
+            f001_line = $i
+            f001_index = i
+        }
+    }
+
+    if (n_004 <= 1) {
+        print $0
+    } else {
+        for (j = 1; j <= n_004; j++) {
+            new_record = ""
+            for (i = 1; i <= NF; i++) {
+                # Replace 001 line if needed
+                if (i == f001_index && j > 1) {
+                    new_record = new_record "=001  " substr(f001_line, 7)""substr(f004[j], 7) "\n"
+                    continue
+                }
+
+                # Replace 004 line at its original position
+                replaced = 0
+                for (k = 1; k <= n_004; k++) {
+                    if (i == f004_pos[k]) {
+                        if (k == j) {
+                            new_record = new_record f004[j] "\n"
+                        }
+                        replaced = 1
+                        break
+                    }
+                }
+
+                if (!replaced) {
+                    new_record = new_record $i "\n"
+                }
+            }
+            # Remove trailing newline and print
+            sub(/\n$/, "", new_record)
+            print new_record
+        }
+    }
+}

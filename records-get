@@ -171,6 +171,7 @@ case $rec_type in
 "holdings")
 	limitbyid="yes"
 	rec_type="holdingsRecords"
+	jqexpr="jq -c '.holdingsRecords[] | del(.metadata) | del(.holdingsItems) |del(.bareHoldingsItems)'"
 	endpoint="holdings-storage/holdings";;
 "holdingstypes")
 	rec_type="holdingsTypes"

@@ -7,7 +7,13 @@ if [[ -z ${4} ]];then
 	echo
 	echo "Usage: jqinsert [jsonfile] [mapfile] [matchkey] [newkey]"
 	echo
-	echo "jqinsert items.json item_status itemDamagedStatusId .status.name"
+	echo "jqinsert items.json item_status itemDamagedStatusId status"
+	echo 
+	echo "To insert within objects, the tsv file should contain objects. For example,"
+	echo "to set .status name, the second column should contain {\"name\":\"somename\"}"
+	echo
+	echo	"To insert or add to arrays, the second column should be expressed as an array"
+	echo  "Example\": [{\"itemNoteTypeId\":\"95fedc27-2417-4a58-9fe5-a70951998168\",\"note\":\"gift\"}]"
 	echo
 	exit
 else
@@ -33,7 +39,7 @@ pv  ${json_file} | jq -c --argfile key_value tmp_map --arg MATCHKEY "${matchkey}
 		($value | fromjson) as $parsed
 			| if has($NEWKEY) then
 			 if (.[$NEWKEY] | type) == "array" then
-				.[$NEWKEY] += [$parsed]
+				.[$NEWKEY] += $parsed
 			 elif (.[$NEWKEY] | type) == "object" and ($parsed | type) == "object" then
 				.[$NEWKEY] += $parsed
 			 else

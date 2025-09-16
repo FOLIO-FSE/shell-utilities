@@ -66,6 +66,8 @@ postrecord() {
 case $recordtype in
 "accounts")
 	recordtype="accounts";;
+"actionprofiles")
+	recordtype="data-import-profiles/actionProfiles";;
 "agreements")
 	recordtype="erm/sas";;
 "agreements-picklists")
@@ -173,7 +175,7 @@ case $recordtype in
 "users")
 	recordtype="users";;
 *)
-	echo "Record type '${recordtype}' not found. Supported types are accounts, agreements, agreements-picklists, authorities, authorities-source, boundwiths, campuses, composite-orders, groups, feefineactions, fiscalyears, funds, holdings, identifiertypes, instances, instance-formats, instance-note-types, instance-types, interfaces, invoices, invoice-lines, items, libraries, licenses, licenses-picklists, licenses-terms, loans, locations, manualblocks, mattypes, nature-of-content, notices, orderlines, organizations, parsedrecords, permissions, polines, precedingsucceeding, requests, servicepoints, srs, tags, templates, users."
+	echo "Record type '${recordtype}' not found. Supported types are accounts, actionprofiles, agreements, agreements-picklists, authorities, authorities-source, boundwiths, campuses, composite-orders, groups, feefineactions, fiscalyears, funds, holdings, identifiertypes, instances, instance-formats, instance-note-types, instance-types, interfaces, invoices, invoice-lines, items, libraries, licenses, licenses-picklists, licenses-terms, loans, locations, manualblocks, mattypes, nature-of-content, notices, orderlines, organizations, parsedrecords, permissions, polines, precedingsucceeding, requests, servicepoints, srs, tags, templates, users."
 	exit;;
 esac
 

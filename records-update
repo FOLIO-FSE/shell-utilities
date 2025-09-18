@@ -80,8 +80,7 @@ fixrecord() {
 	')
 		#updated_record=${apicall//$pattern/$replace}
 		apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_record}" "${okapi_url}/${recordtype}/${uuid}")
-	echo "${apicall}" |grep -i [a-z] >> "tmp_records.${fileno}"
-
+	echo "${apicall}" |grep -i [a-z] >> "tmp_records.${recordtype}.${seq}"
 }
 
 
@@ -190,8 +189,8 @@ while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
 
         echo -en "Processing record $counter of $numrecs in $msg\r"
 
-	cat tmp_records.* >> ${outfile}
-	rm tmp_records.*
+	cat tmp_records.${recordtype}* >> ${outfile}
+	rm tmp_records.${recordtype}*
 
 done < ${infile}
 

@@ -177,7 +177,7 @@ while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
 	for line in "${lines[@]}";do
 		IFS=$'\t' read -r uuid value <<< "${line}"
 		
-		fixrecord "${uuid}" "${seq}" "${value}" 
+		fixrecord "${uuid}" "${seq}" "${value}" &
 
 		counter=$(($counter + 1))
 		seq=$(($seq + 1))

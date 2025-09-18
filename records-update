@@ -11,6 +11,7 @@ okapi_token=$(cat okapi.token)
 # batchsize is ignored for users and set to 1 to prevent failure
 batchsize=6
 
+baserecordtype=$1
 recordtype=$1
 infile="${recordtype}.tsv"
 dos2unix "${infile}"
@@ -80,7 +81,7 @@ fixrecord() {
 	')
 		#updated_record=${apicall//$pattern/$replace}
 		apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_record}" "${okapi_url}/${recordtype}/${uuid}")
-	echo "${apicall}" |grep -i [a-z] >> "tmp_records.${recordtype}.${seq}"
+	echo "${apicall}" |grep -i [a-z] >> "tmp_records.${baserecordtype}.${seq}"
 }
 
 
@@ -189,8 +190,8 @@ while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
 
         echo -en "Processing record $counter of $numrecs in $msg\r"
 
-	cat tmp_records.${recordtype}* >> ${outfile}
-	rm tmp_records.${recordtype}*
+	cat tmp_records.${baserecordtype}* >> ${outfile}
+	rm tmp_records.${baserecordtype}*
 
 done < ${infile}
 

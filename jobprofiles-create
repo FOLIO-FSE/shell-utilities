@@ -113,8 +113,7 @@ function load_export_profile {
 numprofiles=${#import_mappingprofile[@]}
 
 for (( which_profile=1; which_profile<=${numprofiles}; which_profile++));do
-	fat=1
-	#load_import_profile
+	load_import_profile
 done
 which_profile=1
 load_import_profile
@@ -123,8 +122,7 @@ load_import_profile
 numprofiles=${#export_mappingprofile[@]}
 
 for (( which_profile=1; which_profile<=${numprofiles}; which_profile++));do
-	fat=1
-	#load_export_profile
+	load_export_profile
 done
 ################ export profile to export ids
 

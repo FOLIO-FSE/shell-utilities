@@ -45,6 +45,8 @@ delete_record() {
 case $deletetype in
 "accounts")
 	recordtype="accounts";;
+"actionprofiles")
+	recordtype="data-import-profiles/actionProfiles";;
 "authorities")
 	singlerecord="yes"
 	batchsize=10
@@ -162,7 +164,7 @@ case $deletetype in
 	batchsize=5
 	recordtype="bl-users/by-id";;
 *)
-	echo "Record type '${deletetype}' not found. Supported types are accounts, boundwiths, campuses, contacts, coursedepartments, courselistings, coursetypes, departments, feefineactions, funds, groups, holdings, instances, instance-types, institutions, items, libraries, licenses, loan history, loans, loantypes, locations, mattypes, notes, notices, organizations, requests, schedulednotices, servicepoints, srs, tags, tasks, templates, transactions, usergroups, users, users-safe. Objects with attached records will need specialized delete routines"
+	echo "Record type '${deletetype}' not found. Supported types are accounts, actionprofiles, boundwiths, campuses, contacts, coursedepartments, courselistings, coursetypes, departments, feefineactions, funds, groups, holdings, instances, instance-types, institutions, items, libraries, licenses, loan history, loans, loantypes, locations, mattypes, notes, notices, organizations, requests, schedulednotices, servicepoints, srs, tags, tasks, templates, transactions, usergroups, users, users-safe. Objects with attached records will need specialized delete routines"
 	exit;;
 esac
 

@@ -64,7 +64,7 @@ while IFS=$'\n' read -r line; do
 
 	if [[ -z $fundcode ]];then fundcode="${fundname}";fi
 	if [[ -z $fundname ]];then fundname="${fundcode}";fi
-	if [[ ${#externalAccount} -lt 1 ]];then externalAccount="not configured";fi
+	if [[ ${#externalAccount} -lt 1 ]];then externalAccount="-";fi
 	if [[ -z ${allocated} ]];then allocated=0;fi
 
 	allocated=$(printf "%.2f" ${allocated//[^0-9\/.]/})

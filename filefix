@@ -64,22 +64,6 @@ fix_dos(){
 	rm ${oldfile}
 }
 
-function fix_encoding(){
-	local oldfile="${1}old"
-	local fixedfile="${1}"
-	cp ${fixedfile} "${1}old"
-	
-	case ${encodingtype} in
-		latin1|iso-8859-1)
-			iconv -f latin1 -t utf-8 -c ${oldfile} -o ${fixedfile};;
-		iso-8859-15)
-			iconv -f latin1 -t iso-8859-15 -c ${oldfile} -o ${fixedfile};;
-		*)	
-			iconv -f utf-8 -t utf-8 -c ${oldfile} -o ${fixedfile};;
-	esac
-	rm ${oldfile}
-}
-
 function to_tsv(){
 	local file="${1}"
 
@@ -135,29 +119,31 @@ if head -c 10000 "${infile}" | grep -qP '\n';then
 fi
 dosfile=0
 
+echo "Correcting encoding"
+
 encodingtype=$(file -i "${infile}" |sed 's/.*charset=//')
 encodingtype=${encodingtype,,}
 
-if [[ ${encodingtype} == "utf-16le" ]];then
-	iconv -f utf-16le -t utf-8 -c "${infile}" -o tmpfile
-	mv tmpfile "${infile}"
-	encodingtype="utf-8"
-fi
+case ${encodingtype} in
+	utf-16le)
+		iconv -f utf-16le -t utf-8 -c "${infile}" -o tmpfile
+	latin1|iso-8859-1)
+		iconv -f latin1 -t utf-8 -c "${infile}" -o tmpfile;;
+	iso-8859-15)
+		iconv -f latin1 -t iso-8859-15 -c "${infile}" -o tmpfile;;
+	*)	
+		iconv -f utf-8 -t utf-8 -c "${infile}" -o tmpfile;;
+esac
+
+mv tmpfile "${infile}"
 
 head -1 ${infile} | grep -q $'\r' && dosfile=1
-
 
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 num_per_file=$(($numrecs / 5 + 1))
 
 split -l $num_per_file ${infile} filefix
 splitlist=(filefixaa filefixab filefixac filefixad filefixae)
-
-echo "Fixing encoding"
-for splitfile in ${splitlist[@]};do 
-	fix_encoding ${splitfile} &
-done
-wait
 
 firstline="$(head -1 filefixaa)"
 

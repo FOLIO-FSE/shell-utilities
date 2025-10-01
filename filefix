@@ -69,12 +69,7 @@ function fix_encoding(){
 	local fixedfile="${1}"
 	cp ${fixedfile} "${1}old"
 	
-	local filetype=$(file -i "${oldfile}" |sed 's/.*charset=//')
-	filetype=${filetype,,}
-
-	case ${filetype} in
-		utf-16le)
-			iconv -f utf-16le -t utf-8 -c ${oldfile} -o ${fixedfile};;
+	case ${encodingtype} in
 		latin1|iso-8859-1)
 			iconv -f latin1 -t utf-8 -c ${oldfile} -o ${fixedfile};;
 		iso-8859-15)
@@ -140,7 +135,17 @@ if head -c 10000 "${infile}" | grep -qP '\n';then
 fi
 dosfile=0
 
+encodingtype=$(file -i "${infile}" |sed 's/.*charset=//')
+encodingtype=${encodingtype,,}
+
+if [[ ${encodingtype} == "utf-16le" ]];then
+	iconv -f utf-16le -t utf-8 -c "${infile}" -o tmpfile
+	mv tmpfile "${infile}"
+	encodingtype="utf-8"
+fi
+
 head -1 ${infile} | grep -q $'\r' && dosfile=1
+
 
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 num_per_file=$(($numrecs / 5 + 1))

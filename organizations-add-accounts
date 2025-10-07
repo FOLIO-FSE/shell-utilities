@@ -13,10 +13,7 @@ dos2unix infile
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 
-while IFS=$'\n' read -r line;do
-	line=$(echo "${line}" |tr "\t" "^" | tr -d '"')
-	IFS='^' read -r org_code account_name account_num accounting_code <<< ${line}
-
+while IFS=$'\t' read -r org_code account_name account_num accounting_code;do
 	goodrecord=0
 
 	# makes sure first and last name are populated

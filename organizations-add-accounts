@@ -29,7 +29,7 @@ while IFS=$'\n' read -r line;do
 		continue
 	fi
 
-	account="$(jq --arg NAME "${account_name}" --arg ACCOUNT_NUMBER "${account_num}" --arg ACCOUNT_CODE "${account_code}" '{"name": $NAME, "accountNo": $ACCOUNT_NUMBER, "payment": "Other", "accountStatus": "Active", "libraryCode": "-", "appSystemNo": $ACCOUNT_CODE, "libraryEdiCode": "-"}'
+	account="$(jq --arg NAME "${account_name}" --arg ACCOUNT_NUMBER "${account_num}" --arg ACCOUNT_CODE "${account_code}" '{"name": $NAME, "accountNo": $ACCOUNT_NUMBER, "accountStatus": "Active", "libraryCode": "-", "appSystemNo": $ACCOUNT_CODE, "libraryEdiCode": "-"}'
 
 	organization=$(curl -G -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" --data-urlencode "query=code==${org_code}" "${okapi_url}/organizations/organizations" |jq '.organizations[] | del(.metadata)')
 

@@ -414,5 +414,6 @@ for (( offset=0; offset<=$num_records; ));do
 	if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s          \r" $offset $num_records;fi
 done
 
+[[ $num_records == "null" ]] && num_records=$(wc -l ${filename})
 echo "$num_records records have been exported to \"${filename}\""
 

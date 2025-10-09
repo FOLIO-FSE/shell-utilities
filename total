@@ -1,7 +1,12 @@
 #!/usr/bin/bash
 
-column=${1:-1}  # Default to column 1 if not specified
-input=$(cat ${2})
+if [[ ! -f ${1} ]];then
+	column=${1:-1}  
+	input=$(cat)
+else
+	input=$(cat ${1})
+	column=${2:-1}
+fi
 
 echo "${input}" | awk -v col="$column" '
   {

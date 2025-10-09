@@ -10,7 +10,7 @@ fi
 
 echo "${input}" | awk -v col="$column" '
   {
-    gsub(/[^0-9.]/, "", $col);  # Remove non-digit and non-decimal characters
+    gsub(/[^0-9.]/, "", $col);  
     sum += $col;
   }
   END {

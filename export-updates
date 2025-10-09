@@ -70,6 +70,8 @@ process_file() {
 		checkfile=$(echo ${apicall} |jq -r '.exportedFiles[0].fileId')
 	done
 
+	sleep 5
+
 	exported=$(echo "${apicall}" |jq -r .progress.exported)
 	failed=$(echo "${apicall}" |jq -r .progress.failed)
 	total=$(echo "${apicall}" |jq -r .progress.total)

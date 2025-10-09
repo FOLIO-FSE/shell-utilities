@@ -1,3 +1,5 @@
+#!/usr/bin/bash
+
 filelist=("$@")
 infile="${filelist[0]}"
 

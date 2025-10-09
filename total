@@ -1,0 +1,14 @@
+#!/usr/bin/bash
+
+column=${1:-1}  # Default to column 1 if not specified
+input=$(cat ${2})
+
+echo "${input}" | awk -v col="$column" '
+  {
+    gsub(/[^0-9.]/, "", $col);  # Remove non-digit and non-decimal characters
+    sum += $col;
+  }
+  END {
+    print sum;
+  }'
+

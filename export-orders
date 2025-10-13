@@ -1,13 +1,18 @@
-echo "Retrieving orders, polines, and reference data"
+echo "Retrieving orders, polines, organizations, funds, and reference data"
 records-get orders
 records-get polines
 records-get organizations
+records-get funds
+records-get fundtypes
+records-get ledgers
 
 echo
-echo "Retrieving reference data"
 jq -r '[.id, .code]|@tsv' organizations.json > vendor.tsv
+jq -r '[.id, .name]|@tsv' fundtypes.json > fundType.tsv
+jq -r '[.id, .code]|@tsv' ledgers.json > ledgerCode.tsv
 
 
+echo -e "id\tcode\tname\texternalAccountNumber\tstatus\tfundType\tledgerCode" > funds.tsv
 echo -e "id\tpoNumber\torderType\tvendor\tworkflowStatus\tapproved\tbillTo\tmanualPo\tnotes" > orders.tsv
 echo -e "id\tpoLineNumber\tpurchaseOrderId\tcheckinItems\tcost.listUnitPrice\tcost.poLineEstimatedPrice\tcost.quantityPhysical\tcost.quantityElectronic\tinstanceId\ttitleOrPackage\tisPackage\torderFormat\paymentStatus\tvendorDetail.referenceNumbers" > polines.tsv
 
@@ -16,6 +21,18 @@ echo "Extracting order records and polines."
 
 delim=$'\t'
 subdelim='; '
+
+pv funds.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
+	[
+	"\(.id)" // "",
+	"\(.code)" // "",
+	"\(.name)" // "",
+	"\(.externalAccountNumber)" // "",
+	"\(.fundStatus)" // "",
+	"\(.fundTypeId)" // "",
+	"\(.ledgerId)" // ""
+	] |join($delim)
+	' >> funds.tsv 
 
 pv orders.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	[
@@ -47,7 +64,7 @@ pv polines.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	"\(.isPackage)" // "",
 	"\(.orderFormat)" // "",
 	"\(.paymentStatus)" // "",
-	"\(.vendorDetail.referenceNumbers|join(";"))" // ""
+	"\(select(.vendorDetail != null) |.vendorDetail.referenceNumbers |join(";")))" // ""
 	] |join($delim)
 	' >> polines.tsv 
 
@@ -55,10 +72,13 @@ echo
 echo "Converting UUIDs to human readable values"
 echo
 value-mapper orders.tsv
+value-mapper funds.tsv
 
 mv orders_fixed.tsv orders.tsv
+#mv funds_fixed.tsv funds.tsv
 
 rm vendor.tsv
 echo "Order records have been exported to orders.tsv"
 echo "PO lines have been exported to polines.tsv"
+echo "Funds have been exported to funds.tsv"
 echo

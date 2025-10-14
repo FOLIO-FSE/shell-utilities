@@ -173,6 +173,7 @@ process_file() {
 	
 	echo "Detecting and removing nulls and converting carriage returns, newlines, and tabs to spaces"
 	pv "${marcfile}.tmp" | tr -d '\000' | tr '\b\n\r\t' ' ' > "${marcfile}"
+	rm ${marcfile}.tmp
 	echo 
 
 	# null identifiers
@@ -251,4 +252,3 @@ if [[ $processType == "directory" ]]; then
 	rm -f tmp_checkmarc
 	cd ..
 fi
-

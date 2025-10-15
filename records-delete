@@ -144,7 +144,7 @@ case $deletetype in
 	singlerecord="yes"
 	recordtype="source-storage/records";;
 "statcodes")
-	recordtype="statcodes";;
+	recordtype="statistical-codes";;
 "tags")
 	recordtype="tags";;
 "tasks")

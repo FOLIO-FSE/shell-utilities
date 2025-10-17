@@ -1,0 +1,57 @@
+#!/usr/bin/bash
+auth 2>/dev/null || authn 2>/dev/null
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+# Looks for location that begins with the case insensitive string "migration", holdings source "FOLIO", and call number type that begins with the string "other", 
+
+infile="ids"  # instance ids
+outfile="holdings.json"
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+rm -f ${outfile}
+
+namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
+callNumber="TEMP"
+counter=0
+
+rm -f "holdings.log"
+
+locationId=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/locations?limit=5000" | jq -r '.locations |map(select(.code | ascii_downcase |startswith("migration"))) | .[0].id')
+
+sourceId=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/holdings-sources?limit=1000" | jq -r '.holdingsRecordsSources[] | select(.name == "FOLIO") | .id')
+
+callNumberTypeId=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/call-number-types?limit=1000" | jq -r '.callNumberTypes |map(select(.name | ascii_downcase |startswith("other"))) | .[0].id')
+
+create_holding() {
+	local instanceUUID=${1}
+	local fileno=${2}
+	local holdId
+	local apicall
+	local holding
+
+	holdId=$(uuid -v 5  ${namespace} ${okapi_url}:holdings:${instanceUUID})
+
+	echo "{\"instanceId\":\"${instanceId}\",\"sourceId\":\"${sourceId}\",\"permanentLocationId\":\"${locationId}\",\"callNumberTypeId\":\"${callNumberTypeId}\",\"callNumber\":\"${callNumber}\",\"discoverySuppress\":true,\"id\":\"${holdId}\"}"  > tmp_holding.${fileno}
+
+}
+
+while mapfile -t -n 100 instanceIds && ((${#instanceIds[@]})); do
+	seq=0
+	for instanceId in ${instanceIds[@]};do
+		create_holding "${instanceId}" ${seq} &
+		counter=$(($counter + 1))
+		seq=$(($seq + 1))
+		printf "Processing record %s of %s                         \r" $counter $numrecs
+	done
+	wait
+
+	cat tmp_holding.* >> ${outfile}
+	rm tmp_holding.*
+
+done < ${infile}
+
+echo 
+echo
+

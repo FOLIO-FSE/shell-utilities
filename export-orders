@@ -1,15 +1,27 @@
 echo "Retrieving reference and transaction data"
-records-get expense-classes
-records-get fiscalyears
-records-get funds
-records-get fundtypes
-records-get invoices
-records-get ledgers
-records-get orders
-records-get organizations
-records-get polines
-records-get transactions
-records-get vouchers
+recordtypes=(
+	"expense-classes"
+	"fiscalyears"
+	"funds"
+	"fundtypes"
+	"invoices"
+	"invoice-lines"
+	"ledgers"
+	"orders"
+	"organizations"
+	"polines"
+	"transactions"
+	"vouchers"
+)
+
+get_records() {
+	for recordtype in "${recordtypes[@]}"; do
+		records-get ${recordtype}
+		sed -i 's/\\n//g; s/\\t//g' "${recordtype}.json"
+	done
+}
+
+get_records
 
 echo
 jq -r '[.id, .code]|@tsv' organizations.json > vendor.tsv
@@ -24,7 +36,8 @@ jq -r '[.id, .name]|@tsv' expense-classes.json > expenseClass.tsv
 
 
 echo -e "id\tcode\tname\texternalAccountNumber\tstatus\tfundType\tledgerName" > funds.tsv
-echo -e "id\tinvoiceNo\tinvoiceDate\tpaymentDate\tpaymentMethod\tstatus\tsubtotal\ttotal\tvendorInvoiceNo\tvoucherNo\tpoNumbers\tvendor\tfiscalYear" > invoices.tsv
+echo -e "id\tinvoiceNo\tvendor\tvendorInvoiceNo\tvoucherNo\tinvoiceDate\tpaymentDate\tpaymentMethod\tstatus\tsubtotal\ttotal\tpoNumbers\tvendor\tfiscalYear" > invoices.tsv
+echo -e "id\tinvoiceId\tinvoiceLineNumber\treferenceNumbers\tinvoiceLineStatus\tpoLineId\tquantity\treleaseEncumbrance\tsubTotal\ttotal\tdescription\tfundDistributionCode\tdistributionType\texpenseClass\ttype\tvalue\tadjustmentDescription\tprorate\trelationToTotal\tamount\tadjustmentsTotal" > invoice-lines.tsv
 
 echo -e "id\tpoNumber\torderType\tvendor\tworkflowStatus\tapproved\tbillTo\tmanualPo\tnotes" > orders.tsv
 echo -e "id\tpoLineNumber\tpurchaseOrderId\tcheckinItems\tcost.listUnitPrice\tcost.poLineEstimatedPrice\tcost.quantityPhysical\tcost.quantityElectronic\tinstanceId\ttitleOrPackage\tisPackage\torderFormat\paymentStatus\tvendorDetail.referenceNumbers" > polines.tsv
@@ -36,7 +49,7 @@ echo
 delim=$'\t'
 subdelim='; '
 
-pv funds.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
+pv funds.json |jq -rc --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	[
 	"\(.id)" // "",
 	"\(.code)" // "",
@@ -48,24 +61,51 @@ pv funds.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	] |join($delim)
 	' >> funds.tsv 
 
-pv invoices.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
+pv invoices.json |jq -rc --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	[
 	"\(.id)" // "",
+	"\(.folioInvoiceNo)" // "",
+	"\(.vendor)" // "",
+	"\(.vendorInvoiceNo)" // "",
+	"\(.voucherNumber)" // "",
 	"\(.invoiceDate)" // "",
 	"\(.paymentDate)" // "",
 	"\(.paymentMethod)" // "",
 	"\(.status)" // "",
 	"\(.subTotal)" // "",
 	"\(.total)" // "",
-	"\(.vendorInvoiceNo)" // "",
-	"\(.voucherNumber)" // "",
 	"\(.poNumbers|join(";"))" // "",
-	"\(.vendor)" // "",
 	"\(.fiscalYear)" // ""
 	] |join($delim)
 	' >> invoices.tsv 
 
-pv orders.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
+pv invoice-lines.json |jq -rc --arg delim "${delim}" --arg subdelim "${subdelim}" '
+	[
+	"\(.id)" // "",
+	"\(.invoiceId)" // "",
+	"\(.invoiceLineNo)" // "",
+	"\(.referenceNumbers|join(";"))" // "",
+	"\(.status)" // "",
+	"\(.poLineId)" // "",
+	"\(.quantity)" // "",
+	"\(.releaseEncumbrance)" // "",
+	"\(.subTotal)" // "",
+	"\(.total)" // "",
+	"\(.description)" // "",
+	"\(.fundDistributions[0]?.code)" // "",
+	"\(.fundDistributions[0]?.distributionType)" // "",
+	"\(.fundDistributions[0]?.expenseClassId)" // "",
+	"\(.fundDistributions[0]?.value)" // "",
+	"\(.adjustments[0]?.description)" // "",
+	"\(.adjustments[0]?.prorate)" // "",
+	"\(.adjustments[0]?.relationToTotal)" // "",
+	"\(.adjustments[0]?.type)" // "",
+	"\(.adjustments[0]?.value)" // "",
+	"\(.adjustmentsTotal)" // ""
+	] |join($delim)
+	' >> invoice-lines.tsv 
+
+pv orders.json |jq -rc --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	[
 	"\(.id)" // "",
 	"\(.poNumber)" // "",
@@ -80,7 +120,7 @@ pv orders.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 
 echo
 
-pv polines.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
+pv polines.json |jq -rc --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	[
 	"\(.id)" // "",
 	"\(.poLineNumber)" // "",
@@ -99,7 +139,7 @@ pv polines.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	] |join($delim)
 	' >> polines.tsv 
 
-pv transactions.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
+pv transactions.json |jq -rc --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	[
 	"\(.id)" // "",
 	"\(.amount)" // "",
@@ -119,7 +159,7 @@ pv transactions.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" 
 	] |join($delim)
 	' >> transactions.tsv
 
-pv vouchers.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
+pv vouchers.json |jq -rc --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	[
 	"\(.id)" // "",
 	"\(.voucherNumber)" // "",
@@ -135,6 +175,8 @@ pv vouchers.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 echo
 echo "Converting UUIDs to human readable values"
 echo
+value-mapper invoices.tsv
+value-mapper invoice-lines.tsv
 value-mapper orders.tsv
 value-mapper funds.tsv
 value-mapper transactions.tsv
@@ -142,11 +184,15 @@ value-mapper vouchers.tsv
 echo
 
 mv funds_fixed.tsv funds.tsv
+mv invoices_fixed.tsv invoices.tsv
+mv invoice-lines_fixed.tsv invoice-lines.tsv
 mv orders_fixed.tsv orders.tsv
 mv transactions_fixed.tsv transactions.tsv
 mv vouchers_fixed.tsv vouchers.tsv
 
 sed -i 's/\<null\>//g' funds.tsv
+sed -i 's/\<null\>//g' invoices.tsv
+sed -i 's/\<null\>//g' invoice-lines.tsv
 sed -i 's/\<null\>//g' orders.tsv
 sed -i 's/\<null\>//g' polines.tsv
 sed -i 's/\<null\>//g' transactions.tsv
@@ -156,6 +202,7 @@ rm -f expenseClass.tsv fund.tsv fromFund.tsv toFund.tsv fundType.tsv fiscalYear.
 
 echo "Funds have been exported to funds.tsv"
 echo "Invoices have been exported to invoices.tsv"
+echo "Invoice lines have been exported to invoice-lines.tsv"
 echo "Order records have been exported to orders.tsv"
 echo "PO lines have been exported to polines.tsv"
 echo "Transactions have been exported to transactions.tsv"

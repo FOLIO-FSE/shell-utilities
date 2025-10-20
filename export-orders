@@ -1,23 +1,36 @@
-echo "Retrieving orders, polines, organizations, funds, and reference data"
-records-get orders
-records-get polines
-records-get organizations
+echo "Retrieving reference and transaction data"
+records-get expense-classes
+records-get fiscalyears
 records-get funds
 records-get fundtypes
+records-get invoices
 records-get ledgers
+records-get orders
+records-get organizations
+records-get polines
+records-get transactions
+records-get vouchers
 
 echo
 jq -r '[.id, .code]|@tsv' organizations.json > vendor.tsv
+jq -r '[.id, .code]|@tsv' funds.json > fund.tsv
+cp fund.tsv toFund.tsv
+cp fund.tsv fromFund.tsv
 jq -r '[.id, .name]|@tsv' fundtypes.json > fundType.tsv
 jq -r '[.id, .code]|@tsv' ledgers.json > ledgerCode.tsv
+jq -r '[.id, .code]|@tsv' fiscalyears.json > fiscalYear.tsv
+jq -r '[.id, .name]|@tsv' expense-classes.json > expenseClass.tsv 
 
 
 echo -e "id\tcode\tname\texternalAccountNumber\tstatus\tfundType\tledgerCode" > funds.tsv
+echo -e "id\tinvoiceNo\tinvoiceDate\tpaymentDate\tpaymentMethod\tstatus\tsubtotal\ttotal\tvendorInvoiceNo\tvoucherNo\tpoNumbers\tvendor\tfiscalYear" > invoices.tsv
+
 echo -e "id\tpoNumber\torderType\tvendor\tworkflowStatus\tapproved\tbillTo\tmanualPo\tnotes" > orders.tsv
 echo -e "id\tpoLineNumber\tpurchaseOrderId\tcheckinItems\tcost.listUnitPrice\tcost.poLineEstimatedPrice\tcost.quantityPhysical\tcost.quantityElectronic\tinstanceId\ttitleOrPackage\tisPackage\torderFormat\paymentStatus\tvendorDetail.referenceNumbers" > polines.tsv
+echo -e "id\tamount\tamountAwaitingPayment\tamountCredited\tAmountExpended\tstatus\torderType\torderStatus\tsourcePoId\tsourcePoLineId\tfiscalYear\texpenseClass\tfromFund\ttoFund\tsource\transactionType" > transactions.tsv
+echo -e "id\tvoucherNumber\tamount\tinvoiceId\tstatus\ttype\voucherDate\tvendor" > vouchers.tsv
 
 echo
-echo "Extracting order records and polines."
 
 delim=$'\t'
 subdelim='; '
@@ -33,6 +46,23 @@ pv funds.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	"\(.ledgerId)" // ""
 	] |join($delim)
 	' >> funds.tsv 
+
+pv invoices.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
+	[
+	"\(.id)" // "",
+	"\(.invoiceDate)" // "",
+	"\(.paymentDate)" // "",
+	"\(.paymentMethod)" // "",
+	"\(.status)" // "",
+	"\(.subTotal)" // "",
+	"\(.total)" // "",
+	"\(.vendorInvoiceNo)" // "",
+	"\(.voucherNumber)" // "",
+	"\(.poNumbers|join(";"))" // ""
+	"\(.vendor)" // ""
+	"\(.fiscalYear)" // ""
+	] |join($delim)
+	' >> invoices.tsv 
 
 pv orders.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	[
@@ -68,17 +98,57 @@ pv polines.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	] |join($delim)
 	' >> polines.tsv 
 
+pv transactions.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
+	[
+	"\(.id)" // "",
+	"\(.encumbrance.amountAwaitingPayment)" // "",
+	"\(.encumbrance.amountCredited)" // "",
+	"\(.encumbrance.amountExpended)" // "",
+	"\(.encumbrance.orderStatus)" // "",
+	"\(.encumbrance.orderType)" // "",
+	"\(.encumbrance.sourcePurchaseOrderId)" // "",
+	"\(.encumbrance.sourcePoLineId)" // "",
+	"\(.fiscalYearId)" // "",
+	"\(.expenseClassId)" // "",
+	"\(.fromFundId)" // "",
+	"\(.toFundId)" // "",
+	"\(.source)" // "",
+	"\(.transactionType)" // ""
+	] |join($delim)
+	' >> transactions.tsv
+
+pv vouchers.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
+	[
+	"\(.id)" // "",
+	"\(.voucherNumber)" // "",
+	"\(.amount)" // "",
+	"\(.invoiceId)" // "",
+	"\(.status)" // ""
+	"\(.type)" // ""
+	"\(.voucherDate)" // ""
+	"\(.vendorId)" // ""
+	] |join($delim)
+	' >> vouchers.tsv
+
 echo
 echo "Converting UUIDs to human readable values"
 echo
 value-mapper orders.tsv
 value-mapper funds.tsv
+value-mapper transactions.tsv
+value-mapper vouchers
 
+mv funds_fixed.tsv funds.tsv
 mv orders_fixed.tsv orders.tsv
-#mv funds_fixed.tsv funds.tsv
+mv transactions_fixed.tsv transactions.tsv
+mv vouchers_fixed.tsv vouchers.tsv
 
-rm vendor.tsv
+rm -f expenseClass.tsv fund.tsv fundType.tsv fiscalYear.tsv vendor.tsv
+
+echo "Funds have been exported to funds.tsv"
+echo "Invoices have been exported to invoices.tsv"
 echo "Order records have been exported to orders.tsv"
 echo "PO lines have been exported to polines.tsv"
-echo "Funds have been exported to funds.tsv"
+echo "Transactions have been exported to transactions.tsv"
+echo "Vouchers have been exported to vouchers.tsv"
 echo

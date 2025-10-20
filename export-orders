@@ -36,7 +36,7 @@ echo -e "id\tinvoiceNo\tvendor\tvendorInvoiceNo\tvoucherNo\tinvoiceDate\tpayment
 echo -e "id\tinvoiceId\tinvoiceLineNumber\treferenceNumbers\tinvoiceLineStatus\tpoLineId\tquantity\treleaseEncumbrance\tsubTotal\ttotal\tdescription\tfundDistributionCode\tdistributionType\texpenseClass\ttype\tvalue\tadjustmentDescription\tprorate\trelationToTotal\tamount\tadjustmentsTotal" > invoice-lines.tsv
 
 echo -e "id\tpoNumber\torderType\tvendor\tworkflowStatus\tapproved\tbillTo\tmanualPo\tnotes" > orders.tsv
-echo -e "id\tpoLineNumber\tpurchaseOrderId\tcheckinItems\tcost.listUnitPrice\tcost.poLineEstimatedPrice\tcost.quantityPhysical\tcost.quantityElectronic\tinstanceId\ttitleOrPackage\tisPackage\torderFormat\paymentStatus\tvendorDetail.referenceNumbers" > polines.tsv
+echo -e "id\tpoLineNumber\tpurchaseOrderId\tcheckinItems\tcost.listUnitPrice\tcost.poLineEstimatedPrice\tcost.quantityPhysical\tcost.quantityElectronic\tinstanceId\ttitleOrPackage\tisPackage\torderFormat\tpaymentStatus\tvendorDetail.referenceNumbers" > polines.tsv
 echo -e "id\tamount\tamountAwaitingPayment\tamountCredited\tamountExpended\tstatus\torderType\tsourcePoId\tsourcePoLineId\tfiscalYear\texpenseClass\tfromFund\ttoFund\tsource\ttransactionType" > transactions.tsv
 echo -e "id\tvoucherNumber\tamount\tinvoiceId\tstatus\ttype\tvoucherDate\tvendor" > vouchers.tsv
 

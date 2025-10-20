@@ -71,7 +71,8 @@ pv invoices.json |jq -rc --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	"\(.subTotal)" // "",
 	"\(.total)" // "",
 	"\(.poNumbers|join(";"))" // "",
-	"\(.fiscalYear)" // ""
+	"\(.vendorId)" // "",
+	"\(.fiscalYearId)" // ""
 	] |join($delim)
 	' >> invoices.tsv 
 

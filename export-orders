@@ -145,6 +145,12 @@ mv orders_fixed.tsv orders.tsv
 mv transactions_fixed.tsv transactions.tsv
 mv vouchers_fixed.tsv vouchers.tsv
 
+sed -i 's/\<null\>//g' funds.tsv
+sed -i 's/\<null\>//g' orders.tsv
+sed -i 's/\<null\>//g' polines.tsv
+sed -i 's/\<null\>//g' transactions.tsv
+sed -i 's/\<null\>//g' vouchers.tsv
+
 rm -f expenseClass.tsv fund.tsv fundType.tsv fiscalYear.tsv vendor.tsv
 
 echo "Funds have been exported to funds.tsv"

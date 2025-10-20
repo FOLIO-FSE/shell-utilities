@@ -14,14 +14,10 @@ recordtypes=(
 	"vouchers"
 )
 
-get_records() {
-	for recordtype in "${recordtypes[@]}"; do
-		records-get ${recordtype}
-		sed -i 's/\\n//g; s/\\t//g' "${recordtype}.json"
-	done
-}
-
-get_records
+for recordtype in "${recordtypes[@]}"; do
+	records-get ${recordtype}
+	sed -i 's/\\n//g; s/\\t//g' "${recordtype}.json"
+done
 
 echo
 jq -r '[.id, .code]|@tsv' organizations.json > vendor.tsv
@@ -175,28 +171,23 @@ pv vouchers.json |jq -rc --arg delim "${delim}" --arg subdelim "${subdelim}" '
 echo
 echo "Converting UUIDs to human readable values"
 echo
-value-mapper invoices.tsv
-value-mapper invoice-lines.tsv
-value-mapper orders.tsv
-value-mapper funds.tsv
-value-mapper transactions.tsv
-value-mapper vouchers.tsv
+
+recordtypes=(
+	"funds"
+	"invoices"
+	"invoice-lines"
+	"orders"
+	"polines"
+	"transactions"
+	"vouchers"
+)
+
+for recordtype in "${recordtypes[@]}"; do
+	value-mapper "${recordtype}.tsv"
+	sed -i 's/\<null\>//g' "${recordtype}_fixed.tsv"
+	mv "${recordtype}_fixed.tsv" "${recordtype}.tsv"
+done
 echo
-
-mv funds_fixed.tsv funds.tsv
-mv invoices_fixed.tsv invoices.tsv
-mv invoice-lines_fixed.tsv invoice-lines.tsv
-mv orders_fixed.tsv orders.tsv
-mv transactions_fixed.tsv transactions.tsv
-mv vouchers_fixed.tsv vouchers.tsv
-
-sed -i 's/\<null\>//g' funds.tsv
-sed -i 's/\<null\>//g' invoices.tsv
-sed -i 's/\<null\>//g' invoice-lines.tsv
-sed -i 's/\<null\>//g' orders.tsv
-sed -i 's/\<null\>//g' polines.tsv
-sed -i 's/\<null\>//g' transactions.tsv
-sed -i 's/\<null\>//g' vouchers.tsv
 
 rm -f expenseClass.tsv fund.tsv fromFund.tsv toFund.tsv fundType.tsv fiscalYear.tsv vendor.tsv
 

@@ -18,17 +18,17 @@ cp fund.tsv toFund.tsv
 cp fund.tsv fromFund.tsv
 
 jq -r '[.id, .name]|@tsv' fundtypes.json > fundType.tsv
-jq -r '[.id, .code]|@tsv' ledgers.json > ledgerCode.tsv
+jq -r '[.id, .code]|@tsv' ledgers.json > ledgerName.tsv
 jq -r '[.id, .code]|@tsv' fiscalyears.json > fiscalYear.tsv
 jq -r '[.id, .name]|@tsv' expense-classes.json > expenseClass.tsv 
 
 
-echo -e "id\tcode\tname\texternalAccountNumber\tstatus\tfundType\tledgerCode" > funds.tsv
+echo -e "id\tcode\tname\texternalAccountNumber\tstatus\tfundType\tledgerName" > funds.tsv
 echo -e "id\tinvoiceNo\tinvoiceDate\tpaymentDate\tpaymentMethod\tstatus\tsubtotal\ttotal\tvendorInvoiceNo\tvoucherNo\tpoNumbers\tvendor\tfiscalYear" > invoices.tsv
 
 echo -e "id\tpoNumber\torderType\tvendor\tworkflowStatus\tapproved\tbillTo\tmanualPo\tnotes" > orders.tsv
 echo -e "id\tpoLineNumber\tpurchaseOrderId\tcheckinItems\tcost.listUnitPrice\tcost.poLineEstimatedPrice\tcost.quantityPhysical\tcost.quantityElectronic\tinstanceId\ttitleOrPackage\tisPackage\torderFormat\paymentStatus\tvendorDetail.referenceNumbers" > polines.tsv
-echo -e "id\tamount\tamountAwaitingPayment\tamountCredited\tamountExpended\tstatus\torderType\torderStatus\tsourcePoId\tsourcePoLineId\tfiscalYear\texpenseClass\tfromFund\ttoFund\tsource\ttransactionType" > transactions.tsv
+echo -e "id\tamount\tamountAwaitingPayment\tamountCredited\tamountExpended\tstatus\torderType\tsourcePoId\tsourcePoLineId\tfiscalYear\texpenseClass\tfromFund\ttoFund\tsource\ttransactionType" > transactions.tsv
 echo -e "id\tvoucherNumber\tamount\tinvoiceId\tstatus\ttype\tvoucherDate\tvendor" > vouchers.tsv
 
 echo
@@ -139,6 +139,7 @@ value-mapper orders.tsv
 value-mapper funds.tsv
 value-mapper transactions.tsv
 value-mapper vouchers.tsv
+echo
 
 mv funds_fixed.tsv funds.tsv
 mv orders_fixed.tsv orders.tsv
@@ -151,7 +152,7 @@ sed -i 's/\<null\>//g' polines.tsv
 sed -i 's/\<null\>//g' transactions.tsv
 sed -i 's/\<null\>//g' vouchers.tsv
 
-rm -f expenseClass.tsv fund.tsv fundType.tsv fiscalYear.tsv vendor.tsv
+rm -f expenseClass.tsv fund.tsv fromFund.tsv toFund.tsv fundType.tsv fiscalYear.tsv vendor.tsv
 
 echo "Funds have been exported to funds.tsv"
 echo "Invoices have been exported to invoices.tsv"

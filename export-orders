@@ -16,6 +16,7 @@ jq -r '[.id, .code]|@tsv' organizations.json > vendor.tsv
 jq -r '[.id, .code]|@tsv' funds.json > fund.tsv
 cp fund.tsv toFund.tsv
 cp fund.tsv fromFund.tsv
+
 jq -r '[.id, .name]|@tsv' fundtypes.json > fundType.tsv
 jq -r '[.id, .code]|@tsv' ledgers.json > ledgerCode.tsv
 jq -r '[.id, .code]|@tsv' fiscalyears.json > fiscalYear.tsv
@@ -27,8 +28,8 @@ echo -e "id\tinvoiceNo\tinvoiceDate\tpaymentDate\tpaymentMethod\tstatus\tsubtota
 
 echo -e "id\tpoNumber\torderType\tvendor\tworkflowStatus\tapproved\tbillTo\tmanualPo\tnotes" > orders.tsv
 echo -e "id\tpoLineNumber\tpurchaseOrderId\tcheckinItems\tcost.listUnitPrice\tcost.poLineEstimatedPrice\tcost.quantityPhysical\tcost.quantityElectronic\tinstanceId\ttitleOrPackage\tisPackage\torderFormat\paymentStatus\tvendorDetail.referenceNumbers" > polines.tsv
-echo -e "id\tamount\tamountAwaitingPayment\tamountCredited\tAmountExpended\tstatus\torderType\torderStatus\tsourcePoId\tsourcePoLineId\tfiscalYear\texpenseClass\tfromFund\ttoFund\tsource\transactionType" > transactions.tsv
-echo -e "id\tvoucherNumber\tamount\tinvoiceId\tstatus\ttype\voucherDate\tvendor" > vouchers.tsv
+echo -e "id\tamount\tamountAwaitingPayment\tamountCredited\tamountExpended\tstatus\torderType\torderStatus\tsourcePoId\tsourcePoLineId\tfiscalYear\texpenseClass\tfromFund\ttoFund\tsource\ttransactionType" > transactions.tsv
+echo -e "id\tvoucherNumber\tamount\tinvoiceId\tstatus\ttype\tvoucherDate\tvendor" > vouchers.tsv
 
 echo
 
@@ -58,8 +59,8 @@ pv invoices.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	"\(.total)" // "",
 	"\(.vendorInvoiceNo)" // "",
 	"\(.voucherNumber)" // "",
-	"\(.poNumbers|join(";"))" // ""
-	"\(.vendor)" // ""
+	"\(.poNumbers|join(";"))" // "",
+	"\(.vendor)" // "",
 	"\(.fiscalYear)" // ""
 	] |join($delim)
 	' >> invoices.tsv 
@@ -101,6 +102,7 @@ pv polines.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 pv transactions.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	[
 	"\(.id)" // "",
+	"\(.amount)" // "",
 	"\(.encumbrance.amountAwaitingPayment)" // "",
 	"\(.encumbrance.amountCredited)" // "",
 	"\(.encumbrance.amountExpended)" // "",
@@ -123,9 +125,9 @@ pv vouchers.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	"\(.voucherNumber)" // "",
 	"\(.amount)" // "",
 	"\(.invoiceId)" // "",
-	"\(.status)" // ""
-	"\(.type)" // ""
-	"\(.voucherDate)" // ""
+	"\(.status)" // "",
+	"\(.type)" // "",
+	"\(.voucherDate)" // "",
 	"\(.vendorId)" // ""
 	] |join($delim)
 	' >> vouchers.tsv
@@ -136,7 +138,7 @@ echo
 value-mapper orders.tsv
 value-mapper funds.tsv
 value-mapper transactions.tsv
-value-mapper vouchers
+value-mapper vouchers.tsv
 
 mv funds_fixed.tsv funds.tsv
 mv orders_fixed.tsv orders.tsv

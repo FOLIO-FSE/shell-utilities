@@ -1,5 +1,7 @@
 echo "Retrieving reference and transaction data"
 recordtypes=(
+	"categories"
+	"contacts"
 	"expense-classes"
 	"fiscalyears"
 	"funds"
@@ -20,10 +22,44 @@ for recordtype in "${recordtypes[@]}"; do
 done
 
 echo
+jq -rc --arg delim $'\x1f' '[
+	.id, 
+	"\(.firstName)" // "",
+	"\(.lastName)" // "",
+	"\(.emails[0].value)" // "",
+	"\(.phoneNumbers[0].phoneNumber)" // "",
+	"\(.addresses[0].addressLine1)" // "",
+	"\(.addresses[0].addressLine2)" // "",
+	"\(.addresses[0].city)" // "",
+	"\(.addresses[0].stateRegion)" // "",
+	"\(.addresses[0].zipCode)" // "",
+	"\(.addresses[0].country)" // "",
+	"\(.categories[0])" // ""
+	]|join($delim)' contacts.json |sed 's/\x1f/\t/' > contact1.tsv
+
+jq -rc --arg delim $'\x1f' '[
+	.id, 
+	"\(.firstName)" // "",
+	"\(.lastName)" // "",
+	"\(.emails[1].value)" // "",
+	"\(.phoneNumbers[1].phoneNumber)" // "",
+	"\(.addresses[1].addressLine1)" // "",
+	"\(.addresses[1].addressLine2)" // "",
+	"\(.addresses[1].city)" // "",
+	"\(.addresses[1].stateRegion)" // "",
+	"\(.addresses[1].zipCode)" // "",
+	"\(.addresses[1].country)" // "",
+	"\(.categories[1])" // ""
+	]|join($delim)' contacts.json |sed 's/\x1f/\t/' > contact2.tsv
+
+jq -r '[.id, .value]|@tsv' categories.json > category.tsv
 jq -r '[.id, .code]|@tsv' organizations.json > vendor.tsv
 jq -r '[.id, .code]|@tsv' funds.json > fund.tsv
+
 cp fund.tsv toFund.tsv
 cp fund.tsv fromFund.tsv
+cp category.tsv contact1Category.tsv
+cp category.tsv contact2Category.tsv
 
 jq -r '[.id, .name]|@tsv' fundtypes.json > fundType.tsv
 jq -r '[.id, .code]|@tsv' ledgers.json > ledgerName.tsv
@@ -36,6 +72,7 @@ echo -e "id\tinvoiceNo\tvendor\tvendorInvoiceNo\tvoucherNo\tinvoiceDate\tpayment
 echo -e "id\tinvoiceId\tinvoiceLineNumber\treferenceNumbers\tinvoiceLineStatus\tpoLineId\tquantity\treleaseEncumbrance\tsubTotal\ttotal\tdescription\tfundDistributionCode\tdistributionType\texpenseClass\ttype\tvalue\tadjustmentDescription\tprorate\trelationToTotal\tamount\tadjustmentsTotal" > invoice-lines.tsv
 
 echo -e "id\tpoNumber\torderType\tvendor\tworkflowStatus\tapproved\tbillTo\tmanualPo\tnotes" > orders.tsv
+echo -e "id\tname\tcode\taliases\tstatus\temail\tphone\turl\tcontact1\tcontact2" > organizations.tsv
 echo -e "id\tpoLineNumber\tpurchaseOrderId\tcheckinItems\tcost.listUnitPrice\tcost.poLineEstimatedPrice\tcost.quantityPhysical\tcost.quantityElectronic\tinstanceId\ttitleOrPackage\tisPackage\torderFormat\tpaymentStatus\tvendorDetail.referenceNumbers" > polines.tsv
 echo -e "id\tamount\tamountAwaitingPayment\tamountCredited\tamountExpended\tstatus\torderType\tsourcePoId\tsourcePoLineId\tfiscalYear\texpenseClass\tfromFund\ttoFund\tsource\ttransactionType" > transactions.tsv
 echo -e "id\tvoucherNumber\tamount\tinvoiceId\tstatus\ttype\tvoucherDate\tvendor" > vouchers.tsv
@@ -89,18 +126,33 @@ pv invoice-lines.json |jq -rc --arg delim "${delim}" --arg subdelim "${subdelim}
 	"\(.subTotal)" // "",
 	"\(.total)" // "",
 	"\(.description)" // "",
-	"\(.fundDistributions[0]?.code)" // "",
-	"\(.fundDistributions[0]?.distributionType)" // "",
-	"\(.fundDistributions[0]?.expenseClassId)" // "",
-	"\(.fundDistributions[0]?.value)" // "",
-	"\(.adjustments[0]?.description)" // "",
-	"\(.adjustments[0]?.prorate)" // "",
-	"\(.adjustments[0]?.relationToTotal)" // "",
-	"\(.adjustments[0]?.type)" // "",
-	"\(.adjustments[0]?.value)" // "",
+	"\(.fundDistributions[0].code)" // "",
+	"\(.fundDistributions[0].distributionType)" // "",
+	"\(.fundDistributions[0].expenseClassId)" // "",
+	"\(.fundDistributions[0].value)" // "",
+	"\(.adjustments[0].description)" // "",
+	"\(.adjustments[0].prorate)" // "",
+	"\(.adjustments[0].relationToTotal)" // "",
+	"\(.adjustments[0].type)" // "",
+	"\(.adjustments[0].value)" // "",
 	"\(.adjustmentsTotal)" // ""
 	] |join($delim)
 	' >> invoice-lines.tsv 
+
+pv organizations.json |jq -rc --arg delim "${delim}" --arg subdelim "${subdelim}" '
+	[
+	"\(.id)" // "",
+	"\(.name)" // "",
+	"\(.code)" // "",
+	"\([.aliases[].value]|join(";"))" // "",
+	"\(.status)" // "",
+	"\([.emails[].value]|join(";"))" // "",
+	"\([.phoneNumbers[].phoneNumber]|join(";"))" // "",
+	"\([.urls[].value]|join(";"))" // "",
+	"\(.contacts[0])" // "",
+	"\(.contacts[1])" // ""
+	] |join($delim)
+	' >> organizations.tsv 
 
 pv orders.json |jq -rc --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	[
@@ -115,7 +167,6 @@ pv orders.json |jq -rc --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	] |join($delim)
 	' >> orders.tsv 
 
-echo
 
 pv polines.json |jq -rc --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	[
@@ -178,6 +229,7 @@ recordtypes=(
 	"invoices"
 	"invoice-lines"
 	"orders"
+	"organizations"
 	"polines"
 	"transactions"
 	"vouchers"
@@ -190,12 +242,20 @@ for recordtype in "${recordtypes[@]}"; do
 done
 echo
 
-rm -f expenseClass.tsv fund.tsv fromFund.tsv toFund.tsv fundType.tsv fiscalYear.tsv vendor.tsv
+sed -i '1,1s#contact1#contact1FirstName\tcontact1LastName\tcontact1Phone\tcontact1Addr1\tcontact1Addr2\tcontact1City\tcontact1Region\tcontact1PostalCode\tcontact1Country\tcontact1Category#g' organizations.tsv
+sed -i '1,1s#contact2#contact2FirstName\tcontact2LastName\tcontact2Phone\tcontact2Addr1\tcontact2Addr2\tcontact2City\tcontact2Region\tcontact2PostalCode\tcontact2Country\tcontact2Category#g' organizations.tsv
+sed -i 's/\x1f/\t/g' organizations.tsv
+
+value-mapper organizations.tsv
+mv organizations_fixed.tsv organizations.tsv
+
+rm -f category.tsv contact1*.tsv contact2*.tsv expenseClass.tsv fund.tsv fromFund.tsv toFund.tsv fundType.tsv fiscalYear.tsv ledgerName.tsv vendor.tsv
 
 echo "Funds have been exported to funds.tsv"
 echo "Invoices have been exported to invoices.tsv"
 echo "Invoice lines have been exported to invoice-lines.tsv"
 echo "Order records have been exported to orders.tsv"
+echo "Organization records have been exported to organizations.tsv"
 echo "PO lines have been exported to polines.tsv"
 echo "Transactions have been exported to transactions.tsv"
 echo "Vouchers have been exported to vouchers.tsv"

@@ -242,8 +242,8 @@ for recordtype in "${recordtypes[@]}"; do
 done
 echo
 
-sed -i '1,1s#contact1#contact1FirstName\tcontact1LastName\tcontact1Phone\tcontact1Addr1\tcontact1Addr2\tcontact1City\tcontact1Region\tcontact1PostalCode\tcontact1Country\tcontact1Category#g' organizations.tsv
-sed -i '1,1s#contact2#contact2FirstName\tcontact2LastName\tcontact2Phone\tcontact2Addr1\tcontact2Addr2\tcontact2City\tcontact2Region\tcontact2PostalCode\tcontact2Country\tcontact2Category#g' organizations.tsv
+sed -i '1,1s#contact1#contact1FirstName\tcontact1LastName\tcontact1Email\tcontact1Phone\tcontact1Addr1\tcontact1Addr2\tcontact1City\tcontact1Region\tcontact1PostalCode\tcontact1Country\tcontact1Category#g' organizations.tsv
+sed -i '1,1s#contact2#contact2FirstName\tcontact2LastName\tcontact2Email\tcontact2Phone\tcontact2Addr1\tcontact2Addr2\tcontact2City\tcontact2Region\tcontact2PostalCode\tcontact2Country\tcontact2Category#g' organizations.tsv
 sed -i 's/\x1f/\t/g' organizations.tsv
 
 value-mapper organizations.tsv

@@ -1,0 +1,51 @@
+# The name is constructed as OKAPI_URL:OBJECT_TYPE_NAME:LEGACY_IDENTIFIER
+# e.g. https://okapi-bugfest-juniper.folio.ebsco.com:items:i3696836
+# e.g. fs00009000:items:i3696836
+#
+# object type is instances, holdings, items, etc
+
+okapi_url=$(cat okapi.url)
+tenant=$(cat tenant)
+namespace="8405ae4d-b315-42e1-918a-d1919900cf3f"
+object_type=$1
+strip=$2
+
+infile="ids"
+outfile="uuids"
+
+dos2unix ids
+
+seed="tenant" # tenant or okapi_url
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+rm -f ${outfile}
+
+uuid_generate() {
+	local identifier=${1}
+	local fileno=${2}
+	
+	if [[ ${strip} == "strip" ]];then
+		identifier="${identifier/./}"
+		identifier="${identifier:0:-1}"
+	fi
+
+	fileno=$(printf "%03d" $fileno)
+	uuid -v 5  ${namespace} ${!seed}:${object_type}:${identifier} > "tmp_uuid.${fileno}"
+}
+
+while mapfile -t -n 100 ids && ((${#ids[@]})); do
+	seq=0
+	for id in ${ids[@]};do
+		uuid_generate ${id} ${seq} &
+		counter=$(($counter + 1))
+		seq=$(($seq + 1))
+		printf "Processing %s -- record %s of %s                         \r" $id $counter $numrecs
+	done
+	wait
+
+	cat tmp_uuid.* >> ${outfile}
+	rm tmp_uuid.*
+done < ${infile}
+
+echo 
+echo "File has been processed and output written to uuids"

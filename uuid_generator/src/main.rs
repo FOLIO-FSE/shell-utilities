@@ -7,7 +7,7 @@ fn main() -> std::io::Result<()> {
     // Get the command-line argument
     let args: Vec<String> = env::args().collect();
     if args.len() != 2 {
-        eprintln!("Usage: {} <label>", args[0]);
+        eprintln!("Usage: {} [recordtype]", args[0]);
         std::process::exit(1);
     }
     let label = &args[1];

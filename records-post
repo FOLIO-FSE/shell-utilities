@@ -168,6 +168,8 @@ case $recordtype in
 	operation="PUT"
 	recordtype="source-storage/records"
         ;;
+"statcodes")
+	recordtype="statistical-codes";;
 "tags")
 	recordtype="tags";;
 "templates")

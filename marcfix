@@ -179,7 +179,7 @@ process_file() {
 	
 	#pv "${marcfile}.tmp" | tr -d '\000' | tr '\b\n\r\t' ' ' > "${marcfile}"
 	marcfixencoding "${marcfile}.tmp"
-	mv "${marcfile}.tmp_fixedencoding" "${marcfile}"
+	mv "${marcfile}.tmp_fixedencoding.mrc" "${marcfile}"
 	echo 
 
 	# null identifiers

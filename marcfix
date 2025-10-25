@@ -175,9 +175,11 @@ process_file() {
 	mv "${marcfile}" "${marcfile}.tmp"
 	
 	
-	echo "Detecting and removing nulls and converting carriage returns, newlines, and tabs to spaces"
-	pv "${marcfile}.tmp" | tr -d '\000' | tr '\b\n\r\t' ' ' > "${marcfile}"
-	rm -f "${marcfile}.tmp"
+	echo "Detecting and removing nulls and converting invalid utf8 characters, carriage returns, newlines, and tabs to spaces"
+	
+	#pv "${marcfile}.tmp" | tr -d '\000' | tr '\b\n\r\t' ' ' > "${marcfile}"
+	marcfixencoding "${marcfile}.tmp"
+	mv "${marcfile}.tmp_fixedencoding" "${marcfile}"
 	echo 
 
 	# null identifiers

@@ -26,9 +26,8 @@ if [[ -z "${infile}" ]];then
 	exit
 fi
 
-cp "${infile}" "${fileroot}"
-marc2text "${fileroot}"
-uconv -i -f utf-8 -t utf-8 "${fileroot}.txt" "${fileroot}.txt" > "${fileroot}_fixedencoding.txt"
+marc2text "${infile}"
+uconv -i -f utf-8 -t utf-8 "${fileroot}.txt" > "${fileroot}_fixedencoding.txt"
 text2marc "${fileroot}_fixedencoding.txt"
 
 echo "A fixed file has been sent to ${fileroot}_fixedencoding.mrc"

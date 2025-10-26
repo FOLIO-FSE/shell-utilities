@@ -93,20 +93,16 @@ filecontent=""
 outfile=$(sed 's/\.....\?$//' <<< "${infile}")
 
 if [[ "${infile: -4}" == "xlsx" ]];then
-	if [[ -f /home/ssm-user/.local/bin/xlsx2csv ]];then
-		/home/ssm-user/.local/bin/xlsx2csv -d "\t" --skipemptycolumns "${infile}" > "${outfile}.tsv"
-	else
-		xlsx2csv -d "\t" --skipemptycolumns "${infile}" > "${outfile}.tsv"
-	fi
+	echo "Excel file detected -- converting"
+	excel2tsv "${infile}"
 
 	if [[ $(head -1 "${outfile}.tsv") =~ ^$'\t' ]];then
 		cut -f2- "${outfile}.tsv" > tmp
 		mv tmp "${outfile}.tsv"
 	fi
-
+	
 	infile="${outfile}.tsv"
 	foundExcel=1
-	echo "Excel file detected -- converting"
 fi
 
 echo

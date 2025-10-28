@@ -25,14 +25,16 @@ else
 	outfile="${fileroot}_remapped.json"
 fi
 
-jq -rRn '
+echo "Building map"
+pv "${map_file}" |jq -rRn '
 	 reduce inputs as $line ({};
 		($line | split("\t") | .[0]) as $key |
 		($line | split("\t") | .[1]) as $value |
 		. + { ($key): $value }
 	)
-' ${map_file} > tmp_map
+' > tmp_map
 
+echo "Extracting and remapping matched values. Please be patient"
 pv  ${json_file} | jq -c --argfile key_value tmp_map --arg MATCHKEY "${matchkey}" --arg NEWKEY "${newkey}" '
 	(if .[$MATCHKEY] != null then ($key_value[.[$MATCHKEY]] // null) else null end) as $value
 		| if $value != null and ($value | test("^[\\[{]")) then
@@ -59,7 +61,7 @@ pv  ${json_file} | jq -c --argfile key_value tmp_map --arg MATCHKEY "${matchkey}
 		  . + { ($NEWKEY): $value }
 		end
 	 else
-		.
+		empty
 	 end
   end
 ' > ${outfile}

@@ -10,7 +10,6 @@ okapi_token=$(cat okapi.token)
 rec_type=$1
 infile="uuids"
 batchsize=50
-metabatchsize=4
 accept="application/json"
 sed -i 's/[^a-f0-9\-]//g' ${infile}
 
@@ -73,7 +72,6 @@ case $rec_type in
 "feefineactions")
 	endpoint="feefineactions";;
 "holdings")
-	metabatchsize=9;
 	jq_replace=".holdingsRecords[]"
 	endpoint="holdings-storage/holdings";;
 "holdings-srs")
@@ -87,15 +85,12 @@ case $rec_type in
 	jq_replace=".instanceRelationships[]"
 	endpoint="instance-storage/instance-relationships";;
 "instances")
-	metabatchsize=9;
 	endpoint="instance-storage/instances";;
 "inventory")
-	metabatchsize=9;
 	endpoint="inventory-view/instances"
 	jq_replace=".instances[]"
 	accept="text/plain";;
 "items")
-	metabatchsize=9;
 	endpoint="item-storage/items";;
 "licenses")
 	endpoint="licenses/licenses";;
@@ -108,7 +103,6 @@ case $rec_type in
 "loans")
 	endpoint="loan-storage/loans";;
 "notes")
-	metabatchsize=9;
 	endpoint="notes";;
 "organizations")
 	endpoint="organizations-storage/organizations";;
@@ -124,7 +118,6 @@ case $rec_type in
 	jq_replace=".poLines[]"
 	endpoint="orders-storage/po-lines";;
 "preceedingsucceeding")
-	metabatchsize=8;
 	jq_replace=".precedingSucceedingTitles[]"
 	endpoint="preceding-succeeding-titles";;
 "requestprefs")
@@ -179,7 +172,7 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 		getbatch "${querystring}" ${t} &
 		t=$(($t + 1))
 
-		if [[ $t -eq ${metabatchsize} || $lastset -eq 1 ]];then
+		if [[ $t -eq 4 || $lastset -eq 1 ]];then
 			wait
 			t=0
 			printrecords

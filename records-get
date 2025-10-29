@@ -349,6 +349,7 @@ case $rec_type in
 	rec_type="records"
 	limitbyid="yes"
 	query="recordType=MARC_BIB&state=ACTUAL"
+	jqexpr="jq -c '.records[] | del(.metadata) | .id = .parsedRecord.id'"
 	endpoint="source-storage/records";;
 "statcodes")
 	rec_type="statisticalCodes"

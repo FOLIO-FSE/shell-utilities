@@ -231,6 +231,10 @@ function build_mfhd() {
 					bibId=i
 					printf ("Bib ID found in "$i"\\n")
 					break
+				case "mmsrecordid":
+					bibId=i
+					printf ("Bib ID found in "$i"\\n")
+					break
 				case "recordbibliographic":
 					bibId=i
 					printf ("Bib ID found in "$i"\\n")
@@ -248,14 +252,6 @@ function build_mfhd() {
 					printf ("Location found in "$i"\\n")
 					break
 				case "locationcode":
-					location=i
-					printf ("Location found in "$i"\\n")
-					break
-				case "permanentlocation":
-					location=i
-					printf ("Location found in "$i"\\n")
-					break
-				case "permanentphysicallocation":
 					location=i
 					printf ("Location found in "$i"\\n")
 					break
@@ -338,6 +334,11 @@ function build_mfhd() {
 					printf ("Holdings ID found in "$i"\\n")
 					break
 				case "holdingsid":
+					holdIdpos=i
+					holdId=i
+					printf ("Holdings ID found in "$i"\\n")
+					break
+				case "holrecordid":
 					holdIdpos=i
 					holdId=i
 					printf ("Holdings ID found in "$i"\\n")

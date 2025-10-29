@@ -14,7 +14,19 @@ perm_uuid=$(jq -r .id <<< "${folio_admin_perms}")
 
 echo "Getting list of all permissions"
 
-all_perms=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/perms/permissions?expandSubs=true&query=(mutable==true)&length=100000" | jq '..|.permissionName?|select(. != null)|select(. |startswith("okapi.") |not)' |sort -u |sed '/perms.users.assign.okapi/d' |tr -d '\n' |sed 's/""/","/g;s/^/[/;s/$/]/' )
+#all_perms=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/perms/permissions?expandSubs=true&query=(mutable==true)&length=100000" | jq '..|.permissionName?|select(. != null)|select(. |startswith("okapi.") |not)' |sort -u \
+all_perms=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/perms/permissions?expandSubs=true&query=(mutable==true)&length=100000" | jq '..|.permissionName?|select(. != null)' |sort -u \
+|sed '/okapi.deployment.get/d
+/okapi.discovery.health.get/d
+/okapi.discovery.nodes.get/d
+/okapi.env.get/d
+/okapi.proxy.modules.get/d
+/okapi.proxy.tenants.get/d
+/okapi.proxy.tenants.install.get/d
+/okapi.proxy.tenants.interfaces.get/d
+/okapi.proxy.tenants.modules.enabled.get/d
+/okapi.proxy.tenants.timers.get/d
+/perms.users.assign.okapi/d ' |tr -d '\n' |sed 's/""/","/g;s/^/[/;s/$/]/' )
 
 folio_admin_perms=$(jq -c --argjson ALLPERMS "${all_perms}" '.subPermissions = $ALLPERMS' <<< "${folio_admin_perms}")
 

@@ -1,0 +1,78 @@
+#!/usr/bin/bash
+auth 2>/dev/null || authn 2>/dev/null
+SECONDS=1
+TIMER=1
+OFFSET=0
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+infile="uuids"
+outfile="instances_promote.log"
+batchsize=4
+
+consortiumId=${1}
+
+rm -f "${outfile}"
+
+echo "This script expects input file \"uuids\" to exist and expects the tenant ID of the central tenant as a positional argument" 
+echo "Usage: instances-promote [central_tenantId]
+echo
+
+if [[ ! -f ${infile} ]]; then echo "This script cannot find input file ${infile}";exit;fi
+if [[ -z ${consortiumId} ]];then echo "You must enter a central tenant ID";fi
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+promote_instance() {
+	local uuid="${1}"
+	local seq="${2}"
+	local apicall
+
+	local instance="{\"id\":\"${uuid}\",\"instanceIdentifier\":\"${uuid}\",\"sourceTenantId\":\"${tenant}\",\"targetTenantId\":\"${consortiumId}\",\"status\":\"IN_PROGRESS\"}"
+
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${instance}" "${okapi_url}/consortia/${consortiumId}/sharing/instances")
+	
+	echo "${apicall}" | tr -d '\n' |sed 's/$/\n/' > "tmp_instances_promote.${seq}"
+
+}
+
+counter=0
+seconds=1
+
+while mapfile -t -n ${batchsize} uuids && ((${#uuids[@]})); do
+	seq=0
+
+	for uuid in "${uuids[@]}";do
+
+		promote_instance "${uuid}" "${seq}" & 
+
+		counter=$(($counter + 1))
+		seq=$(($seq + 1))
+	done
+	wait
+
+  if [[ $SECONDS -gt 500 ]]; then
+		TIMER=$(($TIMEROFFSET * 500 + $SECONDS))
+    auth 2>/dev/null || authn 2>/dev/null
+		okapi_token=$(cat okapi.token)
+    SECONDS=1
+		TIMEROFFSET=$(($TIMEROFFSET + 1))
+  fi
+	if [[ $TIMER -lt 500 ]];then TIMER=$SECONDS;fi
+
+  TIME=$TIMER;msg="$TIMER seconds"
+  if [[ $TIMER -gt 60 ]];then TIME=$(bc <<< "scale=1;$TIMER/60");msg="$TIME minutes";fi
+  if [[ $TIMER -gt 3600 ]];then TIME=$(bc <<< "scale=1;$TIMER/3600");msg="$TIME hours     ";fi
+
+	echo -en "Processing record $counter of $numrecs in $msg\r"
+
+	cat tmp_records.* >> ${outfile}
+	rm tmp_records.*
+
+done < ${infile}
+
+echo "Finished promoting $numrecs instances"
+echo "API output has been sent to ${outfile}"
+

@@ -49,7 +49,7 @@ promote_instance() {
 }
 
 counter=0
-seconds=1
+SECONDS=1
 
 while mapfile -t -n ${batchsize} uuids && ((${#uuids[@]})); do
 	seq=0
@@ -65,11 +65,11 @@ while mapfile -t -n ${batchsize} uuids && ((${#uuids[@]})); do
 	sleep 1
 
   if [[ $SECONDS -gt 500 ]]; then
-		TIMER=$(($TIMEROFFSET * 500 + $SECONDS))
+		TIMER=$(($OFFSET * 500 + $SECONDS))
     auth 2>/dev/null || authn 2>/dev/null
 		okapi_token=$(cat okapi.token)
     SECONDS=1
-		TIMEROFFSET=$(($TIMEROFFSET + 1))
+		OFFSET=$(($OFFSET + 1))
   fi
 	if [[ $TIMER -lt 500 ]];then TIMER=$SECONDS;fi
 

@@ -42,7 +42,7 @@ promote_instance() {
 
 	local instance="{\"id\":\"${uuid}\",\"instanceIdentifier\":\"${uuid}\",\"sourceTenantId\":\"${sourceTenant}\",\"targetTenantId\":\"${tenant}\"}"
 
-	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${instance}" "${okapi_url}/consortia/${consortiumId}/sharing/instances")
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: */*" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${instance}" "${okapi_url}/consortia/${consortiumId}/sharing/instances")
 	
 	echo "${apicall}" | tr -d '\n' |sed 's/$/\n/' > "tmp_instances_promote.${seq}"
 

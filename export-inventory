@@ -1,55 +1,24 @@
-echo "Retrieving holdings and items"
-records-get holdings
+#!/usr/bin/bash
+echo "Exporting bibs"
+export-all instances
+echo "Exporting holdings"
+export-all holdings
+
+echo "Retrieving items"
 records-get items
 records-get locations
 records-get mattypes 
 records-get loantypes
 records-get holdingstypes
 
-echo "Extracting instance ids from holdings"
-pv holdings.json |jq -r .instanceId |sort -u > instanceIds.csv
-
-echo "Instance ids have been copied to instanceIds.csv. Upload these to the default Data Export instance profile to extract MARC records"
 
 echo
 echo "Retrieving reference data"
 jq -r '[.id, .code]|@tsv' locations.json > location.tsv
 jq -r '[.id, .name]|@tsv' mattypes.json > mattype.tsv
 jq -r '[.id, .name]|@tsv' loantypes.json > loantype.tsv
-jq -r '[.id, .name]|@tsv' holdingstypes.json > holdingtype.tsv
-
-
-echo -e "id\thrid\tholdingtype\tinstanceId\tlocation\tcallNumber\tpublic_notes\tstaff_notes\tadministrativeNotes\tholdingsStatements\tholdingsStatementsForIndexes\tholdingsStatementsForSupplements\tdiscoverySuppress" > holdings.tsv
 
 echo -e "id\thrid\tholdingsId\tlocation\tmattype\tloantype\tbarcode\tcopy\tvolume\tstatus\tcallNumber\tcheckin_notes\tcheckout_notes\tpublic_notes\tstaff_notes\tadministrativeNotes" > items.tsv
-
-echo
-echo "Extracting instance Ids for use with data export."
-pv holdings.json |jq -r .instanceId > instanceIds.csv
-
-echo
-echo "Extracting holdings records."
-
-delim=$'\t'
-subdelim='; '
-
-pv holdings.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
-	[
-	"\(.id)" // "",
-	"\(.hrid)" // "",
-	"\(.holdingsTypeId)" // "",
-	"\(.instanceId)" // "",
-	"\(.effectiveLocationId)" // "",
-	"\(.callNumber)" // "",
-	"\([ .holdingsStatements[] |select(.statement!=null) | .statement ] |join($subdelim))" // "",
-	"\([ .holdingsStatementsForIndexes[] |select(.statement!=null) | .statement ] |join($subdelim))" // "",
-	"\([ .holdingsStatementsForSupplements[] |select(.statement!=null) | .statement ] |join($subdelim))" // "",
-	"\([ .notes[] |select(.staffOnly==false) | .note ] |join($subdelim))" // "",
-	"\([ .notes[] |select(.staffOnly==true) | .note ] |join($subdelim))" // "",
-	"\( .administrativeNotes |join($subdelim))" // "",
-	"\(.discoverySuppress)" // false
-	] |join($delim)
-	' >> holdings.tsv 
 
 echo
 echo "Extracting item records."
@@ -77,16 +46,13 @@ pv items.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 echo
 echo "Converting UUIDs to human readable values"
 echo
-value-mapper holdings.tsv
 value-mapper items.tsv
 
 mv items_fixed.tsv items.tsv
-mv holdings_fixed.tsv holdings.tsv
 
 rm location.tsv
 rm mattype.tsv
 rm loantype.tsv
-rm holdingtype.tsv
 
 echo "Instance IDs are exported to instanceIds.csv"
 numrecs=$(wc -l instanceIds.csv |cut -d " " -f1)
@@ -95,6 +61,6 @@ if [[ $numrecs -gt 500000 ]];then
 	echo "Large instance file with $numrecs records detected"
 	echo "Splitting into smaller files is recommended"
 fi
-echo "Holdings records have been exported to holdings.tsv"
+echo "Bib and holdings files are saved as MARC files"
 echo "Item records have been exported to items.tsv"
 echo

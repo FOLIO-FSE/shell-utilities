@@ -112,6 +112,8 @@ case $rec_type in
 "composite-orders")
 	rec_type="purchaseOrders"
 	endpoint="orders/composite-orders" ;;
+"consortia")
+	endpoint="consortia" ;;
 "contacts")
 	endpoint="organizations-storage/contacts" ;;
 "coursedepartments")
@@ -377,7 +379,7 @@ case $rec_type in
 "vouchers")
 	endpoint="voucher/vouchers";;
 *)
-	echo "Record type '${recordtype}' not found. Supported types are accounts, acqunits, actionprofiles, addresstypes, agreements, agreements-picklists, agreements-suppl, authorities, authorities-source, authorities-srs, batch-groups, boundwiths, budgets, campuses, categories, circ-loans, circlog, composite-orders, contacts, coursedepartments, courselistings, courses, coursetypes, departments, eholdings, entitlements expense-classes, feefines, feefineactions, fiscalyears, fund-expense, fund-groups, funds, fundtypes, groups, holdings, holdingstypes, holdings-srs, identifiertypes, importjobs, inhouse,  interfaces, instance-relationships, instancerelationshiptypes, instances, institutions, items, inventory, inventory-items, invoices, invoice-lines, exportjobs, ledgers, libraries, licenses, licenses-picklists, licenses-terms, locations, loantypes, loan-history, loans, manualblocks, mappingprofiles, marcspecs, matchprofiles, mattypes, mtypes, notes, notices, orderprefixes, orderlines, orders, organizations, permissions, permissionusers, polines, preceedingsucceeding, receivinghistory, requestprefs, requests, schedulednotices, servicepoints, servicepointsusers, sourcerecords, srs, statcodes, statcodetypes, tags, tasks, templates, transactions, usergroups, users, vouchers.";exit;;
+	echo "Record type '${recordtype}' not found. Supported types are accounts, acqunits, actionprofiles, addresstypes, agreements, agreements-picklists, agreements-suppl, authorities, authorities-source, authorities-srs, batch-groups, boundwiths, budgets, campuses, categories, circ-loans, circlog, composite-orders, consortia, contacts, coursedepartments, courselistings, courses, coursetypes, departments, eholdings, entitlements expense-classes, feefines, feefineactions, fiscalyears, fund-expense, fund-groups, funds, fundtypes, groups, holdings, holdingstypes, holdings-srs, identifiertypes, importjobs, inhouse,  interfaces, instance-relationships, instancerelationshiptypes, instances, institutions, items, inventory, inventory-items, invoices, invoice-lines, exportjobs, ledgers, libraries, licenses, licenses-picklists, licenses-terms, locations, loantypes, loan-history, loans, manualblocks, mappingprofiles, marcspecs, matchprofiles, mattypes, mtypes, notes, notices, orderprefixes, orderlines, orders, organizations, permissions, permissionusers, polines, preceedingsucceeding, receivinghistory, requestprefs, requests, schedulednotices, servicepoints, servicepointsusers, sourcerecords, srs, statcodes, statcodetypes, tags, tasks, templates, transactions, usergroups, users, vouchers.";exit;;
 esac
 
 rm -f ${rec_type}

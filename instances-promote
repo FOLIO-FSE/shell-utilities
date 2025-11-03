@@ -62,6 +62,7 @@ while mapfile -t -n ${batchsize} uuids && ((${#uuids[@]})); do
 		seq=$(($seq + 1))
 	done
 	wait
+	sleep 1
 
   if [[ $SECONDS -gt 500 ]]; then
 		TIMER=$(($TIMEROFFSET * 500 + $SECONDS))

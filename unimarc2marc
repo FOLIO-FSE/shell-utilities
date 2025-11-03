@@ -21,10 +21,10 @@ if [[ ! $(which yaz-marcdump |grep yaz) ]];then
 fi
 
 if [[ -z $1 ]];then
-	echo "This tool converts MARC8 files to UTF8 "
+	echo "This tool converts UNIMARC files to UTF-8 MARC21 "
 	echo "It performs no checks or repairs -- run marcfix first"
 	echo 
-	echo "Usage: marc2utf8 [filename]"
+	echo "Usage: unimarc2marc [filename]"
 	echo
 	exit
 else

@@ -78,8 +78,8 @@ while mapfile -t -n ${batchsize} uuids && ((${#uuids[@]})); do
 
 	echo -en "Processing record $counter of $numrecs in $msg\r"
 
-	cat tmp_records.* >> ${outfile}
-	rm tmp_records.*
+	cat tmp_instances_promote.* >> ${outfile}
+	rm tmp_instances_promote.*
 
 done < ${infile}
 

@@ -16,12 +16,16 @@ consortiumId=${1}
 
 rm -f "${outfile}"
 
-echo "This script expects input file \"uuids\" to exist and expects the tenant ID of the central tenant as a positional argument" 
-echo "Usage: instances-promote [central_tenantId]"
-echo
 
 if [[ ! -f ${infile} ]]; then echo "This script cannot find input file ${infile}";exit;fi
-if [[ -z ${consortiumId} ]];then echo "You must enter a central tenant ID";exit;fi
+if [[ -z ${consortiumId} ]];then 
+	echo "You must enter a central tenant ID"
+	echo
+	echo "This script expects input file \"uuids\" to exist and expects the tenant ID of the central tenant as a positional argument" 
+	echo "Usage: instances-promote [central_tenantId]"
+	echo
+	exit
+fi
 
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 

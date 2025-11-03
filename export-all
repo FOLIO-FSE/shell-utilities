@@ -45,7 +45,7 @@ IFS='' read -r -d '' export_json << EndOfExport
   "idType": "${profile}",
   "jobProfileId": "${jobProfileId}",
   "suppressedFromDiscovery": true,
-  "deletedRecords": true
+  "deletedRecords": false 
 }
 EndOfExport
 

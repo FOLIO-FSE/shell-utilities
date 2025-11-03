@@ -114,6 +114,17 @@ echo "JobId: $jobExecutionId"
 echo
 echo "exporting file to ${workingdir}/${fileName} Please be patient"
 curl -w '\n' -o "${workingdir}/${fileName}" -X GET -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${link}" 
+
+cd "${workingdir}"
+
+if file ${fileName} | grep -q 'Zip archive data'; then
+	echo "Zip file detected. Extracting..."
+	temp_dir=$(mktemp -d)
+	unzip ${fileName} -d ${temp_dir}
+	pv ${temp_dir}/* > ${fileName}
+	rm -rf ${temp_dir}
+fi
+
 TIMER=$(($OFFSET * 500 + $SECONDS))
 TIME=$TIMER;msg="$TIMER seconds"
 if [[ $TIMER -gt 60 ]];then TIME=$(($TIMER/60));msg="$TIME minutes";fi

@@ -351,7 +351,7 @@ case $rec_type in
 		echo "No query supplied. Defaulting to status=IN_PROGRESS"
 		echo "Supply query status=ERROR to get error sharing instances"
 		echo
-		search_for="IN_PROGRESS"
+		search_for="status=IN_PROGRESS"
 	fi
 	sortby=""
 	startlimit="1"

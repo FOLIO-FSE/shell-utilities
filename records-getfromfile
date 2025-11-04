@@ -129,6 +129,10 @@ case $rec_type in
 	endpoint="scheduled-notice-storage/scheduled-notices";;
 "servicepoints")
 	endpoint="service-points";;
+"sharinginstances")
+	jq_replace=".sharingInstances[]"
+	consortiumId=$(curl -s -w '\n' -X GET -H "Accept: */*" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/consortia" |jq -r '.consortia[].id')
+	endpoint="consortia/${consortiumId}/sharing/instances";;
 "srs")
 	indivrecord=1
 	jq_replace=".sourceRecords[]"

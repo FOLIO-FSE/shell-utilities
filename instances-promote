@@ -10,7 +10,7 @@ okapi_token=$(cat okapi.token)
 
 infile="uuids"
 outfile="instances_promote.log"
-batchsize=4
+batchsize=3
 
 sourceTenant=${1}
 

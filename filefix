@@ -111,7 +111,7 @@ echo "################ Processing ${infile} #####################"
 
 if [[ ! -f "${infile}" ]];then echo "The input file ${infile} could not be found";exit;fi
 
-if head -c 10000 "${infile}" | grep -q $'\n';then
+if head -c 10000 "${infile}" | grep -qP $'\n';then
 	echo "No newlines could be detected in the first 10,000 characters. Please verify file"
 	exit
 fi

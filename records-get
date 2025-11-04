@@ -45,6 +45,7 @@ function fetch_batch() {
 		fi
 		curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?query=${compositeSearch}%20sortBy%20id&limit=${num_retrieved}&offset=${idOffset}" |eval "${jqexpr}" > "tmp_${rec_type}.${t}"
 	else
+echo "${okapi_url}/${endpoint}?${limitOrPerPage}=${num_retrieved}&${PageOrOffset}=${!PageOrOffset}&${query}${sortby}";exit
 		curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${limitOrPerPage}=${num_retrieved}&${PageOrOffset}=${!PageOrOffset}&${query}${sortby}" |eval "${jqexpr}" > "tmp_${rec_type}.${t}"
 	fi
 
@@ -346,9 +347,13 @@ case $rec_type in
 "sharinginstances")
 	rec_type="sharingInstances"
 	consortiumId=$(curl -s -w '\n' -X GET -H "Accept: */*" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/consortia" |jq -r '.consortia[].id')
-	query="status=IN_PROGRESS"
+	if [[ ${search_for} == "cql.allRecords=1" ]];then
+		echo "You must enter a query when searching sharing instances"
+		exit
+	fi
 	sortby=""
 	startlimit="1"
+	query=${search_for/query=/}
 	endpoint="consortia/${consortiumId}/sharing/instances";;
 "sourcerecords")
 	rec_type="sourceRecords"

@@ -77,6 +77,8 @@ fixrecord() {
 	#                (.statusId = $VALUE)
 	#                (.temporaryLoanType = {"id": $VALUE} ) # UUID, must use items-inventory
 	#                (.temporaryLocation = {"id": $VALUE} ) # UUID, must use items-inventory
+	#				 (.workflowStatus = "Open")
+	#				 (.reEncumber = "true")
 			|del(.metadata)
 	')
 		#updated_record=${apicall//$pattern/$replace}

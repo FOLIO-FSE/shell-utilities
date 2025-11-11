@@ -96,6 +96,8 @@ case $recordtype in
 	recordtype="location-units/campuses";;
 "categories")
 	recordtype="organizations-storage/categories";;
+"composite-orders")
+	recordtype="orders/composite-orders";;
 "entitlements")
 	recordtype="erm/entitlements";;
 "funds")

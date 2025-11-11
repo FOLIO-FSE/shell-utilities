@@ -4,12 +4,13 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-search=${1}
+sharinginstanceId=$(sed 's/[^a-z0-9\-]//g' <<< "$1")
+
 consortiumId=$(curl -s -w '\n' -X GET -H "Accept: */*" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/consortia" |jq -r '.consortia[].id')
 
-if [[ ${search} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
-	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/consortia/${consortiumId}/sharing/instances/${search}"
-else
-	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/consortia/${consortiumId}/sharing/instances?limit=1"
-fi
+endpoint="consortia/${consortiumId}/sharing/instances"
+
+curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" ${okapi_url}/${endpoint}/${sharinginstanceId} |jq .
+
+
 

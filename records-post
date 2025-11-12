@@ -2,6 +2,7 @@
 auth 2>/dev/null || authn 2>/dev/null
 SECONDS=1
 TIMER=1
+TIMEROFFSET=0
 OFFSET=0
 
 tenant=$(cat tenant)

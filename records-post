@@ -167,6 +167,7 @@ case $recordtype in
 "sharinginstances")
 	accept="application/json"
 	batchsize=2
+	pause=1
 	consortiumId=$(curl -s -w '\n' -X GET -H "Accept: */*" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/consortia" |jq -r '.consortia[].id')
 	operation="POST"
 	recordtype="consortia/${consortiumId}/sharing/instances";;
@@ -203,8 +204,8 @@ while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
 	done
 	wait
 
-	if [[ ${sleep} -gt 0 ]];then
-		sleep ${sleep}
+	if [[ ${pause} -gt 0 ]];then
+		sleep ${pause}
 	fi
 
   if [[ $SECONDS -gt 500 ]]; then

@@ -165,6 +165,8 @@ for splitfile in ${splitlist[@]};do
 done
 wait
 
+head -1000 filefixaa | awk -F'\t' '{ for(i=1;i<=NF;i++){ if($i ~ /^[[:space:]]+/ || $i ~ /[[:space:]]+$/){ print "Leading/trailing spaces detected"; exit 1 } } }' |grep detected && echo leading_trail="yes"
+
 if [[ $dosfile -eq 1 ]];then
 	for splitfile in ${splitlist[@]};do 
 		fix_dos ${splitfile} &
@@ -482,6 +484,10 @@ foundExcel=0
 }
 
 for file in "${filelist[@]}";do
+	if [[ $(head -n 1 "${file}") =~ ^[[:space:]]*$ ]]; then
+		echo "First line contains only whitespace, deleting all leading blank lines"
+		sed -i '1,/^[[:alnum:]]/ { /^[[:space:]]*$/d }' "${file}"
+	fi
 	fix_file "${file}"
 done
 

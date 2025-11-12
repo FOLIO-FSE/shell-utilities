@@ -165,6 +165,7 @@ case $recordtype in
 "servicepoints")
 	recordtype="service-points";;
 "sharinginstances")
+	accept="application/json"
 	batchsize=2
 	consortiumId=$(curl -s -w '\n' -X GET -H "Accept: */*" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/consortia" |jq -r '.consortia[].id')
 	operation="POST"

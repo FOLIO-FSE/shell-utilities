@@ -12,6 +12,7 @@ infile="${1}.json"
 recordtype=$1
 operation=${2^^}
 batchsize=10
+accept="text/plain"
 
 outfile="${recordtype}_posting.log"
 rm -f "${outfile}"
@@ -51,7 +52,7 @@ postrecord() {
 	local apicall
 
 	if [[ ${operation} == "POST" ]];then
-		apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/${recordtype}")
+		apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/${recordtype}")
 	else
 		id=$(echo "${record}" |jq -r .id)
 
@@ -163,6 +164,11 @@ case $recordtype in
 	recordtype="circulation/requests";;
 "servicepoints")
 	recordtype="service-points";;
+"sharinginstances")
+	batchsize=2
+	consortiumId=$(curl -s -w '\n' -X GET -H "Accept: */*" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/consortia" |jq -r '.consortia[].id')
+	operation="POST"
+	recordtype="consortia/${consortiumId}/sharing/instances";;
 "srs")
 	batchsize=5
 	operation="PUT"
@@ -177,7 +183,7 @@ case $recordtype in
 "users")
 	recordtype="users";;
 *)
-	echo "Record type '${recordtype}' not found. Supported types are accounts, actionprofiles, agreements, agreements-picklists, authorities, authorities-source, boundwiths, campuses, composite-orders, groups, feefineactions, fiscalyears, funds, holdings, identifiertypes, instances, instance-formats, instance-note-types, instance-types, interfaces, invoices, invoice-lines, items, libraries, licenses, licenses-picklists, licenses-terms, loans, locations, manualblocks, mattypes, nature-of-content, notices, orderlines, organizations, parsedrecords, permissions, polines, precedingsucceeding, requests, servicepoints, srs, tags, templates, users."
+	echo "Record type '${recordtype}' not found. Supported types are accounts, actionprofiles, agreements, agreements-picklists, authorities, authorities-source, boundwiths, campuses, composite-orders, groups, feefineactions, fiscalyears, funds, holdings, identifiertypes, instances, instance-formats, instance-note-types, instance-types, interfaces, invoices, invoice-lines, items, libraries, licenses, licenses-picklists, licenses-terms, loans, locations, manualblocks, mattypes, nature-of-content, notices, orderlines, organizations, parsedrecords, permissions, polines, precedingsucceeding, requests, servicepoints, sharinginstances, srs, tags, templates, users."
 	exit;;
 esac
 
@@ -189,7 +195,7 @@ while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
 
 	for line in "${lines[@]}";do
 
-		postrecord "${line}" "${seq}" & 
+		postrecord "${line}" "${seq}" &
 
 		counter=$(($counter + 1))
 		seq=$(($seq + 1))

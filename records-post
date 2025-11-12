@@ -90,14 +90,14 @@ case $recordtype in
 "groups")
 	recordtype="groups";;
 "feefineactions")
-        recordtype="feefineactions"
-        ;;
+  recordtype="feefineactions"
+  ;;
 "fines")
-        recordtype="feefineactions";;
+  recordtype="feefineactions";;
 "fiscalyears")
-        recordtype="finance/fiscal-years";;
+  recordtype="finance/fiscal-years";;
 "funds")
-        recordtype="finance/funds";;
+  recordtype="finance/funds";;
 "holdings")
 	recordtype="holdings-storage/holdings";;
 "identifiertypes")
@@ -201,6 +201,10 @@ while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
 		seq=$(($seq + 1))
 	done
 	wait
+
+	if [[ ${sleep} -gt 0 ]];then
+		sleep ${sleep}
+	fi
 
   if [[ $SECONDS -gt 500 ]]; then
 		TIMER=$(($TIMEROFFSET * 500 + $SECONDS))

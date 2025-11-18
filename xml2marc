@@ -8,6 +8,6 @@ echo
 for file in "${filelist[@]}";do
 	fileroot=$(echo "${file}" | sed 's/\.....\?$//')
 	outfile="${fileroot}.mrc"
-	cmarcedit.exe -s "${file}" -d "${fileroot}.mrc" -pd -xmlmarc
+	cmarcedit -s "${file}" -d "${fileroot}.mrc" -pd -xmlmarc
 done
 

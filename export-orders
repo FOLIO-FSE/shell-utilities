@@ -1,5 +1,6 @@
 echo "Retrieving reference and transaction data"
 recordtypes=(
+	"acqmethods"
 	"categories"
 	"contacts"
 	"expense-classes"
@@ -52,6 +53,7 @@ jq -rc --arg delim $'\x1f' '[
 	"\(.categories[1])" // ""
 	]|join($delim)' contacts.json |sed 's/\x1f/\t/' > contact2.tsv
 
+jq -r '[.id, .value]|@tsv' acqmethods.json > acquisitionMethod.tsv
 jq -r '[.id, .value]|@tsv' categories.json > category.tsv
 jq -r '[.id, .code]|@tsv' organizations.json > vendor.tsv
 jq -r '[.id, .code]|@tsv' funds.json > fund.tsv
@@ -73,7 +75,7 @@ echo -e "id\tinvoiceId\tinvoiceLineNumber\treferenceNumbers\tinvoiceLineStatus\t
 
 echo -e "id\tpoNumber\torderType\tvendor\tworkflowStatus\tapproved\tbillTo\tmanualPo\tnotes" > orders.tsv
 echo -e "id\tname\tcode\taliases\tstatus\temail\tphone\turl\tcontact1\tcontact2" > organizations.tsv
-echo -e "id\tpoLineNumber\tpurchaseOrderId\tcheckinItems\tcost.listUnitPrice\tcost.poLineEstimatedPrice\tcost.quantityPhysical\tcost.quantityElectronic\tinstanceId\ttitleOrPackage\tisPackage\torderFormat\tpaymentStatus\tvendorDetail.referenceNumbers" > polines.tsv
+echo -e "id\tpoLineNumber\tpurchaseOrderId\tacquisitionMethod\tcheckinItems\tcost.listUnitPrice\tcost.poLineEstimatedPrice\tcost.quantityPhysical\tcost.quantityElectronic\tinstanceId\ttitleOrPackage\tisPackage\torderFormat\tpaymentStatus\tvendorDetail.referenceNumbers" > polines.tsv
 echo -e "id\tamount\tamountAwaitingPayment\tamountCredited\tamountExpended\tstatus\torderType\tsourcePoId\tsourcePoLineId\tfiscalYear\texpenseClass\tfromFund\ttoFund\tsource\ttransactionType" > transactions.tsv
 echo -e "id\tvoucherNumber\tamount\tinvoiceId\tstatus\ttype\tvoucherDate\tvendor" > vouchers.tsv
 
@@ -173,6 +175,7 @@ pv polines.json |jq -rc --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	"\(.id)" // "",
 	"\(.poLineNumber)" // "",
 	"\(.purchaseOrderId)" // "",
+	"\(.acquisitionMethod)" // "",
 	"\(.checkinItems)" // "",
 	"\(.cost.listUnitPrice)" // "",
 	"\(.cost.poLineEstimatedPrice)" // "",

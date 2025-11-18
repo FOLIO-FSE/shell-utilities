@@ -43,6 +43,7 @@ function fetch_batch() {
 		else
 			compositeSearch="${search_for}%20and%20id>${startUUID}"
 		fi
+
 		curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?query=${compositeSearch}%20sortBy%20id&limit=${num_retrieved}&offset=${idOffset}" |eval "${jqexpr}" > "tmp_${rec_type}.${t}"
 	else
 		curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${limitOrPerPage}=${num_retrieved}&${PageOrOffset}=${!PageOrOffset}&${query}${sortby}" |eval "${jqexpr}" > "tmp_${rec_type}.${t}"
@@ -53,6 +54,9 @@ function fetch_batch() {
 case $rec_type in
 "accounts")
 	endpoint="accounts";;
+"acqmethods")
+	rec_type="acquisitionMethods"
+	endpoint="orders/acquisition-methods";;
 "acqunits")
 	rec_type="acquisitionsUnits"
 	endpoint="acquisitions-units/units";;
@@ -111,8 +115,6 @@ case $rec_type in
 "composite-orders")
 	rec_type="purchaseOrders"
 	endpoint="orders/composite-orders" ;;
-"consortia")
-	endpoint="consortia" ;;
 "contacts")
 	endpoint="organizations-storage/contacts" ;;
 "coursedepartments")
@@ -343,20 +345,6 @@ case $rec_type in
 "servicepointsusers")
 	rec_type="servicePointsUsers"
 	endpoint="service-points-users";;
-"sharinginstances")
-	rec_type="sharingInstances"
-	consortiumId=$(curl -s -w '\n' -X GET -H "Accept: */*" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/consortia" |jq -r '.consortia[].id')
-	if [[ ${search_for} == "cql.allRecords=1" ]];then
-		echo
-		echo "No query supplied. Defaulting to status=IN_PROGRESS"
-		echo "Supply query status=ERROR to get error sharing instances"
-		echo
-		search_for="status=IN_PROGRESS"
-	fi
-	sortby=""
-	startlimit="1"
-	query=${search_for/query=/}
-	endpoint="consortia/${consortiumId}/sharing/instances";;
 "sourcerecords")
 	rec_type="sourceRecords"
 	endpoint="source-storage/source-records";;
@@ -364,14 +352,10 @@ case $rec_type in
 	rec_type="records"
 	limitbyid="yes"
 	query="recordType=MARC_BIB&state=ACTUAL"
-	jqexpr="jq -c '.records[] | del(.metadata) | .id = .parsedRecord.id'"
 	endpoint="source-storage/records";;
 "statcodes")
 	rec_type="statisticalCodes"
 	endpoint="statistical-codes";;
-"statcodetypes")
-	rec_type="statisticalCodeTypes"
-	endpoint="statistical-code-types";;
 "tasks")
 	query="sort=name%3Border=ascending"
 	num_retrieved="100"
@@ -392,7 +376,7 @@ case $rec_type in
 "vouchers")
 	endpoint="voucher/vouchers";;
 *)
-	echo "Record type '${recordtype}' not found. Supported types are accounts, acqunits, actionprofiles, addresstypes, agreements, agreements-picklists, agreements-suppl, authorities, authorities-source, authorities-srs, batch-groups, boundwiths, budgets, campuses, categories, circ-loans, circlog, composite-orders, consortia, contacts, coursedepartments, courselistings, courses, coursetypes, departments, eholdings, entitlements expense-classes, feefines, feefineactions, fiscalyears, fund-expense, fund-groups, funds, fundtypes, groups, holdings, holdingstypes, holdings-srs, identifiertypes, importjobs, inhouse,  interfaces, instance-relationships, instancerelationshiptypes, instances, institutions, items, inventory, inventory-items, invoices, invoice-lines, exportjobs, ledgers, libraries, licenses, licenses-picklists, licenses-terms, locations, loantypes, loan-history, loans, manualblocks, mappingprofiles, marcspecs, matchprofiles, mattypes, mtypes, notes, notices, orderprefixes, orderlines, orders, organizations, permissions, permissionusers, polines, preceedingsucceeding, receivinghistory, requestprefs, requests, schedulednotices, servicepoints, servicepointsusers, sharinginstances, sourcerecords, srs, statcodes, statcodetypes, tags, tasks, templates, transactions, usergroups, users, vouchers.";exit;;
+	echo "Record type '${recordtype}' not found. Supported types are accounts, acqmethods, acqunits, actionprofiles, addresstypes, agreements, agreements-picklists, agreements-suppl, authorities, authorities-source, authorities-srs, batch-groups, boundwiths, budgets, campuses, categories, circ-loans, circlog, composite-orders, contacts, coursedepartments, courselistings, courses, coursetypes, departments, eholdings, entitlements expense-classes, feefines, feefineactions, fiscalyears, fund-expense, fund-groups, funds, fundtypes, groups, holdings, holdingstypes, holdings-srs, identifiertypes, importjobs, inhouse,  interfaces, instance-relationships, instancerelationshiptypes, instances, institutions, items, inventory, inventory-items, invoices, invoice-lines, exportjobs, ledgers, libraries, licenses, licenses-picklists, licenses-terms, locations, loantypes, loan-history, loans, manualblocks, mappingprofiles, marcspecs, matchprofiles, mattypes, mtypes, notes, notices, orderprefixes, orderlines, orders, organizations, permissions, permissionusers, polines, preceedingsucceeding, receivinghistory, requestprefs, requests, schedulednotices, servicepoints, servicepointsusers, sourcerecords, srs, statcodes, tags, tasks, templates, transactions, usergroups, users, vouchers.";exit;;
 esac
 
 rm -f ${rec_type}

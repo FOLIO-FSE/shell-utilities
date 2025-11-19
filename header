@@ -1,6 +1,11 @@
 infile="${1}"
 
 if [[ ! -f ${infile} ]];then
+	read -t 0.1 -n 1 && has_input=true 
+	if [[ -z ${has_input} ]];then
+		echo "No file or standard input could be found. Exiting"
+		exit
+	fi
 	tmp=$(mktemp)
 	infile=$tmp
 	cp /dev/stdin $infile

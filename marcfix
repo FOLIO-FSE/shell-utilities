@@ -164,13 +164,13 @@ printf "Bib records: %d Holdings records: %d Authority records : %s             
 print bibmsg""holdingsmsg""authoritymsg""
 
 count = 0
-for (t in tag_seen) {
+for (t in tag_count) {
 	count++
 }
 if (count > 0){
 	printf "The following nonnumeric tags were detected followed by the number of records that contained them\\n"		
-  for (t in tag_seen) {
- 	  printf "%s : %d\\n", k, tag_seen[t]
+  for (t in tag_count) {
+ 	  printf "%s : %d\\n", k, tag_count[t]
    }
 }
 

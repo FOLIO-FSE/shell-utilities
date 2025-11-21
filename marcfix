@@ -48,7 +48,7 @@ function check_fields() {
 			if (tag == "008") {found008 = 1}
 			if (tag == "245") {override245=found245=1;rectype="bib"}
 			if (tag ~ /[A-Z]/) {
-				if (!(tag in tag_seen)) {
+				if (!tag_seen[tag]) {
 					tag_count[tag]++
 					tag_seen[tag] = 1
 					if (good_tag == 1) { bad_tag++; good_tag = 0 }

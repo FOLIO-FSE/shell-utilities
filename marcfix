@@ -170,7 +170,7 @@ for (t in tag_count) {
 if (count > 0){
 	printf "The following nonnumeric tags were detected followed by the number of records that contained them\\n"		
   for (t in tag_count) {
- 	  printf "%s : %d\\n", k, tag_count[t]
+ 	  printf "%s : %d\\n", t, tag_count[t]
    }
 }
 

@@ -48,10 +48,10 @@ function check_fields() {
 			if (tag == "008") {found008 = 1}
 			if (tag == "245") {override245=found245=1;rectype="bib"}
 			if (tag ~ /[A-Z]/) {
-				good_tag=0
 				if (!(tag in tag_seen)) {
 					tag_count[tag]++
 					tag_seen[tag] = 1
+					if (good_tag == 1) { bad_tag++; good_tag = 0 }
 				}					
 			}
 		}
@@ -130,7 +130,7 @@ if (rectype == "bib") {
 	if ( found245 == 0 && foundbad == 0){ print $0 > "bad_missing245_"rectype"_"FILEROOT;bad245++;bad245text = " (245: "bad245")";foundbad = 1 }
 }
 
-if ( good_tag == 0 && foundbad == 0) { badtagtext = " (Valid records with nonnumeric tags: "badtag")" }
+if ( good_tag == 0 && goodrec == 1) { badtagtext = " (Valid records with nonnumeric tags: "badtag")" }
 
 if ( goodrec == 1 && badsubfields == 1){ goodrecs++;badsubfieldtotal++;badsubfieldstext = " (Bad subfields: "badsubfieldtotal")";foundbad = 1; print $0 > "tmp_"rectype"_badsubfields.mrc" }
 

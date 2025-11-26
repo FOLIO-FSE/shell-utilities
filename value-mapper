@@ -1,10 +1,4 @@
-#!/bin/bash
-#
-
-# use mapby to determine if a value must be a uuid or if unmapped values are passed verbatim
-
-mapby="value"
-#mapby="uuid"
+#!/usr/bin/bash
 
 read -d '' -r instructions << END
 value-mapper looks for 2 column tab-delimited mapping files with the 
@@ -37,113 +31,51 @@ column, the original value is output.
 Enter the name of the tab delimited input file
 END
 
-# allow paramters to be passed 
-
 if [[ -n "${1}" ]]; then
 	infile="${1}"
 	outfile="${1/.tsv/}"_fixed.tsv
 else
 	echo "${instructions}"
 	read infile
-
 	echo -e "\nEnter the name of the output file"
 	read outfile
 fi
 
-echo
+IFS=$'\t' read -r -a headers < "${infile}"
 
-rm -rf tmpcols
-mkdir tmpcols 2>/dev/null
+declare -A maps
+declare -A files
 
-numrecs=$(wc -l ${infile} |cut -d " " -f1) 
-numfields=$(awk 'BEGIN{FS="\t"}{print NF;exit}' ${infile})
+for header in "${headers[@]}"; do
+	if [[ -f "${header}.tsv" ]]; then
+		echo "Mapping file found for ${header}"
 
-echo "Detected $numfields columns and $numrecs records in data file"
-
-columncounter=1
-declare paste_expr
-
-IFS='^' read -ra column_headers <<< $(head -1 "${infile}"|tr  '\t' '^')
-
-for (( i=0 ; i <= ${#column_headers[@]} - 1; i++)); do
-	column="${column_headers[$i]}"
-	echo -n "Column ${columncounter} (${column}): "
-	cut -f${columncounter} ${infile} > "tmpcols/col_${columncounter}"
-
-	# clear out all mapped values to allow reinitialization
-	declare -Ag maparr
-		
-	if [[ -f "${column}.tsv" ]];then
-		echo "   Mapping file found"
-
-		# read the mapped values into a temporary array
-	
-		while IFS=$'\t' read -r key value;do
-			key="${key//[^a-zA-Z0-9]/}"
-			maparr["${key,,}"]="${value}"
-		done < "${column}.tsv"
-
-		# load source file into array, map them
-		# and write to file
-
-		mappedvals=0
-		unmappedvals=0
-		totalvals=0
-	
-		finalcol=""
-		while IFS=$'\n' read -r entry;do
-			totalvals=$((totalvals + 1))
-	
-			if [[ $(( totalvals % 10000 )) == 0 ]];then
-				printf "      Number of values processed: ${totalvals}\r"
-			fi
-	
-			entry="${entry//[^a-zA-Z0-9]/}"
-
-			if [[ ${entry} =~ [a-zA-Z0-9] ]];then
-				mappedval=${maparr["${entry,,}"]}
-
-				if [[ $mapby == "uuid" ]] && ! [[ ${mappedval} =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]];then
-					unset mappedval
-					entry=""
-				fi
-			fi
-
-			if [[ -n "${mappedval}" ]];then
-				mappedvals=$((mappedvals + 1))
-				entry="${mappedval}"
-			else
-				unmappedvals=$((unmappedvals + 1))
-			fi
-			
-			finalcol+="${entry}\n"
-
-		done < "tmpcols/col_${columncounter}"
-
-		echo -e "      Mapped entries: ${mappedvals}                   "
-		echo -e "      Unmapped entries: ${unmappedvals}\n"
-		echo -e  "${finalcol}" > "tmpcols/col_${columncounter}"
-	
-	else
-		echo -e "   No mapping file found"
+		while IFS=$'\t' read -r key value; do
+			maps["${header}:${key}"]="${value}"
+		done < "${header}.tsv"
+		files["${header}"]=1
 	fi
-
-	columncounter=$((columncounter + 1))
-
-
-	
 done
 
-echo "Building output file"
-# create final string to paste
-colnum=1
+{
+	printf "%s\n" "$(IFS=$'\t'; echo "${headers[*]}")"
 
-while [[ $colnum -lt $columncounter ]];do
-	paste_expr="${paste_expr} tmpcols/col_${colnum}"
-	colnum=$((colnum + 1)) 
-done
+	count=0
 
-paste $paste_expr > ${outfile}
+	pv "${infile} | tail -n +2 | while IFS=$'\t' read -r -a row; do
+		for i in "${!headers[@]}"; do
+			col="${headers[${i}]}"
+			val="${row[${i}]}"
+			if [[ ${files[${col}]} ]]; then
+			    mapped="${maps[${col}:${val}]}"
+			    printf "%s" "${mapped:-${val}}"
+			else
+			    printf "%s" "${val}"
+			fi
+			[[ ${i} -lt $((${#headers[@]} - 1)) ]] && printf "\t"
+		done
+		printf "\n"
+	done
+} > "${outfile}"
 
-echo "Done mapping ${outfile}"
-rm -rf tmpcols
+echo -e "A mapped file has been sent to ${outfile}\n"

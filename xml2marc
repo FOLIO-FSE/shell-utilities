@@ -3,6 +3,14 @@ infile="${filelist[0]}"
 
 if [[ -z ${infile} ]];then echo "You must supply a file name or expression (wildcards OK). Usage: xml2marc [filename]";fi
 
+if [[ ! $(which yaz-marcdump |grep yaz) ]];then
+	echo
+	echo "You must install yaz to use this utility"
+	echo "sudo apt install yaz libyaz5"
+	echo
+	exit
+fi
+
 echo
 
 for file in "${filelist[@]}";do

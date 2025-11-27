@@ -27,7 +27,7 @@ pv loans.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	"\(.dueDate)" // "",
 	"\(.action)" // "",
 	"\(.itemStatus)" // "",
-	.renewalCount // 0,
+	"\(.renewalCount\)" // 0,
 	"\(.checkoutServicePointId)" // ""
 	] |join($delim)
 	' >> loans.tsv 

@@ -8,7 +8,7 @@ records-get servicepoints
 
 echo "Retrieving reference data"
 jq -r '[.id, .code]|@tsv' servicepoints.json > servicePoint.tsv
-jq -r '[.id, .feefineType]|@tsv' feefines.json > feeFines.tsv
+jq -r '[.id, .feefineType]|@tsv' feefines.json > fineType.tsv
 
 
 echo -e "userid\titemId\tloanDate\tdueDate\taction\titemStatus\trenewalCount\tservicePoint" > loans.tsv

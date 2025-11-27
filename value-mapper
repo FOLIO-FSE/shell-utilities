@@ -41,41 +41,41 @@ else
 	read outfile
 fi
 
-IFS=$'\t' read -r -a headers < "${infile}"
+pv "${infile}" | awk '
+BEGIN {
+    FS=OFS="\t"
+}
 
-declare -A maps
-declare -A files
+NR == 1 {
+	for (i = 1; i <= NF; i++) {
+		header[i] = $i
+		fname = $i".tsv"
 
-for header in "${headers[@]}"; do
-	if [[ -f "${header}.tsv" ]]; then
-		echo "Mapping file found for ${header}"
-
-		while IFS=$'\t' read -r key value; do
-			maps["${header}:${key}"]="${value}"
-		done < "${header}.tsv"
-		files["${header}"]=1
-	fi
-done
+ if ((system("[ -f \"" fname "\" ]") == 0)) {
+			while ((getline line < fname) > 0) {
+			split(line, kv, FS)
+			map[fname, kv[1]] = kv[2]
+			}
+			close(fname)
+			hasmap[i] = fname
+		}
+	}
+	print $0
+	next
+}
 
 {
-	printf "%s\n" "$(IFS=$'\t'; echo "${headers[*]}")"
-
-	count=0
-
-	pv "${infile}" | tail -n +2 | while IFS=$'\t' read -r -a row; do
-		for i in "${!headers[@]}"; do
-			col="${headers[${i}]}"
-			val="${row[${i}]}"
-			if [[ ${files[${col}]} ]]; then
-			    mapped="${maps[${col}:${val}]}"
-			    printf "%s" "${mapped:-${val}}"
-			else
-			    printf "%s" "${val}"
-			fi
-			[[ ${i} -lt $((${#headers[@]} - 1)) ]] && printf "\t"
-		done
-		printf "\n"
-	done
-} > "${outfile}"
+	for (i = 1; i <= NF; i++) {
+		if (hasmap[i]) {
+			key = $i
+			val = map[hasmap[i], key]
+			if (val != "") {
+			$i = val
+			}
+		}
+	}
+	print
+}
+' > "${outfile}"
 
 echo -e "A mapped file has been sent to ${outfile}\n"

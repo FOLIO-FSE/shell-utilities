@@ -62,7 +62,7 @@ done
 
 	count=0
 
-	pv "${infile} | tail -n +2 | while IFS=$'\t' read -r -a row; do
+	pv "${infile}" | tail -n +2 | while IFS=$'\t' read -r -a row; do
 		for i in "${!headers[@]}"; do
 			col="${headers[${i}]}"
 			val="${row[${i}]}"

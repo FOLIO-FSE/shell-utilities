@@ -48,10 +48,9 @@ BEGIN {
 
 NR == 1 {
 	for (i = 1; i <= NF; i++) {
-		header[i] = $i
 		fname = $i".tsv"
 
- if ((system("[ -f \"" fname "\" ]") == 0)) {
+ 		if ((system("[ -f \"" fname "\" ]") == 0)) {
 			while ((getline line < fname) > 0) {
 			split(line, kv, FS)
 			map[fname, kv[1]] = kv[2]

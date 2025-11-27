@@ -57,9 +57,20 @@ NR == 1 {
 			}
 			close(fname)
 			hasmap[i] = fname
+			mappedCols[++mappedCount] = $i
 		}
 	}
 	print $0
+
+  if (mappedCount > 0) {
+        printf("Mapping will be applied to the following columns:\n    ") > "/dev/stderr"
+        for (j = 1; j <= mappedCount; j++) {
+            printf("%s%s", mappedCols[j], (j < mappedCount ? "\n    " : "\n\n")) > "/dev/stderr"
+        }
+    } else {
+        printf("No mapping files were found for any columns\n") > "/dev/stderr"
+    }
+
 	next
 }
 

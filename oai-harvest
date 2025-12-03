@@ -29,24 +29,41 @@ if [[ ${instance_uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]]
         apicall=$(curl -s -X GET "${edge_url}/oai/${edge_key}?verb=GetRecord&identifier=oai:${oai_prefix}:${tenant}/${instance_uuid}&metadataPrefix=marc21_withholdings")
 
         echo "${apicall}" |xmlstarlet fo
-        echo "${edge_url}/oai/${edge_key}?verb=GetRecord&identifier=oai:${oai_prefix}:${tenant}/${instance_uuid}&metadataPrefix=marc21_withholdings"
+        echo "${edge_url}/oai/${edge_key}?verb=GetRecord&identifier=oai:${oai_prefix}:${tenant}/${instance_uuid}&metadataPrefix=marc21"
         exit
 fi
 
 from='&from='${from}
 
-echo "${oai_server}&metadataPrefix=marc21_withholdings${from}"
+echo "${oai_server}&metadataPrefix=marc21${from}"
 
 resumption_token=''
 counter=0
 SECONDS=0
 
+read -r -d '' stylesheet <<'EOF'
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
+    xmlns:oai="http://www.openarchives.org/OAI/2.0/"
+    xmlns:marc="http://www.loc.gov/MARC21/slim"
+    exclude-result-prefixes="oai">
+  <xsl:output method="xml" indent="yes"/>
+  <xsl:template match="/">
+    <collection xmlns="http://www.loc.gov/MARC21/slim">
+      <xsl:apply-templates select="//marc:record"/>
+    </collection>
+  </xsl:template>
+  <xsl:template match="marc:record">
+    <xsl:copy-of select="."/>
+  </xsl:template>
+</xsl:stylesheet>
+EOF
+
 if [[ ${resumption_token} == '' ]]; then
         rm -rf oaiharvest
         mkdir oaiharvest
 
-        oai_data=$(curl -s --retry 9 --retry-delay 300 "${oai_server}&metadataPrefix=marc21_withholdings${from}")
-        echo -e "${oai_data}" > "oaiharvest/${counter}.xml"
+        oai_data=$(curl -s --retry 9 --retry-delay 300 "${oai_server}&metadataPrefix=marc21${from}")
+				yaz-marcdump -i marcxml -o marc <(xmlstarlet tr <(echo "${stylesheet}") <(echo "${oai_data}")) > oaiharvest/${counter}.mrc
 
 
         counter=$((${counter} + 1))
@@ -58,8 +75,7 @@ fi
 while [[ ${resumption_token} != '' ]]; do
 	oai_data=$(curl -s --retry 9 --retry-delay 60 "${oai_server}&resumptionToken=${resumption_token}")
 	resumption_token=$((grep -o '<resumptionToken.*</resumptionToken>' |grep -oi '>[a-z0-9]*<' |tr -d '<>') <<<  "${oai_data}")
-
-	echo -e "${oai_data}" > oaiharvest/${counter}.xml
+	yaz-marcdump -i marcxml -o marc <(xmlstarlet tr <(echo "${stylesheet}") <(echo "${oai_data}")) > oaiharvest/${counter}.mrc
 	counter=$((${counter} + 1))
 
 	echo -en "$(( $counter )) tokens processed in $SECONDS seconds\r"

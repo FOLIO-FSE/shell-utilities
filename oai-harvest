@@ -7,6 +7,9 @@ tenant=$(cat tenant)
 edge_url=$(cat okapi.url |sed 's/okapi-/edge-/')
 oai_server="${edge_url}/oai/$(cat edge.key)?verb=ListRecords"
 
+outfile="harvested_records.mrc"
+rm -f ${outfile}
+
 if [[ ! $(which yaz-marcdump |grep yaz) ]];then
 	echo
 	echo "You must install yaz to use this utility"
@@ -79,7 +82,7 @@ if [[ ${resumption_token} == '' ]]; then
         mkdir oaiharvest
 
         oai_data=$(curl -s --retry 9 --retry-delay 300 "${oai_server}&metadataPrefix=${metadataprefix}${from}")
-				yaz-marcdump -i marcxml -o marc <(xmlstarlet tr <(echo "${stylesheet}") <(echo "${oai_data}")) > oaiharvest/${counter}.mrc
+				yaz-marcdump -i marcxml -o marc <(xmlstarlet tr <(echo "${stylesheet}") <(echo "${oai_data}")) >> ${outfile}
 
 
         counter=$((${counter} + 1))
@@ -91,7 +94,7 @@ fi
 while [[ ${resumption_token} != '' ]]; do
 	oai_data=$(curl -s --retry 9 --retry-delay 60 "${oai_server}&resumptionToken=${resumption_token}")
 	resumption_token=$((grep -o '<resumptionToken.*</resumptionToken>' |grep -oi '>[a-z0-9]*<' |tr -d '<>') <<<  "${oai_data}")
-	yaz-marcdump -i marcxml -o marc <(xmlstarlet tr <(echo "${stylesheet}") <(echo "${oai_data}")) > oaiharvest/${counter}.mrc
+	yaz-marcdump -i marcxml -o marc <(xmlstarlet tr <(echo "${stylesheet}") <(echo "${oai_data}")) >> ${outfile}
 	counter=$((${counter} + 1))
 
 	echo -en "$(( $counter )) tokens processed in $SECONDS seconds\r"

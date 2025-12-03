@@ -8,3 +8,5 @@ okapi_token=$(cat okapi.token)
 
 curl --http1.1 -s -w '\n' -X POST  -H "Accept: application/json" -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d '' "${okapi_url}/search/index/instance-records/reindex/full"
 
+curl --http1.1 -s -w '\n' -X POST  -H "Accept: application/json" -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d '' "${okapi_url}/search/index/inventory/reindex"
+

@@ -7,6 +7,14 @@ tenant=$(cat tenant)
 edge_url=$(cat okapi.url |sed 's/okapi-/edge-/')
 oai_server="${edge_url}/oai/$(cat edge.key)?verb=ListRecords"
 
+if [[ ! $(which yaz-marcdump |grep yaz) ]];then
+	echo
+	echo "You must install yaz to use this utility"
+	echo "sudo apt install yaz libyaz5"
+	echo
+	exit
+fi
+
 #### look for single record query and exit
 search=$(echo ${1} |tr "." "-" |tr -dc [^a-z0-9\-])
 

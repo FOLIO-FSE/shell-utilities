@@ -10,6 +10,7 @@ okapi_token="$(cat okapi.token)"
 
 reftypes=("addresstypes" \
 "alternative-title-types" \
+"browse/config/instance-classification" \
 "call-number-types" \
 "cancellation-reason-storage/cancellation-reasons" \
 "circulation/rules" \
@@ -71,7 +72,6 @@ reftypes=("addresstypes" \
 "templates" \
 "tenant/rules" \
 "groups" \
-"users" \
 "vendor-storage/categories" \
 "waives")
 

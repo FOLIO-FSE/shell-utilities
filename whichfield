@@ -1,18 +1,32 @@
 #!/usr/bin/bash
 
-if [[ ! -f "${1}" ]] || [[ -z "${2}" ]];then
+if [[ ! "${1}" ]];then
 	echo 
 	echo "You must specify a tab delimited source file and a regex"
 	echo 
 	echo "Usage: whichfield [sourcefile] [regex]"
 	echo
-	exit
+	exit 1
 fi
 
-pv "${1}" | awk -v REGEX="${2}" 'BEGIN{print "Record\tField\tValue"}{
-  for (i = 1; i <= NF; i++)
-    if ($i ~ REGEX)
-      printf("%d\t%d\t%s\n", FNR, i, $i)
-}' > whichfield.tsv
+if [[ ! -f "${1}" ]];then
+	regex="${1}"
 
-echo "The record and field numbers as well as matched entries have been output to whichfield.tsv" 
+	awk -v REGEX="${regex}" 'BEGIN{print "Record\tField\tValue"}{
+	  for (i = 1; i <= NF; i++)
+	    if ($i ~ REGEX)
+	      printf("%d\t%d\t%s\n", FNR, i, $i)
+	}' 
+else
+	regex="${2}"
+	sourcefile="${1}"
+
+	pv "${sourcefile}" | awk -v REGEX="${regex}" 'BEGIN{print "Record\tField\tValue"}{
+	  for (i = 1; i <= NF; i++)
+	    if ($i ~ REGEX)
+	      printf("%d\t%d\t%s\n", FNR, i, $i)
+	}' > whichfield.tsv
+	
+	echo "The record and field numbers as well as matched entries have been output to whichfield.tsv" 
+fi
+

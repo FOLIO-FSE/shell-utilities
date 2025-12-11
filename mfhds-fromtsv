@@ -257,6 +257,12 @@ function build_mfhd() {
 					bibId=i
 					printf ("Bib ID found in "$i"\\n")
 					break
+				case "oclcnumber":
+					if (bibId == 0) {
+						bibId=i
+						printf ("Bib ID found in "$i"\\n")
+					}
+					break
 				case "loc":
 					location=i
 					printf ("Location found in "$i"\\n")
@@ -266,6 +272,14 @@ function build_mfhd() {
 					printf ("Location found in "$i"\\n")
 					break
 				case "locationcode":
+					location=i
+					printf ("Location found in "$i"\\n")
+					break
+				case "itempermanentlocation":
+					location=i
+					printf ("Location found in "$i"\\n")
+					break
+				case "itempermanentshelvinglocation":
 					location=i
 					printf ("Location found in "$i"\\n")
 					break

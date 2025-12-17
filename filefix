@@ -203,6 +203,7 @@ sed -i '
 1 s/\bbarcode[^\t]*i[^\t]*\b/item_barcode/i
 1 s/\bout[^\t]*date\b/out_date/i
 1 s/\bcharge[^\t]*date\b/out_date/i
+1 s/\bcharge[^\t]*loc[^\t]*\b/service_point_id/i
 1 s/\bcheckedout\b/out_date/i
 1 s/\bcheckoutdate\b/out_date/i
 1 s/\bdatecheck.?.?out\b/out_date/i

@@ -5,10 +5,10 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 rm -f role_uuids uuids users_tmp role_users.tsv user_roles.tsv
 
-jq -r '[.id, .name]|@tsv' roles.json > rolemap.sed
 echo
 echo "Retrieving user and role data"
 records-get roles
+jq -r '[.id, (.name|sub("/"; "."))]|@tsv' roles.json > rolemap.sed
 echo
 jq -r .id roles.json > uuids
 
@@ -37,7 +37,7 @@ mv final.tsv role_users.tsv
 
 sed -f rolemap.sed user_roles.tsv|sort -f > final.tsv
 mv final.tsv user_roles.tsv
-rm rolemap.sed
+#rm rolemap.sed
 
 echo "Files listing users by role and roles by user can be found in role_users.tsv and user_roles.tsv"
 echo

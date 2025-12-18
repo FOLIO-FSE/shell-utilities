@@ -37,7 +37,7 @@ mv final.tsv role_users.tsv
 
 sed -f rolemap.sed user_roles.tsv|sort -f > final.tsv
 mv final.tsv user_roles.tsv
-#rm rolemap.sed
+rm rolemap.sed
 
 echo "Files listing users by role and roles by user can be found in role_users.tsv and user_roles.tsv"
 echo

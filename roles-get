@@ -1,0 +1,77 @@
+#!/usr/bin/bash
+auth 2>/dev/null || authn 2>/dev/null
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+rm -f role_uuids uuids users_tmp role_users.tsv user_roles.tsv
+
+declare -A role_dict
+declare -A user_dict
+
+eval "$(jq -r '. |@sh "role_dict[\(.id|tostring)]=\(.name|tostring)"' roles.json)"
+
+records-get roles
+echo
+jq -r .id roles.json > role_uuids
+
+while IFS= read -r role;do
+	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/roles/users?limit=5000&query=roleId==${role}")
+
+	if [[ $SECONDS -gt 500 ]]; then
+		auth 2>/dev/null || authn 2>/dev/null
+		okapi_token=$(cat okapi.token)
+		SECOND=1
+	fi
+
+	role_name=${role_dict[${role}]}
+	if [[ ! ${role_name} =~ [a-zA-Z0-9] ]];then role_name=${role};fi
+	echo "Processing ${role_name}"
+	assigned_users=$(echo "${apicall}" |jq -r '[.userRoles[]|.userId]|join(", ")')
+	echo "${assigned_users}" |tr -d ',' |tr ' ' '\n' >> users_tmp
+
+	echo -e "${role_name}\t${assigned_users}" >> role_users.tsv
+done < role_uuids
+
+sort -u users_tmp |grep [a-f0-9] > uuids
+rm users_tmp
+
+echo
+records-getfromfile users
+jq -r '"s/" + .id + "/" + .username + "/g"' users.json > users.sed
+sed -f users.sed role_users.tsv|sort -f > final.tsv
+mv final.tsv role_users.tsv
+rm users.sed
+
+echo
+echo "Finding roles associated with each user"
+echo
+
+eval "$(jq -r '. |@sh "user_dict[\(.id|tostring)]=\(.username|tostring)"' users.json)"
+
+while IFS= read -r user;do
+	apicall=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/roles/users?limit=5000&query=userId==${user}")
+
+	if [[ $SECONDS -gt 500 ]]; then
+		auth 2>/dev/null || authn 2>/dev/null
+		okapi_token=$(cat okapi.token)
+		SECOND=1
+	fi
+
+	user_name=${user_dict[${user}]}
+
+	if [[ ! ${user_name} =~ [a-zA-Z0-9] ]];then user_name=${user};fi
+	echo "Processing ${user_name}"
+	assigned_roles=$(echo "${apicall}" |jq -r '[.userRoles[]|.roleId]|join(", ")')
+	echo "${assigned_roles}" |tr -d ',' |tr ' ' '\n' >> roles_tmp
+	echo -e "${user_name}\t${assigned_roles}" >> user_roles.tsv
+done < uuids
+
+sort -u roles_tmp |grep [a-f0-9] > uuids
+rm roles_tmp
+echo
+
+jq -r '"s/" + .id + "/" + .name + "/g"' roles.json > roles.sed
+sed -f roles.sed user_roles.tsv|sort -f > final.tsv
+rm roles.sed 
+mv final.tsv user_roles.tsv
+echo "Files listing users by role and roles by user can be found in role_users.tsv and user_roles.tsv"

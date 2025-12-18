@@ -125,6 +125,8 @@ case $rec_type in
 	endpoint="request-preference-storage/request-preference";;
 "requests")
 	endpoint="circulation/requests";;
+"roles")
+	endpoint="roles";;
 "schedulednotices")
 	endpoint="scheduled-notice-storage/scheduled-notices";;
 "servicepoints")

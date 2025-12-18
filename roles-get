@@ -17,12 +17,7 @@ records-getfromfile roleusers
 jq -rsc '
   sort_by(.roleId)
   | group_by(.roleId)
-  | map({
-      roleId: .[0].roleId,
-      userIds: (map(.userId) | unique)
-       })
-  | .[]
-  |[.roleId, (.userIds|join(","))]|@tsv' roleusers.json > role_users.tsv
+	|.[] | [.[0].roleId, ([.[].userId]|join(","))]|@tsv' roleusers.json > role_users.tsv
 
 jq -r .userId roleusers.json |sort -u > uuids
 
@@ -31,12 +26,7 @@ records-getfromfile users
 jq -rsc '
   sort_by(.userId)
   | group_by(.userId)
-  | map({
-      userId: .[0].userId,
-      roleIds: (map(.roleId) | unique)
-       })
-  | .[]
-  |[.userId, (.roleIds|join(","))]|@tsv' roleusers.json > user_roles.tsv
+	|.[] | [.[0].userId, ([.[].roleId]|join(","))]|@tsv' roleusers.json > user_roles.tsv
 
 jq -r '[.id, (.username // .id)]|@tsv' users.json >> rolemap.sed
 

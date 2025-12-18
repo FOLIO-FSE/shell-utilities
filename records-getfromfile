@@ -127,6 +127,11 @@ case $rec_type in
 	endpoint="circulation/requests";;
 "roles")
 	endpoint="roles";;
+"roleusers")
+	endpoint="roles/users?limit=5000&query=roleId=="
+	jq_replace=".userRoles[]"
+	queryseparator=""
+	indivrecord=1;;
 "schedulednotices")
 	endpoint="scheduled-notice-storage/scheduled-notices";;
 "servicepoints")
@@ -153,6 +158,11 @@ case $rec_type in
 	endpoint="statistical-codes";;
 "tags")
 	endpoint="tags";;
+"userroles")
+	endpoint="roles/users?limit=5000&query=userId=="
+	jq_replace=".userRoles[]"
+	queryseparator=""
+	indivrecord=1;;
 "users")
 	endpoint="users";;
 "vouchers")

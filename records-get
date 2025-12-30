@@ -34,8 +34,6 @@ function fetch_batch() {
 	local idOffset
 	local compositeSearch
 
-	limitbyid="no"
-
 	if [[ $limitbyid == "yes" ]];then
 		idOffset=$(($num_retrieved * $t))
 		idQuery="id>${startUUID}"

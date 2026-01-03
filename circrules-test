@@ -20,14 +20,15 @@ patronGroupIdAtCheckout=$(jq -r .patronGroupIdAtCheckout <<< "${loan}")
 overdueFinePolicyId=$(jq -r .overdueFinePolicyId <<< "${loan}")
 lostItemPolicyId=$(jq -r .lostItemPolicyId <<< "${loan}")
 
-circrules-get > circrules.json
-records-get loantypes
-records-get groups
-records-get loanpolicies
-records-get lostitempolicies
-records-get overduefinepolicies
-records-get noticepolicies
-records-get requestpolicies 
+curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/rules" > circrules.json  &
+curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/loan-types?query=cql.allRecords=1&limit=1000" |jq -c .loantypes[] > loantypes.json &
+curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/groups?query=cql.allRecords=1&limit=1000" |jq -c .usergroups[] > groups.json &
+curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/loan-policy-storage/loan-policies?query=cql.allRecords=1&limit=1000" |jq -c .loanPolicies[] > loanpolicies.json &
+curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/lost-item-fees-policies?query=cql.allRecords=1&limit=1000" |jq -c .lostItemFeePolicies[] > lostitempolicies.json &
+curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/overdue-fines-policies?query=cql.allRecords=1&limit=1000" |jq -c .overdueFinePolicies[] > overduefinepolicies.json &
+curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/patron-notice-policy-storage/patron-notice-policies?query=cql.allRecords=1&limit=1000" |jq -c .patronNoticePolicies[] > noticepolicies.json &
+curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/request-policy-storage/request-policies?query=cql.allRecords=1&limit=1000" |jq -c .requestPolicies[] > requestpolicies.json &
+wait
 
 jq -r '. | "s/\(.id)/\((.group // .name)|gsub("/";"\\/"))/g"' loantypes.json groups.json loanpolicies.json lostitempolicies.json overduefinepolicies.json noticepolicies.json requestpolicies.json > temp.sed
 
@@ -36,14 +37,14 @@ jq --arg loanPolicyId "${loanPolicyId}" \
    --arg overdueFinePolicyId "${overdueFinePolicyId}" \
    --arg lostItemPolicyId "${lostItemPolicyId}" '
   .rulesAsText
-  | gsub("\r";"")                                   # normalize CRLF if present
-  | split("\n")                                     # split into lines
+  | gsub("\r";"")             
+  | split("\n")              
   | to_entries                                      # [{key, value}, ...] where key is 0-based
   | map(select(
-      (.value | test("\\b\($loanPolicyId)\\b")) and
-      (.value | test("\\b\($patronGroupIdAtCheckout)\\b")) and
-      (.value | test("\\b\($overdueFinePolicyId)\\b")) and
-      (.value | test("\\b\($lostItemPolicyId)\\b"))
+      (.value | test("\($loanPolicyId)")) and
+      (.value | test("\($patronGroupIdAtCheckout)")) and
+      (.value | test("\($overdueFinePolicyId)")) and
+      (.value | test("\($lostItemPolicyId)"))
     ))
   | map(
       (.value | capture("(?<rule>.*?)\\s*:\\s*(?<action>.*)")) as $parts

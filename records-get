@@ -316,7 +316,7 @@ case $rec_type in
 	;;
 "overduefinepolicies")
 	rec_type="overdueFinePolicies"
-	endpoint="overdue-fine-policies" ;
+	endpoint="overdue-fine-policies";;
 "packages")
 	rec_type="data"
 	num_retrieved=100

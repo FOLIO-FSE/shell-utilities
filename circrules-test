@@ -21,6 +21,15 @@ overdueFinePolicyId=$(jq -r .overdueFinePolicyId <<< "${loan}")
 lostItemPolicyId=$(jq -r .lostItemPolicyId <<< "${loan}")
 
 circrules-get > circrules.json
+records-get loantypes
+records-get groups
+records-get loanpolicies
+records-get lostitempolicies
+records-get overduefinepolicies
+records-get noticepolicies
+records-get requestpolicies 
+
+jq -r '. | "s/\(.id)/\((.group // .name)|gsub("/";"\\/"))/g"' loantypes.json groups.json loanpolicies.json lostitempolicies.json overduefinepolicies.json noticepolicies.json requestpolicies.json > temp.sed
 
 jq --arg loanPolicyId "${loanPolicyId}" \
    --arg patronGroupIdAtCheckout "${patronGroupIdAtCheckout}" \
@@ -40,5 +49,7 @@ jq --arg loanPolicyId "${loanPolicyId}" \
       (.value | capture("(?<rule>.*?)\\s*:\\s*(?<action>.*)")) as $parts
       | { line: (.key + 1), rule: $parts.rule, action: $parts.action }
     )
-' circrules.json
+' circrules.json |sed -f temp.sed
+rm -f temp.sed loantypes.json groups.json loanpolicies.json lostitempolicies.json overduefinepolicies.json noticepolicies.json requestpolicies.json
+
 

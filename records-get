@@ -272,7 +272,7 @@ case $rec_type in
 	rec_type="loansHistory";;
 "loans")
 	endpoint="loan-storage/loans";;
-"lostitempolcies")
+"lostitempolicies")
 	endpoint="lost-item-fees-policies"
 	rec_type="lostItemFeePolicies";;
 "matchprofiles")

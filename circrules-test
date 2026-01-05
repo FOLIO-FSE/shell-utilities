@@ -9,13 +9,7 @@ if [[ -z ${2} ]];then
 	exit
 fi
 
-for arg in "$@"; do
-	if [[ "$arg" == "group" ]]; then
-		testGroup=1
-		break
-	fi
-done
-
+for arg in "$@"; do                                                                                                                                    case $arg in                                                                                                                                           group)                                                                                                                                                 testGroup=1;;                                                                                                                                      mattype)                                                                                                                                               testMattype=1;;                                                                                                                                  esac                                                                                                                                               done
 
 userId=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?query=barcode==${1}" |jq -r .users[0].id)
 itemId=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/inventory/items?query=barcode==${2}" |jq -r .items[0].id) 

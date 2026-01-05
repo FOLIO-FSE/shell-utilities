@@ -36,12 +36,12 @@ function fetch_batch() {
 
 	if [[ $limitbyid == "yes" ]];then
 		idOffset=$(($num_retrieved * $t))
-		idQuery="id>${startUUID}"
+		idQuery="id%3E${startUUID}"
 
 		if [[ "${search_for}" == "cql.allRecords=1" ]];then
-			compositeSearch="id>${startUUID}"
+			compositeSearch="id%3E${startUUID}"
 		else
-			compositeSearch="${search_for}%20and%20id>${startUUID}"
+			compositeSearch="${search_for}%20and%20id%3E${startUUID}"
 		fi
 		curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?query=${compositeSearch}%20sortBy%20id&limit=${num_retrieved}&offset=${idOffset}" |eval "${jqexpr}" > "tmp_${rec_type}.${t}"
 	else

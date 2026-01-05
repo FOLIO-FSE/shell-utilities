@@ -5,9 +5,17 @@ tenant=$(cat tenant)
 okapi_token=$(cat okapi.token)
 
 if [[ -z ${2} ]];then
-	echo "Usage: circrules-test [user_barcode] [item_barcode]"
+	echo "Usage: circrules-test [user_barcode] [item_barcode] [optional: group]"
 	exit
 fi
+
+for arg in "$@"; do
+	if [[ "$arg" == "group" ]]; then
+		testGroup=1
+		break
+	fi
+done
+
 
 userId=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?query=barcode==${1}" |jq -r .users[0].id)
 itemId=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/inventory/items?query=barcode==${2}" |jq -r .items[0].id) 
@@ -35,14 +43,18 @@ jq -r '. | "s/\(.id)/\((.group // .name)|gsub("/";"\\/"))/g"' loantypes.json gro
 jq --arg loanPolicyId "${loanPolicyId}" \
    --arg patronGroupIdAtCheckout "${patronGroupIdAtCheckout}" \
    --arg overdueFinePolicyId "${overdueFinePolicyId}" \
-   --arg lostItemPolicyId "${lostItemPolicyId}" '
+   --arg lostItemPolicyId "${lostItemPolicyId}" \
+   --arg testGroup "${testGroup}" '
   .rulesAsText
   | gsub("\r";"")             
   | split("\n")              
   | to_entries                                      # [{key, value}, ...] where key is 0-based
   | map(select(
+			(
+				(($testGroup != "1")) or
+      	(.value | test("\($patronGroupIdAtCheckout)")) 
+			) and
       (.value | test("\($loanPolicyId)")) and
-      (.value | test("\($patronGroupIdAtCheckout)")) and
       (.value | test("\($overdueFinePolicyId)")) and
       (.value | test("\($lostItemPolicyId)"))
     ))

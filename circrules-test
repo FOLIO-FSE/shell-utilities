@@ -9,17 +9,23 @@ if [[ -z ${2} ]];then
 	echo "Usage: circrules-test [user_barcode] [item_barcode] "
 	echo
 	echo "Options:"
-	echo "-g Use group from loan associated with keyword"
+	echo "-g Use group from loan"
+	echo "-l Use location from loan"
 	echo "-k [keyword] Search rule for keyword or UUID"
+	echo
+	echo "Note that using -g or -l options requires that the circ rule specifies the group or location in the criteria which may cause the actual rule involved not to be retrieved"
+	echo
 	exit
 fi
 
-while getopts "gk:" opt; do
+while getopts "gk:l" opt; do
   case $opt in
     g)
       testGroup=1 ;;
     k)
       testKey=$OPTARG ;;
+    l)
+      testLocation=1 ;;
     \?) # Handle invalid options
       echo "Error: Invalid option -$OPTARG" >&2
       echo "Usage: $0 [-g] [-k keyword]" >&2
@@ -36,10 +42,12 @@ itemId=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Ten
 
 loan=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/loan-storage/loans?query=itemId==${itemId}%20and%20userId==${userId}%20sortby%20loanDate%20desc" |jq '.loans[0]')
 
+
 loanPolicyId=$(jq -r .loanPolicyId <<< "${loan}")
 patronGroupIdAtCheckout=$(jq -r .patronGroupIdAtCheckout <<< "${loan}")
 overdueFinePolicyId=$(jq -r .overdueFinePolicyId <<< "${loan}")
 lostItemPolicyId=$(jq -r .lostItemPolicyId <<< "${loan}")
+locationId=$(jq -r .itemEffectiveLocationIdAtCheckOut <<< "${loan}")
 
 curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/rules" > circrules.json  &
 curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/loan-types?query=cql.allRecords=1&limit=1000" |jq -c .loantypes[] > loantypes.json &
@@ -56,8 +64,10 @@ jq -r '. | "s/\(.id)/\((.group // .name)|gsub("/";"\\/"))/g"' loantypes.json mat
 
 jq --arg loanPolicyId "${loanPolicyId}" \
    --arg patronGroupIdAtCheckout "${patronGroupIdAtCheckout}" \
+   --arg locationId "${locationId}" \
    --arg overdueFinePolicyId "${overdueFinePolicyId}" \
    --arg lostItemPolicyId "${lostItemPolicyId}" \
+   --arg testLocation "${testLocation}" \
    --arg testGroup "${testGroup}" -c '
   .rulesAsText
   | gsub("\r";"")             
@@ -67,6 +77,10 @@ jq --arg loanPolicyId "${loanPolicyId}" \
 			(
 				(($testGroup != "1")) or
       	(.value | test("\($patronGroupIdAtCheckout)")) 
+			) and
+			(
+				(($testLocation != "1")) or
+      	(.value | test("\($locationId)")) 
 			) and
       (.value | test("\($loanPolicyId)")) and
       (.value | test("\($overdueFinePolicyId)")) and

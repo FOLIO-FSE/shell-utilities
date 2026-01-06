@@ -30,7 +30,9 @@ overdueFinePolicyId=$(jq -r .overdueFinePolicyId <<< "${loan}")
 lostItemPolicyId=$(jq -r .lostItemPolicyId <<< "${loan}")
 locationId=$(jq -r .itemEffectiveLocationIdAtCheckOut <<< "${loan}")
 
-circRulesFromAPI=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/rules/loan-policy-all?item_type_id=${materialTypeId}&loan_type_id=${loanTypeId}&patron_type_id=${patronGroupIdAtCheckout}&location_id=${locationId}"|jq .circulationRuleMatches)
+circRulesFromLoanApi=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/rules/loan-policy-all?item_type_id=${materialTypeId}&loan_type_id=${loanTypeId}&patron_type_id=${patronGroupIdAtCheckout}&location_id=${locationId}"|jq .circulationRuleMatches)
+
+circRulesFromOverdueApi=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/rules/overdue-fine-policy-all?item_type_id=${materialTypeId}&loan_type_id=${loanTypeId}&patron_type_id=${patronGroupIdAtCheckout}&location_id=${locationId}"|jq .circulationRuleMatches)
 
 echo "Evaluating circulation rules"
 
@@ -67,11 +69,26 @@ circRulesFromLoan=$(jq --arg loanPolicyId "${loanPolicyId}" \
     )
 ' circrules.json |sed -f temp.sed)
 
-jq -n --arg circFromLoan "${circRulesFromLoan}" --arg circFromAPI "${circRulesFromAPI}" '
-  ($circFromLoan | fromjson) as $LoanJSON
-  | ($circFromAPI | fromjson) as $ApiJSON
-  | INDEX($ApiJSON[]; .circulationRuleLine) as $idx
-  | [$LoanJSON[] | select($idx[(.line|tostring)]) | {line, rule, action}]
+jq -n \
+  --arg circFromLoan         "${circRulesFromLoan}" \
+  --arg circFromLoanApi      "${circRulesFromLoanApi}" \
+  --arg circFromOverdueApi   "${circRulesFromOverdueApi}" '
+
+  ($circFromLoan       | fromjson) as $LoanJSON
+| ($circFromLoanApi    | fromjson | map(.circulationRuleLine)) as $LoanApiLines
+| ($circFromOverdueApi | fromjson | map(.circulationRuleLine)) as $OverdueApiLines
+
+# find intersection of line numbers present in BOTH APIs
+| ($LoanApiLines | map(tostring)) as $L1
+| ($OverdueApiLines | map(tostring)) as $L2
+| ($L1 | map(select(. as $x | $L2 | index($x)))) as $CommonLines
+
+# select LoanJSON entries having line in that intersection
+| [
+    $LoanJSON[]
+    | select((.line|tostring) as $ln | $CommonLines | index($ln))
+    | {line, rule, action}
+  ]
 '
 
 rm -f temp.sed loantypes.json mattypes.json groups.json loanpolicies.json lostitempolicies.json overduefinepolicies.json noticepolicies.json requestpolicies.json

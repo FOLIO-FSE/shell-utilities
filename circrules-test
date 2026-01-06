@@ -6,48 +6,33 @@ okapi_token=$(cat okapi.token)
 testKey="."
 
 if [[ -z ${2} ]];then
-	echo "Usage: circrules-test [user_barcode] [item_barcode] "
-	echo
-	echo "Options:"
-	echo "-g Use group from loan"
-	echo "-l Use location from loan"
-	echo "-k [keyword] Search rule for keyword or UUID"
-	echo
-	echo "Note that using -g or -l options requires that the circ rule specifies the group or location in the criteria which may cause the actual rule involved not to be retrieved"
+	echo "Usage: circrule-get [user_barcode] [item_barcode] "
 	echo
 	exit
 fi
 
-while getopts "gk:l" opt; do
-  case $opt in
-    g)
-      testGroup=1 ;;
-    k)
-      testKey=$OPTARG ;;
-    l)
-      testLocation=1 ;;
-    \?) # Handle invalid options
-      echo "Error: Invalid option -$OPTARG" >&2
-      echo "Usage: $0 [-g] [-k keyword]" >&2
-      exit 1
-      ;;
-  esac
-done
+echo "Retrieving user, item, and reference data. Please wait"
 
-shift $((OPTIND - 1))
+user=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?query=barcode==${1}" |jq -c .users[0]) 
+item=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/inventory/items?query=barcode==${2}" |jq -c .items[0]) 
 
-userId=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?query=barcode==${1}" |jq -r .users[0].id)
-itemId=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/inventory/items?query=barcode==${2}" |jq -r .items[0].id) 
-
+itemId=$(jq -r .id <<< "${item}")
+userId=$(jq -r .id <<< "${user}")
 
 loan=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/loan-storage/loans?query=itemId==${itemId}%20and%20userId==${userId}%20sortby%20loanDate%20desc" |jq '.loans[0]')
 
+materialTypeId=$(jq -r .materialType.id <<< "${item}")
+loanTypeId=$(jq -r .permanentLoanType.id <<< "${item}")
 
 loanPolicyId=$(jq -r .loanPolicyId <<< "${loan}")
 patronGroupIdAtCheckout=$(jq -r .patronGroupIdAtCheckout <<< "${loan}")
 overdueFinePolicyId=$(jq -r .overdueFinePolicyId <<< "${loan}")
 lostItemPolicyId=$(jq -r .lostItemPolicyId <<< "${loan}")
 locationId=$(jq -r .itemEffectiveLocationIdAtCheckOut <<< "${loan}")
+
+circRulesFromAPI=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/rules/loan-policy-all?item_type_id=${materialTypeId}&loan_type_id=${loanTypeId}&patron_type_id=${patronGroupIdAtCheckout}&location_id=${locationId}"|jq .circulationRuleMatches)
+
+echo "Evaluating circulation rules"
 
 curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/rules" > circrules.json  &
 curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/loan-types?query=cql.allRecords=1&limit=1000" |jq -c .loantypes[] > loantypes.json &
@@ -62,26 +47,16 @@ wait
 
 jq -r '. | "s/\(.id)/\((.group // .name)|gsub("/";"\\/"))/g"' loantypes.json mattypes.json groups.json loanpolicies.json lostitempolicies.json overduefinepolicies.json noticepolicies.json requestpolicies.json > temp.sed
 
-jq --arg loanPolicyId "${loanPolicyId}" \
+circRulesFromLoan=$(jq --arg loanPolicyId "${loanPolicyId}" \
    --arg patronGroupIdAtCheckout "${patronGroupIdAtCheckout}" \
    --arg locationId "${locationId}" \
    --arg overdueFinePolicyId "${overdueFinePolicyId}" \
    --arg lostItemPolicyId "${lostItemPolicyId}" \
-   --arg testLocation "${testLocation}" \
-   --arg testGroup "${testGroup}" -c '
-  .rulesAsText
+  '.rulesAsText
   | gsub("\r";"")             
   | split("\n")              
   | to_entries                                      # [{key, value}, ...] where key is 0-based
   | map(select(
-			(
-				(($testGroup != "1")) or
-      	(.value | test("\($patronGroupIdAtCheckout)")) 
-			) and
-			(
-				(($testLocation != "1")) or
-      	(.value | test("\($locationId)")) 
-			) and
       (.value | test("\($loanPolicyId)")) and
       (.value | test("\($overdueFinePolicyId)")) and
       (.value | test("\($lostItemPolicyId)"))
@@ -90,7 +65,14 @@ jq --arg loanPolicyId "${loanPolicyId}" \
       (.value | capture("(?<rule>.*?)\\s*:\\s*(?<action>.*)")) as $parts
       | { line: (.key + 1), rule: $parts.rule, action: $parts.action }
     )
-' circrules.json |sed -f temp.sed |jq -c .[] |grep "${testKey}" |jq -s .
+' circrules.json |sed -f temp.sed)
+
+jq -n --arg circFromLoan "${circRulesFromLoan}" --arg circFromAPI "${circRulesFromAPI}" '
+  ($circFromLoan | fromjson) as $LoanJSON
+  | ($circFromAPI | fromjson) as $ApiJSON
+  | INDEX($ApiJSON[]; .circulationRuleLine) as $idx
+  | [$LoanJSON[] | select($idx[(.line|tostring)]) | {line, rule, action}]
+'
 
 rm -f temp.sed loantypes.json mattypes.json groups.json loanpolicies.json lostitempolicies.json overduefinepolicies.json noticepolicies.json requestpolicies.json
 

@@ -209,7 +209,11 @@ case $rec_type in
 "holdings")
 	limitbyid="yes"
 	rec_type="holdingsRecords"
-	jqexpr="jq -c '.holdingsRecords[] | del(.metadata) | del(.holdingsItems) |del(.bareHoldingsItems)'"
+	if [[ ${delete_metadata} == "yes" ]]; then
+		jqexpr="jq -c '.holdingsRecords[] | del(.metadata) | del(.holdingsItems) |del(.bareHoldingsItems)'"
+	else
+		jqexpr="jq -c '.holdingsRecords[] | del(.holdingsItems) |del(.bareHoldingsItems)'"
+	fi
 	endpoint="holdings-storage/holdings";;
 "holdingstypes")
 	rec_type="holdingsTypes"

@@ -7,6 +7,32 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
+delete_metadata="yes"
+
+if [[ -z ${1} ]];then
+	echo "Usage: records-getfromfile [record_type] "
+	echo
+	echo "Options:"
+	echo "-m Retrieve metadata (removed by default)"
+	echo
+	exit
+fi
+
+while getopts "m" opt; do
+	case $opt in
+		m)
+			delete_metadata="no"
+			;;
+		\?)
+			echo "Error: Invalid option -$OPTARG" >&2
+			echo "Usage: $0 [-m]" >&2
+			exit 1
+			;;
+	esac
+done
+
+shift $((OPTIND - 1))
+
 rec_type=$1
 infile="uuids"
 batchsize=50
@@ -28,7 +54,11 @@ numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 printrecords(){
 	if [[ -f tmp_records.${rec_type}.0 ]];then
-		cat tmp_records.${rec_type}.* | jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo) |del(.metadata)" >>  "${rec_type}.json"
+		if [[ ${delete_metadata} == "yes" ]]; then
+			cat tmp_records.${rec_type}.* | jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo) |del(.metadata)" >>  "${rec_type}.json"
+		else
+			cat tmp_records.${rec_type}.* | jq -c "${jq_replace} | del(.totalRecords) |del(.resultInfo)" >>  "${rec_type}.json"
+		fi
 		rm -f tmp_records.${rec_type}.*
 	fi
 }

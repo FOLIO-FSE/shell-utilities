@@ -6,6 +6,32 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
+delete_metadata="yes"
+
+if [[ -z ${1} ]];then
+	echo "Usage: records-get [record_type] [optional: cql_query] "
+	echo
+	echo "Options:"
+	echo "-m Retrieve metadata (removed by default)"
+	echo
+	exit
+fi
+
+while getopts "m" opt; do
+	case $opt in
+		m)
+			delete_metadata="no"
+			;;
+		\?)
+			echo "Error: Invalid option -$OPTARG" >&2
+			echo "Usage: $0 [-m]" >&2
+			exit 1
+			;;
+	esac
+done
+
+shift $((OPTIND - 1))			
+
 rec_type=$1
 search_for=$2
 filename="${1}.json"
@@ -411,7 +437,13 @@ if [[ $erm == "yes" ]];then
 	jqexpr="jq -c '.[] | del(.metadata)'"
 fi
 
-if [[ -z $jqexpr ]];then jqexpr="jq -c --arg REC_TYPE "${rec_type}" '.[\$REC_TYPE][] | del(.metadata)'";fi
+if [[ -z $jqexpr ]];then
+	if [[ ${delete_metadata} == "yes" ]]; then 
+			jqexpr="jq -c --arg REC_TYPE "${rec_type}" '.[\$REC_TYPE][] | del(.metadata)'"
+		else
+			jqexpr="jq -c --arg REC_TYPE "${rec_type}" '.[\$REC_TYPE][]'"
+		fi
+fi
 
 if [[ $limitOrPerPage == "limit" ]];then
 	num_records=$(curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&${limitOrPerPage}=${startlimit}" |jq -r .${totalRecords})

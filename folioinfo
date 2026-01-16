@@ -1,0 +1,13 @@
+#!/usr/bin/bash
+
+# retrieves module and permisisons info
+
+auth 2>/dev/null || authn 2>/dev/null
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+curl -s --http1.1 -L -X GET -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/entitlements/${tenant}/applications?limit=500" |pv| jq . > folioInfo.json
+
+echo "Module and permissions info has been output to folioInfo.json"
+

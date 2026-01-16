@@ -5,8 +5,9 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-customfields=$(curl -s --http1.1 -L -X GET -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/_/proxy/tenants/${tenant}/interfaces/custom-fields")
-module_id=$(jq -r '.[] |select(.id |match("users")) | .id' <<< "${customfields}")
+versionInfo=$(curl -s --http1.1 -L -X GET -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/entitlements/${tenant}/applications?limit=500")
+
+module_id=$(jq -r '.applicationDescriptors[] | select(.name == "app-platform-minimal") | .modules[] | select(.name == "mod-users") | .id' <<< "${versionInfo}")
 
 curl -s --http1.1 -L -X GET -H "x-okapi-tenant: ${tenant}" -H "x-okapi-module-id: ${module_id}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/custom-fields?limit=1000"
 

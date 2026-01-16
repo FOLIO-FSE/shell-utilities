@@ -5,6 +5,7 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 url="${1}"
+[[ ${url} != https* ]] && url="${okapi_url}${url}"
 
 curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${url}"
 

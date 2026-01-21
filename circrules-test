@@ -48,6 +48,10 @@ circRulesFromLoanApi=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "
 
 circRulesFromOverdueApi=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/rules/overdue-fine-policy-all?item_type_id=${materialTypeId}&loan_type_id=${loanTypeId}&patron_type_id=${patronGroupIdAtCheckout}&location_id=${locationId}"|jq .circulationRuleMatches)
 
+circRulesFromLostApi=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/rules/lost-item-policy-all?item_type_id=${materialTypeId}&loan_type_id=${loanTypeId}&patron_type_id=${patronGroupIdAtCheckout}&location_id=${locationId}"|jq .circulationRuleMatches)
+
+circRulesFromRequestApi=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/rules/request-policy-all?item_type_id=${materialTypeId}&loan_type_id=${loanTypeId}&patron_type_id=${patronGroupIdAtCheckout}&location_id=${locationId}"|jq .circulationRuleMatches)
+
 echo "Evaluating circulation rules"
 
 curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/rules" > circrules.json  &
@@ -108,8 +112,10 @@ matchedLoanRule=$(jq -n \
 if [[ ${matchedLoanRule} == "[]" ]];then 
 	fromLoans=$(jq -r '.[].circulationRuleLine' <<< ${circRulesFromLoanApi}|sort -u)
 	fromOverdue=$(jq -r '.[].circulationRuleLine' <<< ${circRulesFromOverdueApi}|sort -u)
+	fromLost=$(jq -r '.[].circulationRuleLine' <<< ${circRulesFromLostApi}|sort -u)
+	fromRequest=$(jq -r '.[].circulationRuleLine' <<< ${circRulesFromRequestApi}|sort -u)
 	
-	matchedLines=$(echo "${fromLoans} ${fromOverdue}" |tr " " "\n" |sort |uniq -d)
+	matchedLines=$(echo "${fromLoans} ${fromOverdue} ${fromLost} ${fromRequest} " |tr " " "\n" |sort |uniq -dc | grep "^ *4" |sed 's/^ *4//')
 	echo
 	
 	if [[ "${matchedLines}" =~ [0-9] ]];then
@@ -118,6 +124,8 @@ if [[ ${matchedLoanRule} == "[]" ]];then
 		echo "No match found. Examine raw data for likely matches"
 		echo ${circRulesFromLoanApi}
 		echo ${circRulesFromOverdueApi}
+		echo ${circRulesFromLostApi}
+		echo ${circRulesFromRequestApi}
 	fi
 	echo
 fi

@@ -17,18 +17,32 @@ user=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenan
 item=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/inventory/items?query=barcode==${2}" |jq -c .items[0]) 
 
 itemId=$(jq -r .id <<< "${item}")
+materialTypeId=$(jq -r .materialType.id <<< "${item}")
+locationId=$(jq -r .effectiveLocation.id <<< "${item}")
+loanTypeId=$(jq -r .permanentLoanType.id <<< "${item}")
+
 userId=$(jq -r .id <<< "${user}")
+patronTypeId=$(jq -r .patronGroup <<< "${user}")
 
 loan=$(curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/loan-storage/loans?query=itemId==${itemId}%20and%20userId==${userId}%20sortby%20loanDate%20desc" |jq '.loans[0]')
 
-materialTypeId=$(jq -r .materialType.id <<< "${item}")
-loanTypeId=$(jq -r .permanentLoanType.id <<< "${item}")
 
-loanPolicyId=$(jq -r .loanPolicyId <<< "${loan}")
-patronGroupIdAtCheckout=$(jq -r .patronGroupIdAtCheckout <<< "${loan}")
-overdueFinePolicyId=$(jq -r .overdueFinePolicyId <<< "${loan}")
-lostItemPolicyId=$(jq -r .lostItemPolicyId <<< "${loan}")
-locationId=$(jq -r .itemEffectiveLocationIdAtCheckOut <<< "${loan}")
+if [[ ${loan} != "null" ]];then
+  echo "Using information from last detected loan"
+  loanPolicyId=$(jq -r .loanPolicyId <<< "${loan}")
+  patronGroupIdAtCheckout=$(jq -r .patronGroupIdAtCheckout <<< "${loan}")
+  overdueFinePolicyId=$(jq -r .overdueFinePolicyId <<< "${loan}")
+  lostItemPolicyId=$(jq -r .lostItemPolicyId <<< "${loan}")
+  locationId=$(jq -r .itemEffectiveLocationIdAtCheckOut <<< "${loan}")
+else
+  echo "No loan detected. Analyzing potential rules"
+	patronGroupIdAtCheckout=${patronTypeId}
+	loanPolicyId=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/rules/loan-policy?item_type_id=${materialTypeId}&loan_type_id=${loanTypeId}&patron_type_id=${patronTypeId}&location_id=${locationId}")
+	overdueFinePolicyId=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/rules/overdue-fine-policy?item_type_id=${materialTypeId}&loan_type_id=${loanTypeId}&patron_type_id=${patronTypeId}&location_id=${locationId}") 
+	lostItemPolicyId=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/rules/lost-item-policy?item_type_id=${materialTypeId}&loan_type_id=${loanTypeId}&patron_type_id=${patronTypeId}&location_id=${locationId}")
+	requestPolicyId=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/rules/request-policy?item_type_id=${materialTypeId}&loan_type_id=${loanTypeId}&patron_type_id=${patronTypeId}&location_id=${locationId}")
+	noticePolicyId=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/rules/request-policy?item_type_id=${materialTypeId}&loan_type_id=${loanTypeId}&patron_type_id=${patronTypeId}&location_id=${locationId}")
+fi 
 
 circRulesFromLoanApi=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/circulation/rules/loan-policy-all?item_type_id=${materialTypeId}&loan_type_id=${loanTypeId}&patron_type_id=${patronGroupIdAtCheckout}&location_id=${locationId}"|jq .circulationRuleMatches)
 
@@ -69,7 +83,7 @@ circRulesFromLoan=$(jq --arg loanPolicyId "${loanPolicyId}" \
     )
 ' circrules.json |sed -f temp.sed)
 
-jq -n \
+matchedLoanRule=$(jq -n \
   --arg circFromLoan         "${circRulesFromLoan}" \
   --arg circFromLoanApi      "${circRulesFromLoanApi}" \
   --arg circFromOverdueApi   "${circRulesFromOverdueApi}" '
@@ -89,7 +103,24 @@ jq -n \
     | select((.line|tostring) as $ln | $CommonLines | index($ln))
     | {line, rule, action}
   ]
-'
+')
+
+if [[ ${matchedLoanRule} == "[]" ]];then 
+	fromLoans=$(jq -r '.[].circulationRuleLine' <<< ${circRulesFromLoanApi}|sort -u)
+	fromOverdue=$(jq -r '.[].circulationRuleLine' <<< ${circRulesFromOverdueApi}|sort -u)
+	
+	matchedLines=$(echo "${fromLoans} ${fromOverdue}" |tr " " "\n" |sort |uniq -d)
+	echo
+	
+	if [[ "${matchedLines}" =~ [0-9] ]];then
+		echo "Check circulation line(s): ${matchedLines}"
+	else
+		echo "No match found. Examine raw data for likely matches"
+		echo ${circRulesFromLoanApi}
+		echo ${circRulesFromOverdueApi}
+	fi
+	echo
+fi
 
 rm -f temp.sed loantypes.json mattypes.json groups.json loanpolicies.json lostitempolicies.json overduefinepolicies.json noticepolicies.json requestpolicies.json
 

@@ -1,0 +1,29 @@
+#!/usr/bin/bash
+
+if [[ -z ${3} ]];then
+	echo "Extracts the id field from a JSON file using a matching file with values for a specified key"
+	echo
+	echo "JSON key must be specified in jq syntax minus leading dot in first element"
+	echo
+	echo "Usage: jqfindmatches [jsonfile] [valuefile] [jsonkey]"
+	echo
+	echo "Example: jqfindmatches myfile.json ids id"
+	echo "Example: jqfindmatches myfile.json ids id not"
+	exit
+else
+	jsonfile="${1}"
+	valuefile="${2}"
+	jsonkey="${3}"
+fi
+
+cat "${valuefile}" |jq -R . > "tmp_vals"
+
+echo "Finding matching records. Please wait"
+jq -c --slurpfile all_values tmp_vals --arg KEY "${jsonkey}" 'select(.[$KEY] | IN($all_values[]))|.id ' "${jsonfile}" |pv > matched_ids.txt
+
+echo "Finding nonmatching records. Please wait"
+jq -c --slurpfile all_values tmp_vals --arg KEY "${jsonkey}" 'select(.[$KEY] | IN($all_values[]) |not)|.id ' "${jsonfile}" |pv > not_matched_ids.txt
+
+echo "Ids of matching records have been output to matched_ids.txt. Ids of nonmatching records have been output to not_matched_ids.txt"
+
+rm tmp_vals

@@ -8,7 +8,6 @@ if [[ -z ${3} ]];then
 	echo "Usage: jqfindmatches [jsonfile] [valuefile] [jsonkey]"
 	echo
 	echo "Example: jqfindmatches myfile.json ids id"
-	echo "Example: jqfindmatches myfile.json ids id not"
 	exit
 else
 	jsonfile="${1}"
@@ -18,11 +17,24 @@ fi
 
 cat "${valuefile}" |jq -R . > "tmp_vals"
 
-echo "Finding matching records. Please wait"
-jq -c --slurpfile all_values tmp_vals --arg KEY "${jsonkey}" 'select(.[$KEY] | IN($all_values[]))|.id ' "${jsonfile}" |pv > matched_ids.txt
 
-echo "Finding nonmatching records. Please wait"
-jq -c --slurpfile all_values tmp_vals --arg KEY "${jsonkey}" 'select(.[$KEY] | IN($all_values[]) |not)|.id ' "${jsonfile}" |pv > not_matched_ids.txt
+if [[ "${jsonkey}" =~ ^([^[]+)\[([^]]+)\]$ ]]; then
+	key="${BASH_REMATCH[1]}"
+	val="${BASH_REMATCH[2]}"
+	jsonkey="$(printf '["%s", %s]\n' "$key" "$val")"
+
+	echo "Finding matching records. Please wait"
+	jq -rc --slurpfile all_values tmp_vals --argjson PATH "${jsonkey}" 'select(getpath($PATH) | IN($all_values[]))|.id' "${jsonfile}" |pv > matched_ids.txt
+
+	echo "Finding nonmatching records. Please wait"
+	jq -rc --slurpfile all_values tmp_vals --argjson PATH "${jsonkey}" 'select(getpath($PATH) | IN($all_values[])|not)|.id' "${jsonfile}" |pv > not_matched_ids.txt
+else
+	echo "Finding matching records. Please wait"
+	jq -rc --slurpfile all_values tmp_vals --argjson KEY "${jsonkey}" 'select(.$[KEY] | IN($all_values[]))|.id ' "${jsonfile}" |pv > matched_ids.txt
+
+	echo "Finding nonmatching records. Please wait"
+	jq -rc --slurpfile all_values tmp_vals --argjson KEY "${jsonkey}" 'select(.[$KEY] | IN($all_values[]) |not)|.id ' "${jsonfile}" |pv > not_matched_ids.txt
+fi
 
 echo "Ids of matching records have been output to matched_ids.txt. Ids of nonmatching records have been output to not_matched_ids.txt"
 

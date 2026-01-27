@@ -7,7 +7,7 @@ packages=(
 )
 
 for package in "${packages[@]}";do
-	which ${package} >/dev/null 2>&1 || echo "Package ${package} not installed. Please install with  sudo apt install -y ${package}"
+	which ${package} >/dev/null 2>&1 || echo "Package ${package} not installed. Please install before continuing"
 	missing=1
 done
 

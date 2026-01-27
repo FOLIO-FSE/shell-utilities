@@ -1,5 +1,21 @@
 #!/usr/bin/bash
 
+packages=(
+	"pv"
+	"csvkit"
+	"dos2unix"
+)
+
+for package in "${packages[@]}";do
+	which ${package} >/dev/null 2>&1 || echo "Package ${package} not installed. Please install with  sudo apt install -y ${package}"
+	missing=1
+done
+
+if [[ ${missing} -eq 1 ]];then
+	echo "Please install above packages before continuing"
+fi
+
+
 filelist=("$@")
 infile="${filelist[0]}"
 

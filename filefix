@@ -2,7 +2,6 @@
 
 packages=(
 	"pv"
-	"csvkit"
 	"dos2unix"
 )
 
@@ -10,6 +9,8 @@ for package in "${packages[@]}";do
 	which ${package} >/dev/null 2>&1 || echo "Package ${package} not installed. Please install before continuing"
 	missing=1
 done
+
+if ! dpkg-query -W --showformat='${db:Status-Status}' csvkit 2>/dev/null | grep -q "^installed$"; then echo "Package csvkit not installed. Please install before continuing";missing=1;fi
 
 if [[ ${missing} -eq 1 ]];then
 	echo "Please install above packages before continuing"

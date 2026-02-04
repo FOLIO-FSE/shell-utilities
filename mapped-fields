@@ -1,11 +1,13 @@
 #!/bin/bash
 
 # For use with maps associated with folio_migration_tools
-
+echo
+echo -e "Legacy field\tFOLIO field"
 jq -r '
   .data[]
   | select((.legacy_field // "") != "" and .legacy_field != "Not mapped")
   | [.legacy_field, .folio_field]
   | @tsv
 ' ${1}
+echo
 

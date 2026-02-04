@@ -1,0 +1,184 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Convert an EDIFACT EDI file to structural JSON.
+#
+# Usage:
+#   edi2json [filename]
+#
+
+if [[ $# -ne 1 ]]; then
+  echo "Usage: $0 <input-file.edi>" >&2
+  exit 1
+fi
+
+INPUT="$1"
+
+if [[ ! -f "$INPUT" ]]; then
+  echo "Error: input file not found: $INPUT" >&2
+  exit 1
+fi
+
+# Build output path: same directory, base name without extension + .json
+# Examples:
+#   /a/b/invoice.edi  -> /a/b/invoice.json
+#   ./foo             -> ./foo.json   (no extension case)
+DIR="$(dirname -- "$INPUT")"
+FILE="$(basename -- "$INPUT")"
+BASE="${FILE%.*}"
+# If filename starts with dot and has no other dots, %.* would yield empty (e.g., .edi)
+# Handle that safely:
+if [[ -z "$BASE" ]]; then
+  BASE="$FILE"
+fi
+OUTPUT="$DIR/$BASE.json"
+
+# Read whole file into one line (EDIFACT often has newlines for readability)
+RAW="$(tr -d '\r\n' < "$INPUT")"
+
+# Detect UNA at very start (if present): "UNA" + 6 chars
+# UNA positions after "UNA": component, element, decimal, release, reserved, segment
+# Example: UNA:+.? '
+COMP=":"
+ELEM="+"
+DEC="."
+REL="?"
+RES=" "
+SEG="'"
+
+if [[ "${RAW:0:3}" == "UNA" ]]; then
+  COMP="${RAW:3:1}"
+  ELEM="${RAW:4:1}"
+  DEC="${RAW:5:1}"
+  REL="${RAW:6:1}"
+  RES="${RAW:7:1}"
+  SEG="${RAW:8:1}"
+fi
+
+# Parse and convert to JSON
+# Output is written to OUTPUT
+awk -v COMP="$COMP" -v ELEM="$ELEM" -v DEC="$DEC" -v REL="$REL" -v SEG="$SEG" '
+function json_escape(s,    t) {
+  t = s
+  gsub(/\\/,"\\\\",t)
+  gsub(/"/,"\\\"",t)
+  gsub(/\t/,"\\t",t)
+  gsub(/\r/,"\\r",t)
+  gsub(/\n/,"\\n",t)
+  return t
+}
+
+# Remove release char before any char: "?+" -> "+", "??"->"?", "?\x27" -> "\x27" etc.
+function unrelease(s,    out,i,c) {
+  out = ""
+  for (i=1; i<=length(s); i++) {
+    c = substr(s,i,1)
+    if (c == REL) {
+      if (i < length(s)) {
+        i++
+        out = out substr(s,i,1)
+      }
+    } else {
+      out = out c
+    }
+  }
+  return out
+}
+
+# Split s into array a on separator sep, respecting release char.
+# Returns count.
+function split_released(s, sep, a,    i,c,buf,n) {
+  n = 0
+  buf = ""
+  for (i=1; i<=length(s); i++) {
+    c = substr(s,i,1)
+    if (c == REL) {
+      if (i < length(s)) {
+        i++
+        buf = buf substr(s,i,1)
+      }
+    } else if (c == sep) {
+      a[++n] = buf
+      buf = ""
+    } else {
+      buf = buf c
+    }
+  }
+  a[++n] = buf
+  return n
+}
+
+function emit_segment(segtext,    parts, np, tag, i, comps, nc, j) {
+  np = split_released(segtext, ELEM, parts)
+  tag = unrelease(parts[1])
+
+  printf("{\"tag\":\"%s\",\"elements\":[", json_escape(tag))
+
+  for (i=2; i<=np; i++) {
+    if (i>2) printf(",")
+    if (parts[i] == "") {
+      printf("null")
+      continue
+    }
+
+    nc = split_released(parts[i], COMP, comps)
+
+    printf("[")
+    for (j=1; j<=nc; j++) {
+      if (j>1) printf(",")
+      if (comps[j] == "") {
+        printf("null")
+      } else {
+        printf("\"%s\"", json_escape(unrelease(comps[j])))
+      }
+    }
+    printf("]")
+  }
+
+  printf("]}")
+}
+
+{
+  raw = $0
+  buf = ""
+
+  for (i=1; i<=length(raw); i++) {
+    c = substr(raw,i,1)
+
+    # Keep release char so split_released can interpret it
+    if (c == REL) {
+      buf = buf c
+      continue
+    }
+
+    if (c == SEG) {
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", buf)
+      if (buf != "") {
+        emit_segment(buf)
+        printf("\n")
+      }
+      buf = ""
+    } else {
+      buf = buf c
+    }
+  }
+
+  # If final segment terminator missing, emit remaining buffer
+  gsub(/^[[:space:]]+|[[:space:]]+$/, "", buf)
+  if (buf != "") {
+    emit_segment(buf)
+    printf("\n")
+  }
+}
+' <<< "$RAW" \
+| jq -s \
+    --arg comp "$COMP" --arg elem "$ELEM" --arg dec "$DEC" \
+    --arg rel "$REL" --arg seg "$SEG" \
+    '{
+      ediStandard: "EDIFACT",
+      separators: { component: $comp, element: $elem, decimal: $dec, release: $rel, segment: $seg },
+      segments: .
+    }' \
+> "$OUTPUT"
+
+echo "Wrote: $OUTPUT" >&2

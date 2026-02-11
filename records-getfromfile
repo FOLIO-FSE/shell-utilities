@@ -101,6 +101,8 @@ case $rec_type in
 	endpoint="feefines";;
 "feefineactions")
 	endpoint="feefineactions";;
+"funds")
+	endpoint="finance/funds";;
 "holdings")
 	jq_replace=".holdingsRecords[]"
 	endpoint="holdings-storage/holdings";;

@@ -39,7 +39,7 @@ NR == 1 {
   # Map header names to indices
   for (i = 1; i <= NF; i++) {
     header = $i
-    key = ci ? tolower(header) : header
+    key = tolower(header)
     h2idx[key] = i
     original[key] = header
   }
@@ -48,7 +48,7 @@ NR == 1 {
   n_out = 0
   for (k = 1; k <= n_want; k++) {
     wname = want_order[k]
-    key = ci ? tolower(wname) : wname
+    key = tolower(wname)
     if (key in h2idx) {
       ++n_out
       out_idx[n_out] = h2idx[key]

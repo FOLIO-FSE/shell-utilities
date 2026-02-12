@@ -1,0 +1,100 @@
+#!/usr/bin/bash
+
+
+if [ -z $2 ]; then
+	echo "Usage: cutcols [col1] [col2] [...] [filename]"
+	echo 
+	echo "Extracts columns from a delimited text file by case insensitive header names "
+	echo
+	exit 
+fi
+
+
+# Last arg is filename; others are requested column names
+infile="${!#}"
+
+fileroot=$(echo "${infile}" | sed 's/\.....\?$//')
+outfile="${fileroot}_fixed.tsv"
+
+# Collect column names (all args except last)
+COLS=("$@")
+unset 'COLS[${#COLS[@]}-1]' # remove filename element
+
+awk -v FS="\t" -v OFS="\t" -v want_cols="$(printf "%s\n" "${COLS[@]}")" -v outfile="${outfile}" '
+BEGIN {
+  n_want = 0
+  # Load requested column names
+  split(want_cols, lines, /\n/)
+  for (i in lines) {
+    if (length(lines[i]) == 0) continue
+    ++n_want
+    wname = lines[i]
+    want_order[n_want] = wname
+    key = tolower(wname)
+    want[key] = n_want  # store position in request order
+  }
+}
+
+NR == 1 {
+  # Map header names to indices
+  for (i = 1; i <= NF; i++) {
+    header = $i
+    key = ci ? tolower(header) : header
+    h2idx[key] = i
+    original[key] = header
+  }
+
+  # Resolve requested columns to indices; warn for missing
+  n_out = 0
+  for (k = 1; k <= n_want; k++) {
+    wname = want_order[k]
+    key = ci ? tolower(wname) : wname
+    if (key in h2idx) {
+      ++n_out
+      out_idx[n_out] = h2idx[key]
+      out_name[n_out] = original[key]
+    } else {
+      missing[++missing_n] = wname
+    }
+  }
+
+  # Emit warnings for any missing columns to stderr
+  if (missing_n > 0) {
+    for (m = 1; m <= missing_n; m++) {
+      printf("Warning: column not found: %s\n", missing[m]) > "/dev/stderr"
+    }
+  }
+
+  # If none found, exit non-zero
+  if (n_out == 0) {
+    print "Error: none of the requested columns were found in header." > "/dev/stderr"
+    exit 3
+  }
+
+  # Print header row for selected columns
+  for (j = 1; j <= n_out; j++) {
+    sel[j] = out_idx[j]
+    hdr[j] = out_name[j]
+  }
+  print_row = ""
+  for (j = 1; j <= n_out; j++) {
+    print_row = (j == 1) ? hdr[j] : print_row OFS hdr[j]
+  }
+  print print_row > outfile
+  next
+}
+
+# Print data rows
+{
+  print_row = ""
+  for (j = 1; j <= n_out; j++) {
+    val = (sel[j] <= NF) ? $(sel[j]) : ""
+    print_row = (j == 1) ? val : print_row OFS val
+  }
+  print print_row > outfile
+}
+' "${infile}"
+echo
+echo "The desired columns were extracted to ${outfile}"
+echo
+

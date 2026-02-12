@@ -19,10 +19,15 @@ generate_uuids="no"
 sed -i 's/"//g' "${fines_file}"
 
 # FeeFine owner must be defined in /settings/users/owners
-fine_owner="8bfeb216-116e-48c0-a763-25a6777e5c7b"
+default_fine_owner="8bfeb216-116e-48c0-a763-25a6777e5c7b"
 
-id=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/owners/${fine_owner}" |jq -r .id)
-if [[ $id != "${fine_owner}" ]];then echo "Fine owner not located. Exiting program";exit;fi
+declare -a owner_arr
+
+owner_arr["lawcirc"]="3de7b86d-0f9f-41bd-9b4a-30ff8bad6c00"
+owner_arr["lawill"]="3de7b86d-0f9f-41bd-9b4a-30ff8bad6c00"
+
+id=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/owners/${default_fine_owner}" |jq -r .id)
+if [[ $id != "${default_fine_owner}" ]];then echo "Default fine owner not located. Exiting program";exit;fi
 
 # FeeFine type should be defined in /settings/users/feefinestable
 feeFineType="Migrated fine"
@@ -139,10 +144,12 @@ while IFS=$'\n' read -r line; do
 	#
 	#IFS=$'^' read -r patron_barcode item_charge item_barcode fee_assess_date fineamount <<< "${line}"
 	#
-	#IFS=$'^' read -r patron_identifier fineamount patron_barcode item_identifier item_barcode out_date due_date notes  <<< "${line}"
-	IFS=$'^' read -r patron_barcode item_barcode fineamount due_date returned_date  <<< "${line}"
+	#IFS=$'^' read -r patron_identifier fineamount fine_owner patron_barcode item_identifier item_barcode out_date due_date description notes  <<< "${line}"
+	IFS=$'^' read -r patron_barcode item_barcode fineamount fine_owner description notes  <<< "${line}"
 
 	if [[ -z $patron_barcode ]];then patron_barcode="${patron_identifier}";fi
+	if [[ -v owner_arr[${fine_owner}] ]]; then fine_owner=${owner_arr[${fine_owner}]}; else fine_owner=${default_fine_owner}; fi
+	if [[ ${description} =~ ^[0-9a-zA-Z]$ ]];then notes="${description} ${notes}";fi
 	if [[ ${out_date} =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]];then notes="${notes}. Checkout date:  ${out_date}";fi
 	if [[ ${due_date} =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]];then dueDate=${due_date}; else dueDate="";fi
 	if [[ ${due_date} != "" ]];then notes="${notes} Due date: ${due_date}";fi

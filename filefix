@@ -150,15 +150,14 @@ case ${encodingtype} in
 		iconv -f utf-8 -t utf-8 -c "${infile}" -o tmpfile;;
 esac
 
-mv tmpfile "${infile}"
+head -1 tmpfile | grep -q $'\r' && dosfile=1
 
-head -1 ${infile} | grep -q $'\r' && dosfile=1
-
-numrecs=$(wc -l ${infile} |cut -d " " -f1)
+numrecs=$(wc -l tmpfile |cut -d " " -f1)
 num_per_file=$(($numrecs / 5 + 1))
 
-split -l $num_per_file ${infile} filefix
+split -l $num_per_file tmpfile filefix
 splitlist=(filefixaa filefixab filefixac filefixad filefixae)
+rm -f tmpfile
 
 firstline="$(head -1 filefixaa)"
 

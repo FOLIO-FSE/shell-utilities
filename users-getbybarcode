@@ -3,18 +3,14 @@ auth 2>/dev/null || authn 2>/dev/null
 tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
+rm -r users.json
 
 while read -r barcode;do
 	
 	query="query=barcode==${barcode}"
 	
-	apicall=$(curl -s -w '\n' -X GET -D \
-	  -H "Accept: application/json" \
-	  -H "X-Okapi-Tenant: ${tenant}" \
-	  -H "x-okapi-token: ${okapi_token}" \
-	  "${okapi_url}/users?${query}")
+	curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/users?${query}" |jq -c . >> users.json
 	
-	id=$(echo $apicall | jq -r .users[].id)
 	echo "$barcode	$id" |tee -a barcode_id
 
 done < barcodes

@@ -29,7 +29,7 @@ echo "${license}"
 while IFS=$'\n' read -r line;do 
 	line=$(echo "${line}" |tr "\t" "^" |tr -d '"')
 	IFS='^' read -r name description startdate enddate <<< ${line}
-	if [[ ! -z ${description} ]];then 	description=$(echo ${description} |jq -Rs );fi
+	if [[ ! -z "${description}" ]];then 	description=$(echo "${description}" |jq -Rs );fi
 	keyname=$(tr -dc [a-z0-9] <<< ${name,,})
 
 	# license uuid -- needs to be global
@@ -50,7 +50,7 @@ while IFS=$'\n' read -r line;do
 			
 	fi
 
-	if [[ ! -z ${description} ]];then
+	if [[ ! -z "${description}" ]];then
 		license=$(echo "${license}" | jq ".description = ${description}")
 	fi
 	

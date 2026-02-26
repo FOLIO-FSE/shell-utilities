@@ -10,6 +10,7 @@ declare -A license_dict
 declare -A organization_dict
 
 infile="license_altname.tsv"
+dos2unix ${infile}
 
 all_licenses=""
 all_organizations=""

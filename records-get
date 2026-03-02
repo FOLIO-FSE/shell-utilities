@@ -183,6 +183,9 @@ case $rec_type in
 "fieldprotection")
 	rec_type="marcFieldProtectionSettings"
 	endpoint="field-protection-settings/marc";;
+"financedata")
+	rec_type="fyFinanceData"
+	endpoint="finance/finance-data";;
 "fines")
 	rec_type="feefineactions"
 	endpoint="feefineactions";;

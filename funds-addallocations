@@ -5,6 +5,7 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 infile="fund-allocation.tsv"
+logfile="allocation.log"
 SECONDS=0
 COUNTER=0
 
@@ -12,11 +13,11 @@ defaultFiscalYearId="90018d36-2d86-4448-b78f-712c0620fdb1"
 
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
-while IFS=$'\t' read -r fund allocation fiscalYear; do
+while IFS=$'\t' read -r fund allocation fiscalYear budgetId; do
 	COUNTER=$(($COUNTER + 1))
 	echo "Processing ${fundcode} -- record $COUNTER of $numrecs"
 
-	if [[ -z fiscalYear ]];then fiscalYearId=defaultFiscalYearId;else fiscalYearId=fiscalYear;fi
+	if [[ -z fiscalYear ]];then fiscalYearId=defaultFiscalYearId;else fiscalYearId=${fiscalYear};fi
 
 	allocation=$(echo ${allocation} |tr -dc '[0-9\.]')
 
@@ -33,7 +34,7 @@ while IFS=$'\t' read -r fund allocation fiscalYear; do
 		funduuid=${fund}
 	fi
 
-IFS='' read -r -d '' action << EndOfJSON
+IFS='' read -r -d '' allocation << EndOfJSON
 {
   "id": "$(uuidgen)",
   "amount": ${allocation},
@@ -46,7 +47,10 @@ IFS='' read -r -d '' action << EndOfJSON
 }
 EndOfJSON
 
+	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${allocation}" "${okapi_url}/finance/allocations" |tee -a ${logfile}
 
-	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${budgetdata}" "${okapi_url}/finance/budgets"
+	if [[ ${budgetId} =~ $uuid_regex ]]; then
+		curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "" "${okapi_url}/finance/budgets/${budgetId}/recalculate" |tee -a ${logfile}
+	fi
 
 done < "${infile}"

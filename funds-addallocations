@@ -1,0 +1,52 @@
+#!/usr/bin/bash
+auth 2>/dev/null || authn 2>/dev/null
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+infile="fund-allocation.tsv"
+SECONDS=0
+COUNTER=0
+
+defaultFiscalYearId="90018d36-2d86-4448-b78f-712c0620fdb1"
+
+numrecs=$(wc -l ${infile} |cut -d " " -f1)
+
+while IFS=$'\t' read -r fund allocation fiscalYear; do
+	COUNTER=$(($COUNTER + 1))
+	echo "Processing ${fundcode} -- record $COUNTER of $numrecs"
+
+	if [[ -z fiscalYear ]];then fiscalYearId=defaultFiscalYearId;else fiscalYearId=fiscalYear;fi
+
+	allocation=$(echo ${allocation} |tr -dc '[0-9\.]')
+
+	if [[ $SECONDS -gt 500 ]]; then
+		auth 2>/dev/null || authn 2>/dev/null
+		okapi_token=$(cat okapi.token)
+		SECONDS=1
+	fi
+
+	if ! [[ ${fund} =~ $uuid_regex ]]; then
+		fund=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/finance/funds?query=code==${fundcode}" |jq '.funds[0]|del(.metadata)')
+		funduuid=$(jq -r '.id' <<< "${fund}")
+	else
+		funduuid=${fund}
+	fi
+
+IFS='' read -r -d '' action << EndOfJSON
+{
+  "id": "$(uuidgen)",
+  "amount": ${allocation},
+  "currency": "USD",
+  "description": "Allocation added via API",
+  "fiscalYearId": "${fiscalYearId}",
+  "source": "User",
+  "toFundId": "${funduuid}",
+  "transactionType": "Allocation"
+}
+EndOfJSON
+
+
+	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${budgetdata}" "${okapi_url}/finance/budgets"
+
+done < "${infile}"

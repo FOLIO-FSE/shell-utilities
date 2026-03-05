@@ -1,0 +1,120 @@
+echo "Retrieving reference and transaction data"
+recordtypes=(
+	"expense-classes"
+	"fiscalyears"
+	"funds"
+	"fundtypes"
+	"ledgers"
+	"budgets"
+	"transactions"
+)
+
+for recordtype in "${recordtypes[@]}"; do
+	records-get ${recordtype}
+	sed -i 's/\\n//g; s/\\t//g' "${recordtype}.json"
+done
+
+echo
+jq -r '[.id, .code]|@tsv' organizations.json > vendor.tsv
+jq -r '[.id, .code]|@tsv' funds.json > fund.tsv
+
+cp fund.tsv toFund.tsv
+cp fund.tsv fromFund.tsv
+
+jq -r '[.id, .name]|@tsv' fundtypes.json > fundType.tsv
+jq -r '[.id, .code]|@tsv' ledgers.json > ledgerName.tsv
+jq -r '[.id, .code]|@tsv' fiscalyears.json > fiscalYear.tsv
+jq -r '[.id, .name]|@tsv' expense-classes.json > expenseClass.tsv
+
+
+echo -e "id\tcode\tname\texternalAccountNumber\tstatus\tfundType\tledgerName" > funds.tsv
+echo -e "id\tname\tbudgetStatus\tallowableEncumbrance\tallowableExpenditure\tallocated\tawaitingPayment\tavailable\tcredits\tencumbered\texpenditures\tnetTransfers\tunavailable\toverEncumbrance\toverExpended\tfund\tfiscalYear\tinitialAllocation\tallocationTo\tallocationFrom\ttotalFunding\tcashBalance" > budgets.tsv
+echo -e "id\tamount\tamountAwaitingPayment\tamountCredited\tamountExpended\tstatus\torderType\tsourcePoId\tsourcePoLineId\tfiscalYear\texpenseClass\tfromFund\ttoFund\tsource\ttransactionType" > transactions.tsv
+
+echo
+
+delim=$'\t'
+subdelim='; '
+
+pv budgets.json |jq -rc --arg delim "${delim}" --arg subdelim "${subdelim}" '
+	[
+	"\(.id)" // "",
+	"\(.name)" // "",
+	"\(.budgetStatus)" // "",
+	"\(.allowableEncumbrance)" // "",
+	"\(.allowableExpenditure)" // "",
+	"\(.allocated)" // "",
+	"\(.awaitingPayment)" // "",
+	"\(.available)" // "",
+	"\(.credits)" // "",
+	"\(.encumbered)" // "",
+	"\(.expenditures)" // "",
+	"\(.netTransfers)" // "",
+	"\(.unavailable)" // "",
+	"\(.overEncumbrance)" // "",
+	"\(.overExpended)" // "",
+	"\(.fundId)" // "",
+	"\(.fiscalYearId)" // "",
+	"\(.initialAllocation)" // "",
+	"\(.allocationTo)" // "",
+	"\(.allocationFrom)" // "",
+	"\(.totalFunding)" // "",
+	"\(.cashBalance)" // ""
+	] |join($delim)
+	' >> budgets.tsv 
+
+pv funds.json |jq -rc --arg delim "${delim}" --arg subdelim "${subdelim}" '
+	[
+	"\(.id)" // "",
+	"\(.code)" // "",
+	"\(.name)" // "",
+	"\(.externalAccountNumber)" // "",
+	"\(.fundStatus)" // "",
+	"\(.fundTypeId)" // "",
+	"\(.ledgerId)" // ""
+	] |join($delim)
+	' >> funds.tsv 
+
+pv transactions.json |jq -rc --arg delim "${delim}" --arg subdelim "${subdelim}" '
+	[
+	"\(.id)" // "",
+	"\(.amount)" // "",
+	"\(.encumbrance.amountAwaitingPayment)" // "",
+	"\(.encumbrance.amountCredited)" // "",
+	"\(.encumbrance.amountExpended)" // "",
+	"\(.encumbrance.orderStatus)" // "",
+	"\(.encumbrance.orderType)" // "",
+	"\(.encumbrance.sourcePurchaseOrderId)" // "",
+	"\(.encumbrance.sourcePoLineId)" // "",
+	"\(.fiscalYearId)" // "",
+	"\(.expenseClassId)" // "",
+	"\(.fromFundId)" // "",
+	"\(.toFundId)" // "",
+	"\(.source)" // "",
+	"\(.transactionType)" // ""
+	] |join($delim)
+	' >> transactions.tsv
+
+echo
+echo "Converting UUIDs to human readable values"
+echo
+
+recordtypes=(
+	"budgets"
+	"funds"
+	"transactions"
+)
+
+for recordtype in "${recordtypes[@]}"; do
+	value-mapper "${recordtype}.tsv"
+	sed -i 's/\<null\>//g' "${recordtype}_fixed.tsv"
+	mv "${recordtype}_fixed.tsv" "${recordtype}.tsv"
+done
+echo
+
+rm -f category.tsv contact1*.tsv contact2*.tsv expenseClass.tsv fund.tsv fromFund.tsv toFund.tsv fundType.tsv fiscalYear.tsv ledgerName.tsv vendor.tsv
+
+echo "Funds have been exported to funds.tsv"
+echo "Transactions have been exported to transactions.tsv"
+echo "Budgets have been exported to budgets.tsv"
+echo

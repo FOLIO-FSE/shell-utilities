@@ -10,7 +10,12 @@ for package in "${packages[@]}";do
 	missing=1
 done
 
-if ! dpkg-query -W --showformat='${db:Status-Status}' csvkit 2>/dev/null | grep -q "^installed$"; then echo "Package csvkit not installed. Please install before continuing";missing=1;fi
+csvkitmissing=1
+if command -v csvcut >/dev/null;then csvkitmissing=0;fi
+if pip show csvkit >/dev/null 2>&1; then csvkitmissing=0;fi
+if uv pip show csvkit >/dev/null 2>&1; then csvkitmissing=0;fi
+
+if [[ csvkitmissing -eq 1 ]];then echo "Package csvkit not installed. Please install before continuing";exit;fi
 
 if [[ ${missing} -eq 1 ]];then
 	echo "Please install above packages before continuing"
@@ -60,6 +65,7 @@ fix_characters(){
 	s/[$DOUBLE]/\"/g
 	s/[$NBSP]/ /g
 	s/[$CONTROL]/ /g
+	s/‡\(.\) */\x1F/g
 	s/\";\"/;/g
 	s/^\"\|\"$//g
 	s/^\"//

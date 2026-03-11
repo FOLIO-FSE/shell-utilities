@@ -9,6 +9,6 @@ versionInfo=$(curl -s --http1.1 -L -X GET -H "X-Okapi-Tenant: ${tenant}" -H "x-o
 
 module_id=$(jq -r '.applicationDescriptors[] | select(.name == "app-platform-minimal") | .modules[] | select(.name == "mod-users") | .id' <<< "${versionInfo}")
 
-curl -s --http1.1 -L -X GET -H "x-okapi-tenant: ${tenant}" -H "x-okapi-module-id: ${module_id}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/custom-fields?limit=1000"
+curl -s --http1.1 -L -X GET -H "x-okapi-tenant: ${tenant}" -H "x-okapi-module-id: ${module_id}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/custom-fields?limit=1000" | jq '.customFields[] |= del(.metadata)'
 
 

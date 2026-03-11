@@ -65,7 +65,7 @@ fix_characters(){
 	s/[$DOUBLE]/\"/g
 	s/[$NBSP]/ /g
 	s/[$CONTROL]/ /g
-	s/‡\([a-zA-Z0-9]\) */\x1F\1/g
+	s/[‡\x87]\([a-zA-Z0-9]\) */\x1F\1/g
 	s/\";\"/;/g
 	s/^\"\|\"$//g
 	s/^\"//

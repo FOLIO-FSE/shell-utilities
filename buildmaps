@@ -1,0 +1,183 @@
+#!/usr/bin/bash
+
+while getopts "hiouv:" opt; do
+  case $opt in
+    h)
+      filetype="holdings"
+      ;;
+		i) 
+			filetype="item"
+			;;
+		o) 
+			filetype="order"
+			;;
+		u) 
+			filetype="user"
+			;;
+		v) 
+			filetype="organization"
+			;;
+    \?)
+      echo "Error: Invalid option -$OPTARG" >&2
+      echo "Usage: $0 [-hiouv]" >&2
+      exit 1
+      ;;
+  esac
+done
+
+shift $((OPTIND - 1))
+
+infile="${1}"
+object_map='{"data":[]}'
+
+if [[ ! -f ${infile} ]] || [[ -z ${filetype} ]];then 
+cat << EOF
+
+You must supply a file name and supply a switch to indicate filetype.
+
+File types: 
+	-h: holdings
+	-i: item
+	-o: order
+	-u: user
+	-v: organizations
+
+EOF
+	exit
+fi
+
+outfile="${filetype}_mapping.json"
+
+note_iter=0
+chkinnote_iter=0
+chkinnote_iter=0
+
+### processed twice so fallback fields can be identified
+IFS=$'\t' read -r -a header_arr < <(head -1 "${infile}" )
+
+addfield() {
+	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\"}"
+	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")
+}
+
+addbackupfield() {
+	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"legacy_backupfield\":\"${2}\"}"
+	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")
+}
+
+addvalue() {
+	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"value\":\"${2}\"}"
+	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")
+}
+
+build_item_map() {
+	for field in "${header_arr[@]}"; do
+		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
+	
+		case ${comp_field} in 
+			id | itemid | itempid | physicalitemid | recorditem | z30reckey)
+				addfield legacyIdentifier
+				itemfield="${field}"
+				;;
+			barcode | itembarcode | z30barcode )
+				addfield barcode
+				barcodefield="${field}"
+			;;
+			holdid | holrecordid | holdingsid | mfhdid | z30holdocunumber )
+				addfield holdingsRecordId 
+				holdidfield="${field}"
+			;;
+			materialformat | materialtype | mattype | mtype | mediaitm | z30material )
+				addfield materialTypeId 
+				mattypefield="${field}"
+			;;
+			loantype | itempolicy )
+				addfield permanentLoanTypeId 
+				loantypefield="${field}"
+			;;
+			fulfillmentnote | imessage | imsg | messgage | checkinnote )
+				addfield circulationNotes[0].note
+				addvalue circulationNotes[0].noteType "Check in"
+				addvalue circulationNotes[0].staffOnly true
+			;;
+			internalnote | intnote | staffnote )
+				addfield notes[${note_iter}].note
+				addvalue notes[${note_iter}].itemNoteTypeId xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+				addvalue notes[${note_iter}].staffOnly true
+				note_iter=$(($note_iter + 1))
+			;;
+			note | opacmsg |publicnote | z30noteopac )
+				addfield notes[${note_iter}].note
+				addvalue notes[${note_iter}].noteTypeId xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+				addvalue notes[${note_iter}].staffOnly false
+				note_iter=$(($note_iter + 1))
+			;;
+			copy | copynumber | copyno | copyid | z30copyid | itemcopyid )
+				addfield copyNumber
+			;;
+			chron | chronology )
+				addfield volume
+			;;
+			enum | enumeration | itemenum )
+				addfield enumeration
+			;;
+			vol | volume )
+				addfield volume
+			;;
+			year )
+				addfield yearCaption[0]
+			;;
+			pieces)
+				addfield numberOfPieces 
+			;;
+			itemstatus | itemstatusdesc | itemstatuscurrentstatus | status | statusmappingkey )
+				addfield status.name
+			;;
+			templocation | itemtemporaryshelvinglocation)
+				addfield temporaryLocationId
+			;;
+		esac
+	done
+
+	
+
+	for field in "${header_arr[@]}"; do
+		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
+	
+		case ${comp_field} in 
+			barcode | itembarcode | z30barcode )
+				if [[ -z ${itemfield} ]];then
+					addfield legacyIdentifier
+					field=${itemfield}
+					addfield barcode
+				else
+					addbackupfield barcode "${itemfield}"
+				fi	
+			;;
+			itype | itemtypeid | itemtypecode )
+				if [[ -z ${mattypefield} ]];then
+					addfield materialTypeId
+					mattypefield="${field}"
+				fi
+				if [[ -z ${loantypefield} ]];then
+					addfield permanentLoanTypeId
+					loantypefield="${field}"
+				fi
+			;;
+		esac
+	done
+
+	if [[ -z ${holdidfield} ]];then
+		field=${itemfield}
+		addfield holdingsRecordId
+	fi
+}
+
+case ${filetype} in	
+	item)
+		build_item_map
+		build_holdings_map
+		;;
+esac
+
+jq '.data |= sort_by(.folio_field)' <<< "${object_map}" |sed 's/"true"/true/;s/"false"/false/'

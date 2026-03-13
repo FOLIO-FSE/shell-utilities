@@ -25,13 +25,6 @@ fi
 filelist=("$@")
 infile="${filelist[0]}"
 
-if [[ "${infile}" =~ \....$ ]];then
-	finalfile=$(echo "${infile}" |sed 's/\(.*\)\(\....$\)/\1_fixed.tsv/')
-else
-	finalfile="${infile}_fixed.tsv"
-fi
-
-errorfile="${infile}_error"
 rm -f "${finalfile}" "${errorfile}"
 rm -f filefix*_bad filefixa* 
 
@@ -107,13 +100,12 @@ function to_tsv(){
 
 function fix_file() {
 local infile="${1}"
-local outfile=""
+local finalfile="${2}"
+local outfile="$(sed 's/\.....\?$//' <<< "${infile}")"
 filedetect="${infile,,}"
 filecontent=""
 
 [[ "${filedetect}" =~ loan ]] && filecontent="loan"
-
-outfile=$(sed 's/\.....\?$//' <<< "${infile}")
 
 if [[ "${infile: -4}" == "xlsx" ]];then
 	echo "Excel file detected -- converting"
@@ -482,7 +474,7 @@ wait
 cat filefixa*_out >> "${finalfile}"
 cat filefixa*_bad > "${errorfile}" 2>/dev/null
 
-rm -f filefixa*
+rm -f filefixa* 
 rm tmp_filefixawk
 
 numclean=$(wc -l ${finalfile} |cut -d " " -f1)
@@ -511,6 +503,15 @@ for file in "${filelist[@]}";do
 		echo "First line contains only whitespace, deleting all leading blank lines"
 		sed -i '1,/^[[:alnum:]]/ { /^[[:space:]]*$/d }' "${file}"
 	fi
-	fix_file "${file}"
+
+	if [[ "${file}" =~ \....$ ]];then
+		finalfile=$(echo "${file}" |sed 's/\(.*\)\(\....$\)/\1_fixed.tsv/')
+	else
+		finalfile="${file}_fixed.tsv"
+	fi
+
+	errorfile="${file}_error"
+
+	fix_file "${file}" "${finalfile}"
 done
 

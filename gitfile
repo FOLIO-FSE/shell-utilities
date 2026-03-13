@@ -1,0 +1,11 @@
+#!/usr/bin/bash
+
+LIBRARY=$1
+FILE=$2
+
+curl -sS -L \
+  -H "Authorization: Bearer $GITHUB_TOKEN" \
+  -H "Accept: application/vnd.github.raw" \
+  "https://api.github.com/repos/FOLIO-FSE/migration_${LIBRARY}/contents/mapping_files/${FILE}?ref=main" \
+  -o ${FILE}
+

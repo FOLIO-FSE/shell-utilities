@@ -48,6 +48,44 @@ fi
 
 outfile="${filetype}_mapping.json"
 
+IFS= read -r -d '' item_statuses <<'EOF'
+legacy_code	folio_name
+m	Missing
+$	Lost and paid
+o	Restricted
+w	Withdrawn
+p	In process
+z	Claimed returned
+!	Awaiting pickup
+n	Aged to lost
+b	In process
+At Bindery	In process (non-requestable)
+Claimed Returned	Claimed returned
+In Process	In process
+In process (non-requestable)	In process (non-requestable)
+Lib Use Only	Restricted
+Library use only	Restricted
+Lost	Lost
+Lost--System Applied	Lost
+Withdrawn	Withdrawn
+BINDERY In process (non-requestable)
+CATALOGING  In process
+CLAIMED_RETURNED  Claimed returned
+DAMAGED In process (non-requestable)
+DISCARD Withdrawn
+DISPATCHED  In transit
+INPROCESS In process
+IN_PROCESSING In process
+LOST  Lost and paid
+LOST-ASSUM  Missing
+LOST-CLAIM  Declared lost
+LOST-CLAIM  Missing
+LOST-PAID Lost and paid
+NON-CIRC  Restricted
+RESTRICTED  Restricted
+WITHDRAWN Withdrawn
+EOF
+
 note_iter=0
 chkinnote_iter=0
 chkinnote_iter=0
@@ -132,6 +170,7 @@ build_item_map() {
 			;;
 			itemstatus | itemstatusdesc | itemstatuscurrentstatus | status | statusmappingkey )
 				addfield status.name
+				statusfield="${field}"
 			;;
 			templocation | itemtemporaryshelvinglocation)
 				addfield temporaryLocationId
@@ -171,6 +210,10 @@ build_item_map() {
 		field=${itemfield}
 		addfield holdingsRecordId
 	fi
+
+	[[ -n ${mattypefield} ]] && echo -e "${mattypefield}\tfolio_name\n*\tmigration" > material_types.tsv
+	[[ -n ${loantypefield} ]] && echo -e "${loantypefield}\tfolio_name\n*\tmigration" > loan_types.tsv
+	echo -e "${item_statuses}" > item_statuses.tsv
 }
 
 case ${filetype} in	
@@ -184,7 +227,7 @@ esac
 jq '.data |= sort_by(.folio_field)' <<< "${object_map}" \
   | sed 's/"true"/true/;s/"false"/false/' > "${outfile}"
 
-echo "Mapped file was output to ${outfile}. "
+echo "Mapped file was output to ${outfile}. Delimited map templates were created with applicable headers. "
 echo
 
 {

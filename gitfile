@@ -1,11 +1,14 @@
 #!/usr/bin/bash
 
 LIBRARY=$1
-FILE=$2
+FULLPATH=$2
+FILE="${FULLPATH##*/}"
 
 curl -sS -L \
   -H "Authorization: Bearer $GITHUB_TOKEN" \
   -H "Accept: application/vnd.github.raw" \
-  "https://api.github.com/repos/FOLIO-FSE/migration_${LIBRARY}/contents/mapping_files/${FILE}?ref=main" \
+  "https://api.github.com/repos/FOLIO-FSE/migration_${LIBRARY}/contents/${FULLPATH}?ref=main" \
   -o ${FILE}
-
+echo
+echo "${FILE} has been retrieved"
+echo

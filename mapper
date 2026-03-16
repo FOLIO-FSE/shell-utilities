@@ -84,8 +84,9 @@ WITHDRAWN Withdrawn
 EOF
 
 note_iter=0
+address_iter=0
 chkinnote_iter=0
-chkinnote_iter=0
+chkoutnote_iter=0
 
 ### processed twice so fallback fields can be identified
 IFS=$'\t' read -r -a header_arr < <(head -1 "${infile}" )
@@ -335,6 +336,101 @@ build_item_map() {
 	echo -e "${item_statuses}" > item_statuses.tsv
 }
 
+build_user_map() {
+	for field in "${header_arr[@]}"; do
+		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
+	
+		case ${comp_field} in 
+			id | patronuniqueid | primaryidentifier | record | recordnumberpatron | uniqueid | userid | useruserid )
+				addfield legacyIdentifier
+				idfield="${field}"
+				;;
+			categorycode | group | mappedpatrongroup | patronborrowercategory | patrongroup | patrongroupcode | patrontype | ptype | ptypecode | type | usergroup | usergroupcode | userprofile )
+				addfield patronGroup
+				groupfield="${field}"
+			;;
+			note | notes | note_content | notepatron | patronnote | patronnotes | borrowernote |userxinfonote | comment )
+				addfield notes[${note_iter}].note
+				addvalue notes[${note_iter}].noteTypeId xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+				note_iter=$(($note_iter + 1))
+			;;
+			firstname | fname | givenname | patrongivenname )
+				addfield personal.firstName 
+				;;
+			 middle | middlename | mname )
+				addfield personal.lastName 
+				;;
+			 familyname | lastname | lname | patronfamilyname | surname )
+				addfield personal.lastName 
+				lnamefield="${field}"
+				;;
+			address1phone1 | homephone | patronphone | patronphonenumber | phone | phoneno | phonenumber | primaryphone | telephone )
+				addfield personal.phone 
+				;;
+			 cellphone | mobile | mobilephone )
+				addfield personal.mobilePhone 
+				;;
+			 email | emailaddr | emailaddress | emailaddress1 | patronemail  | patronemailaddress | primaryemail )
+				addfield personal.email
+				;;
+			loginid | username )
+				addfield username
+				userfield="${field}"
+				;;
+			 addr1 | addr1line1 | address | address1 | address1line1 | addrline1 | homeadddress1 | permaddressline1 | primaryaddress )
+				addfield personal.addresses[0].addressLine1
+				addvalue personal.addresses[0].addressTypeId primary
+				;;
+			 addr1city | address1city | city | homecity | permcity )
+				addfield personal.addresses[0].city
+				;;
+			 addr1zip | address1zip | homezip | patronpostalcode | permzip | postalcode | zip )
+				addfield personal.addresses[0].postalCode
+				;;
+			 addr1state | address1state | homestate | patronprovince | permstate | region | state )
+				addfield personal.addresses[0].region
+				;;
+		esac
+	done
+		case ${comp_field} in 
+			barcode | pbarcode | patronbarcode | cardnumber | borrowerid )
+				if [[ -z ${idfield} ]];then
+					addfield legacyIdentifier
+					addfield barcode
+					idfield=${field}
+					barcodefield=${field}
+				else
+					addbackupfield barcode "${idfield}"
+				fi
+			;;
+			patrnname | name )
+				if [[ -z ${lastname} ]];then
+					addfield personal.lastName
+					addfield personal.firstName
+				else
+					addfield personal.firstName
+				fi
+			;;
+		esac
+	done
+
+	for field in "${header_arr[@]}"; do
+		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
+	
+		case ${comp_field} in 
+			univid | uniid | externalsystemid | studentid )
+				if [[ -z ${barcode} ]];then
+					addbackupfield barcode "${idfield}"
+					field=${barcodefield}
+				fi	
+			;;
+		esac
+	done
+	if [[ -z ${lastname} ]];then
+		[[ -n ${firstname} ]] && lastname="${firstname}"
+	fi
+	[[ -n ${groupfield} ]] && echo -e "${groupfield}\tfolio_group\n*\tmigration" > user_groups.tsv
+}
 initialize
 
 case ${filetype} in	
@@ -349,6 +445,10 @@ case ${filetype} in
 		initialize
 		build_holdings_map
 		echo
+		print_results
+		;;
+	user)
+		build_user_map
 		print_results
 		;;
 

@@ -9,7 +9,7 @@ while getopts "hiouv:" opt; do
 			filetype="item"
 			;;
 		o) 
-			filetype="order"
+			filetype="composite_order"
 			;;
 		u) 
 			filetype="user"
@@ -102,7 +102,14 @@ addbackupfield() {
 }
 
 addvalue() {
+	value="${2}"
 	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"value\":\"${2}\"}"
+	newfield=$(sed 's/"\(true\|false\)"/\1/' <<< "${newfield}")
+	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")
+}
+
+addvaluerules() {
+	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"value\":\"${2}\", \"rules\":\"replaceValues\":{${3}}"
 	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")
 }
 
@@ -138,6 +145,118 @@ print_results() {
 	paste -d $'\t' tmpmap tmpunmapped2 | column -t -s $'\t'
 	
 	rm -f tmp1 tmp2 tmpunmapped1 tmpunmapped2 tmpmap
+}
+
+build_order_map() {
+	for field in "${header_arr[@]}"; do
+		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
+	
+		case ${comp_field} in 
+			almapoline | ordernumber | po | ponumber | purchaseordernumber | recordorder )
+				addfield poNumber
+				addfield legacyIdentifier
+				;;
+			poprefix )
+				addfield poNumberPrefix 
+				;;
+			posuffix )
+				addfield poNumberSuffix
+				;;
+			almapoline | ordernumber | ponumber | purchaseordernumber | recordorder )
+				addfield callNumber 
+				callfield="${field}"
+				;;
+			holdid | holrecordid | holdingsid | mfhdid | z30holdocunumber )
+				addfield holdingsRecordId 
+				holdidfield="${field}"
+			;;
+			holdings | libhas | libhascheckin | summaryholding | summaryholdings )
+				addfield holdingsStatements[0].statement
+			;;
+			lineitemtype )
+				addvaluerules orderType Ongoing '"\"Single-part\":\"One-Time\",\"Subscription\":\"Ongoing\",\"Standing order\":\"Ongoing\"'
+				addvaluerules ongoing.isSubscription Ongoing '"\"Single-part\":false,\"Subscription\":true,\"Standing order\":false'
+				addvalue ongoing.manualRenewal true 
+			;;
+			fund | fundcode )
+				addfield notes[${note_iter}] 
+				addvalue notes[${note_iter}] "(${field})"
+				note_iter=$(($note_iter + 1))
+			;;
+			note | ordernote  )
+				addfield notes[${note_iter}] 
+				note_iter=$(($note_iter + 1))
+			;;
+			intnote )
+				addfield ongoing.notes
+			;;
+			receivingnote )
+				addfield compositePoLines[0].details.receivingNote
+			;;
+			location )
+				addfield compositePoLines[0].locations.[0].locationId
+			;;
+			vendor )
+				addfield vendor
+			;;
+		esac
+	done
+
+	
+
+	for field in "${header_arr[@]}"; do
+		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
+	
+		case ${comp_field} in 
+			call | callmarc | callno | callnumber )
+				if [[ -z ${callfield} ]];then
+					callfield=${field}
+					addfield callNumber
+				fi	
+			;;
+			callprefix | callnumberprefix )
+				addfield callNumberPrefix
+			;;
+			callsuffix | callnumbersuffix )
+				addfield callNumberPrefix
+			;;
+			oclc | oclcnumber )
+				if [[ -z ${bibfield} ]];then
+					bibfield=${field}
+					addfield instanceId
+				fi	
+			;;
+			loc | location )
+				if [[ -z ${locationfield} ]];then
+					addfield permanentLocationId
+					locationfield=${field}
+				fi	
+			;;
+		esac
+	done
+
+	# extra sweep to pull up bib specific call numbers
+
+	for field in "${header_arr[@]}"; do
+		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
+	
+		case ${comp_field} in 
+			bibcall | callbiblio | callbibliographic | callnonmarc )
+				if [[ -z ${callfield} ]];then
+					callfield=${field}
+					addfield callNumber
+				fi	
+			;;
+		esac
+	done
+
+	if [[ -z ${holdidfield} ]];then
+		field=${itemfield}
+		addfield holdingsRecordId
+	fi
+
+	[[ -n ${typefield} ]] && echo -e "${mattypefield}\tfolio_name\n*\tmigration" > material_types.tsv
+	[[ -n ${locationfield} ]] && echo -e "${locationfield}\tlegacy_code\tfolio_code\n*\t*\tmigration" > locations.tsv
 }
 
 build_holdings_map() {
@@ -381,14 +500,27 @@ build_user_map() {
 				addfield personal.addresses[0].addressLine1
 				addvalue personal.addresses[0].addressTypeId primary
 				;;
+			 addr2 | addr2line1 | address2 | address2 | address2line1 | addr2line1 )
+				addfield personal.addresses[1].addressLine1
+				addvalue personal.addresses[1].addressTypeId work
+				;;
 			 addr1city | address1city | city | homecity | permcity )
 				addfield personal.addresses[0].city
+				;;
+			 addr2city | address2city | city2 )
+				addfield personal.addresses[1].city
 				;;
 			 addr1zip | address1zip | homezip | patronpostalcode | permzip | postalcode | zip )
 				addfield personal.addresses[0].postalCode
 				;;
+			 addr2zip | address2zip | postalcode2 | zip2 )
+				addfield personal.addresses[1].postalCode
+				;;
 			 addr1state | address1state | homestate | patronprovince | permstate | region | state )
 				addfield personal.addresses[0].region
+				;;
+			 addr2state | address2state | region2 | state2 )
+				addfield personal.addresses[1].region
 				;;
 		esac
 	done
@@ -434,6 +566,10 @@ build_user_map() {
 initialize
 
 case ${filetype} in	
+	composite_order)
+		build_order_map
+		print_results
+		;;
 	holdings)
 		build_holdings_map
 		print_results

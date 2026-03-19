@@ -149,60 +149,114 @@ print_results() {
 
 build_order_map() {
 	for field in "${header_arr[@]}"; do
-		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
+		comp_field=$(echo "${field,,}" | tr -dc "[a-z0-9]" |sed 's/folio//' )
 	
-		case ${comp_field} in 
-			almapoline | ordernumber | po | ponumber | purchaseordernumber | recordorder )
-				addfield poNumber
-				addfield legacyIdentifier
-				;;
-			poprefix )
-				addfield poNumberPrefix 
-				;;
-			posuffix )
-				addfield poNumberSuffix
-				;;
-			almapoline | ordernumber | ponumber | purchaseordernumber | recordorder )
-				addfield callNumber 
-				callfield="${field}"
-				;;
-			holdid | holrecordid | holdingsid | mfhdid | z30holdocunumber )
-				addfield holdingsRecordId 
-				holdidfield="${field}"
-			;;
-			holdings | libhas | libhascheckin | summaryholding | summaryholdings )
-				addfield holdingsStatements[0].statement
-			;;
-			lineitemtype )
-				addvaluerules orderType Ongoing '"\"Single-part\":\"One-Time\",\"Subscription\":\"Ongoing\",\"Standing order\":\"Ongoing\"'
-				addvaluerules ongoing.isSubscription Ongoing '"\"Single-part\":false,\"Subscription\":true,\"Standing order\":false'
-				addvalue ongoing.manualRenewal true 
-			;;
-			fund | fundcode )
-				addfield notes[${note_iter}] 
-				addvalue notes[${note_iter}] "(${field})"
-				note_iter=$(($note_iter + 1))
-			;;
-			note | ordernote  )
-				addfield notes[${note_iter}] 
-				note_iter=$(($note_iter + 1))
-			;;
-			intnote )
-				addfield ongoing.notes
-			;;
-			receivingnote )
-				addfield compositePoLines[0].details.receivingNote
-			;;
-			location )
-				addfield compositePoLines[0].locations.[0].locationId
-			;;
-			vendor )
+    case ${comp_field} in
+      almapoline | ordernumber | ponumber | purchaseordernumber | recordorder )
+        addfield callNumber
+        callfield="${field}"
+        ;;
+      acqtype | acquisitionmethod | format | ordtype )
+        addfield compositePoLines[0].acquisitionMethod
+        ;;
+      eprice | price | listunitprice | polineestimatedprice | unitprice )
+        addfield compositePoLines[0].cost.listUnitPrice
+        addfield totalEstimatedPrice
+        ;;
+      listunitpriceelectronic )
+        addfield compositePoLines[0].cost.listUnitPriceElectronic
+        ;;
+      listunitpricephysical )
+        addfield compositePoLines[0].cost.listUnitPricePhysical
+        ;;
+       costquantityelectronic | quantityelectronic )
+        addfield compositePoLines[0].cost.quantityElectronic
+        ;;
+       costquantityphysical | quantity | quantityphysical )
+        addfield compositePoLines[0].cost.quantityElectronic
+        ;;
+      receivingnote )
+        addfield compositePoLines[0].details.receivingNote
+        ;;
+      url )
+        addfield compositePoLines[0].details.resourceUrl
+        ;;
+      startdate )
+        addfield compositePoLines[0].details.subscriptionFrom
+        ;;
+       expirationdate )
+        addfield compositePoLines[0].details.subscriptionTo
+        ;;
+      location )
+        addfield compositePoLines[0].locations.[0].locationId
+        ;;
+      copies | quantity | quantitytotal | totalitems )
+        addfield compositePoLines[0].locations[0].quantity
+        ;;
+      locationquantityelectronic | quantityelectronic )
+        addfield compositePoLines[0].locations[0].quantityElectronic
+        ;;
+      locationquantityphysical | quantityphysical )
+        addfield compositePoLines[0].locations[0].quantityPhysical
+        ;;
+      form | format )
+        addfield compositePoLines[0].orderFormat
+        ;;
+      publishername )
+        addfield compositePoLines[0].publisher
+        ;;
+      requester )
+        addfield compositePoLines[0].requester
+        ;;
+      approvaldate | dateordered | invoicedate | odate | podate )
+        addfield dateOrdered
+        ;;
+      holdid | holrecordid | holdingsid | mfhdid | z30holdocunumber )
+        addfield holdingsRecordId
+        holdidfield="${field}"
+        ;;
+      holdings | libhas | libhascheckin | summaryholding | summaryholdings )
+        addfield holdingsStatements[0].statement
+        ;;
+      expenseclass | fund | fundcode )
+        addfield notes[${note_iter}]
+        addvalue notes[${note_iter}] "(${field})"
+        note_iter=$(($note_iter + 1))
+        ;;
+      note | ordernote )
+        addfield notes[${note_iter}]
+        note_iter=$(($note_iter + 1))
+        ;;
+      intnote )
+        addfield ongoing.notes
+        ;;
+      lineitemtype | ordtype )
+        addvaluerules orderType Ongoing '"\"Single-part\":\"One-Time\",\"Subscription\":\"Ongoing\",\"Standing order\":\"Ongoing\"'
+        addvaluerules ongoing.isSubscription Ongoing '"\"Single-part\":false,\"Subscription\":true,\"Standing order\":false'
+        addvalue ongoing.manualRenewal true
+        ;;
+      almapoline | ordernumber | po | ponumber | purchaseordernumber | recordorder )
+        addfield poNumber
+        addfield legacyIdentifier
+				addvalue compositePoLines[0].source API
+        ;;
+      poprefix )
+        addfield poNumberPrefix
+        ;;
+      posuffix )
+        addfield poNumberSuffix
+        ;;
+      rencumber | renewaldate )
+        addfield reEncumber
+        ;;
+      totalcost | totalprice )
+        addfield totalEstimatedPrice
+        ;;
+			organization | vendor | vendorcode )
 				addfield vendor
 			;;
-		esac
-	done
-
-	
+    esac
+done
 
 	for field in "${header_arr[@]}"; do
 		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
@@ -220,7 +274,7 @@ build_order_map() {
 			callsuffix | callnumbersuffix )
 				addfield callNumberPrefix
 			;;
-			oclc | oclcnumber )
+			oclc | oclcnumber | recordbiblio )
 				if [[ -z ${bibfield} ]];then
 					bibfield=${field}
 					addfield instanceId

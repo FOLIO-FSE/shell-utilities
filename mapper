@@ -1,10 +1,10 @@
 #!/usr/bin/bash
 
-while getopts "hiouv:" opt; do
+while getopts "hiouv" opt; do
   case $opt in
-    h)
-      filetype="holdings"
-      ;;
+	h)
+	  filetype="holdings"
+	  ;;
 		i) 
 			filetype="item"
 			;;
@@ -17,11 +17,11 @@ while getopts "hiouv:" opt; do
 		v) 
 			filetype="organization"
 			;;
-    \?)
-      echo "Error: Invalid option -$OPTARG" >&2
-      echo "Usage: $0 [-hiouv]" >&2
-      exit 1
-      ;;
+	\?)
+		echo "Error: Invalid option -$OPTARG" >&2
+		echo "Usage: $0 [-hiouv]" >&2
+		exit 1
+		;;
   esac
 done
 

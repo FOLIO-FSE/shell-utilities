@@ -87,6 +87,7 @@ note_iter=0
 address_iter=0
 chkinnote_iter=0
 chkoutnote_iter=0
+phone_iter=0
 
 ### processed twice so fallback fields can be identified
 IFS=$'\t' read -r -a header_arr < <(head -1 "${infile}" )
@@ -110,6 +111,11 @@ addvalue() {
 
 addvaluerules() {
 	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"value\":\"${2}\", \"rules\":\"replaceValues\":{${3}}"
+	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")
+}
+
+addregexrules() {
+	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"value\":\"${2}\", \"rules\":\"regexGetFirstMatchOrEmpty\":{${3}}"
 	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")
 }
 
@@ -181,6 +187,7 @@ build_order_map() {
         ;;
       url )
         addfield compositePoLines[0].details.resourceUrl
+				addregexrules compositePoLines[0].details.resourceUrl "(^http.*)"
         ;;
       startdate )
         addfield compositePoLines[0].details.subscriptionFrom
@@ -460,6 +467,144 @@ build_item_map() {
 	echo -e "${item_statuses}" > item_statuses.tsv
 }
 
+build_organization_map() {
+	for field in "${header_arr[@]}"; do
+		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
+	
+		case ${comp_field} in 
+			accountnum )
+				addfield accounts[0].accountNo
+				;;
+			vendorname )
+				addfield accounts[0].name
+				;;
+			addr1 | address1 | address11 | addressline1 )
+				addfield addresses[0].addressLine1
+				addvalue addresses[0].isPrimary true
+				;;
+			addr2 | address2 | address12 | addressline2 )
+				addfield addresses[0].addressLine2
+				;;
+			addresscategory | category )
+				addfield addresses[0].categories[0]
+				;;
+			addresscity | city | city1 )
+				addfield addresses[0].city
+				;;
+			addresscountry | country )
+				addfield addresses[0].country
+				;;
+			addresszip | postalcode | zip | zip1 )
+				addfield addresses[0].postalCode
+				;;
+			addressstate | region | state | state1 )
+				addfield addresses[0].region
+				;;
+			addr21 | address21 | address2line1 )
+				addfield addresses[1].addressLine1
+				addvalue addresses[1].isPrimary false
+				;;
+			addr22 | address22 | address2line2 )
+				addfield addresses[1].addressLine2
+				;;
+			address2category | category2 )
+				addfield addresses[1].categories[0]
+				;;
+			address2city | city2 )
+				addfield addresses[1].city
+				;;
+			address2country | country2 )
+				addfield addresses[1].country
+				;;
+			address2zip | postalcode2 | zip2 )
+				addfield addresses[1].postalCode
+				;;
+			address2state | region2 | state2 )
+				addfield addresses[1].region
+				;;
+			altname | alternativenames )
+				addfield aliases[0].value
+				;;
+			code | orgcode | vencode | vendorcode )
+				addfield code
+				codefield="${field}"
+				addfield legacyIdentifier
+			;;
+			contact1address | contact1addressline1 )
+				addfield contacts[0].addresses[0].addressLine1
+			;;
+			contact1addressline2 )
+				addfield contacts[0].addresses[0].addressLine2
+			;;
+			contact1addresscity )
+				addfield contacts[0].addresses[0].city
+			;;
+			contactfirstname | contact1fname )
+				addfield contacts[0].firstName
+			;;
+			contactlastname | contact1lname )
+				addfield contacts[0].lastName
+			;;
+			contactnote | contact1note )
+				addfield contacts[0].notes
+			;;
+			description | orgnote | vendornote | vennote )
+				addfield description
+			;;
+			email | preferredemail )
+				addfield emails[0].value
+				addvalue emails[0].isPrimary true
+				addregexrules emails[0].value "(^[a-zA-Z0-9_\\\\-\\\\.]+@[a-zA-Z0-9_\\\\-\\\\.]+)"
+			;;
+			accountcode | erpcode )
+				addfield erpCode
+			;;
+			interfaceuri | url )
+				addfield interfaces[0].uri
+			;;
+			isvendor | isvendoryesno )
+				addfield isVendor
+				addvaluerules isVendor '"\"Yes\":\"true\",\"YES\":\"true\",\"TRUE\":\"true\","\"No\":\"false\",\"NO\":\"false\",\"FALSE\":\"false\"'
+			;;
+			name | orgname | providername | venname | vendorname )
+				addfield name
+			;;
+			note | notes | notecontent | orgnote | vendornote | vennote )
+				addfield notes[${note_iter}].content
+				addvalue notes[${note_iter}].content organizations
+				addvalue notes[${note_iter}].noteTypeId xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+				note_iter=$(($note_iter + 1))
+			;;
+			note2 | notes2 | notecontent2 | orgnote2 | vendornote2 | vennote2 )
+				addfield notes[${note_iter}].content
+				addvalue notes[${note_iter}].content organizations
+				addvalue notes[${note_iter}].noteTypeId xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+				note_iter=$(($note_iter + 1))
+			;;
+			orgtype | vendortype )
+				addfield organizationTypes[0]
+			;;
+			phone | phone1 | phonenum | phonenumber | preferredphonenumber | tel | telephone )
+				addfield phoneNumbers[${phone_iter}].phoneNumber
+				addvalue phoneNumbers[${phone_iter}].type main
+				addvalue phoneNumbers[${phone_iter}].isPrimary true
+				note_iter=$(($note_iter + 1))
+			;;
+			phone2 | phonenum2 | phonenumber2 | tel2 | telephone2 )
+				addfield phoneNumbers[${phone_iter}].phoneNumber
+				addvalue phoneNumbers[${phone_iter}].type main
+				addvalue phoneNumbers[${phone_iter}].isPrimary false
+				note_iter=$(($note_iter + 1))
+			;;
+			orgstatus | orgstatusactiveinactivepending | status )
+				addfield status
+				addvaluerules isVendor '"\"active\":\"Active\",\"ACTIVE\":\"Active\",\"inactive\":\"Inactive\","\"INACTIVE\":\"Inactive\",\"pending\":\"Pending\",\"PENDING\":\"Pending\"'
+			;;
+		esac
+	done
+	[[ -n ${codefield} ]] && echo -e "${codefield}\tfolio_code\n" > organizationCodeMap.tsv
+}
+
 build_user_map() {
 	for field in "${header_arr[@]}"; do
 		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
@@ -496,6 +641,7 @@ build_user_map() {
 				;;
 			 email | emailaddr | emailaddress | emailaddress1 | patronemail  | patronemailaddress | primaryemail )
 				addfield personal.email
+				addregexrules personal.email "(^[a-zA-Z0-9_\\\\-\\\\.]+@[a-zA-Z0-9_\\\\-\\\\.]+)"
 				;;
 			loginid | username )
 				addfield username

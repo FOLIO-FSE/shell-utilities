@@ -158,6 +158,7 @@ build_order_map() {
         ;;
       acqtype | acquisitionmethod | format | ordtype )
         addfield compositePoLines[0].acquisitionMethod
+				acqMethod="${field}"
         ;;
       eprice | price | listunitprice | polineestimatedprice | unitprice )
         addfield compositePoLines[0].cost.listUnitPrice
@@ -189,6 +190,7 @@ build_order_map() {
         ;;
       location )
         addfield compositePoLines[0].locations.[0].locationId
+				locationfield="${field}"
         ;;
       copies | quantity | quantitytotal | totalitems )
         addfield compositePoLines[0].locations[0].quantity
@@ -258,59 +260,8 @@ build_order_map() {
     esac
 done
 
-	for field in "${header_arr[@]}"; do
-		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
-	
-		case ${comp_field} in 
-			call | callmarc | callno | callnumber )
-				if [[ -z ${callfield} ]];then
-					callfield=${field}
-					addfield callNumber
-				fi	
-			;;
-			callprefix | callnumberprefix )
-				addfield callNumberPrefix
-			;;
-			callsuffix | callnumbersuffix )
-				addfield callNumberPrefix
-			;;
-			oclc | oclcnumber | recordbiblio )
-				if [[ -z ${bibfield} ]];then
-					bibfield=${field}
-					addfield instanceId
-				fi	
-			;;
-			loc | location )
-				if [[ -z ${locationfield} ]];then
-					addfield permanentLocationId
-					locationfield=${field}
-				fi	
-			;;
-		esac
-	done
-
-	# extra sweep to pull up bib specific call numbers
-
-	for field in "${header_arr[@]}"; do
-		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
-	
-		case ${comp_field} in 
-			bibcall | callbiblio | callbibliographic | callnonmarc )
-				if [[ -z ${callfield} ]];then
-					callfield=${field}
-					addfield callNumber
-				fi	
-			;;
-		esac
-	done
-
-	if [[ -z ${holdidfield} ]];then
-		field=${itemfield}
-		addfield holdingsRecordId
-	fi
-
-	[[ -n ${typefield} ]] && echo -e "${mattypefield}\tfolio_name\n*\tmigration" > material_types.tsv
-	[[ -n ${locationfield} ]] && echo -e "${locationfield}\tlegacy_code\tfolio_code\n*\t*\tmigration" > locations.tsv
+	[[ -n ${acqMethod} ]] && echo -e "${acqMethod}\tfolio_value\nApproval Plan\tApproval Plan\nContinuation\tContinuation\nDemand Driven Acquisitions (DDA)\tDemand Driven Acquisitions (DDA)\nDepository\tDepository\nExchange\tExchange\nFirm Order\tFirm Order\nFree\tFree\nGift\tGift\nMembership\tMembership\nMembership Title\tMembership\nPurchase At Vendor System\tPurchase At Vendor System\na\tSubscription\nc\t\tPurchase\nm\tMembership\np\tPurchase\ns\tSubscription\nt\tPurchase\n*\tOther" > acquisitionMethodMap.tsv
+	[[ -n ${locationfield} ]] && echo -e "${locationfield}\tlegacy_code\tfolio_code\n*\t*\tmigration" > locations_orders.tsv
 }
 
 build_holdings_map() {

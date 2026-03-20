@@ -114,12 +114,19 @@ addvalue() {
 }
 
 addreplacerules() {
-	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\", \"rules\":{\"replaceValues\":{${2}}}}"
+	replace_rule="${2}"
+	[[ "${2}" == "truefalse" ]] && replace_rule='"Yes":"true","YES":"true","TRUE":"true","No":"false","NO":"false","FALSE":"false"'
+
+	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\", \"rules\":{\"replaceValues\":{${replace_rule}}}}"
 	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")
 }
 
 addregexrules() {
-	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"rules\":{\"regexGetFirstMatchOrEmpty\":\"${2}\"}}"
+	regex_rule="${2}"
+	[[ "${2}" == "email" ]] && regex_rule='(^[a-zA-Z0-9_\\-\\.]+@[a-zA-Z0-9_\\-\\.]+)'
+	[[ "${2}" == "url" ]] && regex_rule='(^http.*)'
+
+	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"rules\":{\"regexGetFirstMatchOrEmpty\":\"${regex_rule}\"}}"
 	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")
 }
 
@@ -191,7 +198,7 @@ build_order_map() {
         ;;
       url )
         addfield compositePoLines[0].details.resourceUrl
-				addregexrules compositePoLines[0].details.resourceUrl "(^http.*)"
+				addregexrules compositePoLines[0].details.resourceUrl url
         ;;
       startdate )
         addfield compositePoLines[0].details.subscriptionFrom
@@ -558,7 +565,7 @@ build_organization_map() {
 			email | preferredemail )
 				addfield emails[0].value
 				addvalue emails[0].isPrimary true
-				addregexrules emails[0].value "(^[a-zA-Z0-9_\\\\-\\\\.]+@[a-zA-Z0-9_\\\\-\\\\.]+)"
+				addregexrules emails[0].value email
 			;;
 			accountcode | erpcode )
 				addfield erpCode
@@ -567,7 +574,7 @@ build_organization_map() {
 				addfield interfaces[0].uri
 			;;
 			isvendor | vendoryesno )
-				addreplacerules isVendor '"Yes":"true","YES":"true","TRUE":"true","No":"false","NO":"false","FALSE":"false"'
+				addreplacerules isVendor truefalse
 			;;
 			name | orgname | providername | venname | vendorname )
 				addfield name
@@ -643,7 +650,7 @@ build_user_map() {
 				;;
 			 email | emailaddr | emailaddress | emailaddress1 | patronemail  | patronemailaddress | primaryemail )
 				addfield personal.email
-				addregexrules personal.email "(^[a-zA-Z0-9_\\\\-\\\\.]+@[a-zA-Z0-9_\\\\-\\\\.]+)"
+				addregexrules personal.email email
 				;;
 			loginid | username )
 				addfield username

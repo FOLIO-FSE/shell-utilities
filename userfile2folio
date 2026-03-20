@@ -15,7 +15,7 @@ inputFile="users.tsv"
 # strip out all double quotes if present
 sed -i 's/"//g' users.tsv
 
-okapi_url="https://okapi-warner.folio.ebsco.com"
+okapi_url="https://okapi-xxx.folio.ebsco.com"
 tenant=""
 username=''
 password=''
@@ -37,8 +37,7 @@ IFS='' read -r -d '' okapi_login << EndOfAuth
 }
 EndOfAuth
 
-okapi_token=$(curl -s -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -d "${okapi_login}" "${okapi_url}/authn/login-with-expiry" |grep folioAccessToken| cut -f7)
-
+okapi_token=$(curl -c - -s -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -d "${okapi_login}" "${okapi_url}/authn/login-with-expiry" |grep folioAccessToken| cut -f7)
 
 ### just stick your data into a structure. If you have custom fields
 ### to pass through, this will need to be modified

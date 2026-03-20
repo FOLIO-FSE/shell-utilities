@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+declare -A header_arr
+
 while getopts "hiouv" opt; do
   case $opt in
 	h)

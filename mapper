@@ -89,8 +89,12 @@ chkinnote_iter=0
 chkoutnote_iter=0
 phone_iter=0
 
-### processed twice so fallback fields can be identified
-IFS=$'\t' read -r -A header_arr < <(head -1 "${infile}" )
+### convert indexed array to associative array
+
+IFS=$'\t' read -r -a hdr < <(head -n 1 -- "$infile")
+declare -A header_arr
+
+for i in "${!hdr[@]}"; do header_arr["${hdr[$i]}"]="${hdr[$i]}";done
 
 addfield() {
 	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\"}"
@@ -109,13 +113,13 @@ addvalue() {
 	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")
 }
 
-addvaluerules() {
-	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"value\":\"${2}\", \"rules\":\"replaceValues\":{${3}}"
+addreplacerules() {
+	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\", \"rules\":{\"replaceValues\":{${2}}}}"
 	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")
 }
 
 addregexrules() {
-	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"value\":\"${2}\", \"rules\":\"regexGetFirstMatchOrEmpty\":{${3}}"
+	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"rules\":{\"regexGetFirstMatchOrEmpty\":\"${2}\"}}"
 	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")
 }
 
@@ -240,8 +244,8 @@ build_order_map() {
         addfield ongoing.notes
         ;;
       lineitemtype | ordtype )
-        addvaluerules orderType Ongoing '"\"Single-part\":\"One-Time\",\"Subscription\":\"Ongoing\",\"Standing order\":\"Ongoing\"'
-        addvaluerules ongoing.isSubscription Ongoing '"\"Single-part\":false,\"Subscription\":true,\"Standing order\":false'
+        addreplacerules orderType '"Single-part":"One-Time","Subscription":"Ongoing","Standing order":"Ongoing"'
+        addreplacerules ongoing.isSubscription '"Single-part":"false","Subscription":"true","Standing order":"false"'
         addvalue ongoing.manualRenewal true
         ;;
       almapoline | ordernumber | po | ponumber | purchaseordernumber | recordorder )
@@ -562,9 +566,8 @@ build_organization_map() {
 			interfaceuri | url )
 				addfield interfaces[0].uri
 			;;
-			isvendor | isvendoryesno )
-				addfield isVendor
-				addvaluerules isVendor '"\"Yes\":\"true\",\"YES\":\"true\",\"TRUE\":\"true\","\"No\":\"false\",\"NO\":\"false\",\"FALSE\":\"false\"'
+			isvendor | vendoryesno )
+				addreplacerules isVendor '"Yes":"true","YES":"true","TRUE":"true","No":"false","NO":"false","FALSE":"false"'
 			;;
 			name | orgname | providername | venname | vendorname )
 				addfield name
@@ -588,17 +591,16 @@ build_organization_map() {
 				addfield phoneNumbers[${phone_iter}].phoneNumber
 				addvalue phoneNumbers[${phone_iter}].type main
 				addvalue phoneNumbers[${phone_iter}].isPrimary true
-				note_iter=$(($note_iter + 1))
+				phone_iter=$(($note_iter + 1))
 			;;
-			phone2 | phonenum2 | phonenumber2 | tel2 | telephone2 )
+			fax | phone2 | phonenum2 | phonenumber2 | tel2 | telephone2 )
 				addfield phoneNumbers[${phone_iter}].phoneNumber
 				addvalue phoneNumbers[${phone_iter}].type main
 				addvalue phoneNumbers[${phone_iter}].isPrimary false
-				note_iter=$(($note_iter + 1))
+				phone_iter=$(($note_iter + 1))
 			;;
 			orgstatus | orgstatusactiveinactivepending | status )
-				addfield status
-				addvaluerules isVendor '"\"active\":\"Active\",\"ACTIVE\":\"Active\",\"inactive\":\"Inactive\","\"INACTIVE\":\"Inactive\",\"pending\":\"Pending\",\"PENDING\":\"Pending\"'
+				addreplacerules status '"active":"Active","ACTIVE":"Active","inactive":"Inactive","INACTIVE":"Inactive","pending":"Pending","PENDING":"Pending"'
 			;;
 		esac
 	done
@@ -736,6 +738,10 @@ case ${filetype} in
 		initialize
 		build_holdings_map
 		echo
+		print_results
+		;;
+	organization)
+		build_organization_map
 		print_results
 		;;
 	user)

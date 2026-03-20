@@ -1,7 +1,5 @@
 #!/usr/bin/bash
 
-declare -A header_arr
-
 while getopts "hiouv" opt; do
   case $opt in
 	h)
@@ -92,7 +90,7 @@ chkoutnote_iter=0
 phone_iter=0
 
 ### processed twice so fallback fields can be identified
-IFS=$'\t' read -r -a header_arr < <(head -1 "${infile}" )
+IFS=$'\t' read -r -A header_arr < <(head -1 "${infile}" )
 
 addfield() {
 	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\"}"

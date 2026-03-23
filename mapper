@@ -600,14 +600,14 @@ build_organization_map() {
 			;;
 			phone | phone1 | phonenum | phonenumber | preferredphonenumber | tel | telephone )
 				addfield phoneNumbers[${phone_iter}].phoneNumber
-				addvalue phoneNumbers[${phone_iter}].type main
+				addvalue phoneNumbers[${phone_iter}].type General
 				addvalue phoneNumbers[${phone_iter}].isPrimary true
 				phone_iter=$(($note_iter + 1))
 				phonecategoryfield="${field}"
 			;;
 			fax | phone2 | phonenum2 | phonenumber2 | tel2 | telephone2 )
 				addfield phoneNumbers[${phone_iter}].phoneNumber
-				addvalue phoneNumbers[${phone_iter}].type main
+				addvalue phoneNumbers[${phone_iter}].type General
 				addvalue phoneNumbers[${phone_iter}].isPrimary false
 				phone_iter=$(($note_iter + 1))
 			;;

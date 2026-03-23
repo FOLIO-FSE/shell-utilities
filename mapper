@@ -565,9 +565,8 @@ build_organization_map() {
 				addfield description
 			;;
 			email | preferredemail )
-				addfield emails[0].value
-				addvalue emails[0].isPrimary true
 				addregexrules emails[0].value email
+				addvalue emails[0].isPrimary true
 				emailcategoryfield="${field}"
 			;;
 			accountcode | erpcode )

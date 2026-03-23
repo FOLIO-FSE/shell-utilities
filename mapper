@@ -593,6 +593,7 @@ build_organization_map() {
 			;;
 			orgtype | vendortype )
 				addfield organizationTypes[0]
+				orgtypefield="${field}"
 			;;
 			phone | phone1 | phonenum | phonenumber | preferredphonenumber | tel | telephone )
 				addfield phoneNumbers[${phone_iter}].phoneNumber
@@ -612,6 +613,10 @@ build_organization_map() {
 		esac
 	done
 	[[ -n ${codefield} ]] && echo -e "${codefield}\tfolio_code\n" > organizationCodeMap.tsv
+	[[ -n ${orgtypefield} ]] && echo -e "${orgtypefield}\tfolio_name\n*\tGeneral" > organization_types.tsv
+	[[ -n ${addresscategoriesfield} ]] && echo -e "${addresscategoriesfield}\tfolio_value\n*\tGeneral" > address_categories.tsv
+	[[ -n ${emailcategoriesfield} ]] && echo -e "${orgtypefield}\tfolio_value\n*\tGeneral" > email_categories.tsv
+	[[ -n ${phonecategoriesfield} ]] && echo -e "${phonecategoriesfield}\tfolio_value\n*\tGeneral" > phone_categories.tsv
 }
 
 build_user_map() {

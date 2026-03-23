@@ -117,7 +117,7 @@ addreplacerules() {
 	replace_rule="${2}"
 	[[ "${2}" == "truefalse" ]] && replace_rule='"Yes":"true","YES":"true","TRUE":"true","No":"false","NO":"false","FALSE":"false"'
 
-	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\", \"rules\":{\"replaceValues\":{${replace_rule}}}}"
+	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"value\":\"\",\"rules\":{\"replaceValues\":{${replace_rule}}}}"
 	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")
 }
 
@@ -126,7 +126,7 @@ addregexrules() {
 	[[ "${2}" == "email" ]] && regex_rule='(^[a-zA-Z0-9_\\-\\.]+@[a-zA-Z0-9_\\-\\.]+)'
 	[[ "${2}" == "url" ]] && regex_rule='(^http.*)'
 
-	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"rules\":{\"regexGetFirstMatchOrEmpty\":\"${regex_rule}\"}}"
+	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"value\":\"\",\"rules\":{\"regexGetFirstMatchOrEmpty\":\"${regex_rule}\"}}"
 	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")
 }
 

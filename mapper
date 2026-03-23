@@ -599,14 +599,14 @@ build_organization_map() {
 			;;
 			phone | phone1 | phonenum | phonenumber | preferredphonenumber | tel | telephone )
 				addfield phoneNumbers[${phone_iter}].phoneNumber
-				addvalue phoneNumbers[${phone_iter}].type General
+				addvalue phoneNumbers[${phone_iter}].type Customer Service
 				addvalue phoneNumbers[${phone_iter}].isPrimary true
 				phone_iter=$(($note_iter + 1))
 				phonecategoryfield="${field}"
 			;;
 			fax | phone2 | phonenum2 | phonenumber2 | tel2 | telephone2 )
 				addfield phoneNumbers[${phone_iter}].phoneNumber
-				addvalue phoneNumbers[${phone_iter}].type General
+				addvalue phoneNumbers[${phone_iter}].type Customer Service
 				addvalue phoneNumbers[${phone_iter}].isPrimary false
 				phone_iter=$(($note_iter + 1))
 			;;
@@ -615,13 +615,13 @@ build_organization_map() {
 			;;
 		esac
 	done
-	[[ -z ${addresscategoryfield} ]] && echo -e "${addressfield}\tfolio_value\n*\tGeneral" > address_categories.tsv
+	[[ -z ${addresscategoryfield} ]] && echo -e "${addressfield}\tfolio_value\n*\tCustomer Service" > address_categories.tsv
 
 	[[ -n ${codefield} ]] && echo -e "${codefield}\tfolio_code\n" > organizationCodeMap.tsv
-	[[ -n ${orgtypefield} ]] && echo -e "${orgtypefield}\tfolio_name\n*\tGeneral" > organization_types.tsv
-	[[ -n ${addresscategoryfield} ]] && echo -e "${addresscategoryfield}\tfolio_value\n*\tGeneral" > address_categories.tsv
-	[[ -n ${emailcategoryfield} ]] && echo -e "${emailcategoryfield}\tfolio_value\n*\tGeneral" > email_categories.tsv
-	[[ -n ${phonecategoryfield} ]] && echo -e "${phonecategoryfield}\tfolio_value\n*\tGeneral" > phone_categories.tsv
+	[[ -n ${orgtypefield} ]] && echo -e "${orgtypefield}\tfolio_name\n*\tCustomer Service" > organization_types.tsv
+	[[ -n ${addresscategoryfield} ]] && echo -e "${addresscategoryfield}\tfolio_value\n*\tCustomer Service" > address_categories.tsv
+	[[ -n ${emailcategoryfield} ]] && echo -e "${emailcategoryfield}\tfolio_value\n*\tCustomer Service" > email_categories.tsv
+	[[ -n ${phonecategoryfield} ]] && echo -e "${phonecategoryfield}\tfolio_value\n*\tCustomer Service" > phone_categories.tsv
 }
 
 build_user_map() {

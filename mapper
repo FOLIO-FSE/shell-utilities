@@ -498,6 +498,7 @@ build_organization_map() {
 				;;
 			addresscategory | category )
 				addfield addresses[0].categories[0]
+				addresscategoryfield=${field}
 				;;
 			addresscity | city | city1 )
 				addfield addresses[0].city
@@ -566,6 +567,7 @@ build_organization_map() {
 				addfield emails[0].value
 				addvalue emails[0].isPrimary true
 				addregexrules emails[0].value email
+				emailcategoryfield="${field}"
 			;;
 			accountcode | erpcode )
 				addfield erpCode
@@ -600,6 +602,7 @@ build_organization_map() {
 				addvalue phoneNumbers[${phone_iter}].type main
 				addvalue phoneNumbers[${phone_iter}].isPrimary true
 				phone_iter=$(($note_iter + 1))
+				phonecategoryfield="${field}"
 			;;
 			fax | phone2 | phonenum2 | phonenumber2 | tel2 | telephone2 )
 				addfield phoneNumbers[${phone_iter}].phoneNumber
@@ -614,9 +617,9 @@ build_organization_map() {
 	done
 	[[ -n ${codefield} ]] && echo -e "${codefield}\tfolio_code\n" > organizationCodeMap.tsv
 	[[ -n ${orgtypefield} ]] && echo -e "${orgtypefield}\tfolio_name\n*\tGeneral" > organization_types.tsv
-	[[ -n ${addresscategoriesfield} ]] && echo -e "${addresscategoriesfield}\tfolio_value\n*\tGeneral" > address_categories.tsv
-	[[ -n ${emailcategoriesfield} ]] && echo -e "${orgtypefield}\tfolio_value\n*\tGeneral" > email_categories.tsv
-	[[ -n ${phonecategoriesfield} ]] && echo -e "${phonecategoriesfield}\tfolio_value\n*\tGeneral" > phone_categories.tsv
+	[[ -n ${addresscategoryfield} ]] && echo -e "${addresscategoryfield}\tfolio_value\n*\tGeneral" > address_categories.tsv
+	[[ -n ${emailcategorsfield} ]] && echo -e "${emailcategoryfield}\tfolio_value\n*\tGeneral" > email_categories.tsv
+	[[ -n ${phonecategoryfield} ]] && echo -e "${phonecategoryfield}\tfolio_value\n*\tGeneral" > phone_categories.tsv
 }
 
 build_user_map() {

@@ -511,6 +511,7 @@ for file in "${filelist[@]}";do
 	fi
 
 	errorfile="${file}_error"
+	rm -f "${finalfile}"
 
 	fix_file "${file}" "${finalfile}"
 done

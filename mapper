@@ -97,12 +97,12 @@ declare -A header_arr
 for i in "${!hdr[@]}"; do header_arr["${hdr[$i]}"]="${hdr[$i]}";done
 
 addfield() {
-	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\"}"
+	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"value\":\"\"}"
 	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")
 }
 
 addbackupfield() {
-	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"legacy_backupfield\":\"${2}\"}"
+	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"value\":\"\",\"legacy_backupfield\":\"${2}\"}"
 	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")
 }
 

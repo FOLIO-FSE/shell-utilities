@@ -136,7 +136,7 @@ initialize() {
 }
 
 print_results() {
-	jq '.data |= sort_by(.folio_field)' <<< "${object_map}" \
+	jq '.data |= (sort_by(.folio_field) | map(. + {description: ""}))' <<< "${object_map}" \
 	  | sed 's/"true"/true/;s/"false"/false/' > "${outfile}"
 	{
 	  echo -e "Legacy field\tFOLIO field"

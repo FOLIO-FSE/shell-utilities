@@ -433,6 +433,7 @@ function build_mfhd() {
 						printf ("Ownership note was found in "$i"\\n")
 					}
 					break
+				case "note":
 				case "publicnote":
 				case "summaryholdingspublicnote":
 					if (itemfile == 0) {

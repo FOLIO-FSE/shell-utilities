@@ -118,6 +118,8 @@ function showmatches() {
 		endpoint="organizations-storage/organization-types";;
 	"overdueFinePolicies")
 		endpoint="overdue-fines-policies";;
+	"patronBlockConditions")
+		endpoint="patron-block-conditions";;
 	"patronNoticePolicies")
 		endpoint="patron-notice-policy-storage/patron-notice-policies";;
 	"requestPolicies")
@@ -134,8 +136,8 @@ function showmatches() {
 		endpoint="groups"
 		jq=".${matchtype}[] | select((.group  |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"${matchtype}\", .id, .group] |@tsv";;
 	*)
-		echo "No matching endpoint could be found. Quitting"
-		exit	;;
+		[[ -z ${endpoint} ]] && echo "No matching endpoint could be found. Quitting" && exit
+		;;
 	esac
 
 	if [[ ${jq} == "code_name" ]];then 
@@ -151,9 +153,9 @@ function showmatches() {
 }
 
 
-echo "Downloading data for  acq methods, acq units, address types, authority source files, call number types, cancellation reasons, categories, contributor types, course departments, course types, courses, expense classes, fee/fine owners, fiscal years, finance-groups, funds, fundtypes, holdings note types, holdings record sources, holdings types, identifier types, instance formats, instance note types, instance relationship types, instance statuses, instance types, item damaged statuses, item material types, item note types, ledgers, loan policies, loan types, locations, location institutions, location campuses, location libraries, lost item fee policies, note types, organization types, overdue fine policies, patron notice policies, request policies, service points, statcodes, statcodetypes, and usergroups"
+echo "Downloading data for  acq methods, acq units, address types, authority source files, call number types, cancellation reasons, categories, contributor types, course departments, course types, courses, expense classes, fee/fine owners, fiscal years, finance-groups, funds, fundtypes, holdings note types, holdings record sources, holdings types, identifier types, instance formats, instance note types, instance relationship types, instance statuses, instance types, item damaged statuses, item material types, item note types, ledgers, loan policies, loan types, locations, location institutions, location campuses, location libraries, lost item fee policies, note types, organization types, overdue fine policies, patron block conditions, patron notice policies, request policies, service points, statcodes, statcodetypes, and usergroups"
 
-rec_array=("acquisitionMethods acquisitionsUnits" "addressTypes" "authoritySourceFiles" "callNumberTypes" "cancellationReasons" "categories" "contributorTypes" "courseDepartments" "courseTerms" "courseTypes" "departments" "expenseClasses" "feefineowners" "fiscalYears" "finance-groups" "funds" "fundTypes" "holdingsNoteTypes" "holdingsRecordsSources" "holdingsTypes" "identifierTypes" "instanceFormats" "instanceNoteTypes" "instanceRelationshipTypes" "instanceStatuses" "instanceTypes" "itemDamageStatuses" "itemNoteTypes" "ledgers" "loanPolicies" "loantypes" "locations" "locinsts" "loccamps" "loclibs" "lostItemFeePolicies" "mtypes" "noteTypes" "organizationTypes" "overdueFinePolicies" "patronNoticePolicies" "requestPolicies" "servicepoints" "statisticalCodes" "statisticalCodeTypes" "usergroups")
+rec_array=("acquisitionMethods acquisitionsUnits" "addressTypes" "authoritySourceFiles" "callNumberTypes" "cancellationReasons" "categories" "contributorTypes" "courseDepartments" "courseTerms" "courseTypes" "departments" "expenseClasses" "feefineowners" "fiscalYears" "finance-groups" "funds" "fundTypes" "holdingsNoteTypes" "holdingsRecordsSources" "holdingsTypes" "identifierTypes" "instanceFormats" "instanceNoteTypes" "instanceRelationshipTypes" "instanceStatuses" "instanceTypes" "itemDamageStatuses" "itemNoteTypes" "ledgers" "loanPolicies" "loantypes" "locations" "locinsts" "loccamps" "loclibs" "lostItemFeePolicies" "mtypes" "noteTypes" "organizationTypes" "overdueFinePolicies" "patronBlockConditions" "patronNoticePolicies" "requestPolicies" "servicepoints" "statisticalCodes" "statisticalCodeTypes" "usergroups")
 
 counter=1
 for rec_type in "${rec_array[@]}";do

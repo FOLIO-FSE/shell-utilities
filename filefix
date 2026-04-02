@@ -212,7 +212,7 @@ if [[ ${filecontent} == "loan" ]];then
 sed -i '
 1 s/[^0-9A-Za-z_#)(\.\t\-]//g
 1 s/\b[up][^\t]*barcode\b/patron_barcode/i
-1 s/\bpatronno[^\t]\b/patron_barcode/i
+1 s/\bpatronno[^\t]*\b/patron_barcode/i
 1 s/\bbarcode[^\t]*p[^\t]*\b/patron_barcode/i
 1 s/\bi[^\t]*barcode\b/item_barcode/i
 1 s/\bbarcode[^\t]*i[^\t]*\b/item_barcode/i

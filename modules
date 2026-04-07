@@ -1,0 +1,10 @@
+#!/usr/bin/bash
+auth 2>/dev/null || authn 2>/dev/null
+# reindexes elasticsearch
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+curl -s -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/_/proxy/tenants/${tenant}/modules" |jq -r .[].id 
+

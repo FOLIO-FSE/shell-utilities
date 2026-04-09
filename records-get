@@ -429,6 +429,7 @@ case $rec_type in
 	no_total="yes";;
 "templates")
 	num_retrieved="1000"
+	startlimit=1000;
 	endpoint="templates";;
 "transactions")
 	endpoint="finance/transactions";;

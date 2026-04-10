@@ -54,11 +54,11 @@ LOG_GROUP="${CLUSTER}-folio-eis"
 QUERY='fields @timestamp, @message'
 
 if [[ -n "${FILTER}" ]]; then
-  QUERY+=" | filter @message like /${FILTER}/"
+  QUERY+=" | filter @message like /${FILTER}/i"
 fi
 
 if [[ -n "${TENANT}" ]]; then
-  QUERY+=" | filter @message like /${TENANT}/"
+  QUERY+=" | filter @message like /${TENANT}/i"
 fi
 
 QUERY+=' | sort @timestamp desc | limit 1000'

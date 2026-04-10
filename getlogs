@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+
+START_TIME=$(date -d "10 minutes ago" +%s)
+END_TIME=$(date +%s)
+REGION="us-east-1"
+
+while getopts "s:e:f:r:t:" opt; do
+  case $opt in
+    s)
+      START_TIME=$(date -d "${OPTARG}" +%s)
+      ;;
+    e)
+      END_TIME=$(date -d "${OPTARG}" +%s)
+      ;;
+    f)
+      FILTER="${OPTARG}"
+      ;;
+    r)
+      REGION="${OPTARG}"
+      ;;
+    t)
+      TENANT="${OPTARG}"
+      ;;
+    \?)
+      echo "Usage: $0 [-s start] [-e end] [-f filter] [-r region] [-t tenant] CLUSTER"
+      exit 1
+      ;;
+  esac
+done
+
+shift $((OPTIND - 1))
+
+CLUSTER="$1"
+
+
+if [[ -z "${CLUSTER}" ]]; then
+  echo "You must enter a cluster"
+  echo
+  echo "Usage:"
+  echo "  $0 [options] CLUSTER"
+  echo
+  echo "Options:"
+  echo "  -s Start time (e.g. '15 minutes ago')"
+  echo "  -e End time   (e.g. 'now')"
+  echo "  -f Filter pattern"
+  echo "  -r AWS Region"
+  echo "  -t Tenant ID"
+  echo
+  exit 1
+fi
+
+LOG_GROUP="${CLUSTER}-folio-eis"
+
+QUERY='fields @timestamp, @message'
+
+if [[ -n "${FILTER}" ]]; then
+  QUERY+=" | filter @message like /${FILTER}/"
+fi
+
+if [[ -n "${TENANT}" ]]; then
+  QUERY+=" | filter @message like /${TENANT}/"
+fi
+
+QUERY+=' | sort @timestamp desc | limit 1000'
+
+QUERY_ID=$(aws logs start-query \
+  --region "${REGION}" \
+  --log-group-name "${LOG_GROUP}" \
+  --start-time "${START_TIME}" \
+  --end-time "${END_TIME}" \
+  --query-string "${QUERY}" \
+  --output text \
+  --query queryId)
+
+STATUS="Running"
+while [[ "${STATUS}" == "Running" || "${STATUS}" == "Scheduled" ]]; do
+  sleep 1
+  STATUS=$(aws logs get-query-results \
+    --region "${REGION}" \
+    --query-id "${QUERY_ID}" \
+    --query status \
+    --output text)
+done
+
+if [[ "${STATUS}" != "Complete" ]]; then
+  echo "Query failed with status: ${STATUS}"
+  exit 1
+fi
+
+aws logs get-query-results \
+  --region "${REGION}" \
+  --query-id "${QUERY_ID}" \
+  --output json |jq -r '.results[]|[.[0].value, .[1].value]|@tsv'

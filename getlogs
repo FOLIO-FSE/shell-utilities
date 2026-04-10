@@ -54,14 +54,14 @@ LOG_GROUP="${CLUSTER}-folio-eis"
 QUERY='fields @timestamp, @message'
 
 if [[ -n "${FILTER}" ]]; then
-  QUERY+=" | filter @message like /${FILTER}/i"
+  QUERY+=" | filter @message like /${FILTER}/"
 fi
 
 if [[ -n "${TENANT}" ]]; then
-  QUERY+=" | filter @message like /${TENANT}/i"
+  QUERY+=" | filter @message like /${TENANT}/"
 fi
 
-QUERY+=' | sort @timestamp desc | limit 1000'
+QUERY+=' | sort @timestamp desc'
 
 QUERY_ID=$(aws logs start-query \
   --region "${REGION}" \

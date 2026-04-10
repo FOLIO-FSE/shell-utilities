@@ -4,7 +4,7 @@ START_TIME=$(date -d "10 minutes ago" +%s)
 END_TIME=$(date +%s)
 REGION="us-east-1"
 
-while getopts "s:e:f:r:t:" opt; do
+while getopts "s:e:f:q:r:t:" opt; do
   case $opt in
     s)
       START_TIME=$(date -d "${OPTARG}" +%s)
@@ -15,6 +15,9 @@ while getopts "s:e:f:r:t:" opt; do
     f)
       FILTER="${OPTARG}"
       ;;
+    q)
+      FILTER2="${OPTARG}"
+      ;;
     r)
       REGION="${OPTARG}"
       ;;
@@ -22,7 +25,7 @@ while getopts "s:e:f:r:t:" opt; do
       TENANT="${OPTARG}"
       ;;
     \?)
-      echo "Usage: $0 [-s start] [-e end] [-f filter] [-r region] [-t tenant] CLUSTER"
+      echo "Usage: $0 [-s start] [-e end] [-f filter] [-q second filter] [-r region] [-t tenant] CLUSTER"
       exit 1
       ;;
   esac
@@ -43,6 +46,7 @@ if [[ -z "${CLUSTER}" ]]; then
   echo "  -s Start time (e.g. '15 minutes ago')"
   echo "  -e End time   (e.g. 'now')"
   echo "  -f Filter pattern"
+  echo "  -q Second filter (query) pattern"
   echo "  -r AWS Region"
   echo "  -t Tenant ID"
   echo
@@ -54,11 +58,15 @@ LOG_GROUP="${CLUSTER}-folio-eis"
 QUERY='fields @timestamp, @message'
 
 if [[ -n "${FILTER}" ]]; then
-  QUERY+=" | filter @message like /${FILTER}/"
+  QUERY+=" | filter @message like /(?i)${FILTER}/"
+fi
+
+if [[ -n "${QUERY}" ]]; then
+  QUERY+=" | filter @message like /(?i)${FILTER2}/"
 fi
 
 if [[ -n "${TENANT}" ]]; then
-  QUERY+=" | filter @message like /${TENANT}/"
+  QUERY+=" | filter @message like /(?i)${TENANT}/"
 fi
 
 QUERY+=' | sort @timestamp desc'

@@ -1,7 +1,7 @@
 args=("$@")
 
 infile="${args[0]}"
-knownprocesses=("currency" "dateiso8" "merge" "prefix" "regexrepl" "repl" "suffix")
+knownprocesses=("currency" "dateiso8" "ftrim" "merge" "ltrim" "prefix" "regexrepl" "repl" "suffix")
 
 fileroot=$(echo "${infile}" | sed 's/\.....\?$//')
 fileextension=$(echo "${infile}" | sed 's/.*\(\..*\)$/\1/')
@@ -46,6 +46,7 @@ if [[ ! -f ${infile} ]];then
 	echo "Use parentheses and double slashes for capture groups"
 	echo 
 	echo "e.g. fieldfix [filename] 'currency|field1' 'dateiso8|field2' ..."
+	echo "e.g. fieldfix [filename] 'ftrim|field1' 'ltrim|field2' ..."
 	echo "e.g. fieldfix [filename] 'merge|field2|field2/field3/field4|delimiter' 'dateiso8|field2'..."
 	echo "e.g. fieldfix [filename] 'prefix|field1|.b' 'dateiso8|field2'..."
 	echo "e.g. fieldfix [filename] 'repl|field1|searchexpr/replaceexpr' 'dateiso8|field2'..."
@@ -96,6 +97,14 @@ function dateiso8(bad_field) {
 	if ($bad_field == "NEVER") {
 		$bad_field = "2099-12-31"
 	}
+}
+
+function ftrim(bad_field) {
+	$bad_field = substr($bad_field, 2)
+}
+
+function ltrim(bad_field) {
+	$bad_field = substr($badfield, 1, length($badfield) - 1)
 }
 
 function merge(bad_field) {

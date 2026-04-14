@@ -100,11 +100,11 @@ function dateiso8(bad_field) {
 }
 
 function ftrim(bad_field) {
-	$bad_field = substr($bad_field, 2)
+	sub(/./, "", $bad_field)
 }
 
 function ltrim(bad_field) {
-	$bad_field = substr($badfield, 1, length($badfield) - 1)
+	sub(/.$/, "", $bad_field)
 }
 
 function merge(bad_field) {

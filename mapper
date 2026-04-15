@@ -169,12 +169,12 @@ build_order_map() {
 		comp_field=$(echo "${field,,}" | tr -dc "[a-z0-9]" |sed 's/folio//' )
 	
     case ${comp_field} in
-      almapoline | ordernumber | ponumber | purchaseordernumber | recordorder )
-        addfield legacyIdentifier
-        ;;
       acqtype | acquisitionmethod | ordtype )
         addfield compositePoLines[0].acquisitionMethod
 				acqMethod="${field}"
+        ;;
+      approved )
+				addreplacerules approved truefalse
         ;;
       currency )
         addfield compositePoLines[0].cost.currency

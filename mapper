@@ -173,7 +173,7 @@ build_order_map() {
         addfield callNumber
         callfield="${field}"
         ;;
-      acqtype | acquisitionmethod | format | ordtype )
+      acqtype | acquisitionmethod | ordtype )
         addfield compositePoLines[0].acquisitionMethod
 				acqMethod="${field}"
         ;;
@@ -225,7 +225,7 @@ build_order_map() {
       locationquantityphysical | quantityphysical )
         addfield compositePoLines[0].locations[0].quantityPhysical
         ;;
-      form | format )
+      form | format | orderformat )
         addfield compositePoLines[0].orderFormat
         ;;
       publishername )

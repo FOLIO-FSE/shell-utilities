@@ -192,16 +192,15 @@ build_order_map() {
         addregexrules compositePoLines[0].cost.listUnitPricePhysical currency
         ;;
        costquantityelectronic | quantityelectronic )
-        addfield compositePoLines[0].cost.quantityElectronic
+        addregexrules compositePoLines[0].cost.quantityElectronic number
         ;;
        costquantityphysical | quantity | quantityphysical )
-        addfield compositePoLines[0].cost.quantityElectronic
+        addregexrules compositePoLines[0].cost.quantityElectronic number
         ;;
       detailsreceivingnote | receivingnote )
         addfield compositePoLines[0].details.receivingNote
         ;;
       url )
-        addfield compositePoLines[0].details.resourceUrl
 				addregexrules compositePoLines[0].details.resourceUrl url
         ;;
       startdate )

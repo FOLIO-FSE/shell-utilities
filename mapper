@@ -177,6 +177,9 @@ build_order_map() {
         addfield compositePoLines[0].acquisitionMethod
 				acqMethod="${field}"
         ;;
+      currency )
+        addfield compositePoLines[0].cost.currency
+        ;;
       eprice | price | listunitprice | polineestimatedprice | unitprice )
         addfield compositePoLines[0].cost.listUnitPrice
         addfield totalEstimatedPrice
@@ -193,7 +196,7 @@ build_order_map() {
        costquantityphysical | quantity | quantityphysical )
         addfield compositePoLines[0].cost.quantityElectronic
         ;;
-      receivingnote )
+      detailsreceivingnote | receivingnote )
         addfield compositePoLines[0].details.receivingNote
         ;;
       url )
@@ -203,10 +206,13 @@ build_order_map() {
       startdate )
         addfield compositePoLines[0].details.subscriptionFrom
         ;;
-       expirationdate )
+      expirationdate )
         addfield compositePoLines[0].details.subscriptionTo
         ;;
-      location )
+      bibid | bibno | mmsid | mmsrecordid | recordbiblio | recordbibliographic | recordnumberbibliographic | systemidentifierbibid )
+        addfield compositePoLines[0].instanceId
+        ;;
+      location | locationcode | locationidcode )
         addfield compositePoLines[0].locations.[0].locationId
 				locationfield="${field}"
         ;;
@@ -243,7 +249,7 @@ build_order_map() {
         addvalue notes[${note_iter}] "(${field})"
         note_iter=$(($note_iter + 1))
         ;;
-      note | ordernote )
+      note | ordernote | polnote | descriptioninternalnote )
         addfield notes[${note_iter}]
         note_iter=$(($note_iter + 1))
         ;;
@@ -287,7 +293,7 @@ build_holdings_map() {
 		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
 	
 		case ${comp_field} in 
-			bibid | bibno | mmsid | mmsrecordid | recordbiblio | recordbibliographic | recordnumberbibliographic )
+			bibid | bibno | mmsid | mmsrecordid | recordbiblio | recordbibliographic | recordnumberbibliographic | systemidentifierbibid )
 				addfield instanceId
 				bibfield="${field}"
 				;;

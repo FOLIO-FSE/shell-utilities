@@ -247,7 +247,7 @@ build_order_map() {
       holdings | libhas | libhascheckin | summaryholding | summaryholdings )
         addfield holdingsStatements[0].statement
         ;;
-      expenseclass | fund | fundcode )
+      expenseclass | fund | fundcode | vendorinstruction )
         addfield notes[${note_iter}]
         addvalue notes[${note_iter}] "(${field})"
         note_iter=$(($note_iter + 1))

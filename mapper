@@ -181,17 +181,13 @@ build_order_map() {
         addfield compositePoLines[0].cost.currency
         ;;
       eprice | price | listunitprice | polineestimatedprice | unitprice )
-        addfield compositePoLines[0].cost.listUnitPrice
         addregexrules compositePoLines[0].cost.listUnitPrice currency
-        addfield totalEstimatedPrice
 				addregexrules totalEstimatedPrice currency
         ;;
       listunitpriceelectronic )
-        addfield compositePoLines[0].cost.listUnitPriceElectronic
         addregexrules compositePoLines[0].cost.listUnitPriceElectronic currency
         ;;
       listunitpricephysical )
-        addfield compositePoLines[0].cost.listUnitPricePhysical
         addregexrules compositePoLines[0].cost.listUnitPricePhysical currency
         ;;
        costquantityelectronic | quantityelectronic )
@@ -283,7 +279,6 @@ build_order_map() {
         addfield reEncumber
         ;;
       totalcost | totalprice )
-        addfield totalEstimatedPrice
         addregexrules totalEstimatedPrice currency
         ;;
 			organization | vendor | vendorcode )

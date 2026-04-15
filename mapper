@@ -170,8 +170,7 @@ build_order_map() {
 	
     case ${comp_field} in
       almapoline | ordernumber | ponumber | purchaseordernumber | recordorder )
-        addfield callNumber
-        callfield="${field}"
+        addfield legacyIdentifier
         ;;
       acqtype | acquisitionmethod | ordtype )
         addfield compositePoLines[0].acquisitionMethod

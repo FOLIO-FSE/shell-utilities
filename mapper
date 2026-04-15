@@ -123,6 +123,7 @@ addreplacerules() {
 
 addregexrules() {
 	regex_rule="${2}"
+	[[ "${2}" == "currency" ]] && regex_rule='([0-9]+\\.[0-9]{2})'
 	[[ "${2}" == "email" ]] && regex_rule='(^[a-zA-Z0-9_\\-\\.]+@[a-zA-Z0-9_\\-\\.]+)'
 	[[ "${2}" == "url" ]] && regex_rule='(^http.*)'
 
@@ -181,13 +182,17 @@ build_order_map() {
         ;;
       eprice | price | listunitprice | polineestimatedprice | unitprice )
         addfield compositePoLines[0].cost.listUnitPrice
+        addregexrules compositePoLines[0].cost.listUnitPrice currency
         addfield totalEstimatedPrice
+				addregexrules totalEstimatedPrice currency
         ;;
       listunitpriceelectronic )
         addfield compositePoLines[0].cost.listUnitPriceElectronic
+        addregexrules compositePoLines[0].cost.listUnitPriceElectronic currency
         ;;
       listunitpricephysical )
         addfield compositePoLines[0].cost.listUnitPricePhysical
+        addregexrules compositePoLines[0].cost.listUnitPricePhysical currency
         ;;
        costquantityelectronic | quantityelectronic )
         addfield compositePoLines[0].cost.quantityElectronic
@@ -279,6 +284,7 @@ build_order_map() {
         ;;
       totalcost | totalprice )
         addfield totalEstimatedPrice
+        addregexrules totalEstimatedPrice currency
         ;;
 			organization | vendor | vendorcode )
 				addfield vendor

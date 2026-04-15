@@ -234,6 +234,9 @@ build_order_map() {
       requester )
         addfield compositePoLines[0].requester
         ;;
+      title | titleorpackage )
+        addfield compositePoLines[0].titleOrPackage
+        ;;
       approvaldate | dateordered | invoicedate | odate | podate )
         addfield dateOrdered
         ;;

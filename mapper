@@ -243,13 +243,6 @@ build_order_map() {
       approvaldate | dateordered | invoicedate | odate | podate )
         addfield dateOrdered
         ;;
-      holdid | holrecordid | holdingsid | mfhdid | z30holdocunumber )
-        addfield holdingsRecordId
-        holdidfield="${field}"
-        ;;
-      holdings | libhas | libhascheckin | summaryholding | summaryholdings )
-        addfield holdingsStatements[0].statement
-        ;;
       expenseclass | fund | fundcode | vendorinstruction )
         addfield notes[${note_iter}]
         addvalue notes[${note_iter}] "(${field})"
@@ -292,8 +285,11 @@ build_order_map() {
         ;;
 			organization | vendor | vendorcode )
 				addfield vendor
+				vendorfield="${field}"
 			;;
     esac
+
+	[[ -n ${vendorfield} ]] && echo -e "${vendorfield}\tfolio_name\n" > organizationCodeMap.tsv
 done
 
 	[[ -n ${acqMethod} ]] && echo -e "${acqMethod}\tfolio_value\nApproval\tApproval plan\nApproval Plan\tApproval plan\nDemand Driven Acquisitions (DDA)\tDemand Driven Acquisitions (DDA)\nDepository\tDepository\nExchange\tExchange\nFirm Order\tPurchase\nFree\tFree\nGift\tGift\nMembership\tMembership\nMembership Title\tMembership\nPurchase at Vendor System\tPurchase at vendor system\nc\tPurchase\nm\tMembership\np\tPurchase\nt\tPurchase\n*\tOther" > acquisitionMethodMap.tsv

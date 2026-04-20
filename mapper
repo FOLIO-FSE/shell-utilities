@@ -287,7 +287,7 @@ build_order_map() {
     esac
 done
 
-	[[ -n ${acqMethod} ]] && echo -e "${acqMethod}\tfolio_value\nApproval\tApproval plan\nApproval Plan\tApproval plan\nContinuation\tContinuation\nDemand Driven Acquisitions (DDA)\tDemand driven acquisitions (DDA)\nDepository\tDepository\nExchange\tExchange\nFirm Order\tPurchase\nFree\tFree\nGift\tGift\nMembership\tMembership\nMembership Title\tMembership\nPurchase at Vendor System\tPurchase at vendor system\na\tSubscription\nc\tPurchase\nm\tMembership\np\tPurchase\ns\tSubscription\nt\tPurchase\n*\tOther" > acquisitionMethodMap.tsv
+	[[ -n ${acqMethod} ]] && echo -e "${acqMethod}\tfolio_value\nApproval\tApproval plan\nApproval Plan\tApproval plan\nDemand Driven Acquisitions (DDA)\tDemand Driven Acquisitions (DDA)\nDepository\tDepository\nExchange\tExchange\nFirm Order\tPurchase\nFree\tFree\nGift\tGift\nMembership\tMembership\nMembership Title\tMembership\nPurchase at Vendor System\tPurchase at vendor system\nc\tPurchase\nm\tMembership\np\tPurchase\nt\tPurchase\n*\tOther" > acquisitionMethodMap.tsv
 	[[ -n ${locationfield} ]] && echo -e "${locationfield}\tlegacy_code\tfolio_code\n*\t*\tmigration" > locations_orders.tsv
 }
 

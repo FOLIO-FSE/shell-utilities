@@ -1,0 +1,63 @@
+#!/usr/bin/bash
+
+if [ "$#" -ne 3 ]; then
+  echo "Usage: $0 file1 file2 [column_name]" >&2
+  exit 1
+fi
+
+file1="${1}"
+file2="${2}"
+key="${3}"
+
+awk -F'\t' -v OFS='\t' -v KEY="$key" '
+NR==FNR {
+  # File 1
+  if (FNR==1) {
+    for (i=1;i<=NF;i++) {
+      h1[i]=$i
+      if ($i==KEY) k1=i
+    }
+    if (!k1) {
+      printf "ERROR: column \"%s\" not found in %s\n", KEY, FILENAME > "/dev/stderr"
+      exit 1
+    }
+    n1=NF
+    next
+  }
+
+  k=$k1
+  for (i=1;i<=NF;i++) a[k,i]=$i
+  rows[k]=1
+  next
+}
+
+FNR==1 {
+  for (i=1;i<=NF;i++) {
+    h2[i]=$i
+    if ($i==KEY) k2=i
+  }
+  if (!k2) {
+    printf "ERROR: column \"%s\" not found in %s\n", KEY, FILENAME > "/dev/stderr"
+    exit 1
+  }
+  n2=NF
+
+  # Print joined header
+  for (i=1;i<=n1;i++) printf (i==1 ? "%s" : OFS "%s"), h1[i]
+  for (i=1;i<=n2;i++) if (i!=k2) printf OFS "%s", h2[i]
+  print ""
+  next
+}
+
+{
+  k=$k2
+  if (k in rows) {
+    # Print file1 row
+    for (i=1;i<=n1;i++) printf (i==1 ? "%s" : OFS "%s"), a[k,i]
+
+    # Print file2 row excluding join KEY
+    for (i=1;i<=NF;i++) if (i!=k2) printf OFS "%s", $i
+    print ""
+  }
+}
+' "${file1}" "${file2}"

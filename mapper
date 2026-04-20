@@ -209,7 +209,7 @@ build_order_map() {
       expirationdate )
         addfield compositePoLines[0].details.subscriptionTo
         ;;
-      polinenote )
+      polinenote | polnote)
         addfield compositePoLines[0].description
         ;;
       bibid | bibno | mmsid | mmsrecordid | recordbiblio | recordbibliographic | recordnumberbibliographic | systemidentifierbibid )

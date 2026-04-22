@@ -286,8 +286,15 @@ build_order_map() {
 			organization | vendor | vendorcode )
 				addfield vendor
 				vendorfield="${field}"
-			;;
+        ;;
+      workflowstatus | almapoline | ordernumber | po | ponumber | purchaseordernumber | recordorder )
+        addvalue workflowStatus Pending
+        ;;
     esac
+
+	# add useful default values
+	object_map=$(jq '.data |= map(if (.folio_field | endswith("Price"))then . + { fallback_legacy_value: "0" } else . end)'  <<< "${object_map}")
+	object_map=$(jq '.data |= map(if (.folio_field | contains("cost.quantity"))then . + { fallback_legacy_value: "0" } else . end)'  <<< "${object_map}")
 
 	[[ -n ${vendorfield} ]] && echo -e "${vendorfield}\tfolio_name\n" > organizationCodeMap.tsv
 done

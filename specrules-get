@@ -10,7 +10,7 @@ else
 	echo "No UUID specified. Defaulting to MARC bibliographic"
 	marcrules=$(curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/specification-storage/specifications?limit=500&query=family=MARC&profile=bibliographic&include=all")
 	uuid=$(echo "${marcrules}" | jq -r '.specifications[] |select(.title == "MARC Bibliographic Specification") |.id')
-	jq . "${marcrules}" > marcrules.json
+	echo "${marcrules}" |jq . > marcrules.json
 fi
 
 curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/specification-storage/specifications/${uuid}/rules" |jq -c '.rules[] |del(.metadata)' > specrules.json

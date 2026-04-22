@@ -132,6 +132,21 @@ addregexrules() {
 	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")
 }
 
+
+default_value() {
+  local key="$1"
+  local value="$2"
+
+  object_map=$(jq --arg key "$key" --arg value "$value" '
+    .data |= map(
+      if .folio_field == $key
+      then . + { fallback_legacy_value: $value }
+      else .
+      end
+    )
+  ' <<< "${object_map}")
+}
+
 initialize() {
 	object_map='{"data":[]}'
 	outfile="${filetype}_mapping.json"
@@ -183,19 +198,25 @@ build_order_map() {
         ;;
       eprice | price | listunitprice | polineestimatedprice | unitprice )
         addregexrules compositePoLines[0].cost.listUnitPrice currency
+				default_value compositePoLines[0].cost.listUnitPrice "0"
 				addregexrules totalEstimatedPrice currency
+				default_value totalEstimatedPrice "0"
         ;;
       listunitpriceelectronic )
         addregexrules compositePoLines[0].cost.listUnitPriceElectronic currency
+				default_value compositePoLines[0].cost.listUnitPriceElectronic "0"
         ;;
       listunitpricephysical )
         addregexrules compositePoLines[0].cost.listUnitPricePhysical currency
+				default_value compositePoLines[0].cost.listUnitPricePhysical "0"
         ;;
        costquantityelectronic | quantityelectronic )
         addregexrules compositePoLines[0].cost.quantityElectronic number
+				default_value  compositePoLines[0].cost.quantityElectronic "0"
         ;;
        costquantityphysical | quantity | quantityphysical )
         addregexrules compositePoLines[0].cost.quantityPhysical number
+				default_value  compositePoLines[0].cost.quantityPhysical "0"
         ;;
       descriptionreceivingnote | detailsreceivingnote | receivingnote )
         addfield compositePoLines[0].details.receivingNote
@@ -224,12 +245,15 @@ build_order_map() {
         ;;
       locationquantityelectronic | quantityelectronic )
         addregexrules compositePoLines[0].locations[0].quantityElectronic number
+				default_value compositePoLines[0].locations[0].quantityElectronic "0"
         ;;
       locationquantityphysical | quantityphysical )
         addregexrules compositePoLines[0].locations[0].quantityPhysical number
+				default_value compositePoLines[0].locations[0].quantityPhysical "0"
         ;;
       form | format | orderformat )
         addfield compositePoLines[0].orderFormat
+				default_value compositePoLines[0].orderFormat Physical
         ;;
       publishername )
         addfield compositePoLines[0].publisher
@@ -291,10 +315,6 @@ build_order_map() {
         addvalue workflowStatus Pending
         ;;
     esac
-
-	# add useful default values
-	object_map=$(jq '.data |= map(if (.folio_field | endswith("Price"))then . + { fallback_legacy_value: "0" } else . end)'  <<< "${object_map}")
-	object_map=$(jq '.data |= map(if (.folio_field | contains("cost.quantity"))then . + { fallback_legacy_value: "0" } else . end)'  <<< "${object_map}")
 
 	[[ -n ${vendorfield} ]] && echo -e "${vendorfield}\tfolio_name\n" > organizationCodeMap.tsv
 done

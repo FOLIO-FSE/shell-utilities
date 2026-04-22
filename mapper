@@ -188,6 +188,7 @@ build_order_map() {
     case ${comp_field} in
       acqtype | acquisitionmethod | ordtype )
         addfield compositePoLines[0].acquisitionMethod
+				default_value compositePoLines[0].acquisitionMethod Other
 				acqMethod="${field}"
         ;;
       approved )

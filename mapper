@@ -195,7 +195,7 @@ build_order_map() {
         addregexrules compositePoLines[0].cost.quantityElectronic number
         ;;
        costquantityphysical | quantity | quantityphysical )
-        addregexrules compositePoLines[0].cost.quantityElectronic number
+        addregexrules compositePoLines[0].cost.quantityPhysical number
         ;;
       descriptionreceivingnote | detailsreceivingnote | receivingnote )
         addfield compositePoLines[0].details.receivingNote

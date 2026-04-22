@@ -286,7 +286,7 @@ build_order_map() {
         addreplacerules ongoing.manualrenewal truefalse
         ;;
       lineitemtype | ordtype | ordertype )
-        addreplacerules orderType '"Single-part":"One-Time","Subscription":"Ongoing","Standing order":"Ongoing","ongoing", "Ongoing", "one-time", "One-Time"'
+        addreplacerules orderType '"Single-part":"One-Time","Subscription":"Ongoing","Standing order":"Ongoing","ongoing":"Ongoing", "one-time":"One-Time"'
         addreplacerules ongoing.isSubscription '"Single-part":"false","Subscription":"true","Standing order":"false"'
         addvalue ongoing.manualRenewal true
         ;;

@@ -115,7 +115,7 @@ addvalue() {
 
 addreplacerules() {
 	replace_rule="${2}"
-	[[ "${2}" == "truefalse" ]] && replace_rule='"Yes":"true","YES":"true","Y":"true","y":"true","n":"false","N":"false":"TRUE":"true","No":"false","NO":"false","FALSE":"false"'
+	[[ "${2}" == "truefalse" ]] && replace_rule='"Yes":"true","YES":"true","Y":"true","y":"true","n":"false","N":"false","TRUE":"true","No":"false","NO":"false","FALSE":"false"'
 
 	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"value\":\"\",\"rules\":{\"replaceValues\":{${replace_rule}}}}"
 	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")

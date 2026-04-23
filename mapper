@@ -142,11 +142,11 @@ default_field() {
 	else
 	  .data += [{
 		folio_field: $target,
-		legacy_value: (
+		legacy_field: (
 		  first(
 			.data[]
 			| select(.folio_field == $source)
-			| .legacy_value
+			| .legacy_field
 		  )
 		)
 	  }]
@@ -333,10 +333,13 @@ build_order_map() {
 			addfield vendor
 			vendorfield="${field}"
 		;;
-	  workflowstatus | almapoline | ordernumber | po | ponumber | purchaseordernumber | recordorder )
+	  workflowstatus )
 			addvalue workflowStatus Pending
 		;;
 	esac
+
+	default_field workflowStatus poNumber
+	default_value workflowStatus Pending
 
 	[[ -n ${vendorfield} ]] && echo -e "${vendorfield}\tfolio_name\n" > organizationCodeMap.tsv
 done

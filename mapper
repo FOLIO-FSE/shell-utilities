@@ -208,133 +208,133 @@ build_order_map() {
 	
 	case ${comp_field} in
 	  acqtype | acquisitionmethod | ordtype )
-		addfield compositePoLines[0].acquisitionMethod
-				default_value compositePoLines[0].acquisitionMethod Other
-				acqMethod="${field}"
+			addfield compositePoLines[0].acquisitionMethod
+			default_value compositePoLines[0].acquisitionMethod Other
+			acqMethod="${field}"
 		;;
 	  approved )
 				addreplacerules approved truefalse
 		;;
 	  currency )
-		addfield compositePoLines[0].cost.currency
+			addfield compositePoLines[0].cost.currency
 		;;
-	  eprice | price | listunitprice | polineestimatedprice | unitprice )
-		addregexrules compositePoLines[0].cost.listUnitPrice currency
-				default_value compositePoLines[0].cost.listUnitPrice "0"
-				addregexrules totalEstimatedPrice currency
-				default_value totalEstimatedPrice "0"
+	  	eprice | price | listunitprice | polineestimatedprice | unitprice )
+			addregexrules compositePoLines[0].cost.listUnitPrice currency
+			default_value compositePoLines[0].cost.listUnitPrice "0"
+			addregexrules totalEstimatedPrice currency
+			default_value totalEstimatedPrice "0"
 		;;
 	  listunitpriceelectronic )
-		addregexrules compositePoLines[0].cost.listUnitPriceElectronic currency
-				default_value compositePoLines[0].cost.listUnitPriceElectronic "0"
+			addregexrules compositePoLines[0].cost.listUnitPriceElectronic currency
+			default_value compositePoLines[0].cost.listUnitPriceElectronic "0"
 		;;
 	  listunitpricephysical )
-		addregexrules compositePoLines[0].cost.listUnitPricePhysical currency
-				default_value compositePoLines[0].cost.listUnitPricePhysical "0"
+			addregexrules compositePoLines[0].cost.listUnitPricePhysical currency
+			default_value compositePoLines[0].cost.listUnitPricePhysical "0"
 		;;
-	   costquantityelectronic | quantityelectronic )
-		addregexrules compositePoLines[0].cost.quantityElectronic number
-				default_value  compositePoLines[0].cost.quantityElectronic "0"
+	  costquantityelectronic | quantityelectronic )
+			addregexrules compositePoLines[0].cost.quantityElectronic number
+			default_value  compositePoLines[0].cost.quantityElectronic "0"
 		;;
-	   costquantityphysical | quantity | quantityphysical )
-		addregexrules compositePoLines[0].cost.quantityPhysical number
-				default_value  compositePoLines[0].cost.quantityPhysical "0"
+	  costquantityphysical | quantity | quantityphysical )
+			addregexrules compositePoLines[0].cost.quantityPhysical number
+			default_value  compositePoLines[0].cost.quantityPhysical "0"
 		;;
 	  descriptionreceivingnote | detailsreceivingnote | receivingnote )
-		addfield compositePoLines[0].details.receivingNote
+			addfield compositePoLines[0].details.receivingNote
 		;;
 	  url )
 				addregexrules compositePoLines[0].details.resourceUrl url
 		;;
 	  startdate )
-		addfield compositePoLines[0].details.subscriptionFrom
+			addfield compositePoLines[0].details.subscriptionFrom
 		;;
 	  expirationdate )
-		addfield compositePoLines[0].details.subscriptionTo
+			addfield compositePoLines[0].details.subscriptionTo
 		;;
 	  polinenote | polnote)
-		addfield compositePoLines[0].description
+			addfield compositePoLines[0].description
 		;;
 	  bibid | bibno | mmsid | mmsrecordid | recordbiblio | recordbibliographic | recordnumberbibliographic | systemidentifierbibid )
 		addfield compositePoLines[0].instanceId
 		;;
 	  location | locationcode | locationidcode )
-		addfield compositePoLines[0].locations.[0].locationId
-				locationfield="${field}"
+			addfield compositePoLines[0].locations.[0].locationId
+			locationfield="${field}"
 		;;
 	  copies | quantity | quantitytotal | totalitems )
-		addregexrules compositePoLines[0].locations[0].quantity number
+			addregexrules compositePoLines[0].locations[0].quantity number
 		;;
 	  locationquantityelectronic | quantityelectronic )
-		addregexrules compositePoLines[0].locations[0].quantityElectronic number
-				default_value compositePoLines[0].locations[0].quantityElectronic "0"
+			addregexrules compositePoLines[0].locations[0].quantityElectronic number
+			default_value compositePoLines[0].locations[0].quantityElectronic "0"
 		;;
 	  locationquantityphysical | quantityphysical )
-		addregexrules compositePoLines[0].locations[0].quantityPhysical number
-				default_value compositePoLines[0].locations[0].quantityPhysical "0"
+			addregexrules compositePoLines[0].locations[0].quantityPhysical number
+			default_value compositePoLines[0].locations[0].quantityPhysical "0"
 		;;
 	  form | format | orderformat )
-		addfield compositePoLines[0].orderFormat
-				default_value compositePoLines[0].orderFormat Physical
+			addfield compositePoLines[0].orderFormat
+			default_value compositePoLines[0].orderFormat Physical
 		;;
 	  publishername )
-		addfield compositePoLines[0].publisher
+			addfield compositePoLines[0].publisher
 		;;
 	  requester )
-		addfield compositePoLines[0].requester
+			addfield compositePoLines[0].requester
 		;;
 	  title | titleorpackage )
-		addfield compositePoLines[0].titleOrPackage
+			addfield compositePoLines[0].titleOrPackage
 		;;
 	  approvaldate | dateordered | invoicedate | odate | podate )
 		addfield dateOrdered
 		;;
 	  expenseclass | fund | fundcode | vendorinstruction )
-		addfield notes[${note_iter}]
-		addvalue notes[${note_iter}] "(${field})"
-		note_iter=$(($note_iter + 1))
+			addfield notes[${note_iter}]
+			addvalue notes[${note_iter}] "(${field})"
+			note_iter=$(($note_iter + 1))
 		;;
 	  note | ordernote | descriptioninternalnote )
-		addfield notes[${note_iter}]
-		note_iter=$(($note_iter + 1))
+			addfield notes[${note_iter}]
+			note_iter=$(($note_iter + 1))
 		;;
 	  intnote | ongoingnote )
-		addfield ongoing.notes
+			addfield ongoing.notes
 		;;
 	  ongoingissubscription )
-		addreplacerules ongoing.isSubscription truefalse
+			addreplacerules ongoing.isSubscription truefalse
 		;;
 	  ongoingmanualrenewal )
-		addreplacerules ongoing.manualrenewal truefalse
+			addreplacerules ongoing.manualrenewal truefalse
 		;;
 	  lineitemtype | ordtype | ordertype )
-		addreplacerules orderType '"Single-part":"One-Time","Subscription":"Ongoing","Standing order":"Ongoing","ongoing":"Ongoing", "one-time":"One-Time"'
-		addreplacerules ongoing.isSubscription '"Single-part":"false","Subscription":"true","Standing order":"false"'
-		addvalue ongoing.manualRenewal true
+			addreplacerules orderType '"Single-part":"One-Time","Subscription":"Ongoing","Standing order":"Ongoing","ongoing":"Ongoing", "one-time":"One-Time"'
+			addreplacerules ongoing.isSubscription '"Single-part":"false","Subscription":"true","Standing order":"false"'
+			addvalue ongoing.manualRenewal true
 		;;
 	  almapoline | ordernumber | po | ponumber | purchaseordernumber | recordorder )
-		addfield poNumber
-		addfield legacyIdentifier
-				addvalue compositePoLines[0].source API
+			addfield poNumber
+			addfield legacyIdentifier
+			addvalue compositePoLines[0].source API
 		;;
 	  poprefix )
-		addfield poNumberPrefix
+			addfield poNumberPrefix
 		;;
 	  posuffix )
-		addfield poNumberSuffix
+			addfield poNumberSuffix
 		;;
 	  reencumber | renewaldate )
-		addfield reEncumber
+			addfield reEncumber
 		;;
 	  totalcost | totalprice )
-		addregexrules totalEstimatedPrice currency
+			addregexrules totalEstimatedPrice currency
 		;;
 			organization | vendor | vendorcode )
-				addfield vendor
-				vendorfield="${field}"
+			addfield vendor
+			vendorfield="${field}"
 		;;
 	  workflowstatus | almapoline | ordernumber | po | ponumber | purchaseordernumber | recordorder )
-		addvalue workflowStatus Pending
+			addvalue workflowStatus Pending
 		;;
 	esac
 
@@ -375,8 +375,6 @@ build_holdings_map() {
 			;;
 		esac
 	done
-
-	
 
 	for field in "${header_arr[@]}"; do
 		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")

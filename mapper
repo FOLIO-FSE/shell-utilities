@@ -273,7 +273,7 @@ build_order_map() {
 		addfield compositePoLines[0].instanceId
 		;;
 	  location | locationcode | locationidcode )
-			addfield compositePoLines[0].locations.[0].locationId
+			addfield compositePoLines[0].locations[0].locationId
 			locationfield="${field}"
 		;;
 	  copies | quantity | quantitytotal | totalitems )
@@ -323,7 +323,7 @@ build_order_map() {
 		;;
 	  lineitemtype | ordtype | ordertype )
 			addreplacerules orderType '"Single-part":"One-Time","Subscription":"Ongoing","Standing order":"Ongoing","ongoing":"Ongoing", "one-time":"One-Time"'
-			addreplacerules ongoing.isSubscription '"Single-part":"false","Subscription":"true","Standing order":"false"'
+			addreplacerules ongoing.isSubscription '"Single-part":"false","Subscription":"true","Standing order":"false","y":"true"'
 			addvalue ongoing.manualRenewal true
 		;;
 	  almapoline | ordernumber | po | ponumber | purchaseordernumber | recordorder )
@@ -352,8 +352,14 @@ build_order_map() {
 		;;
 	esac
 
+	default_field compositePoLines[0].acquisitionMethod poNumber
+	default_value compositePoLines[0].acquisitionMethod Pending
+
 	default_field workflowStatus poNumber
 	default_value workflowStatus Pending
+
+	default_field orderType poNumber
+	default_value orderType	Ongoing
 
 	[[ -n ${vendorfield} ]] && echo -e "${vendorfield}\tfolio_name\n" > organizationCodeMap.tsv
 done

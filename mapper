@@ -701,14 +701,14 @@ build_organization_map() {
 				addfield phoneNumbers[${phone_iter}].phoneNumber
 				addvalue phoneNumbers[${phone_iter}].type Office
 				addvalue phoneNumbers[${phone_iter}].isPrimary true
-				phone_iter=$(($note_iter + 1))
+				phone_iter=$(($phone_iter + 1))
 				phonecategoryfield="${field}"
 			;;
 			fax | phone2 | phonenum2 | phonenumber2 | tel2 | telephone2 )
 				addfield phoneNumbers[${phone_iter}].phoneNumber
 				addvalue phoneNumbers[${phone_iter}].type Office
 				addvalue phoneNumbers[${phone_iter}].isPrimary false
-				phone_iter=$(($note_iter + 1))
+				phone_iter=$(($phone_iter + 1))
 			;;
 			orgstatus | orgstatusactiveinactivepending | status )
 				addreplacerules status '"active":"Active","ACTIVE":"Active","inactive":"Inactive","INACTIVE":"Inactive","pending":"Pending","PENDING":"Pending"'

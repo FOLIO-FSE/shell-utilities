@@ -289,7 +289,8 @@ build_order_map() {
 		;;
 	  form | format | orderformat )
 			addfield compositePoLines[0].orderFormat
-			default_value compositePoLines[0].orderFormat Physical
+			fallback_value orderFormat "Physical Resource"
+			addreplacerules orderFormat '"print":"Physical Resource","Print":"Physical Resource","database":"Electronic Resource","Database":"Electronic Resource","online":"Electronic Resource","Online":"Electronic Resource","print+online":"P/E Mix"'
 		;;
 	  publishername )
 			addfield compositePoLines[0].publisher
@@ -330,6 +331,7 @@ build_order_map() {
 			addfield poNumber
 			addfield legacyIdentifier
 			addvalue compositePoLines[0].source API
+			primary_key="${field}"
 		;;
 	  poprefix )
 			addfield poNumberPrefix
@@ -365,7 +367,7 @@ build_order_map() {
 done
 
 	[[ -n ${acqMethod} ]] && echo -e "${acqMethod}\tfolio_value\nApproval\tApproval plan\nApproval Plan\tApproval plan\nDemand Driven Acquisitions (DDA)\tDemand Driven Acquisitions (DDA)\nDepository\tDepository\nExchange\tExchange\nFirm Order\tPurchase\nFree\tFree\nGift\tGift\nMembership\tMembership\nMembership Title\tMembership\nPurchase at Vendor System\tPurchase at vendor system\nc\tPurchase\nm\tMembership\np\tPurchase\nt\tPurchase\n*\tOther" > acquisitionMethodMap.tsv
-	[[ -n ${locationfield} ]] && echo -e "${locationfield}\tlegacy_code\tfolio_code\n*\t*\tmigration" > locations_orders.tsv
+	[[ -n ${locationfield} ]] && echo -e "${locationfield}\tlegacy_code\tfolio_code\n*\tmigration" > locations_orders.tsv
 }
 
 build_holdings_map() {

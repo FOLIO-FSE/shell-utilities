@@ -232,7 +232,7 @@ print_results() {
 
 build_order_map() {
 	for field in "${header_arr[@]}"; do
-		comp_field=$(echo "${field,,}" | tr -dc "[a-z0-9]" |sed 's/folio//' )
+		comp_field=$(echo "${field,,}" | tr -dc [a-z0-9] |sed 's/folio//' )
 	
 	case ${comp_field} in
 	  acqtype | acquisitionmethod | ordtype )
@@ -386,7 +386,7 @@ done
 
 build_holdings_map() {
 	for field in "${header_arr[@]}"; do
-		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
+		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}")
 	
 		case ${comp_field} in 
 			accession | accessionnumber)
@@ -419,7 +419,7 @@ build_holdings_map() {
 	done
 
 	for field in "${header_arr[@]}"; do
-		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
+		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}")
 	
 		case ${comp_field} in 
 			call | callmarc | callno | callnumber )
@@ -452,7 +452,7 @@ build_holdings_map() {
 	# extra sweep to pull up bib specific call numbers
 
 	for field in "${header_arr[@]}"; do
-		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
+		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}")
 	
 		case ${comp_field} in 
 			bibcall | callbiblio | callbibliographic | callnonmarc )
@@ -475,7 +475,7 @@ build_holdings_map() {
 
 build_item_map() {
 	for field in "${header_arr[@]}"; do
-		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
+		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}")
 	
 		case ${comp_field} in 
 			id | itemid | itempid | physicalitemid | recorditem | z30reckey)
@@ -546,7 +546,7 @@ build_item_map() {
 
 
 	for field in "${header_arr[@]}"; do
-		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
+		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}")
 	
 		case ${comp_field} in 
 			barcode | itembarcode | z30barcode )
@@ -583,7 +583,7 @@ build_item_map() {
 
 build_organization_map() {
 	for field in "${header_arr[@]}"; do
-		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
+		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}")
 	
 		case ${comp_field} in 
 			accountnum )
@@ -729,7 +729,7 @@ build_organization_map() {
 
 build_user_map() {
 	for field in "${header_arr[@]}"; do
-		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
+		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}")
 	
 		case ${comp_field} in 
 			id | patronuniqueid | primaryidentifier | record | recordnumberpatron | uniqueid | userid | useruserid )
@@ -799,7 +799,7 @@ build_user_map() {
 	done
 
 	for field in "${header_arr[@]}"; do
-		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
+		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}")
 
 		case ${comp_field} in 
 			barcode | pbarcode | patronbarcode | cardnumber | borrowerid )
@@ -824,7 +824,7 @@ build_user_map() {
 	done
 
 	for field in "${header_arr[@]}"; do
-		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
+		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}")
 	
 		case ${comp_field} in 
 			univid | uniid | externalsystemid | studentid )

@@ -102,7 +102,7 @@ addfield() {
 }
 
 addbackupfield() {
-	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"value\":\"\",\"legacy_backupfield\":\"${2}\"}"
+	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"value\":\"\",\"fallback_legacy_field\":\"${2}\"}"
 	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")
 }
 
@@ -544,7 +544,6 @@ build_item_map() {
 		esac
 	done
 
-	
 
 	for field in "${header_arr[@]}"; do
 		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
@@ -556,7 +555,7 @@ build_item_map() {
 					field=${itemfield}
 					addfield barcode
 				else
-					addbackupfield barcode "${itemfield}"
+					addfield barcode
 				fi	
 			;;
 			itype | itemtypeid | itemtypecode )

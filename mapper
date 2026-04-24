@@ -168,6 +168,20 @@ default_value() {
   ' <<< "${object_map}")
 }
 
+fallback_field() {
+  local key="$1"
+  local value="$2"
+
+  object_map=$(jq --arg key "$key" --arg value "$value" '
+	.data |= map(
+	  if .folio_field == $key
+	  then . + { fallback_legacy_field: $value }
+	  else .
+	  end
+	)
+  ' <<< "${object_map}")
+}
+
 fallback_value() {
   local key="$1"
   local value="$2"
@@ -234,17 +248,17 @@ build_order_map() {
 		;;
 	  	eprice | price | listunitprice | polineestimatedprice | unitprice )
 			addregexrules compositePoLines[0].cost.listUnitPrice currency
-			default_value compositePoLines[0].cost.listUnitPrice 0
+			default_value compositePoLines[0].cost.listUnitPrice "0.00"
 			addregexrules totalEstimatedPrice currency
-			default_value totalEstimatedPrice 0
+			default_value totalEstimatedPrice "0.00"
 		;;
 	  listunitpriceelectronic )
 			addregexrules compositePoLines[0].cost.listUnitPriceElectronic currency
-			default_value compositePoLines[0].cost.listUnitPriceElectronic 0
+			default_value compositePoLines[0].cost.listUnitPriceElectronic "0.00" 
 		;;
 	  listunitpricephysical )
 			addregexrules compositePoLines[0].cost.listUnitPricePhysical currency
-			default_value compositePoLines[0].cost.listUnitPricePhysical 0
+			default_value compositePoLines[0].cost.listUnitPricePhysical "0.00" 
 		;;
 	  costquantityelectronic | quantityelectronic )
 			addregexrules compositePoLines[0].cost.quantityElectronic number

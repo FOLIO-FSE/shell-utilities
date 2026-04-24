@@ -669,7 +669,7 @@ build_organization_map() {
 				addvalue emails[0].isPrimary true
 				emailcategoryfield="${field}"
 			;;
-			accountcode | erpcode )
+			accountcode | accountno | erpcode )
 				addfield erpCode
 			;;
 			interfaceuri | url )
@@ -681,7 +681,7 @@ build_organization_map() {
 			name | orgname | providername | venname | vendorname )
 				addfield name
 			;;
-			note | notes | notecontent | orgnote | vendornote | vennote )
+			note | note1 | notes | notecontent | orgnote | special | vendornote | vennote )
 				addfield notes[${note_iter}].content
 				addvalue notes[${note_iter}].content organizations
 				addvalue notes[${note_iter}].noteTypeId xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx

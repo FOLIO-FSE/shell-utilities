@@ -589,7 +589,7 @@ build_organization_map() {
 			vendorname )
 				addfield accounts[0].name
 				;;
-			addr1 | address1 | address11 | addressline1 )
+			addr1 | address1 | address | address11 | addressline1 )
 				addfield addresses[0].addressLine1
 				addvalue addresses[0].isPrimary true
 				addressfield="${field}"

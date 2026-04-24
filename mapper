@@ -389,6 +389,9 @@ build_holdings_map() {
 		comp_field=$(tr -dc "[a-z0-9]" <<< "${field,,}")
 	
 		case ${comp_field} in 
+			accession | accessionnumber)
+				addfield accessionNumber 
+				;;
 			bibid | bibno | mmsid | mmsrecordid | recordbiblio | recordbibliographic | recordnumberbibliographic | systemidentifierbibid )
 				addfield instanceId
 				bibfield="${field}"
@@ -487,26 +490,27 @@ build_item_map() {
 				addfield holdingsRecordId 
 				holdidfield="${field}"
 			;;
-			materialformat | materialtype | mattype | mtype | mediaitm | z30material )
+			itype | materialformat | materialtype | mattype | mtype | mediaitm | z30material )
 				addfield materialTypeId 
 				mattypefield="${field}"
 			;;
-			loantype | itempolicy )
+			loantype | itempolicy | icode2 )
 				addfield permanentLoanTypeId 
 				loantypefield="${field}"
 			;;
-			fulfillmentnote | imessage | imsg | messgage | checkinnote )
-				addfield circulationNotes[0].note
-				addvalue circulationNotes[0].noteType "Check in"
-				addvalue circulationNotes[0].staffOnly true
+			fulfillmentnote | imessage | imsg | message | checkinnote )
+				addfield circulationNotes[${chkinnote_iter}].note
+				addvalue circulationNotes[${chkinnote_iter}].noteType "Check in"
+				addvalue circulationNotes[${chkinnote_iter}].staffOnly true
+				chkinnote_iter=$(($chkinnote_iter + 1))
 			;;
-			internalnote | intnote | staffnote )
+			internalnote | intnote | price | staffnote )
 				addfield notes[${note_iter}].note
 				addvalue notes[${note_iter}].itemNoteTypeId xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 				addvalue notes[${note_iter}].staffOnly true
 				note_iter=$(($note_iter + 1))
 			;;
-			note | opacmsg |publicnote | z30noteopac )
+			note | notegeneral | opacmsg | publicnote | z30noteopac )
 				addfield notes[${note_iter}].note
 				addvalue notes[${note_iter}].noteTypeId xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 				addvalue notes[${note_iter}].staffOnly false
@@ -699,14 +703,14 @@ build_organization_map() {
 			;;
 			phone | phone1 | phonenum | phonenumber | preferredphonenumber | tel | telephone )
 				addfield phoneNumbers[${phone_iter}].phoneNumber
-				addvalue phoneNumbers[${phone_iter}].type Office
+				addvalue phoneNumbers[${phone_iter}].type Work
 				addvalue phoneNumbers[${phone_iter}].isPrimary true
 				phone_iter=$(($phone_iter + 1))
 				phonecategoryfield="${field}"
 			;;
 			fax | phone2 | phonenum2 | phonenumber2 | tel2 | telephone2 )
 				addfield phoneNumbers[${phone_iter}].phoneNumber
-				addvalue phoneNumbers[${phone_iter}].type Office
+				addvalue phoneNumbers[${phone_iter}].type Work
 				addvalue phoneNumbers[${phone_iter}].isPrimary false
 				phone_iter=$(($phone_iter + 1))
 			;;

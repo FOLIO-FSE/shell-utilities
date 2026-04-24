@@ -478,7 +478,7 @@ build_item_map() {
 		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}")
 	
 		case ${comp_field} in 
-			id | itemid | itempid | physicalitemid | recorditem | z30reckey)
+			id | itemid | itempid | physicalitemid | recorditem | recordnumberitem | z30reckey)
 				addfield legacyIdentifier
 				itemfield="${field}"
 				;;

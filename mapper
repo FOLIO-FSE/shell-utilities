@@ -582,9 +582,6 @@ build_organization_map() {
 			accountnum )
 				addfield accounts[0].accountNo
 				;;
-			vendorname )
-				addfield accounts[0].name
-				;;
 			addr1 | address1 | address | address11 | addressline1 )
 				addfield addresses[0].addressLine1
 				addvalue addresses[0].isPrimary true
@@ -711,6 +708,10 @@ build_organization_map() {
 			;;
 		esac
 	done
+	
+	default_field status code
+	default_value code Active
+
 	[[ -z ${addresscategoryfield} ]] && echo -e "${addressfield}\tfolio_value\n*\tOffice" > address_categories.tsv
 
 	[[ -n ${codefield} ]] && echo -e "${codefield}\tfolio_code\n" > organizationCodeMap.tsv

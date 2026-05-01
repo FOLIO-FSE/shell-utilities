@@ -139,13 +139,13 @@ encodingtype=${encodingtype,,}
 
 case ${encodingtype} in
 	utf-16le)
-		iconv -f utf-16le -t utf-8 -c "${infile}" -o tmpfile;;
+		pv "${infile}" | iconv -f utf-16le -t utf-8 -c > tmpfile;;
 	latin1|iso-8859-1)
-		iconv -f latin1 -t utf-8 -c "${infile}" -o tmpfile;;
+		pv "${infile}" | iconv -f latin1 -t utf-8 -c > tmpfile;;
 	iso-8859-15)
-		iconv -f iso-8859-15 -t utf-8 -c "${infile}" -o tmpfile;;
+		pv "${infile}" | iconv -f iso-8859-15 -t utf-8 -c > tmpfile;;
 	*)	
-		iconv -f utf-8 -t utf-8 -c "${infile}" -o tmpfile;;
+		pv "${infile}" | iconv -f utf-8 -t utf-8 -c > tmpfile;;
 esac
 
 head -1 tmpfile | grep -q $'\r' && dosfile=1

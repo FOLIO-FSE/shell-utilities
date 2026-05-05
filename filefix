@@ -480,7 +480,7 @@ cat filefixa*_bad > "${errorfile}" 2>/dev/null
 rm -f filefixa* 
 rm tmp_filefixawk
 
-numclean=$(wc -l ${finalfile} |cut -d " " -f1)
+numclean=$(wc -l "${finalfile}" |cut -d " " -f1)
 
 if [[ -f bad_dates ]];then
 	echo "Blank dates have been identified. Examining date fields for anomalies recommended"

@@ -60,12 +60,7 @@ get_summary() {
 check_upload() {
   jobExecutionId=$(cat "${workingdir}/.jobid")
 
-  status=$(curl -s \
-    -H "Accept: application/json" \
-    -H "X-Okapi-Tenant: ${tenant}" \
-    -H "x-okapi-token: ${okapi_token}" \
-    "${okapi_url}/metadata-provider/jobExecutions/${jobExecutionId}" \
-    | jq -r '.uiStatus')
+  status=$(curl -s -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/metadata-provider/jobExecutions/${jobExecutionId}" | jq -r '.uiStatus')
 }
 
 upload_file() {
@@ -100,7 +95,7 @@ upload_file() {
 process_file() {
 	marcfile="${1}"
 	upload_file "${marcfile}"
-	status="beginning"
+	status="RUNNING"
 
 	while [[ ${status} == "RUNNING" || ${status} == "PREPARING_FOR_PREVIEW" ]];do
 		sleep 5

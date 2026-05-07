@@ -7,11 +7,11 @@ okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
 workingdir=$(pwd)
-profileName="Update Instances 999i"
-#profileName="Default - Create SRS MARC Authority"
+profileName="Default - Create SRS MARC Authority"
 
 logfile="${workingdir}/dataimport_errors.json"
 summaryfile="$(pwd)/summaryfile.log"
+rm -f ${summaryfile}
 batchdir="batch_upload"
 
 tenant=$(cat tenant)
@@ -21,6 +21,10 @@ okapi_token=$(cat okapi.token)
 errors=0
 created=0
 updated=0
+batcherrors=0
+batchcreated=0
+batchupdated=0
+
 status=""
 
 rm -f ${logfile}
@@ -34,26 +38,34 @@ fi
 get_summary() {
 	jobExecutionId=$(cat "${workingdir}/.jobid")
 
-	apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/metadata-provider/jobSummary/${jobExecutionId}") 
-	batcherrors=$(echo "${apicall}" |jq -r .sourceRecordSummary.totalErrors)
-	batchcreated=$(echo "${apicall}" |jq -r .sourceRecordSummary.totalCreatedEntries)
-	batchupdated=$(echo "${apicall}" |jq -r .sourceRecordSummary.totalUpdatedEntries)
+	apicall=$(curl -s -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/change-manager/jobExecutions/${jobExecutionId}")
+
+	added=$(echo "$apicall" | jq '.progress.current')
+	total=$(echo "$apicall" | jq '.progress.total')
+	failed=$(echo "$apicall" | jq '.progress.error')
+	status=$(echo "$apicall" | jq -r '.uiStatus')
 
 	created=$(($created + $batchcreated))
 	updated=$(($updated + $batchupdated))
 	errors=$(($errors + $batcherrors))
 
-	summarymessage="Created: $created	Updated: $updated	Errors: $errors	JobId: $jobExecutionId"
+	summarymessage="Created: $added	Total: $total	Failed: $failed	JobId: $jobExecutionId"
 	echo "${apicall}" >> ${summaryfile}
 
 
 	curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/metadata-provider/jobLogEntries/${jobExecutionId}?entity=SRS_MARC&errorsOnly=true&limit=10000&order=asc" |jq -r '.entries[]' >> ${logfile}
 
 }
+
 check_upload() {
-	jobExecutionId=$(cat "${workingdir}/.jobid")
-	status=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/metadata-provider/jobExecutions?statusNot=DISCARDED&uiStatusAny=PREPARING_FOR_PREVIEW&uiStatusAny=READY_FOR_PREVIEW&uiStatusAny=RUNNING" |jq -r ".jobExecutions[] | select(.id = \"${jobExecutionId}\") |select(.status != null) | .status")
-	
+  jobExecutionId=$(cat "${workingdir}/.jobid")
+
+  status=$(curl -s \
+    -H "Accept: application/json" \
+    -H "X-Okapi-Tenant: ${tenant}" \
+    -H "x-okapi-token: ${okapi_token}" \
+    "${okapi_url}/metadata-provider/jobExecutions/${jobExecutionId}" \
+    | jq -r '.uiStatus')
 }
 
 upload_file() {
@@ -62,7 +74,6 @@ upload_file() {
 
 	apicall=$(curl --http1.1 -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/data-import-profiles/jobProfiles?limit=1000")
 	jobProfileId=$(echo "${apicall}" |jq -r ".jobProfiles[] | select(.name==\"${profileName}\") | .id")
-
 
 	if ! [[ $jobProfileId =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]]; then
 		echo "No valid profile found. Exiting."
@@ -78,12 +89,12 @@ upload_file() {
 	echo "${jobExecutionId}" > ${workingdir}/.jobid
 
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/octet-stream" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "@${marcfile}" "${okapi_url}/data-import/uploadDefinitions/${uploadDefinitionId}/files/${fileId}")
-	
+
 	payload="{\"uploadDefinition\":${apicall},\"jobProfileInfo\": {\"id\": \"${jobProfileId}\", \"dataType\": \"MARC\"}}"
 	
 	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${payload}" "${okapi_url}/data-import/uploadDefinitions/${uploadDefinitionId}/processFiles?defaultMapping=true")
 	
-	echo "${apicall}"
+	echo "${apicall}" 
 }
 
 process_file() {
@@ -91,7 +102,7 @@ process_file() {
 	upload_file "${marcfile}"
 	status="beginning"
 
-	while [[ ${status} != "" ]];do
+	while [[ ${status} == "RUNNING" || ${status} == "PREPARING_FOR_PREVIEW" ]];do
 		sleep 5
 		check_upload
 	done

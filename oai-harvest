@@ -23,7 +23,7 @@ search=$(echo ${1} |tr "." "-" |tr -dc [^a-z0-9\-])
 
 if [[ ${1} == "full" ]];then
 	fullharvest="yes"
-	metadataprefix="marc21"
+	metadataprefix="marc21_withholdings"
 else
 	metadataprefix="marc21_withholdings"
 fi

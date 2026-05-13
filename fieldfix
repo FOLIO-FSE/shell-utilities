@@ -1,7 +1,7 @@
 args=("$@")
 
 infile="${args[0]}"
-knownprocesses=("currency" "dateiso8" "ftrim" "merge" "ltrim" "prefix" "regexrepl" "repl" "suffix")
+knownprocesses=("currency" "dateiso8" "firstfield" "ftrim" "merge" "ltrim" "prefix" "regexrepl" "repl" "suffix")
 
 fileroot=$(echo "${infile}" | sed 's/\.....\?$//')
 fileextension=$(echo "${infile}" | sed 's/.*\(\..*\)$/\1/')

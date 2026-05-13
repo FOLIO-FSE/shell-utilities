@@ -65,22 +65,22 @@ Library use only	Restricted
 Lost	Lost
 Lost--System Applied	Lost
 Withdrawn	Withdrawn
-BINDERY In process (non-requestable)
-CATALOGING  In process
-CLAIMED_RETURNED  Claimed returned
-DAMAGED In process (non-requestable)
-DISCARD Withdrawn
-DISPATCHED  In transit
-INPROCESS In process
-IN_PROCESSING In process
-LOST  Lost and paid
-LOST-ASSUM  Missing
-LOST-CLAIM  Declared lost
-LOST-CLAIM  Missing
-LOST-PAID Lost and paid
-NON-CIRC  Restricted
-RESTRICTED  Restricted
-WITHDRAWN Withdrawn
+BINDERY	In process (non-requestable)
+CATALOGING	In process
+CLAIMED_RETURNED	Claimed returned
+DAMAGED	In process (non-requestable)
+DISCARD	Withdrawn
+DISPATCHED	In transit
+INPROCESS	In process
+IN_PROCESSING	In process
+LOST	Lost and paid
+LOST-ASSUM	Missing
+LOST-CLAIM	Declared lost
+LOST-CLAIM	Missing
+LOST-PAID	Lost and paid
+NON-CIRC	Restricted
+RESTRICTED	Restricted
+WITHDRAWN	Withdrawn
 EOF
 
 note_iter=0

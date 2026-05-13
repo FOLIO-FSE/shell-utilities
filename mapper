@@ -411,7 +411,7 @@ build_holdings_map() {
 			holdings | libhas | libhascheckin | summaryholding | summaryholdings )
 				addfield holdingsStatements[0].statement
 			;;
-			itempermanentlocation | itemshelvinglocation | permanentlocation | permanentphysicallocation )
+			itempermanentlocation | itemshelvinglocation | permlocation | permanentlocation | permanentphysicallocation )
 				addfield permanentLocationId
 				locationfield="${field}"
 			;;
@@ -541,6 +541,9 @@ build_item_map() {
 			templocation | itemtemporaryshelvinglocation)
 				addfield temporaryLocationId
 			;;
+			tempitemtype | temporaryitemtype | temploantype | temporaryloantype)
+				addfield temporaryLoanTypeId
+			;;
 		esac
 	done
 
@@ -551,7 +554,7 @@ build_item_map() {
 			barcode | itembarcode | z30barcode )
 				[[ -z ${itemfield} ]] && addfield legacyIdentifier
 			;;
-			itype | itemtypeid | itemtypecode )
+			itype | itemtypeid | itemtypecode | itemtypename)
 				if [[ -z ${mattypefield} ]];then
 					addfield materialTypeId
 					mattypefield="${field}"

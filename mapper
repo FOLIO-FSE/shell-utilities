@@ -513,7 +513,7 @@ build_item_map() {
 			;;
 			note | notegeneral | opacmsg | publicnote | z30noteopac )
 				addfield notes[${note_iter}].note
-				addvalue notes[${note_iter}].noteTypeId xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+				addvalue notes[${note_iter}].itemNoteTypeId xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 				addvalue notes[${note_iter}].staffOnly false
 				note_iter=$(($note_iter + 1))
 			;;

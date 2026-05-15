@@ -62,7 +62,7 @@ In Process	In process
 In process (non-requestable)	In process (non-requestable)
 Lib Use Only	Restricted
 Library use only	Restricted
-Lost	Aged to lost
+Lost	Missing
 Lost--System Applied	Aged to lost
 Withdrawn	Withdrawn
 BINDERY	In process (non-requestable)
@@ -73,10 +73,9 @@ DISCARD	Withdrawn
 DISPATCHED	In transit
 INPROCESS	In process
 IN_PROCESSING	In process
-LOST	Lost and paid
+LOST	Missing
 LOST-ASSUM	Missing
 LOST-CLAIM	Declared lost
-LOST-CLAIM	Missing
 LOST-PAID	Lost and paid
 NON-CIRC	Restricted
 RESTRICTED	Restricted

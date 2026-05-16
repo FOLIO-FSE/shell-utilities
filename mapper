@@ -325,7 +325,7 @@ build_order_map() {
 			addvalue notes[${note_iter}] "(${field})"
 			note_iter=$(($note_iter + 1))
 		;;
-	  note | ordernote | descriptioninternalnote )
+	  note | noteorder | ordernote | descriptioninternalnote )
 			addfield notes[${note_iter}]
 			note_iter=$(($note_iter + 1))
 		;;
@@ -364,6 +364,9 @@ build_order_map() {
 			organization | vendor | vendorcode )
 			addfield vendor
 			vendorfield="${field}"
+		;;
+	  vennote )
+			addfield vendorDetail.noteFromVendor 
 		;;
 	  workflowstatus )
 			addvalue workflowStatus Pending

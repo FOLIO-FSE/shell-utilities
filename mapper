@@ -234,10 +234,12 @@ build_order_map() {
 		comp_field=$(echo "${field,,}" | tr -dc [a-z0-9] |sed 's/folio//' )
 	
 	case ${comp_field} in
-	  acqtype | acquisitionmethod | ordtype )
-			addfield compositePoLines[0].acquisitionMethod
-			default_value compositePoLines[0].acquisitionMethod Other
-			acqMethod="${field}"
+	  acquisitionmethod | form | ordtype )
+			if [[ -z ${acqtype} ]];then
+				addfield compositePoLines[0].acquisitionMethod
+				default_value compositePoLines[0].acquisitionMethod Other
+				acqMethod="${field}"
+			fi
 		;;
 	  approved )
 				addreplacerules approved truefalse
@@ -382,7 +384,7 @@ build_order_map() {
 	default_value compositePoLines[0].acquisitionMethod Pending
 
 	[[ -z ${acqMethod} ]] && default_field compositePoLines[0].acquisitionMethod poNumber
-	[[ -z ${acqMethod} ]] && default_value compositePoLines[0].acquisitionMethod Pending
+	[[ -z ${acqMethod} ]] && default_value compositePoLines[0].acquisitionMethod Other
 
 	[[ -z ${orderFormat} ]] && default_field orderFormat poNumber
 	[[ -z ${orderFormat} ]] && default_value orderFormat Physical
@@ -396,7 +398,7 @@ build_order_map() {
 	[[ -n ${vendorfield} ]] && echo -e "${vendorfield}\tfolio_name\n" > organizationCodeMap.tsv
 done
 
-	[[ -n ${acqMethod} ]] && echo -e "${acqMethod}\tfolio_value\nApproval\tApproval plan\nApproval Plan\tApproval Plan\nDemand Driven Acquisitions (DDA)\tDemand Driven Acquisitions (DDA)\nDepository\tDepository\nExchange\tExchange\nFirm Order\tPurchase\nFree\tFree\nGift\tGift\ni\tInternal transfer\nMembership\tMembership\nMembership Title\tMembership\nPurchase at Vendor System\tPurchase At Vendor System\nc\tPurchase\nm\tMembership\np\tPurchase\nt\tPurchase\n*\tOther" > acquisitionMethodMap.tsv
+	[[ -n ${acqMethod} ]] && echo -e "${acqMethod}\tfolio_value\nApproval\tApproval plan\nApproval Plan\tApproval Plan\nDemand Driven Acquisitions (DDA)\tDemand Driven Acquisitions (DDA)\nDepository\tDepository\nExchange\tExchange\nFirm Order\tPurchase\nFree\tFree\nGift\tGift\ni\tInternal transfer\nMembership\tMembership\nMembership Title\tMembership\na\tApproval Plan\nc\tPurchase\nm\tMembership\nn\tPurchasee\np\tPurchase\nt\tPurchase\nv\tPurchase At Vendor System\n*\tOther" > acquisitionMethodMap.tsv
 	[[ -n ${locationfield} ]] && echo -e "${locationfield}\tfolio_code\n*\tmigration" > locations_orders.tsv
 }
 

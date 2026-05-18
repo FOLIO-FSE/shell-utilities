@@ -300,10 +300,12 @@ build_order_map() {
 			addregexrules compositePoLines[0].locations[0].quantityPhysical number
 			default_value compositePoLines[0].locations[0].quantityPhysical 1
 		;;
-	  form | format | orderformat )
-			addfield compositePoLines[0].orderFormat
-			fallback_value orderFormat "Physical Resource"
-			addreplacerules orderFormat '"print":"Physical Resource","Print":"Physical Resource","database":"Electronic Resource","Database":"Electronic Resource","online":"Electronic Resource","Online":"Electronic Resource","print+online":"P/E Mix"'
+	  format | orderformat )
+			if [[ -z ${orderFormat} ]];then
+				addfield compositePoLines[0].orderFormat
+				fallback_value orderFormat "Physical Resource"
+				addreplacerules orderFormat '"print":"Physical Resource","Print":"Physical Resource","database":"Electronic Resource","Database":"Electronic Resource","online":"Electronic Resource","Online":"Electronic Resource","print+online":"P/E Mix"'
+			fi
 		;;
 	  publishername )
 			addfield compositePoLines[0].publisher
@@ -339,9 +341,11 @@ build_order_map() {
 			addreplacerules ongoing.manualRenewal truefalse
 		;;
 	  lineitemtype | ordtype | ordertype )
-			addreplacerules orderType '"Single-part":"One-Time","Subscription":"Ongoing","Standing order":"Ongoing","ongoing":"Ongoing", "one-time":"One-Time"'
-			addreplacerules ongoing.isSubscription '"Single-part":false,"Subscription":true,"Standing order":false,"y":true'
-			addvalue ongoing.manualRenewal true
+			if [[ -z ${ordType} ]]; then
+				addreplacerules orderType '"Single-part":"One-Time","Subscription":"Ongoing","Standing order":"Ongoing","ongoing":"Ongoing", "one-time":"One-Time","m":"One-Time","r":"Ongoing"'
+				addreplacerules ongoing.isSubscription '"Single-part":false,"Subscription":true,"Standing order":false,"y":true'
+				addvalue ongoing.manualRenewal true
+			fi
 		;;
 	  almapoline | ordernumber | po | ponumber | purchaseordernumber | recordorder )
 			addfield poNumber
@@ -370,17 +374,24 @@ build_order_map() {
 		;;
 	  workflowstatus )
 			addvalue workflowStatus Pending
+			workflowStatus="${field}"
 		;;
 	esac
 
 	default_field compositePoLines[0].acquisitionMethod poNumber
 	default_value compositePoLines[0].acquisitionMethod Pending
 
-	default_field workflowStatus poNumber
-	default_value workflowStatus Pending
+	[[ -z ${acqMethod} ]] && default_field compositePoLines[0].acquisitionMethod poNumber
+	[[ -z ${acqMethod} ]] && default_value compositePoLines[0].acquisitionMethod Pending
 
-	default_field orderType poNumber
-	default_value orderType	Ongoing
+	[[ -z ${orderFormat} ]] && default_field orderFormat poNumber
+	[[ -z ${orderFormat} ]] && default_value orderFormat Physical
+
+	[[ -z ${ordType} ]] && default_field orderType poNumber
+	[[ -z ${ordType} ]] && default_value orderType	Ongoing
+
+	[[ -z ${workflowStatus} ]] && default_field orderFormat poNumber
+	[[ -z ${workflowStatus} ]] && default_value orderFormat Pending
 
 	[[ -n ${vendorfield} ]] && echo -e "${vendorfield}\tfolio_name\n" > organizationCodeMap.tsv
 done

@@ -234,10 +234,12 @@ build_order_map() {
 		comp_field=$(echo "${field,,}" | tr -dc [a-z0-9] |sed 's/folio//' )
 	
 	case ${comp_field} in
-	  acqtype | acquisitionmethod | ordtype )
-			addfield compositePoLines[0].acquisitionMethod
-			default_value compositePoLines[0].acquisitionMethod Other
-			acqMethod="${field}"
+	  acqtype | acquisitionmethod | form )
+			if [[ -z ${acqMethod} ]];then
+				addfield compositePoLines[0].acquisitionMethod
+				default_value compositePoLines[0].acquisitionMethod Other
+				acqMethod="${field}"
+			fi
 		;;
 	  approved )
 				addreplacerules approved truefalse
@@ -300,7 +302,7 @@ build_order_map() {
 			addregexrules compositePoLines[0].locations[0].quantityPhysical number
 			default_value compositePoLines[0].locations[0].quantityPhysical 1
 		;;
-	  form | format | orderformat )
+	  format | orderformat | ordtype )
 			addfield compositePoLines[0].orderFormat
 			fallback_value orderFormat "Physical Resource"
 			addreplacerules orderFormat '"print":"Physical Resource","Print":"Physical Resource","database":"Electronic Resource","Database":"Electronic Resource","online":"Electronic Resource","Online":"Electronic Resource","print+online":"P/E Mix"'
@@ -310,9 +312,6 @@ build_order_map() {
 		;;
 	  requester )
 			addfield compositePoLines[0].requester
-		;;
-	  selector )
-			addfield compositePoLines[0].selector
 		;;
 	  title | titleorpackage )
 			addfield compositePoLines[0].titleOrPackage
@@ -325,7 +324,7 @@ build_order_map() {
 			addvalue notes[${note_iter}] "(${field})"
 			note_iter=$(($note_iter + 1))
 		;;
-	  note | noteorder | ordernote | descriptioninternalnote )
+	  note | ordernote | descriptioninternalnote )
 			addfield notes[${note_iter}]
 			note_iter=$(($note_iter + 1))
 		;;
@@ -339,9 +338,12 @@ build_order_map() {
 			addreplacerules ongoing.manualRenewal truefalse
 		;;
 	  lineitemtype | ordtype | ordertype )
-			addreplacerules orderType '"Single-part":"One-Time","Subscription":"Ongoing","Standing order":"Ongoing","ongoing":"Ongoing", "one-time":"One-Time"'
-			addreplacerules ongoing.isSubscription '"Single-part":false,"Subscription":true,"Standing order":false,"y":true'
-			addvalue ongoing.manualRenewal true
+			if [[ -z ${ordType} ]]; then 
+				addreplacerules orderType '"Single-part":"One-Time","Subscription":"Ongoing","Standing order":"Ongoing","ongoing":"Ongoing", "one-time":"One-Time","m":"One-Time","r":"Ongoing"'
+				addreplacerules ongoing.isSubscription '"Single-part":false,"Subscription":true,"Standing order":false,"y":true'
+				addvalue ongoing.manualRenewal true
+				ordType="${field}"
+			fi
 		;;
 	  almapoline | ordernumber | po | ponumber | purchaseordernumber | recordorder )
 			addfield poNumber
@@ -365,28 +367,26 @@ build_order_map() {
 			addfield vendor
 			vendorfield="${field}"
 		;;
-	  vennote )
-			addfield vendorDetail.noteFromVendor 
-		;;
 	  workflowstatus )
 			addvalue workflowStatus Pending
+			workflowStatus="${field}"
 		;;
 	esac
 
-	default_field compositePoLines[0].acquisitionMethod poNumber
-	default_value compositePoLines[0].acquisitionMethod Pending
+	[[ -z ${acqMethod} ]] && default_field compositePoLines[0].acquisitionMethod poNumber
+	[[ -z ${acqMethod} ]] && default_value compositePoLines[0].acquisitionMethod Pending
 
-	default_field workflowStatus poNumber
-	default_value workflowStatus Pending
+	[[ -z ${workflowStatus} ]] && default_field workflowStatus poNumber
+	[[ -z ${workflowStatus} ]] && default_value workflowStatus Pending
 
-	default_field orderType poNumber
-	default_value orderType	Ongoing
+	[[ -z ${ordType} ]] && default_field orderType poNumber
+	[[ -z ${ordType} ]] && default_value orderType	Ongoing
 
 	[[ -n ${vendorfield} ]] && echo -e "${vendorfield}\tfolio_name\n" > organizationCodeMap.tsv
 done
 
-	[[ -n ${acqMethod} ]] && echo -e "${acqMethod}\tfolio_value\nApproval\tApproval plan\nApproval Plan\tApproval Plan\nDemand Driven Acquisitions (DDA)\tDemand Driven Acquisitions (DDA)\nDepository\tDepository\nExchange\tExchange\nFirm Order\tPurchase\nFree\tFree\nGift\tGift\ni\tInternal transfer\nMembership\tMembership\nMembership Title\tMembership\nPurchase at Vendor System\tPurchase At Vendor System\nc\tPurchase\nm\tMembership\np\tPurchase\nt\tPurchase\n*\tOther" > acquisitionMethodMap.tsv
-	[[ -n ${locationfield} ]] && echo -e "${locationfield}\tfolio_code\n*\tmigration" > locations_orders.tsv
+	[[ -n ${acqMethod} ]] && echo -e "${acqMethod}\tfolio_value\nApproval\tApproval plan\nApproval Plan\tApproval plan\nDemand Driven Acquisitions (DDA)\tDemand Driven Acquisitions (DDA)\nDepository\tDepository\nExchange\tExchange\nFirm Order\tPurchase\nFree\tFree\nGift\tGift\nMembership\tMembership\nMembership Title\tMembership\na\tApproval Plan\nc\tPurchase\nm\tMembership\np\tPurchase\nt\tPurchase\nv\tPurchase At Vendor System\n*\tOther" > acquisitionMethodMap.tsv
+	[[ -n ${locationfield} ]] && echo -e "${locationfield}\tlegacy_code\tfolio_code\n*\tmigration" > locations_orders.tsv
 }
 
 build_holdings_map() {

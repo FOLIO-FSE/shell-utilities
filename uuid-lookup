@@ -133,8 +133,7 @@ function showmatches() {
 	"statisticalCodeTypes")
 		endpoint="statistical-code-types";;
 	"subjectSources")
-		endpoint="subject-sources"
-		jq="code_name";;
+		endpoint="subject-sources";;
 	"usergroups")
 		endpoint="groups"
 		jq=".${matchtype}[] | select((.group  |ascii_downcase |contains(\"${search}\")) or (.id == \"${search}\")) | [\"${matchtype}\", .id, .group] |@tsv";;

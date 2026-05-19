@@ -63,7 +63,7 @@ fix_characters(){
 	s/^\"//
 	s/\"$//
 	s/^ +//
-	s/ *\t *//g
+	s/ *\t */\t/g
 	s/ +$//
 	s/\b[(]*null[)]*\b//ig
 	s/()//g

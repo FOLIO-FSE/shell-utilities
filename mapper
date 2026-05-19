@@ -245,14 +245,13 @@ build_order_map() {
 				addreplacerules approved truefalse
 		;;
 	  currency )
+			currencyFile="${field}"
 			addfield poLines[0].cost.currency
 		;;
 	 	eprice | price | listunitprice | polineestimatedprice | unitprice )
 			if [[ -z ${costField} ]];then
 				addregexrules poLines[0].cost.listUnitPrice currency
 				fallback_value poLines[0].cost.listUnitPrice "0.00"
-				addfield poLines[0].cost.currency
-				default_value poLines[0].cost.currency USD
 				addregexrules totalEstimatedPrice currency
 				fallback_value totalEstimatedPrice "0.00"
 				costField="${field}"
@@ -400,10 +399,11 @@ build_order_map() {
 	[[ -z ${acqMethod} ]] && default_value poLines[0].acquisitionMethod Other
 
 	if [[ -z ${costField} ]];then
-		addfield poLines[0].cost.listUnitPrice poNumber
+		default_field poLines[0].cost.listUnitPrice poNumber
 		default_value poLines[0].cost.listUnitPrice "0.00"
-		addfield poLines[0].cost.currency poNumber
+		default_field poLines[0].cost.currency poNumber
 		default_value poLines[0].cost.currency USD
+		default_field totalEstimatedPrice poNumber
 		default_value totalEstimatedPrice "0.00"
 	fi
 

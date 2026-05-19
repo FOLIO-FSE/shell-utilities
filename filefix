@@ -437,7 +437,7 @@ function fix_dates() {
 			}
 
 			# fix some 2 digit year issues
-			if ($0 ~ /^[0-9]{2}-/ && substr($fixdate,1,1) > "3"){ $fixdate = "19"$fixdate }
+			if ($fixdate ~ /^[4-9][0-9]-/){ $fixdate = "19"$fixdate }
 			# find zero value dates
 			if ($fixdate ~ /-00/) { $fixdate = "" }
 			if ($fixdate ~ /^[\- ]*$/) { $fixdate = "" }

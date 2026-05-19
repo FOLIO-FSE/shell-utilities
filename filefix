@@ -60,9 +60,11 @@ fix_characters(){
 	s/[$CONTROL]/ /g
 	s/[‡\x87]\([a-zA-Z0-9]\) */\x1F\1/g
 	s/\";\"/;/g
-	s/^\"\|\"$//g
 	s/^\"//
 	s/\"$//
+	s/^ +//
+	s/ *\t *//g
+	s/ +$//
 	s/\b[(]*null[)]*\b//ig
 	s/()//g
 	s/\r/ /g

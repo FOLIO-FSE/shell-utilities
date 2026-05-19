@@ -400,11 +400,11 @@ build_order_map() {
 	[[ -z ${acqMethod} ]] && default_value poLines[0].acquisitionMethod Other
 
 	if [[ -z ${costField} ]];then
-		addfield poLines[0].cost.listUnitPrice
+		addfield poLines[0].cost.listUnitPrice poNumber
 		default_value poLines[0].cost.listUnitPrice "0.00"
-		addfield poLines[0].cost.currency
+		addfield poLines[0].cost.currency poNumber
 		default_value poLines[0].cost.currency USD
-		defuault_value totalEstimatedPrice "0.00"
+		default_value totalEstimatedPrice "0.00"
 	fi
 
 	[[ -z ${orderFormat} ]] && default_field orderFormat poNumber

@@ -412,7 +412,7 @@ build_order_map() {
 	[[ -z ${orderFormat} ]] && default_value orderFormat "Physical Resource"
 
 	[[ -z ${ordType} ]] && default_field orderType poNumber
-	[[ -z ${ordType} ]] && default_value orderType Purchase
+	[[ -z ${ordType} ]] && default_value orderType Ongoing
 
 	[[ -z ${workflowStatus} ]] && default_field orderFormat poNumber
 	[[ -z ${workflowStatus} ]] && default_value orderFormat Pending

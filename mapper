@@ -247,27 +247,40 @@ build_order_map() {
 	  currency )
 			addfield poLines[0].cost.currency
 		;;
-	  	eprice | price | listunitprice | polineestimatedprice | unitprice )
-			addregexrules poLines[0].cost.listUnitPrice currency
-			default_value poLines[0].cost.listUnitPrice "0.00"
-			addregexrules totalEstimatedPrice currency
-			default_value totalEstimatedPrice "0.00"
+	 	eprice | price | listunitprice | polineestimatedprice | unitprice )
+			if [[ -z ${costField} ]];then
+				addregexrules poLines[0].cost.listUnitPrice currency
+				fallback_value poLines[0].cost.listUnitPrice "0.00"
+				addfield poLines[0].cost.currency
+				default_value poLines[0].cost.currency USD
+				addregexrules totalEstimatedPrice currency
+				fallback_value totalEstimatedPrice "0.00"
+				costField="${field}"
+			fi
 		;;
 	  listunitpriceelectronic )
-			addregexrules poLines[0].cost.listUnitPriceElectronic currency
-			default_value poLines[0].cost.listUnitPriceElectronic "0.00" 
+			if [[ -z ${costField} ]];then
+				addregexrules poLines[0].cost.listUnitPriceElectronic currency
+				fallback_value poLines[0].cost.listUnitPriceElectronic "0.00" 
+				addfield poLines[0].cost.currency
+				default_value poLines[0].cost.currency USD
+				addregexrules totalEstimatedPrice currency
+				fallback_value totalEstimatedPrice "0.00"
+				costField="${field}"
+			fi
 		;;
 	  listunitpricephysical )
 			addregexrules poLines[0].cost.listUnitPricePhysical currency
-			default_value poLines[0].cost.listUnitPricePhysical "0.00" 
+			fallback_value poLines[0].cost.listUnitPricePhysical "0.00" 
+			default_value poLines[0].cost.currency USD
 		;;
 	  costquantityelectronic | quantityelectronic )
 			addregexrules poLines[0].cost.quantityElectronic number
-			default_value  poLines[0].cost.quantityElectronic 0
+			default_value poLines[0].cost.quantityElectronic 0
 		;;
 	  costquantityphysical | quantity | quantityphysical )
 			addregexrules poLines[0].cost.quantityPhysical number
-			default_value  poLines[0].cost.quantityPhysical 1
+			default_value poLines[0].cost.quantityPhysical 1
 		;;
 	  descriptionreceivingnote | detailsreceivingnote | receivingnote )
 			addfield poLines[0].details.receivingNote
@@ -385,6 +398,14 @@ build_order_map() {
 
 	[[ -z ${acqMethod} ]] && default_field poLines[0].acquisitionMethod poNumber
 	[[ -z ${acqMethod} ]] && default_value poLines[0].acquisitionMethod Other
+
+	if [[ -z ${costField} ]];then
+		addfield poLines[0].cost.listUnitPrice
+		default_value poLines[0].cost.listUnitPrice "0.00"
+		addfield poLines[0].cost.currency
+		default_value poLines[0].cost.currency USD
+		defuault_value totalEstimatedPrice "0.00"
+	fi
 
 	[[ -z ${orderFormat} ]] && default_field orderFormat poNumber
 	[[ -z ${orderFormat} ]] && default_value orderFormat Physical

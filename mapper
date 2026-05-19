@@ -393,11 +393,11 @@ build_order_map() {
 		esac
 	done
 
-	default_field poLines[0].acquisitionMethod poNumber
-	default_value poLines[0].acquisitionMethod Pending
-
-	[[ -z ${acqMethod} ]] && default_field poLines[0].acquisitionMethod poNumber
-	[[ -z ${acqMethod} ]] && default_value poLines[0].acquisitionMethod Other
+	if [[ -z ${acqMethod} ]];then
+		acqMethod="${primary_key}"
+		default_field poLines[0].acquisitionMethod poNumber
+		default_value poLines[0].acquisitionMethod Other
+	fi
 
 	if [[ -z ${costField} ]];then
 		default_field poLines[0].cost.listUnitPrice poNumber
@@ -412,7 +412,7 @@ build_order_map() {
 	[[ -z ${orderFormat} ]] && default_value orderFormat "Physical Resource"
 
 	[[ -z ${ordType} ]] && default_field orderType poNumber
-	[[ -z ${ordType} ]] && default_value orderType	Ongoing
+	[[ -z ${ordType} ]] && default_value orderType Purchase
 
 	[[ -z ${workflowStatus} ]] && default_field orderFormat poNumber
 	[[ -z ${workflowStatus} ]] && default_value orderFormat Pending

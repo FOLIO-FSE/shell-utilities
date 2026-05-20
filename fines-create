@@ -111,11 +111,11 @@ while IFS=$'\n' read -r line; do
 	[[ -z $patron_barcode ]] && patron_barcode="${patron_identifier}"
 	if [[ -v ${fine_owner} ]];then  fine_owner=${owner_arr[${fine_owner}]}; else fine_owner=${default_fine_owner};fi
 
-	[[ ${description} =~ ^[0-9a-zA-Z]$ ]] && notes="${description} ${notes}"
-	[[ ${fee_assess_date} =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] && notes="${notes}. Assessed:  ${out_date}"
-	[[ ${out_date} =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] && notes="${notes}. Checkout date:  ${out_date}"
-	[[ ${due_date} =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] && notes="${notes} Due date: ${due_date}"
-	[[ ${returned_date} =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] && notes="${notes} Returned date: ${returned_date}"
+	[[ "${description}" =~ [0-9a-zA-Z] ]] && notes="${notes}. ${description}"
+	[[ "${fee_assess_date}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] && notes="${notes}. Assessed:  ${fee_assess_date}"
+	[[ "${out_date}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] && notes="${notes}. Checkout date:  ${out_date}"
+	[[ "${due_date}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] && notes="${notes} Due date: ${due_date}"
+	[[ "${returned_date}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] && notes="${notes} Returned date: ${returned_date}"
 
 	echo -en "Processing record $counter of ${numloans}. Bad barcodes found: ${badbarcodes}\r"
 

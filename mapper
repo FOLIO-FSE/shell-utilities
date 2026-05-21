@@ -357,7 +357,7 @@ build_order_map() {
 		  lineitemtype | ordtype | ordertype )
 				if [[ -z ${ordType} ]]; then
 					addreplacerules orderType '"Approval Plan":"One-Time","Continuation":"Ongoing","Depository":"One-Time","Firm Order":"One-Time","Gift":"One-Time","m":"One-Time","one-time":"One-Time","ongoing":"Ongoing","r":"Ongoing","Single-part":"One-Time","Standing order":"Ongoing","Subscription":"Ongoing"'
-					addreplacerules ongoing.isSubscription '"Single-part":false,"Subscription":true,"Standing order":false,"y":true'
+					addreplacerules ongoing.isSubscription '"Single-part":false,"Subscription":true,"Standing order":false,"m":false,"r":true,"y":true'
 					addvalue ongoing.manualRenewal true
 				fi
 			;;

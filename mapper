@@ -234,7 +234,7 @@ build_order_map() {
 		comp_field=$(echo "${field,,}" | tr -dc [a-z0-9] |sed 's/folio//' )
 	
 		case ${comp_field} in
-		  acquisitionmethod | form | ordtype )
+		  acquisitionmethod | form )
 				if [[ -z ${acqMethod} ]];then
 					addfield poLines[0].acquisitionMethod
 					default_value poLines[0].acquisitionMethod Other

@@ -1,0 +1,26 @@
+#!/usr/bin/bash
+auth 2>/dev/null || authn 2>/dev/null
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+while IFS=$'\t' read -r code name externalAccount;do
+
+[[ -z ${name} ]] && [[ name="${code}" ]]
+
+id=$(uuidgen)
+IFS='' read -r -d '' expenseclass << EndOfExpenseClass
+
+{
+"id": "${id}",
+"name":"${name}",
+"code":"${code}",
+"externalAccountNumberExt":"${externalAccount}"
+}
+EndOfExpenseClass
+
+curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${expenseclass}" "${okapi_url}/finance/expense-classes"
+
+done < expenseclasses.tsv
+
+

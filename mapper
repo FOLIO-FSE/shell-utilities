@@ -408,8 +408,8 @@ build_order_map() {
 		default_value totalEstimatedPrice "0.00"
 	fi
 
-	[[ -z ${orderFormat} ]] && default_field orderFormat poNumber
-	[[ -z ${orderFormat} ]] && default_value orderFormat "Physical Resource"
+	[[ -z ${orderFormat} ]] && default_field poLines[0].orderFormat poNumber
+	[[ -z ${orderFormat} ]] && default_value poLines[0].orderFormat "Physical Resource"
 
 	[[ -z ${ordType} ]] && default_field orderType poNumber
 	[[ -z ${ordType} ]] && default_value orderType Ongoing

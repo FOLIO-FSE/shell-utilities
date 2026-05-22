@@ -236,8 +236,8 @@ build_order_map() {
 		case ${comp_field} in
 		  acquisitionmethod | form )
 				if [[ -z ${acqMethod} ]];then
-					addfield poLines[0].acquisitionMethod
-					default_value poLines[0].acquisitionMethod Other
+					addfield compositePoLines[0].acquisitionMethod
+					default_value compositePoLines[0].acquisitionMethod Other
 					acqMethod="${field}"
 				fi
 			;;
@@ -246,12 +246,12 @@ build_order_map() {
 			;;
 		  currency )
 				currencyFile="${field}"
-				addfield poLines[0].cost.currency
+				addfield compositePoLines[0].cost.currency
 			;;
 		 	eprice | price | listunitprice | polineestimatedprice | unitprice )
 				if [[ -z ${costField} ]];then
-					addregexrules poLines[0].cost.listUnitPrice currency
-					fallback_value poLines[0].cost.listUnitPrice "0.00"
+					addregexrules compositePoLines[0].cost.listUnitPrice currency
+					fallback_value compositePoLines[0].cost.listUnitPrice "0.00"
 					addregexrules totalEstimatedPrice currency
 					fallback_value totalEstimatedPrice "0.00"
 					costField="${field}"
@@ -259,79 +259,79 @@ build_order_map() {
 			;;
 		  listunitpriceelectronic )
 				if [[ -z ${costField} ]];then
-					addregexrules poLines[0].cost.listUnitPriceElectronic currency
-					fallback_value poLines[0].cost.listUnitPriceElectronic "0.00" 
-					addfield poLines[0].cost.currency
-					default_value poLines[0].cost.currency USD
+					addregexrules compositePoLines[0].cost.listUnitPriceElectronic currency
+					fallback_value compositePoLines[0].cost.listUnitPriceElectronic "0.00" 
+					addfield compositePoLines[0].cost.currency
+					default_value compositePoLines[0].cost.currency USD
 					addregexrules totalEstimatedPrice currency
 					fallback_value totalEstimatedPrice "0.00"
 					costField="${field}"
 				fi
 			;;
 		  listunitpricephysical )
-				addregexrules poLines[0].cost.listUnitPricePhysical currency
-				fallback_value poLines[0].cost.listUnitPricePhysical "0.00" 
-				default_value poLines[0].cost.currency USD
+				addregexrules compositePoLines[0].cost.listUnitPricePhysical currency
+				fallback_value compositePoLines[0].cost.listUnitPricePhysical "0.00" 
+				default_value compositePoLines[0].cost.currency USD
 			;;
 		  costquantityelectronic | quantityelectronic )
-				addregexrules poLines[0].cost.quantityElectronic number
-				default_value poLines[0].cost.quantityElectronic 0
+				addregexrules compositePoLines[0].cost.quantityElectronic number
+				default_value compositePoLines[0].cost.quantityElectronic 0
 			;;
 		  costquantityphysical | quantity | quantityphysical )
-				addregexrules poLines[0].cost.quantityPhysical number
-				default_value poLines[0].cost.quantityPhysical 1
+				addregexrules compositePoLines[0].cost.quantityPhysical number
+				default_value compositePoLines[0].cost.quantityPhysical 1
 			;;
 		  descriptionreceivingnote | detailsreceivingnote | receivingnote )
-				addfield poLines[0].details.receivingNote
+				addfield compositePoLines[0].details.receivingNote
 			;;
 		  url )
-					addregexrules poLines[0].details.resourceUrl url
+					addregexrules compositePoLines[0].details.resourceUrl url
 			;;
 		  startdate )
-				addfield poLines[0].details.subscriptionFrom
+				addfield compositePoLines[0].details.subscriptionFrom
 			;;
 		  expirationdate )
-				addfield poLines[0].details.subscriptionTo
+				addfield compositePoLines[0].details.subscriptionTo
 			;;
 		  polinenote | polnote)
-				addfield poLines[0].description
+				addfield compositePoLines[0].description
 			;;
 		  bibid | bibno | mmsid | mmsrecordid | recordbiblio | recordbibliographic | recordnumberbibliographic | systemidentifierbibid )
-			addfield poLines[0].instanceId
+			addfield compositePoLines[0].instanceId
 			;;
 		  location | locationcode | locationidcode )
-				addfield poLines[0].locations[0].locationId
+				addfield compositePoLines[0].locations[0].locationId
 				locationfield="${field}"
 			;;
 		  copies | quantity | quantitytotal | totalitems )
-				addregexrules poLines[0].locations[0].quantity number
+				addregexrules compositePoLines[0].locations[0].quantity number
 			;;
 		  locationquantityelectronic | quantityelectronic )
-				addregexrules poLines[0].locations[0].quantityElectronic number
-				default_value poLines[0].locations[0].quantityElectronic 1
+				addregexrules compositePoLines[0].locations[0].quantityElectronic number
+				default_value compositePoLines[0].locations[0].quantityElectronic 1
 			;;
 		  locationquantityphysical | quantityphysical )
-				addregexrules poLines[0].locations[0].quantityPhysical number
-				default_value poLines[0].locations[0].quantityPhysical 1
+				addregexrules compositePoLines[0].locations[0].quantityPhysical number
+				default_value compositePoLines[0].locations[0].quantityPhysical 1
 			;;
 		  format | orderformat )
 				if [[ -z ${orderFormat} ]];then
-					addfield poLines[0].orderFormat
+					addfield compositePoLines[0].orderFormat
 					fallback_value orderFormat "Physical Resource"
 					addreplacerules orderFormat '"print":"Physical Resource","Print":"Physical Resource","database":"Electronic Resource","Database":"Electronic Resource","online":"Electronic Resource","Online":"Electronic Resource","print+online":"P/E Mix"'
 				fi
 			;;
 		  publishername )
-				addfield poLines[0].publisher
+				addfield compositePoLines[0].publisher
 			;;
 		  requester )
-				addfield poLines[0].requester
+				addfield compositePoLines[0].requester
 			;;
 		  selector )
-				addfield poLines[0].selector
+				addfield compositePoLines[0].selector
 			;;
 		  title | titleorpackage )
-				addfield poLines[0].titleOrPackage
+				addfield compositePoLines[0].titleOrPackage
 			;;
 		  approvaldate | dateordered | invoicedate | odate | podate )
 			addfield dateOrdered
@@ -364,7 +364,7 @@ build_order_map() {
 		  almapoline | ordernumber | po | ponumber | purchaseordernumber | recordorder )
 				addfield poNumber
 				addfield legacyIdentifier
-				addvalue poLines[0].source API
+				addvalue compositePoLines[0].source API
 				primary_key="${field}"
 			;;
 		  poprefix )
@@ -395,21 +395,21 @@ build_order_map() {
 
 	if [[ -z ${acqMethod} ]];then
 		acqMethod="${primary_key}"
-		default_field poLines[0].acquisitionMethod poNumber
-		default_value poLines[0].acquisitionMethod Other
+		default_field compositePoLines[0].acquisitionMethod poNumber
+		default_value compositePoLines[0].acquisitionMethod Other
 	fi
 
 	if [[ -z ${costField} ]];then
-		default_field poLines[0].cost.listUnitPrice poNumber
-		default_value poLines[0].cost.listUnitPrice "0.00"
-		default_field poLines[0].cost.currency poNumber
-		default_value poLines[0].cost.currency USD
+		default_field compositePoLines[0].cost.listUnitPrice poNumber
+		default_value compositePoLines[0].cost.listUnitPrice "0.00"
+		default_field compositePoLines[0].cost.currency poNumber
+		default_value compositePoLines[0].cost.currency USD
 		default_field totalEstimatedPrice poNumber
 		default_value totalEstimatedPrice "0.00"
 	fi
 
-	[[ -z ${orderFormat} ]] && default_field poLines[0].orderFormat poNumber
-	[[ -z ${orderFormat} ]] && default_value poLines[0].orderFormat "Physical Resource"
+	[[ -z ${orderFormat} ]] && default_field compositePoLines[0].orderFormat poNumber
+	[[ -z ${orderFormat} ]] && default_value compositePoLines[0].orderFormat "Physical Resource"
 
 	[[ -z ${ordType} ]] && default_field orderType poNumber
 	[[ -z ${ordType} ]] && default_value orderType Ongoing

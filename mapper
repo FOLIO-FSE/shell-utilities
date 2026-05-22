@@ -305,14 +305,13 @@ build_order_map() {
 			;;
 		  copies | quantity | quantitytotal | totalitems )
 				addregexrules compositePoLines[0].locations[0].quantity number
+				addregexrules compositePoLines[0].cost.quantityPhysical number
 			;;
 		  locationquantityelectronic | quantityelectronic )
 				addregexrules compositePoLines[0].locations[0].quantityElectronic number
-				default_value compositePoLines[0].locations[0].quantityElectronic 1
 			;;
 		  locationquantityphysical | quantityphysical )
 				addregexrules compositePoLines[0].locations[0].quantityPhysical number
-				default_value compositePoLines[0].locations[0].quantityPhysical 1
 			;;
 		  format | orderformat )
 				if [[ -z ${orderFormat} ]];then

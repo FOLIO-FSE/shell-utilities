@@ -84,6 +84,7 @@ cat "${infile}" |jq -c '.compositePoLines[] |= if .details==null then .details={
 	if type == "object" and .cost
 	then (
 	if .cost.currency == null then
+	.cost.currency = "USD"
 	else . end)
 	else end) |
 

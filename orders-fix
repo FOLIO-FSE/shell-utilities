@@ -85,7 +85,6 @@ cat "${infile}" |jq -c '.compositePoLines[] |= if .details==null then .details={
 	then (
 	if .cost.currency == null then
 	else . end)
-	)
 	else end) |
 
 	# fix p/e mix 

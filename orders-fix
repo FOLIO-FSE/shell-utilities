@@ -66,7 +66,7 @@ cat "${infile}" |jq -c '.compositePoLines[] |= if .details==null then .details={
 	if any(values) then map(values) else [] end | 
 	del(..|select(. == [])) |
 
-	# cordinate price info
+	# coordinate price info
 	walk(
 	if type == "object" and ((.cost.poLineEstimatedPrice == null) and (.cost.currency != null)) then 
 	(.cost.poLineEstimatedPrice, .cost.listUnitPrice) = "0.00" 
@@ -78,6 +78,15 @@ cat "${infile}" |jq -c '.compositePoLines[] |= if .details==null then .details={
 	| (.cost.quantityElectronic = .cost.quantityPhysical |del(.cost.quantityPhysical)) 
 	| (.locations[].quantityElectronic = .cost.quantityElectronic| del(.locations[].quantityPhysical))
 	else . end) |
+
+	# fix currency if missing
+	walk(
+	if type == "object" and .cost
+	then (
+	if .cost.currency == null then
+	else . end)
+	)
+	else end) |
 
 	# fix p/e mix 
 	walk(if type == "object" and .orderFormat == "P/E Mix" then 

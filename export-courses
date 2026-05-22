@@ -1,0 +1,30 @@
+#!/usr/bin/bash
+
+echo "Retrieving Courses"
+records-get courses
+
+echo -e "id\tcourseName\tcourseNumber\tdescription\tdepartment\tlocationCode\tterm\tstartDate\tendDate\tinstructors" > courses.tsv
+
+echo
+echo "Extracting course records."
+
+delim=$'\t'
+subdelim='; '
+
+pv courses.json |sed 's/\\n//g' |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
+	[
+	"\(.id)" // "",
+	"\(.name)" // "",
+	"\(.courseNumber)" // "",
+	"\(.description)" // "",
+	"\(.departmentObject.name)" // "",
+	"\(.courseListingObject.locationObject.code)" // "",
+	"\(.termObject.name)" // "",
+	"\(.termObject.startDate)" // "",
+	"\(.termObject.endDate)" // "",
+	"\(.courseListingObject.instructorObjects |map(.name) |join(";"))" // ""
+	] |join($delim)
+	' |sed 's/\bnull\b//g' >> courses.tsv 
+
+echo "Course records have been exported to courses.tsv"
+echo

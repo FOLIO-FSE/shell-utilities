@@ -1,10 +1,47 @@
-# searches a json file for a regex
-#
-# usage: ./jqsearch "regex" "filename"
+#!/usr/bin/env bash
 
-# case sensitive search
-cat $2 |jq --arg REGEX "$1" '. as $data | [path(..| select(scalars and (tostring | test($REGEX)))) ] | map({ (.|join(".")): (. as $path | .=$data | getpath($path)) }) | reduce .[] as $item ({}; . * $item)'
+# usage:
+#   ./jqsearch [-i] "regex" filename
 
-case insensitive search
-#cat $2 |jq --arg REGEX "$1" '. as $data | [path(..| select(scalars and (tostring | test($REGEX; "i")))) ] | map({ (.|join(".")): (. as $path | .=$data | getpath($path)) }) | reduce .[] as $item ({}; . * $item)'
+IGNORE_CASE=0
+
+while getopts "i" opt; do
+  case $opt in
+    i) IGNORE_CASE=1 ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+REGEX="$1"
+FILE="$2"
+
+if [[ $IGNORE_CASE -eq 1 ]]; then
+  JQ_TEST='test($REGEX; "i")'
+else
+  JQ_TEST='test($REGEX)'
+fi
+
+jq -r --arg REGEX "$REGEX" "
+  . as \$data
+  | [
+      path(.. | select(scalars and (tostring | $JQ_TEST))) as \$p
+      | {
+          (
+            # build path string to match jq syntax
+            reduce \$p[] as \$x (\"\"; 
+              if (\$x|type) == \"number\" then
+                . + \"[\" + (\$x|tostring) + \"]\"
+              else
+                if . == \"\" then
+                  \$x
+                else
+                  . + \".\" + \$x
+                end
+              end
+            )
+          ): \$data | getpath(\$p)
+        }
+    ]
+  | add
+" "$FILE"
 

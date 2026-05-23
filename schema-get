@@ -1,0 +1,164 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+QUERY="${1:-}"
+MODE="${2:-json}"
+
+[[ -z "$QUERY" ]] && { echo "Usage: schema-get <name> [json|all|pick]"; exit 1; }
+
+AUTH_HEADER=()
+[[ -n "${GITHUB_TOKEN:-}" ]] && AUTH_HEADER=(-H "Authorization: token $GITHUB_TOKEN")
+
+SEARCH_URL="https://api.github.com/search/code?q=${QUERY}.raml+in:path+ramls+org:folio-org"
+
+# --- Find RAML ---
+RESULT=$(curl -s "${AUTH_HEADER[@]}" "$SEARCH_URL")
+RAML_HTML=$(echo "$RESULT" | jq -r '.items[0].html_url // empty')
+
+[[ -z "$RAML_HTML" ]] && { echo "No RAML found"; exit 1; }
+
+RAML_RAW=$(echo "$RAML_HTML" \
+  | sed 's|github.com|raw.githubusercontent.com|' \
+  | sed 's|/blob/|/|')
+
+BASE=$(echo "$RAML_RAW" | sed 's|/ramls/.*||')
+
+# --- Extract schema paths ---
+RAML=$(curl -s "$RAML_RAW")
+
+SCHEMA_PATHS=$(echo "$RAML" | grep -Eo 'schemas/[^"]+\.json' | sort -u)
+[[ -z "$SCHEMA_PATHS" ]] && { echo "No schemas found"; exit 1; }
+
+SCHEMA_URLS=()
+while read -r p; do
+  SCHEMA_URLS+=("$BASE/ramls/$p")
+done <<< "$SCHEMA_PATHS"
+
+# --- Pick primary ---
+PRIMARY=""
+for u in "${SCHEMA_URLS[@]}"; do
+  [[ "$u" =~ ${QUERY}\.json$ ]] && PRIMARY="$u"
+done
+
+if [[ -z "$PRIMARY" ]]; then
+  SINGULAR=$(echo "$QUERY" | sed 's/-storage//')
+  for u in "${SCHEMA_URLS[@]}"; do
+    [[ "$u" =~ ${SINGULAR}\.json$ ]] && PRIMARY="$u"
+  done
+fi
+
+PRIMARY="${PRIMARY:-${SCHEMA_URLS[0]}}"
+
+# --- Caches ---
+declare -A CACHE
+declare -A VISITED
+
+fetch() {
+  local url="$1"
+
+  if [[ -n "${CACHE[$url]+x}" ]]; then
+    echo "${CACHE[$url]}"
+    return
+  fi
+
+  local content
+  content=$(curl -s "$url")
+
+  # validate JSON
+  if ! echo "$content" | jq empty 2>/dev/null; then
+    return 1
+  fi
+
+  CACHE[$url]="$content"
+  echo "$content"
+}
+
+resolve_refs() {
+  local json="$1"
+  local base_url="$2"
+
+  # avoid cycles
+  local key="$base_url"
+  if [[ -n "${VISITED[$key]+x}" ]]; then
+    echo "$json"
+    return
+  fi
+  VISITED[$key]=1
+
+  local refs
+  refs=$(echo "$json" | jq -r '..|objects|select(has("$ref"))|.["$ref"]' 2>/dev/null || true)
+
+  for ref in $refs; do
+    local ref_url
+
+    if [[ "$ref" == http* ]]; then
+      ref_url="$ref"
+    else
+      ref_url="$(dirname "$base_url")/$ref"
+      ref_url=$(echo "$ref_url" | sed 's|/\./|/|g')
+    fi
+
+    # skip non-json
+    [[ ! "$ref_url" =~ \.json$ ]] && continue
+
+    ref_json=$(fetch "$ref_url" || true)
+    [[ -z "${ref_json:-}" ]] && continue
+
+    ref_resolved=$(resolve_refs "$ref_json" "$ref_url")
+
+    # inject safely (NO argjson!)
+    json=$(echo "$json" | jq \
+      --arg ref "$ref" \
+      --argjson repl "$ref_resolved" '
+      def walk(f):
+        . as $in
+        | if type == "object" then
+            reduce keys[] as $key
+              ( {}; . + { ($key): ( ($in[$key] | walk(f)) ) } )
+            | f
+          elif type == "array" then map( walk(f) ) | f
+          else f
+          end;
+
+      walk(
+        if type == "object" and has("$ref") and .["$ref"] == $ref
+        then $repl
+        else .
+        end
+      )')
+  done
+
+  echo "$json"
+}
+
+render() {
+  local url="$1"
+  json=$(fetch "$url")
+  resolve_refs "$json" "$url" | jq .
+}
+
+# --- Modes ---
+case "$MODE" in
+  pick)
+    echo "Available schemas:"
+    select opt in "${SCHEMA_URLS[@]}"; do
+      render "$opt"
+      break
+    done
+    ;;
+
+  all)
+    for u in "${SCHEMA_URLS[@]}"; do
+      echo "---- $u ----"
+      render "$u"
+    done
+    ;;
+
+  json)
+    render "$PRIMARY"
+    ;;
+  *)
+    echo "Invalid mode"
+    exit 1
+    ;;
+esac

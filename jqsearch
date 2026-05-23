@@ -1,16 +1,25 @@
 #!/usr/bin/env bash
 
 # usage:
-#   ./jqsearch [-i] "regex" filename
+#   ./jqsearch [-i] [-k] "regex" [filename]
+#   cat file.json | ./jqsearch [-i] [-k] "regex"
 
 IGNORE_CASE=0
+KEY_SEARCH=0
 
-while getopts "i" opt; do
+while getopts "ik" opt; do
   case $opt in
     i) IGNORE_CASE=1 ;;
+    k) KEY_SEARCH=1 ;;
   esac
 done
 shift $((OPTIND - 1))
+
+# require at least one positional argument (the regex)
+if [[ -z "$1" ]]; then
+  echo "Usage: jqsearch [-i] [-k] \"regex\" [filename]" >&2
+  exit 1
+fi
 
 REGEX="$1"
 FILE="$2"
@@ -21,27 +30,42 @@ else
   JQ_TEST='test($REGEX)'
 fi
 
-jq -r --arg REGEX "$REGEX" "
-  . as \$data
+# stdin vs file
+INPUT="${FILE:--}"
+
+jq -r --arg REGEX "$REGEX" --argjson KEY_SEARCH "$KEY_SEARCH" '
+  . as $data
   | [
-      path(.. | select(scalars and (tostring | $JQ_TEST))) as \$p
+      (if $KEY_SEARCH == 1 then
+         path(..)
+       else
+         path(.. | select(scalars and (tostring | '"$JQ_TEST"')))
+       end
+      ) as $p
+
+      | select(
+          if $KEY_SEARCH == 1 then
+            ($p[-1] | type == "string" and ($p[-1] | '"$JQ_TEST"'))
+          else
+            true
+          end
+        )
+
       | {
           (
-            # build path string to match jq syntax
-            reduce \$p[] as \$x (\"\"; 
-              if (\$x|type) == \"number\" then
-                . + \"[\" + (\$x|tostring) + \"]\"
+            reduce $p[] as $x ("";
+              if ($x|type) == "number" then
+                . + "[" + ($x|tostring) + "]"
               else
-                if . == \"\" then
-                  \$x
+                if . == "" then
+                  $x
                 else
-                  . + \".\" + \$x
+                  . + "." + $x
                 end
               end
             )
-          ): \$data | getpath(\$p)
+          ): ($data | getpath($p))
         }
     ]
   | add
-" "$FILE"
-
+' "$INPUT"

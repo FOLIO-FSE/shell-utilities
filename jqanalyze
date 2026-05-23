@@ -7,5 +7,5 @@ cat "${1}" | jq -r '
   | map(if type == "number" then "[]" else . end)
   | join(".")
   | gsub("\\.\\[\\]"; "[]")
-' | sort -u
+' | sort |uniq -c
 

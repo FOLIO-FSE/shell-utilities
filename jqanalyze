@@ -2,5 +2,10 @@
 #
 # usage: ./jqanalyze "filename"
 
+cat "${1}" | jq -r '
+  paths(scalars)
+  | map(if type == "number" then "[]" else . end)
+  | join(".")
+  | gsub("\\.\\[\\]"; "[]")
+' | sort -u
 
-cat $1 | jq 'select(objects)|=[.] | map( paths(scalars) ) | map( map(select(numbers)="[]") | join(".")) | unique'

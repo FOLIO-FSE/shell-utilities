@@ -21,24 +21,19 @@ fi
 # ----------------------------
 # GitHub headers
 # ----------------------------
-HEADERS=(
-  -H "Accept: application/vnd.github+json"
-  -H "User-Agent: schema-get"
-)
-
+HEADERS=(-H "Accept: application/vnd.github+json" -H "User-Agent: schema-get")
 if [[ -n "${GITHUB_TOKEN:-}" ]]; then
   HEADERS+=(-H "Authorization: token $GITHUB_TOKEN")
 fi
 
 # ----------------------------
-# MODULE RESOLUTION
+# Module resolution
 # ----------------------------
 Q=$(echo "$QUERY" | tr '[:upper:]' '[:lower:]')
 BASE="${Q%s}"
-
 CANDIDATES=("mod-$BASE" "mod-${BASE}s")
-MODULE=""
 
+MODULE=""
 for m in "${CANDIDATES[@]}"; do
   RESP=$(curl -s "${HEADERS[@]}" "https://api.github.com/repos/folio-org/$m")
   if [[ "$(echo "$RESP" | jq -r '.id // empty')" != "" ]]; then
@@ -47,33 +42,27 @@ for m in "${CANDIDATES[@]}"; do
   fi
 done
 
-[[ -z "$MODULE" ]] && { echo "❌ Module not found for: $QUERY"; exit 1; }
+[[ -z "$MODULE" ]] && { echo "❌ Module not found"; exit 1; }
 
 echo "🔍 Module: $MODULE"
 
-# ----------------------------
-# Get branch
-# ----------------------------
 BRANCH=$(curl -s "${HEADERS[@]}" \
   "https://api.github.com/repos/folio-org/$MODULE" \
   | jq -r '.default_branch')
 
 echo "🌿 Branch: $BRANCH"
 
-# ----------------------------
-# RAML files
-# ----------------------------
 RAML_FILES=$(curl -s "${HEADERS[@]}" \
   "https://api.github.com/repos/folio-org/$MODULE/contents/ramls" \
   | jq -r '.[]? | select(.name|endswith(".raml")) | .path')
 
 # ----------------------------
-# FIND SCHEMA
+# Find schema
 # ----------------------------
 find_schema() {
   local name="$1"
-  local found_path=""
-  local found_file=""
+  local sc_path=""
+  local sc_file=""
 
   for file in $RAML_FILES; do
     CONTENT=$(curl -s \
@@ -92,17 +81,17 @@ find_schema() {
     fi
 
     if [[ -n "$MATCH" ]]; then
-      found_path="$MATCH"
-      found_file=$(basename "$MATCH")
+      sc_path="$MATCH"
+      sc_file=$(basename "$MATCH")
       break
     fi
   done
 
-  echo "$found_path|$found_file"
+  echo "$sc_path|$sc_file"
 }
 
 # ----------------------------
-# FETCH SCHEMA FILE
+# Fetch schema
 # ----------------------------
 fetch_schema() {
   local file="$1"
@@ -129,34 +118,7 @@ fetch_schema() {
 }
 
 # ============================
-# SCHEMA MODE
-# ============================
-if [[ "$MODE" == "schema" ]]; then
-  [[ -z "$ARG" ]] && { echo "❌ provide schema name"; exit 1; }
-
-  IFS="|" read SCHEMA_PATH FILE <<< "$(find_schema "$ARG")"
-
-  [[ -z "$FILE" ]] && { echo "❌ schema not found"; exit 1; }
-
-  TMP=$(mktemp)
-  URL=$(fetch_schema "$FILE" "$SCHEMA_PATH" "$TMP")
-
-  [[ -z "$URL" ]] && {
-    echo "⚠️ Schema referenced but not standalone"
-    exit 1
-  }
-
-  echo "📦 Schema: $FILE"
-  echo "🔗 URL: $URL"
-  echo
-
-  jq . "$TMP"
-  rm -f "$TMP"
-  exit 0
-fi
-
-# ============================
-# EXAMPLE / EXAMPLE-FULL
+# EXAMPLE MODES
 # ============================
 if [[ "$MODE" == example* ]]; then
   [[ -z "$ARG" ]] && { echo "❌ provide schema name"; exit 1; }
@@ -164,81 +126,76 @@ if [[ "$MODE" == example* ]]; then
   FULL=false
   [[ "$MODE" == "example-full" ]] && FULL=true
 
-  IFS="|" read SCHEMA_PATH FILE <<< "$(find_schema "$ARG")"
+  IFS="|" read SCHEMA_PATH SCHEMA_FILE <<< "$(find_schema "$ARG")"
+  [[ -z "$SCHEMA_FILE" ]] && { echo "❌ schema not found"; exit 1; }
 
-  [[ -z "$FILE" ]] && { echo "❌ schema not found"; exit 1; }
+  TMP=$(/usr/bin/mktemp)
+  URL=$(fetch_schema "$SCHEMA_FILE" "$SCHEMA_PATH" "$TMP")
 
-  TMP=$(mktemp)
-  URL=$(fetch_schema "$FILE" "$SCHEMA_PATH" "$TMP")
+  [[ -z "$URL" ]] && { echo "❌ schema fetch failed"; exit 1; }
 
-  [[ -z "$URL" ]] && {
-    echo "❌ could not fetch schema"
-    exit 1
-  }
-
-  echo "🧪 $( $FULL && echo Full || echo Minimal ) payload for: $FILE"
+  echo "🧪 $( $FULL && echo Full || echo Minimal ) payload for: $SCHEMA_FILE"
   echo
 
-jq --argjson full "$FULL" '
+  jq --argjson full "$FULL" '
 
-# ----------------------------
-# Heuristic values
-# ----------------------------
-def guess($key):
-  if ($key|test("id$|Id$")) then "00000000-0000-0000-0000-000000000000"
-  elif ($key|test("date")) then "2026-01-01T00:00:00Z"
-  elif ($key|test("number|Number")) then "PO-0001"
+def guess($k):
+  if ($k|test("id$|Id$|vendor|assignedTo|openedById|approvedById|billTo|shipTo|template|fiscalYearId"))
+    then "00000000-0000-0000-0000-000000000000"
+  elif ($k|test("date"))
+    then "2026-01-01T00:00:00Z"
+  elif ($k|test("number|Number|total|amount"))
+    then 0
+  elif ($k|test("approved|manual|ongoing|reEncumber|needReEncumber"))
+    then false
   else "string"
   end;
 
-# ----------------------------
-# Generator
-# ----------------------------
+def isArray:
+  has("items") or (.type? == "array");
+
+def isObject:
+  has("properties") or (.type? == "object");
+
 def gen($full; $key):
 
-  if has("$ref") then
+  # ✅ ARRAY (hard stop — no recursion leakage)
+  if isArray then
+    []
+
+  # ✅ ENUM (must come before string handling)
+  elif has("enum") then
+    .enum
+
+  # ✅ REF
+  elif has("$ref") then
     guess($key)
 
-  elif type == "object" then
+  # ✅ SCALAR TYPES
+  elif (.type? == "boolean") then false
+  elif (.type? == "integer") then 0
+  elif (.type? == "number") then 0
+
+  # ✅ OBJECT
+  elif isObject then
     (.properties // {}) as $props
-    | (.required // []) as $req
+    |
+    reduce ($props | keys_unsorted[]) as $k (
+      {};
+      . + { ($k): ($props[$k] | gen($full; $k)) }
+    )
 
-    | if ($props | length) == 0 then
-        # fallback when schema is empty object
-        guess($key)
+  # ✅ STRING
+  elif (.type? == "string") then
+    guess($key)
 
-      else
-        if $full then
-          reduce ($props | keys_unsorted[]) as $k (
-            {}; . + { ($k): ($props[$k] | gen($full; $k)) })
-        else
-          if ($req | length) > 0 then
-            reduce $req[] as $k (
-              {}; . + { ($k): ($props[$k] | gen($full; $k)) })
-          else
-            reduce ($props | keys_unsorted[]) as $k (
-              {}; . + { ($k): ($props[$k] | gen($full; $k)) })
-          end
-        end
-      end
-
-  elif type == "array" then
-    [ (.items | gen($full; $key)) ]
-
-  elif type == "string" then
-    if has("enum") then .enum[0]
-    else guess($key)
-    end
-
-  elif type == "boolean" then false
-  elif type == "integer" then 0
-  elif type == "number" then 0
-
-  else guess($key)
+  # ✅ FALLBACK
+  else
+    guess($key)
   end;
 
 gen($full; "")
-' "$TMP"
+  ' "$TMP"
 
   rm -f "$TMP"
   exit 0
@@ -251,10 +208,9 @@ echo
 echo "📡 Endpoints:"
 
 for file in $RAML_FILES; do
-  CONTENT=$(curl -s \
-    "https://raw.githubusercontent.com/folio-org/$MODULE/$BRANCH/$file")
-
-  echo "$CONTENT" | awk '
+  curl -s \
+    "https://raw.githubusercontent.com/folio-org/$MODULE/$BRANCH/$file" \
+  | awk '
     /^[\/]/ { path=$1 }
     /^[ ]+(get|post|put|delete|patch):/ {
       method=toupper($1)

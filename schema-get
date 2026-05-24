@@ -11,21 +11,28 @@ ARG="${3:-}"
 if [[ -z "$QUERY" ]]; then
   echo "Usage:"
   echo "  schema-get <module>"
-  echo "  schema-get <module> schema [name]"
+  echo "  schema-get <module> schema <name>"
   echo "  schema-get <module> example <name>"
   echo "  schema-get <module> example-full <name>"
   exit 1
 fi
 
 HEADERS=(-H "Accept: application/vnd.github+json" -H "User-Agent: schema-get")
+[[ -n "${GITHUB_TOKEN:-}" ]] && HEADERS+=(-H "Authorization: Bearer $GITHUB_TOKEN")
 
 # ----------------------------
 # MODULE RESOLUTION
 # ----------------------------
 Q=$(echo "$QUERY" | tr '[:upper:]' '[:lower:]')
-BASE="${Q%s}"
+BASE="${Q#mod-}"
 
-CANDIDATES=("mod-$BASE" "mod-${BASE}s")
+CANDIDATES=(
+  "mod-$BASE"
+  "$BASE"
+  "mod-${BASE%-storage}"
+  "mod-${BASE%-storage}-storage"
+)
+
 MODULE=""
 
 for m in "${CANDIDATES[@]}"; do
@@ -40,21 +47,31 @@ done
 
 echo "🔍 Module: $MODULE"
 
+# ----------------------------
+# BRANCH
+# ----------------------------
 BRANCH=$(curl -s "${HEADERS[@]}" \
   "https://api.github.com/repos/folio-org/$MODULE" \
-  | jq -r '.default_branch')
+  | jq -r '.default_branch // empty')
+
+[[ -z "$BRANCH" ]] && BRANCH="master"
 
 echo "🌿 Branch: $BRANCH"
 
+# ----------------------------
+# RAML FILES
+# ----------------------------
 RAML_FILES=$(curl -s "${HEADERS[@]}" \
   "https://api.github.com/repos/folio-org/$MODULE/contents/ramls" \
   | jq -r '.[]? | select(.name|endswith(".raml")) | .path')
 
 # ----------------------------
-# FIND SCHEMA (FIXED)
+# FIND SCHEMA (FINAL FIXED)
 # ----------------------------
 find_schema() {
   local name="$1"
+  name="${name%.json}"
+
   local best_match=""
   local best_score=0
 
@@ -70,34 +87,28 @@ find_schema() {
 
       score=0
 
-      # ✅ exact match (highest)
-      if [[ "$base" == "$name" ]]; then
-        score=100
-      fi
+      # ✅ exact match
+      [[ "$base" == "$name" ]] && score=200
 
-      # ✅ case-insensitive exact
-      if [[ "${base,,}" == "${name,,}" ]]; then
-        score=90
-      fi
+      # ✅ direct path match
+      [[ "$s" == *"$name.json" ]] && score=180
 
-      # ✅ composite match
-      if [[ "$base" == "composite_$name" ]]; then
-        score=80
-      fi
+      # ✅ composite
+      [[ "$base" == "composite_$name" ]] && score=150
 
       # ✅ prefix match
-      if [[ "$base" == "$name"* ]]; then
-        score=50
+      [[ "$base" == "$name"* ]] && score=100
+
+      # ✅ contains fallback
+      [[ "$base" == *"$name"* ]] && score=10
+
+      # ❗ penalize collections heavily
+      if [[ "$base" == *_collection ]]; then
+        score=$((score - 150))
       fi
 
-      # ✅ contains (lowest, dangerous)
-      if [[ "$base" == *"$name"* ]]; then
-        score=10
-      fi
-
-      # ✅ prefer shorter names (reduces accidental matches)
-      len=${#base}
-      score=$((score - len / 10))
+      # ✅ prefer shorter names
+      score=$((score - ${#base} / 5))
 
       if (( score > best_score )); then
         best_score=$score
@@ -113,41 +124,40 @@ find_schema() {
   fi
 }
 
-
 # ----------------------------
 # FETCH SCHEMA
 # ----------------------------
 fetch_schema() {
-  local file="$1"
-  local path="$2"
+  local path="$1"
+  local file="$2"
   local tmp="$3"
 
-  URL1="https://raw.githubusercontent.com/folio-org/acq-models/master/$MODULE/schemas/$file"
-  HTTP=$(curl -s -w "%{http_code}" -o "$tmp" "$URL1")
+  URL="https://raw.githubusercontent.com/folio-org/$MODULE/$BRANCH/ramls/$path"
+  HTTP=$(curl -s -w "%{http_code}" -o "$tmp" "$URL")
 
   if [[ "$HTTP" == "200" ]]; then
-    echo "$URL1"
+    echo "$URL"
     return
   fi
 
-  URL2="https://raw.githubusercontent.com/folio-org/$MODULE/$BRANCH/ramls/$path"
+  URL2="https://raw.githubusercontent.com/folio-org/acq-models/master/$MODULE/schemas/$file"
   HTTP=$(curl -s -w "%{http_code}" -o "$tmp" "$URL2")
 
-  if [[ "$HTTP" == "200" ]]; then
-    echo "$URL2"
-    return
-  fi
-
-  echo ""
+  [[ "$HTTP" == "200" ]] && echo "$URL2" || echo ""
 }
 
 # ============================
-# SCHEMA MODE (with listing)
+# SCHEMA MODE
 # ============================
-if [[ "$MODE" == "schema" ]]; then
+# ============================
+# ✅ SCHEMA MODE (LIST + FETCH)
+# ============================
+if [[ "${MODE:-}" == "schema" ]]; then
 
-  # ✅ list schemas
-  if [[ -z "$ARG" ]]; then
+  # ----------------------------
+  # ✅ LIST SCHEMAS
+  # ----------------------------
+  if [[ -z "${ARG:-}" ]]; then
     echo
     echo "📦 Available schemas:"
     echo
@@ -158,33 +168,47 @@ if [[ "$MODE" == "schema" ]]; then
 
       echo "$CONTENT" \
         | grep -Eo 'schemas/[A-Za-z0-9_./-]+\.json' \
-        | sed -E 's#.*/##; s#\.json##' \
-        | sort -u
-    done
+        | sed -E 's#.*/##; s#\.json##'
+    done | sort -u
 
+    echo
+    echo "💡 Usage:"
+    echo "   schema-get $QUERY schema <name>"
     echo
     exit 0
   fi
 
-  IFS="|" read SCHEMA_PATH SCHEMA_FILE <<< "$(find_schema "$ARG")"
-  [[ -z "$SCHEMA_FILE" ]] && { echo "❌ schema not found"; exit 1; }
+  # ----------------------------
+  # ✅ FETCH SINGLE SCHEMA
+  # ----------------------------
+  IFS="|" read SC_PATH SC_FILE <<< "$(find_schema "$ARG")"
+
+  if [[ -z "$SC_FILE" ]]; then
+    echo "❌ schema not found"
+    exit 1
+  fi
 
   TMP=$(/usr/bin/mktemp)
-  URL=$(fetch_schema "$SCHEMA_FILE" "$SCHEMA_PATH" "$TMP")
+  URL=$(fetch_schema "$SC_PATH" "$SC_FILE" "$TMP")
 
-  [[ -z "$URL" ]] && { echo "❌ fetch failed"; exit 1; }
+  if [[ -z "$URL" ]]; then
+    echo "❌ fetch failed"
+    rm -f "$TMP"
+    exit 1
+  fi
 
-  echo "📦 Schema: $SCHEMA_FILE"
+  echo "📦 Schema: $SC_FILE"
   echo "🔗 URL: $URL"
   echo
 
   jq . "$TMP"
+
   rm -f "$TMP"
   exit 0
 fi
 
 # ============================
-# EXAMPLE MODES
+# EXAMPLE MODE
 # ============================
 if [[ "$MODE" == example* ]]; then
   [[ -z "$ARG" ]] && { echo "❌ provide schema name"; exit 1; }
@@ -192,75 +216,45 @@ if [[ "$MODE" == example* ]]; then
   FULL=false
   [[ "$MODE" == "example-full" ]] && FULL=true
 
-  IFS="|" read SCHEMA_PATH SCHEMA_FILE <<< "$(find_schema "$ARG")"
-  [[ -z "$SCHEMA_FILE" ]] && { echo "❌ schema not found"; exit 1; }
+  IFS="|" read SC_PATH SC_FILE <<< "$(find_schema "$ARG")"
+  [[ -z "$SC_FILE" ]] && { echo "❌ schema not found"; exit 1; }
 
   TMP=$(/usr/bin/mktemp)
-  URL=$(fetch_schema "$SCHEMA_FILE" "$SCHEMA_PATH" "$TMP")
+  URL=$(fetch_schema "$SC_PATH" "$SC_FILE" "$TMP")
   [[ -z "$URL" ]] && { echo "❌ fetch failed"; exit 1; }
 
-  echo "🧪 $( $FULL && echo Full || echo Minimal ) payload for: $SCHEMA_FILE"
+  echo "🧪 $( $FULL && echo Full || echo Minimal ) payload for: $SC_FILE"
   echo
 
   jq --argjson full "$FULL" '
 
   def uuid: "00000000-0000-0000-0000-000000000000";
 
-  def guess($k):
-    if ($k == "workflowStatus") then ["Open","Pending","Closed"]
-    elif ($k|test("id$|Id$|vendor|assignedTo|openedById|approvedById|billTo|shipTo|template|fiscalYearId")) then uuid
-    elif ($k|test("date")) then "2026-01-01T00:00:00Z"
-    elif ($k|test("number|Number|total|amount")) then 0
-    elif ($k|test("approved|manual|ongoing|reEncumber|needReEncumber")) then false
-    else "string"
-    end;
+  def gen($full; $k):
 
-  def isArray: has("items") or (.type? == "array");
-  def isObject: has("properties") or (.type? == "object");
-
-  def gen($full; $key):
-
-    # ✅ arrays always safe
-    if isArray then
-      []
-
-    # ✅ inline enum
-    elif has("enum") then
-      .enum
-
-    # ✅ references
-    elif has("$ref") then
-      if ($key == "workflowStatus") then ["Open","Pending","Closed"]
-      else guess($key)
-      end
-
-    # ✅ scalar types
+    if has("items") or (.type? == "array") then []
+    elif has("enum") then .enum
     elif (.type? == "boolean") then false
     elif (.type? == "integer") then 0
     elif (.type? == "number") then 0
 
-    # ✅ objects (full vs minimal)
-    elif isObject then
+    elif has("properties") then
       (.properties // {}) as $props
       | (.required // []) as $req
       | if $full then
-          reduce ($props | keys_unsorted[]) as $k (
+          reduce ($props | keys_unsorted[]) as $p (
             {};
-            . + { ($k): ($props[$k] | gen($full; $k)) }
+            . + { ($p): ($props[$p] | gen($full; $p)) }
           )
         else
-          if ($req | length) > 0 then
-            reduce $req[] as $k (
-              {};
-              . + { ($k): ($props[$k] | gen($full; $k)) }
-            )
-          else
-            {}
-          end
+          reduce $req[] as $p (
+            {};
+            . + { ($p): ($props[$p] | gen($full; $p)) }
+          )
         end
 
     else
-      guess($key)
+      if ($k|test("id$|Id$")) then uuid else "string" end
     end;
 
   gen($full; "")
@@ -271,7 +265,7 @@ if [[ "$MODE" == example* ]]; then
 fi
 
 # ============================
-# ENDPOINTS (fallback)
+# ENDPOINTS
 # ============================
 echo
 echo "📡 Endpoints:"

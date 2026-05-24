@@ -11,19 +11,13 @@ ARG="${3:-}"
 if [[ -z "$QUERY" ]]; then
   echo "Usage:"
   echo "  schema-get <module>"
-  echo "  schema-get <module> schema <name>"
+  echo "  schema-get <module> schema [name]"
   echo "  schema-get <module> example <name>"
   echo "  schema-get <module> example-full <name>"
   exit 1
 fi
 
-# ----------------------------
-# GitHub headers
-# ----------------------------
 HEADERS=(-H "Accept: application/vnd.github+json" -H "User-Agent: schema-get")
-if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-  HEADERS+=(-H "Authorization: token $GITHUB_TOKEN")
-fi
 
 # ----------------------------
 # MODULE RESOLUTION
@@ -46,29 +40,23 @@ done
 
 echo "🔍 Module: $MODULE"
 
-# ----------------------------
-# Branch
-# ----------------------------
 BRANCH=$(curl -s "${HEADERS[@]}" \
   "https://api.github.com/repos/folio-org/$MODULE" \
   | jq -r '.default_branch')
 
 echo "🌿 Branch: $BRANCH"
 
-# ----------------------------
-# RAML files
-# ----------------------------
 RAML_FILES=$(curl -s "${HEADERS[@]}" \
   "https://api.github.com/repos/folio-org/$MODULE/contents/ramls" \
   | jq -r '.[]? | select(.name|endswith(".raml")) | .path')
 
 # ----------------------------
-# FIND SCHEMA
+# FIND SCHEMA (FIXED)
 # ----------------------------
 find_schema() {
   local name="$1"
-  local sc_path=""
-  local sc_file=""
+  local best_match=""
+  local best_score=0
 
   for file in $RAML_FILES; do
     CONTENT=$(curl -s \
@@ -76,17 +64,55 @@ find_schema() {
 
     SCHEMAS=$(echo "$CONTENT" | grep -Eo 'schemas/[A-Za-z0-9_./-]+\.json' || true)
 
-    MATCH=$(echo "$SCHEMAS" | grep -Ei "$name" | head -n1 || true)
+    for s in $SCHEMAS; do
+      fname=$(basename "$s")
+      base="${fname%.json}"
 
-    if [[ -n "$MATCH" ]]; then
-      sc_path="$MATCH"
-      sc_file=$(basename "$MATCH")
-      break
-    fi
+      score=0
+
+      # ✅ exact match (highest)
+      if [[ "$base" == "$name" ]]; then
+        score=100
+      fi
+
+      # ✅ case-insensitive exact
+      if [[ "${base,,}" == "${name,,}" ]]; then
+        score=90
+      fi
+
+      # ✅ composite match
+      if [[ "$base" == "composite_$name" ]]; then
+        score=80
+      fi
+
+      # ✅ prefix match
+      if [[ "$base" == "$name"* ]]; then
+        score=50
+      fi
+
+      # ✅ contains (lowest, dangerous)
+      if [[ "$base" == *"$name"* ]]; then
+        score=10
+      fi
+
+      # ✅ prefer shorter names (reduces accidental matches)
+      len=${#base}
+      score=$((score - len / 10))
+
+      if (( score > best_score )); then
+        best_score=$score
+        best_match="$s"
+      fi
+    done
   done
 
-  echo "$sc_path|$sc_file"
+  if [[ -n "$best_match" ]]; then
+    echo "$best_match|$(basename "$best_match")"
+  else
+    echo "|"
+  fi
 }
+
 
 # ----------------------------
 # FETCH SCHEMA
@@ -116,11 +142,11 @@ fetch_schema() {
 }
 
 # ============================
-# ✅ SCHEMA MODE
+# SCHEMA MODE (with listing)
 # ============================
 if [[ "$MODE" == "schema" ]]; then
 
-  # ✅ If no schema name → list available schemas
+  # ✅ list schemas
   if [[ -z "$ARG" ]]; then
     echo
     echo "📦 Available schemas:"
@@ -137,9 +163,6 @@ if [[ "$MODE" == "schema" ]]; then
     done
 
     echo
-    echo "💡 Usage:"
-    echo "   schema-get $QUERY schema <name>"
-    echo
     exit 0
   fi
 
@@ -149,23 +172,19 @@ if [[ "$MODE" == "schema" ]]; then
   TMP=$(/usr/bin/mktemp)
   URL=$(fetch_schema "$SCHEMA_FILE" "$SCHEMA_PATH" "$TMP")
 
-  [[ -z "$URL" ]] && {
-    echo "⚠️ schema not standalone"
-    exit 1
-  }
+  [[ -z "$URL" ]] && { echo "❌ fetch failed"; exit 1; }
 
   echo "📦 Schema: $SCHEMA_FILE"
   echo "🔗 URL: $URL"
   echo
 
   jq . "$TMP"
-
   rm -f "$TMP"
   exit 0
 fi
 
 # ============================
-# ✅ EXAMPLE / EXAMPLE-FULL
+# EXAMPLE MODES
 # ============================
 if [[ "$MODE" == example* ]]; then
   [[ -z "$ARG" ]] && { echo "❌ provide schema name"; exit 1; }
@@ -178,93 +197,73 @@ if [[ "$MODE" == example* ]]; then
 
   TMP=$(/usr/bin/mktemp)
   URL=$(fetch_schema "$SCHEMA_FILE" "$SCHEMA_PATH" "$TMP")
-
-  [[ -z "$URL" ]] && { echo "❌ schema fetch failed"; exit 1; }
+  [[ -z "$URL" ]] && { echo "❌ fetch failed"; exit 1; }
 
   echo "🧪 $( $FULL && echo Full || echo Minimal ) payload for: $SCHEMA_FILE"
   echo
 
   jq --argjson full "$FULL" '
-def uuid: "00000000-0000-0000-0000-000000000000";
 
-def guess($k):
-  if ($k == "workflowStatus") then ["Open","Pending","Closed"]
-  elif ($k|test("id$|Id$|vendor|assignedTo|openedById|approvedById|billTo|shipTo|template|fiscalYearId")) then uuid
-  elif ($k|test("date")) then "2026-01-01T00:00:00Z"
-  elif ($k|test("number|Number|total|amount")) then 0
-  elif ($k|test("approved|manual|ongoing|reEncumber|needReEncumber")) then false
-  else "string"
-  end;
+  def uuid: "00000000-0000-0000-0000-000000000000";
 
-def isArray:
-  has("items") or (.type? == "array");
+  def guess($k):
+    if ($k == "workflowStatus") then ["Open","Pending","Closed"]
+    elif ($k|test("id$|Id$|vendor|assignedTo|openedById|approvedById|billTo|shipTo|template|fiscalYearId")) then uuid
+    elif ($k|test("date")) then "2026-01-01T00:00:00Z"
+    elif ($k|test("number|Number|total|amount")) then 0
+    elif ($k|test("approved|manual|ongoing|reEncumber|needReEncumber")) then false
+    else "string"
+    end;
 
-def isObject:
-  has("properties") or (.type? == "object");
+  def isArray: has("items") or (.type? == "array");
+  def isObject: has("properties") or (.type? == "object");
 
-def gen($full; $key):
+  def gen($full; $key):
 
-  # ✅ ARRAY FIRST (never fall through)
-  if isArray then
-    []
+    # ✅ arrays always safe
+    if isArray then
+      []
 
-  # ✅ ENUMS BEFORE ANYTHING ELSE
-# ✅ SAFE enum detection (local only)
-elif has("enum") then
-  .enum
+    # ✅ inline enum
+    elif has("enum") then
+      .enum
 
-# ✅ also handle enums in allOf (common FOLIO pattern)
-elif has("allOf") and (.allOf | type == "array") then
-  (.allOf[] | select(has("enum")) | .enum) // empty
+    # ✅ references
+    elif has("$ref") then
+      if ($key == "workflowStatus") then ["Open","Pending","Closed"]
+      else guess($key)
+      end
 
-  # ✅ REF
-  elif has("$ref") then
-    if ($key == "workflowStatus") then ["Open","Pending","Closed"]
-    else guess($key)
-    end
+    # ✅ scalar types
+    elif (.type? == "boolean") then false
+    elif (.type? == "integer") then 0
+    elif (.type? == "number") then 0
 
-  # ✅ SCALARS
-  elif (.type? == "boolean") then false
-  elif (.type? == "integer") then 0
-  elif (.type? == "number") then 0
-
-  # ✅ OBJECTS (THIS IS WHERE MINIMAL LOGIC GOES)
-  elif isObject then
-    (.properties // {}) as $props
-    | (.required // []) as $req
-
-    | if $full then
-        # FULL → everything
-        reduce ($props | keys_unsorted[]) as $k (
-          {};
-          . + { ($k): ($props[$k] | gen($full; $k)) }
-        )
-      else
-        # MINIMAL → only required fields
-        if ($req | length) > 0 then
-          reduce $req[] as $k (
-            {};
-            . + { ($k): ($props[$k] | gen($full; $k)) }
-          )
-        else
-          # fallback: if no required defined
+    # ✅ objects (full vs minimal)
+    elif isObject then
+      (.properties // {}) as $props
+      | (.required // []) as $req
+      | if $full then
           reduce ($props | keys_unsorted[]) as $k (
             {};
             . + { ($k): ($props[$k] | gen($full; $k)) }
           )
+        else
+          if ($req | length) > 0 then
+            reduce $req[] as $k (
+              {};
+              . + { ($k): ($props[$k] | gen($full; $k)) }
+            )
+          else
+            {}
+          end
         end
-      end
 
-  # ✅ STRING
-  elif (.type? == "string") then
-    guess($key)
+    else
+      guess($key)
+    end;
 
-  # ✅ FINAL FALLBACK
-  else
-    guess($key)
-  end;
-
-gen($full; "")
+  gen($full; "")
   ' "$TMP"
 
   rm -f "$TMP"
@@ -272,14 +271,14 @@ gen($full; "")
 fi
 
 # ============================
-# ✅ ENDPOINTS (fallback)
+# ENDPOINTS (fallback)
 # ============================
 echo
 echo "📡 Endpoints:"
 
 for file in $RAML_FILES; do
   curl -s \
-  "https://raw.githubusercontent.com/folio-org/$MODULE/$BRANCH/$file" \
+    "https://raw.githubusercontent.com/folio-org/$MODULE/$BRANCH/$file" \
   | awk '
     /^[\/]/ { path=$1 }
     /^[ ]+(get|post|put|delete|patch):/ {
@@ -291,4 +290,3 @@ for file in $RAML_FILES; do
 done | sort -u
 
 echo
-

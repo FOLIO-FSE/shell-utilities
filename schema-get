@@ -140,16 +140,32 @@ if [[ "$MODE" == example* ]]; then
   jq --argjson full "$FULL" '
 
 def guess($k):
-  if ($k|test("id$|Id$|vendor|assignedTo|openedById|approvedById|billTo|shipTo|template|fiscalYearId"))
-    then "00000000-0000-0000-0000-000000000000"
-  elif ($k|test("date"))
-    then "2026-01-01T00:00:00Z"
-  elif ($k|test("number|Number|total|amount"))
-    then 0
-  elif ($k|test("approved|manual|ongoing|reEncumber|needReEncumber"))
-    then false
-  else "string"
+
+  # ✅ MUST BE FIRST (prevents fallthrough)
+  if ($k == "workflowStatus") then
+    ["Open", "Pending", "Closed"]
+
+  # ✅ UUID-like fields
+  elif ($k|test("id$|Id$|vendor|assignedTo|openedById|approvedById|billTo|shipTo|template|fiscalYearId")) then
+    "00000000-0000-0000-0000-000000000000"
+
+  # ✅ Dates
+  elif ($k|test("date")) then
+    "2026-01-01T00:00:00Z"
+
+  # ✅ Numbers
+  elif ($k|test("number|Number|total|amount")) then
+    0
+
+  # ✅ Booleans
+  elif ($k|test("approved|manual|ongoing|reEncumber|needReEncumber")) then
+    false
+
+  # ✅ Default
+  else
+    "string"
   end;
+
 
 def isArray:
   has("items") or (.type? == "array");

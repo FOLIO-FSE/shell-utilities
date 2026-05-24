@@ -22,16 +22,30 @@ if [[ -z "$QUERY" ]]; then
   exit 1
 fi
 
-HEADERS=(-H "Accept: application/vnd.github+json" -H "User-Agent: schema-get")
+HEADERS=(
+  -H "Accept: application/vnd.github+json"
+  -H "User-Agent: schema-get"
+)
+
+if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+  HEADERS+=(-H "Authorization: token $GITHUB_TOKEN")
+fi
 
 # ----------------------------
 # ✅ MODULE RESOLUTION
 # ----------------------------
 Q=$(echo "$QUERY" | tr '[:upper:]' '[:lower:]')
 
+# normalize base form
+if [[ "$Q" == *s ]]; then
+  BASE="${Q%s}"
+else
+  BASE="$Q"
+fi
+
 CANDIDATES=(
-  "mod-$Q"
-  "mod-${Q}s"
+  "mod-$BASE"
+  "mod-${BASE}s"
 )
 
 MODULE=""

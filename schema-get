@@ -119,7 +119,29 @@ fetch_schema() {
 # ✅ SCHEMA MODE
 # ============================
 if [[ "$MODE" == "schema" ]]; then
-  [[ -z "$ARG" ]] && { echo "❌ provide schema name"; exit 1; }
+
+  # ✅ If no schema name → list available schemas
+  if [[ -z "$ARG" ]]; then
+    echo
+    echo "📦 Available schemas:"
+    echo
+
+    for file in $RAML_FILES; do
+      CONTENT=$(curl -s \
+        "https://raw.githubusercontent.com/folio-org/$MODULE/$BRANCH/$file")
+
+      echo "$CONTENT" \
+        | grep -Eo 'schemas/[A-Za-z0-9_./-]+\.json' \
+        | sed 's#.*/##' \
+        | sort -u
+    done
+
+    echo
+    echo "💡 Usage:"
+    echo "   schema-get $QUERY schema <name>"
+    echo
+    exit 0
+  fi
 
   IFS="|" read SCHEMA_PATH SCHEMA_FILE <<< "$(find_schema "$ARG")"
   [[ -z "$SCHEMA_FILE" ]] && { echo "❌ schema not found"; exit 1; }
@@ -187,8 +209,13 @@ def gen($full; $key):
     []
 
   # ✅ ENUMS BEFORE ANYTHING ELSE
-  elif has("enum") then
-    .enum
+# ✅ SAFE enum detection (local only)
+elif has("enum") then
+  .enum
+
+# ✅ also handle enums in allOf (common FOLIO pattern)
+elif has("allOf") and (.allOf | type == "array") then
+  (.allOf[] | select(has("enum")) | .enum) // empty
 
   # ✅ REF
   elif has("$ref") then

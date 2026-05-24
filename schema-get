@@ -132,7 +132,7 @@ if [[ "$MODE" == "schema" ]]; then
 
       echo "$CONTENT" \
         | grep -Eo 'schemas/[A-Za-z0-9_./-]+\.json' \
-        | sed 's#.*/##' \
+        | sed -E 's#.*/##; s#\.json##' \
         | sort -u
     done
 

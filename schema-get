@@ -26,6 +26,13 @@ HEADERS=(-H "Accept: application/vnd.github+json" -H "User-Agent: schema-get")
 Q=$(echo "$QUERY" | tr '[:upper:]' '[:lower:]')
 BASE="${Q#mod-}"
 
+# ✅ normalize common singular inputs
+case "$BASE" in
+  order-storage) BASE="orders-storage" ;;
+  order) BASE="orders" ;;
+  inventory) BASE="inventory-storage" ;;
+esac
+
 CANDIDATES=(
   "mod-$BASE"
   "$BASE"
@@ -132,6 +139,7 @@ fetch_schema() {
   local file="$2"
   local tmp="$3"
 
+  # ✅ Try current module first
   URL="https://raw.githubusercontent.com/folio-org/$MODULE/$BRANCH/ramls/$path"
   HTTP=$(curl -s -w "%{http_code}" -o "$tmp" "$URL")
 
@@ -140,10 +148,36 @@ fetch_schema() {
     return
   fi
 
-  URL2="https://raw.githubusercontent.com/folio-org/acq-models/master/$MODULE/schemas/$file"
+  # ✅ Try storage module automatically
+  STORAGE_MODULE="${MODULE}-storage"
+
+  URL2="https://raw.githubusercontent.com/folio-org/$STORAGE_MODULE/$BRANCH/ramls/$path"
   HTTP=$(curl -s -w "%{http_code}" -o "$tmp" "$URL2")
 
-  [[ "$HTTP" == "200" ]] && echo "$URL2" || echo ""
+  if [[ "$HTTP" == "200" ]]; then
+    echo "$URL2"
+    return
+  fi
+
+  # ✅ Try acq-models fallback
+  URL3="https://raw.githubusercontent.com/folio-org/acq-models/master/$MODULE/schemas/$file"
+  HTTP=$(curl -s -w "%{http_code}" -o "$tmp" "$URL3")
+
+  if [[ "$HTTP" == "200" ]]; then
+    echo "$URL3"
+    return
+  fi
+
+  # ✅ Try acq-models storage fallback
+  URL4="https://raw.githubusercontent.com/folio-org/acq-models/master/$STORAGE_MODULE/schemas/$file"
+  HTTP=$(curl -s -w "%{http_code}" -o "$tmp" "$URL4")
+
+  if [[ "$HTTP" == "200" ]]; then
+    echo "$URL4"
+    return
+  fi
+
+  echo ""
 }
 
 # ============================

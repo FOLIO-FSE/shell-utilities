@@ -1,164 +1,164 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ----------------------------
+# Setup
+# ----------------------------
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+command -v curl >/dev/null || { echo "❌ curl required"; exit 1; }
+command -v jq >/dev/null || { echo "❌ jq required"; exit 1; }
+
 QUERY="${1:-}"
-MODE="${2:-json}"
+MODE="${2:-}"
+ARG="${3:-}"
 
-[[ -z "$QUERY" ]] && { echo "Usage: schema-get <name> [json|all|pick]"; exit 1; }
+METHOD_FILTER="${2:-}"
+METHOD_FILTER="${METHOD_FILTER^^}"
 
-AUTH_HEADER=()
-[[ -n "${GITHUB_TOKEN:-}" ]] && AUTH_HEADER=(-H "Authorization: token $GITHUB_TOKEN")
-
-SEARCH_URL="https://api.github.com/search/code?q=${QUERY}.raml+in:path+ramls+org:folio-org"
-
-# --- Find RAML ---
-RESULT=$(curl -s "${AUTH_HEADER[@]}" "$SEARCH_URL")
-RAML_HTML=$(echo "$RESULT" | jq -r '.items[0].html_url // empty')
-
-[[ -z "$RAML_HTML" ]] && { echo "No RAML found"; exit 1; }
-
-RAML_RAW=$(echo "$RAML_HTML" \
-  | sed 's|github.com|raw.githubusercontent.com|' \
-  | sed 's|/blob/|/|')
-
-BASE=$(echo "$RAML_RAW" | sed 's|/ramls/.*||')
-
-# --- Extract schema paths ---
-RAML=$(curl -s "$RAML_RAW")
-
-SCHEMA_PATHS=$(echo "$RAML" | grep -Eo 'schemas/[^"]+\.json' | sort -u)
-[[ -z "$SCHEMA_PATHS" ]] && { echo "No schemas found"; exit 1; }
-
-SCHEMA_URLS=()
-while read -r p; do
-  SCHEMA_URLS+=("$BASE/ramls/$p")
-done <<< "$SCHEMA_PATHS"
-
-# --- Pick primary ---
-PRIMARY=""
-for u in "${SCHEMA_URLS[@]}"; do
-  [[ "$u" =~ ${QUERY}\.json$ ]] && PRIMARY="$u"
-done
-
-if [[ -z "$PRIMARY" ]]; then
-  SINGULAR=$(echo "$QUERY" | sed 's/-storage//')
-  for u in "${SCHEMA_URLS[@]}"; do
-    [[ "$u" =~ ${SINGULAR}\.json$ ]] && PRIMARY="$u"
-  done
+if [[ -z "$QUERY" ]]; then
+  echo "Usage:"
+  echo "  schema-get <module>"
+  echo "  schema-get <module> GET|POST"
+  echo "  schema-get <module> schema <name>"
+  exit 1
 fi
 
-PRIMARY="${PRIMARY:-${SCHEMA_URLS[0]}}"
+HEADERS=(-H "Accept: application/vnd.github+json" -H "User-Agent: schema-get")
 
-# --- Caches ---
-declare -A CACHE
-declare -A VISITED
+# ----------------------------
+# Normalize module
+# ----------------------------
+Q=$(echo "$QUERY" | tr '[:upper:]' '[:lower:]')
+Q=${Q%s}
+MODULE="mod-${Q}s"
 
-fetch() {
-  local url="$1"
+echo "🔍 Module: $MODULE"
 
-  if [[ -n "${CACHE[$url]+x}" ]]; then
-    echo "${CACHE[$url]}"
-    return
+# ----------------------------
+# Get branch
+# ----------------------------
+BRANCH=$(curl -s "${HEADERS[@]}" \
+  "https://api.github.com/repos/folio-org/$MODULE" \
+  | jq -r '.default_branch')
+
+if [[ "$BRANCH" == "null" || -z "$BRANCH" ]]; then
+  echo "❌ Module not found"
+  exit 1
+fi
+
+echo "🌿 Branch: $BRANCH"
+
+# ----------------------------
+# Get RAML files
+# ----------------------------
+RAMLS_JSON=$(curl -s "${HEADERS[@]}" \
+  "https://api.github.com/repos/folio-org/$MODULE/contents/ramls")
+
+RAML_FILES=$(echo "$RAMLS_JSON" | jq -r '
+  .[]? | select(.name | endswith(".raml")) | .path
+')
+
+# ----------------------------
+# ✅ SCHEMA MODE (FINAL)
+# ----------------------------
+if [[ "$MODE" == "schema" ]]; then
+  if [[ -z "$ARG" ]]; then
+    echo "Usage: schema-get <module> schema <name>"
+    exit 1
   fi
 
-  local content
-  content=$(curl -s "$url")
+  NAME=$(echo "$ARG" | tr '[:upper:]' '[:lower:]')
 
-  # validate JSON
-  if ! echo "$content" | jq empty 2>/dev/null; then
-    return 1
-  fi
+  echo "🔎 Searching for schema: $NAME"
 
-  CACHE[$url]="$content"
-  echo "$content"
-}
+  FOUND_FILE=""
 
-resolve_refs() {
-  local json="$1"
-  local base_url="$2"
+  for file in $RAML_FILES; do
+    CONTENT=$(curl -s "https://raw.githubusercontent.com/folio-org/$MODULE/$BRANCH/$file")
 
-  # avoid cycles
-  local key="$base_url"
-  if [[ -n "${VISITED[$key]+x}" ]]; then
-    echo "$json"
-    return
-  fi
-  VISITED[$key]=1
+    SCHEMAS=$(echo "$CONTENT" | grep -Eo 'schemas/[A-Za-z0-9_./-]+\.json' || true)
 
-  local refs
-  refs=$(echo "$json" | jq -r '..|objects|select(has("$ref"))|.["$ref"]' 2>/dev/null || true)
+    # ✅ 1. exact match
+    MATCH=$(echo "$SCHEMAS" \
+      | grep -Ei "/${NAME}\.json$" \
+      | head -n1 || true)
 
-  for ref in $refs; do
-    local ref_url
-
-    if [[ "$ref" == http* ]]; then
-      ref_url="$ref"
-    else
-      ref_url="$(dirname "$base_url")/$ref"
-      ref_url=$(echo "$ref_url" | sed 's|/\./|/|g')
+    # ✅ 2. composite fallback (IMPORTANT FIX)
+    if [[ -z "$MATCH" ]]; then
+      MATCH=$(echo "$SCHEMAS" \
+        | grep -Ei "composite_${NAME}\.json$" \
+        | head -n1 || true)
     fi
 
-    # skip non-json
-    [[ ! "$ref_url" =~ \.json$ ]] && continue
+    # ✅ 3. final fallback
+    if [[ -z "$MATCH" ]]; then
+      MATCH=$(echo "$SCHEMAS" \
+        | grep -Ei "$NAME" \
+        | head -n1 || true)
+    fi
 
-    ref_json=$(fetch "$ref_url" || true)
-    [[ -z "${ref_json:-}" ]] && continue
-
-    ref_resolved=$(resolve_refs "$ref_json" "$ref_url")
-
-    # inject safely (NO argjson!)
-    json=$(echo "$json" | jq \
-      --arg ref "$ref" \
-      --argjson repl "$ref_resolved" '
-      def walk(f):
-        . as $in
-        | if type == "object" then
-            reduce keys[] as $key
-              ( {}; . + { ($key): ( ($in[$key] | walk(f)) ) } )
-            | f
-          elif type == "array" then map( walk(f) ) | f
-          else f
-          end;
-
-      walk(
-        if type == "object" and has("$ref") and .["$ref"] == $ref
-        then $repl
-        else .
-        end
-      )')
+    if [[ -n "$MATCH" ]]; then
+      FOUND_FILE=$(basename "$MATCH")
+      break
+    fi
   done
 
-  echo "$json"
-}
-
-render() {
-  local url="$1"
-  json=$(fetch "$url")
-  resolve_refs "$json" "$url" | jq .
-}
-
-# --- Modes ---
-case "$MODE" in
-  pick)
-    echo "Available schemas:"
-    select opt in "${SCHEMA_URLS[@]}"; do
-      render "$opt"
-      break
-    done
-    ;;
-
-  all)
-    for u in "${SCHEMA_URLS[@]}"; do
-      echo "---- $u ----"
-      render "$u"
-    done
-    ;;
-
-  json)
-    render "$PRIMARY"
-    ;;
-  *)
-    echo "Invalid mode"
+  if [[ -z "$FOUND_FILE" ]]; then
+    echo "❌ Schema not found in RAML"
     exit 1
-    ;;
-esac
+  fi
+
+  # ✅ Correct source: acq-models
+  SCHEMA_URL="https://raw.githubusercontent.com/folio-org/acq-models/master/${MODULE}/schemas/${FOUND_FILE}"
+
+  echo "📦 Schema: $FOUND_FILE"
+  echo "🔗 URL: $SCHEMA_URL"
+  echo
+
+  TMP=$(mktemp)
+  HTTP_CODE=$(curl -s -w "%{http_code}" -o "$TMP" "$SCHEMA_URL")
+
+  if [[ "$HTTP_CODE" != "200" ]]; then
+    echo "❌ Failed to fetch schema (HTTP $HTTP_CODE)"
+    rm -f "$TMP"
+    exit 1
+  fi
+
+  cat "$TMP" | jq .
+  rm -f "$TMP"
+
+  exit 0
+fi
+
+# ----------------------------
+# Endpoints
+# ----------------------------
+echo
+echo "📡 Endpoints:"
+
+for file in $RAML_FILES; do
+  CONTENT=$(curl -s "https://raw.githubusercontent.com/folio-org/$MODULE/$BRANCH/$file")
+
+  echo "$CONTENT" | awk '
+    /^[\/]/ { path=$1 }
+    /^[ ]+(get|post|put|delete|patch):/ {
+      method=toupper($1)
+      gsub(":", "", method)
+      if (path != "") print method, path
+    }
+  '
+done | sort -u | awk -v f="$METHOD_FILTER" '
+  f=="" || $1==f { print }
+'
+
+# ----------------------------
+# Schemas list
+# ----------------------------
+echo
+echo "📦 Schemas referenced in RAML:"
+
+for file in $RAML_FILES; do
+  curl -s "https://raw.githubusercontent.com/folio-org/$MODULE/$BRANCH/$file"
+done | grep -Eo 'schemas/[A-Za-z0-9_./-]+\.json' | sort -u
+

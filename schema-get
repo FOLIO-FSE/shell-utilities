@@ -14,6 +14,7 @@ if [[ -z "$QUERY" ]]; then
   echo "  schema-get <module> GET|POST"
   echo "  schema-get <module> schema <name>"
   echo "  schema-get <module> example <name>"
+  echo "  schema-get <module> example-full <name>"
   exit 1
 fi
 
@@ -33,11 +34,9 @@ fi
 # MODULE RESOLUTION
 # ----------------------------
 Q=$(echo "$QUERY" | tr '[:upper:]' '[:lower:]')
-
 BASE="${Q%s}"
 
 CANDIDATES=("mod-$BASE" "mod-${BASE}s")
-
 MODULE=""
 
 for m in "${CANDIDATES[@]}"; do
@@ -48,15 +47,12 @@ for m in "${CANDIDATES[@]}"; do
   fi
 done
 
-if [[ -z "$MODULE" ]]; then
-  echo "❌ Module not found for: $QUERY"
-  exit 1
-fi
+[[ -z "$MODULE" ]] && { echo "❌ Module not found for: $QUERY"; exit 1; }
 
 echo "🔍 Module: $MODULE"
 
 # ----------------------------
-# Branch
+# Get branch
 # ----------------------------
 BRANCH=$(curl -s "${HEADERS[@]}" \
   "https://api.github.com/repos/folio-org/$MODULE" \
@@ -72,7 +68,7 @@ RAML_FILES=$(curl -s "${HEADERS[@]}" \
   | jq -r '.[]? | select(.name|endswith(".raml")) | .path')
 
 # ----------------------------
-# ✅ COMMON: FIND SCHEMA
+# FIND SCHEMA
 # ----------------------------
 find_schema() {
   local name="$1"
@@ -105,36 +101,53 @@ find_schema() {
   echo "$found_path|$found_file"
 }
 
+# ----------------------------
+# FETCH SCHEMA FILE
+# ----------------------------
+fetch_schema() {
+  local file="$1"
+  local path="$2"
+  local tmp="$3"
+
+  URL1="https://raw.githubusercontent.com/folio-org/acq-models/master/$MODULE/schemas/$file"
+  HTTP=$(curl -s -w "%{http_code}" -o "$tmp" "$URL1")
+
+  if [[ "$HTTP" == "200" ]]; then
+    echo "$URL1"
+    return
+  fi
+
+  URL2="https://raw.githubusercontent.com/folio-org/$MODULE/$BRANCH/ramls/$path"
+  HTTP=$(curl -s -w "%{http_code}" -o "$tmp" "$URL2")
+
+  if [[ "$HTTP" == "200" ]]; then
+    echo "$URL2"
+    return
+  fi
+
+  echo ""
+}
+
 # ============================
-# ✅ SCHEMA MODE
+# SCHEMA MODE
 # ============================
 if [[ "$MODE" == "schema" ]]; then
-  [[ -z "$ARG" ]] && { echo "❌ Provide schema name"; exit 1; }
+  [[ -z "$ARG" ]] && { echo "❌ provide schema name"; exit 1; }
 
-  IFS="|" read FOUND_PATH FOUND_FILE <<< "$(find_schema "$ARG")"
+  IFS="|" read SCHEMA_PATH FILE <<< "$(find_schema "$ARG")"
 
-  [[ -z "$FOUND_FILE" ]] && { echo "❌ Schema not found"; exit 1; }
+  [[ -z "$FILE" ]] && { echo "❌ schema not found"; exit 1; }
 
   TMP=$(mktemp)
+  URL=$(fetch_schema "$FILE" "$SCHEMA_PATH" "$TMP")
 
-  URL1="https://raw.githubusercontent.com/folio-org/acq-models/master/$MODULE/schemas/$FOUND_FILE"
-  HTTP=$(curl -s -w "%{http_code}" -o "$TMP" "$URL1")
-
-  if [[ "$HTTP" != "200" ]]; then
-    URL2="https://raw.githubusercontent.com/folio-org/$MODULE/$BRANCH/ramls/$FOUND_PATH"
-    HTTP=$(curl -s -w "%{http_code}" -o "$TMP" "$URL2")
-    SCHEMA_URL="$URL2"
-  else
-    SCHEMA_URL="$URL1"
-  fi
-
-  if [[ "$HTTP" != "200" ]]; then
-    echo "⚠️ Schema exists logically but not as standalone file"
+  [[ -z "$URL" ]] && {
+    echo "⚠️ Schema referenced but not standalone"
     exit 1
-  fi
+  }
 
-  echo "📦 Schema: $FOUND_FILE"
-  echo "🔗 URL: $SCHEMA_URL"
+  echo "📦 Schema: $FILE"
+  echo "🔗 URL: $URL"
   echo
 
   jq . "$TMP"
@@ -143,82 +156,96 @@ if [[ "$MODE" == "schema" ]]; then
 fi
 
 # ============================
-# ✅ EXAMPLE MODE (FIXED)
+# EXAMPLE / EXAMPLE-FULL
 # ============================
-if [[ "$MODE" == "example" ]]; then
-  [[ -z "$ARG" ]] && { echo "❌ Provide schema name"; exit 1; }
+if [[ "$MODE" == example* ]]; then
+  [[ -z "$ARG" ]] && { echo "❌ provide schema name"; exit 1; }
 
-  IFS="|" read FOUND_PATH FOUND_FILE <<< "$(find_schema "$ARG")"
+  FULL=false
+  [[ "$MODE" == "example-full" ]] && FULL=true
 
-  [[ -z "$FOUND_FILE" ]] && { echo "❌ Schema not found"; exit 1; }
+  IFS="|" read SCHEMA_PATH FILE <<< "$(find_schema "$ARG")"
+
+  [[ -z "$FILE" ]] && { echo "❌ schema not found"; exit 1; }
 
   TMP=$(mktemp)
+  URL=$(fetch_schema "$FILE" "$SCHEMA_PATH" "$TMP")
 
-  URL1="https://raw.githubusercontent.com/folio-org/acq-models/master/$MODULE/schemas/$FOUND_FILE"
-  HTTP=$(curl -s -w "%{http_code}" -o "$TMP" "$URL1")
-
-  if [[ "$HTTP" != "200" ]]; then
-    URL2="https://raw.githubusercontent.com/folio-org/$MODULE/$BRANCH/ramls/$FOUND_PATH"
-    HTTP=$(curl -s -w "%{http_code}" -o "$TMP" "$URL2")
-  fi
-
-  if [[ "$HTTP" != "200" ]]; then
-    echo "❌ Could not fetch schema"
+  [[ -z "$URL" ]] && {
+    echo "❌ could not fetch schema"
     exit 1
-  fi
+  }
 
-  echo "🧪 Example payload for: $FOUND_FILE"
+  echo "🧪 $( $FULL && echo Full || echo Minimal ) payload for: $FILE"
   echo
 
-  # ✅ FIXED jq generator (no null-key crash)
-jq '
+jq --argjson full "$FULL" '
+
 # ----------------------------
-# Resolve references (basic)
+# Heuristic values
 # ----------------------------
-def resolve:
-  if type == "object" and has("$ref") then
-    # Just indicate reference (no recursion yet)
-    "ref:" + .["$ref"]
-  else
-    .
+def guess($key):
+  if ($key|test("id$|Id$")) then "00000000-0000-0000-0000-000000000000"
+  elif ($key|test("date")) then "2026-01-01T00:00:00Z"
+  elif ($key|test("number|Number")) then "PO-0001"
+  else "string"
   end;
 
 # ----------------------------
-# Generate example
+# Generator
 # ----------------------------
-def gen:
-  resolve
-  | if type == "object" then
-      if has("properties") then
-        reduce (.properties | keys_unsorted[]) as $k (
-          {};
-          . + { ($k): (.properties[$k] | gen) }
-        )
+def gen($full; $key):
+
+  if has("$ref") then
+    guess($key)
+
+  elif type == "object" then
+    (.properties // {}) as $props
+    | (.required // []) as $req
+
+    | if ($props | length) == 0 then
+        # fallback when schema is empty object
+        guess($key)
+
       else
-        {}
+        if $full then
+          reduce ($props | keys_unsorted[]) as $k (
+            {}; . + { ($k): ($props[$k] | gen($full; $k)) })
+        else
+          if ($req | length) > 0 then
+            reduce $req[] as $k (
+              {}; . + { ($k): ($props[$k] | gen($full; $k)) })
+          else
+            reduce ($props | keys_unsorted[]) as $k (
+              {}; . + { ($k): ($props[$k] | gen($full; $k)) })
+          end
+        end
       end
-    elif type == "array" then
-      [ (.items | gen) ]
-    elif type == "string" then
-      if has("enum") then .enum[0]
-      else "string" end
-    elif type == "integer" then 0
-    elif type == "number" then 0
-    elif type == "boolean" then false
-    else null
+
+  elif type == "array" then
+    [ (.items | gen($full; $key)) ]
+
+  elif type == "string" then
+    if has("enum") then .enum[0]
+    else guess($key)
+    end
+
+  elif type == "boolean" then false
+  elif type == "integer" then 0
+  elif type == "number" then 0
+
+  else guess($key)
   end;
 
-# ----------------------------
-# Entry point
-# ----------------------------
-gen
+gen($full; "")
 ' "$TMP"
+
   rm -f "$TMP"
   exit 0
 fi
 
 # ============================
-# ✅ ENDPOINTS MODE
+# ENDPOINTS
 # ============================
 echo
 echo "📡 Endpoints:"

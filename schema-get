@@ -2,10 +2,8 @@
 set -euo pipefail
 
 # ----------------------------
-# Setup
+# Requirements
 # ----------------------------
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-
 command -v curl >/dev/null || { echo "❌ curl required"; exit 1; }
 command -v jq >/dev/null || { echo "❌ jq required"; exit 1; }
 
@@ -27,30 +25,47 @@ fi
 HEADERS=(-H "Accept: application/vnd.github+json" -H "User-Agent: schema-get")
 
 # ----------------------------
-# Normalize module
+# ✅ MODULE RESOLUTION
 # ----------------------------
 Q=$(echo "$QUERY" | tr '[:upper:]' '[:lower:]')
-Q=${Q%s}
-MODULE="mod-${Q}s"
+
+CANDIDATES=(
+  "mod-$Q"
+  "mod-${Q}s"
+)
+
+MODULE=""
+
+for m in "${CANDIDATES[@]}"; do
+  RESPONSE=$(curl -s "${HEADERS[@]}" \
+    "https://api.github.com/repos/folio-org/$m")
+
+  EXISTS=$(echo "$RESPONSE" | jq -r '.id // empty')
+
+  if [[ -n "$EXISTS" ]]; then
+    MODULE="$m"
+    break
+  fi
+done
+
+if [[ -z "$MODULE" ]]; then
+  echo "❌ Module not found for: $QUERY"
+  exit 1
+fi
 
 echo "🔍 Module: $MODULE"
 
 # ----------------------------
-# Get branch
+# Branch
 # ----------------------------
 BRANCH=$(curl -s "${HEADERS[@]}" \
   "https://api.github.com/repos/folio-org/$MODULE" \
   | jq -r '.default_branch')
 
-if [[ "$BRANCH" == "null" || -z "$BRANCH" ]]; then
-  echo "❌ Module not found"
-  exit 1
-fi
-
 echo "🌿 Branch: $BRANCH"
 
 # ----------------------------
-# Get RAML files
+# RAML files
 # ----------------------------
 RAMLS_JSON=$(curl -s "${HEADERS[@]}" \
   "https://api.github.com/repos/folio-org/$MODULE/contents/ramls")
@@ -60,7 +75,7 @@ RAML_FILES=$(echo "$RAMLS_JSON" | jq -r '
 ')
 
 # ----------------------------
-# ✅ SCHEMA MODE (FINAL)
+# ✅ SCHEMA MODE
 # ----------------------------
 if [[ "$MODE" == "schema" ]]; then
   if [[ -z "$ARG" ]]; then
@@ -69,9 +84,9 @@ if [[ "$MODE" == "schema" ]]; then
   fi
 
   NAME=$(echo "$ARG" | tr '[:upper:]' '[:lower:]')
-
   echo "🔎 Searching for schema: $NAME"
 
+  FOUND_PATH=""
   FOUND_FILE=""
 
   for file in $RAML_FILES; do
@@ -79,26 +94,21 @@ if [[ "$MODE" == "schema" ]]; then
 
     SCHEMAS=$(echo "$CONTENT" | grep -Eo 'schemas/[A-Za-z0-9_./-]+\.json' || true)
 
-    # ✅ 1. exact match
-    MATCH=$(echo "$SCHEMAS" \
-      | grep -Ei "/${NAME}\.json$" \
-      | head -n1 || true)
+    # ✅ 1. exact
+    MATCH=$(echo "$SCHEMAS" | grep -Ei "/${NAME}\.json$" | head -n1 || true)
 
-    # ✅ 2. composite fallback (IMPORTANT FIX)
+    # ✅ 2. composite fallback
     if [[ -z "$MATCH" ]]; then
-      MATCH=$(echo "$SCHEMAS" \
-        | grep -Ei "composite_${NAME}\.json$" \
-        | head -n1 || true)
+      MATCH=$(echo "$SCHEMAS" | grep -Ei "composite_${NAME}\.json$" | head -n1 || true)
     fi
 
     # ✅ 3. final fallback
     if [[ -z "$MATCH" ]]; then
-      MATCH=$(echo "$SCHEMAS" \
-        | grep -Ei "$NAME" \
-        | head -n1 || true)
+      MATCH=$(echo "$SCHEMAS" | grep -Ei "$NAME" | head -n1 || true)
     fi
 
     if [[ -n "$MATCH" ]]; then
+      FOUND_PATH="$MATCH"
       FOUND_FILE=$(basename "$MATCH")
       break
     fi
@@ -109,8 +119,16 @@ if [[ "$MODE" == "schema" ]]; then
     exit 1
   fi
 
-  # ✅ Correct source: acq-models
-  SCHEMA_URL="https://raw.githubusercontent.com/folio-org/acq-models/master/${MODULE}/schemas/${FOUND_FILE}"
+  # ----------------------------
+  # ✅ Determine schema source
+  # ----------------------------
+  if [[ "$MODULE" == mod-orders* || "$MODULE" == mod-finance* ]]; then
+    # Acquisition modules → acq-models
+    SCHEMA_URL="https://raw.githubusercontent.com/folio-org/acq-models/master/${MODULE}/schemas/${FOUND_FILE}"
+  else
+    # Everything else → module repo
+    SCHEMA_URL="https://raw.githubusercontent.com/folio-org/$MODULE/$BRANCH/ramls/$FOUND_PATH"
+  fi
 
   echo "📦 Schema: $FOUND_FILE"
   echo "🔗 URL: $SCHEMA_URL"
@@ -153,7 +171,7 @@ done | sort -u | awk -v f="$METHOD_FILTER" '
 '
 
 # ----------------------------
-# Schemas list
+# Schema list
 # ----------------------------
 echo
 echo "📦 Schemas referenced in RAML:"
@@ -161,4 +179,3 @@ echo "📦 Schemas referenced in RAML:"
 for file in $RAML_FILES; do
   curl -s "https://raw.githubusercontent.com/folio-org/$MODULE/$BRANCH/$file"
 done | grep -Eo 'schemas/[A-Za-z0-9_./-]+\.json' | sort -u
-

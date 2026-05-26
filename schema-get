@@ -139,19 +139,18 @@ fetch_schema() {
   local file="$2"
   local tmp="$3"
 
-  # ✅ Try current module first
-  URL="https://raw.githubusercontent.com/folio-org/$MODULE/$BRANCH/ramls/$path"
-  HTTP=$(curl -s -w "%{http_code}" -o "$tmp" "$URL")
+  # ----------------------------
+  # ✅ 1. Try module repo paths
+  # ----------------------------
+  URL1="https://raw.githubusercontent.com/folio-org/$MODULE/$BRANCH/ramls/$file"
+  HTTP=$(curl -s -w "%{http_code}" -o "$tmp" "$URL1")
 
   if [[ "$HTTP" == "200" ]]; then
-    echo "$URL"
+    echo "$URL1"
     return
   fi
 
-  # ✅ Try storage module automatically
-  STORAGE_MODULE="${MODULE}-storage"
-
-  URL2="https://raw.githubusercontent.com/folio-org/$STORAGE_MODULE/$BRANCH/ramls/$path"
+  URL2="https://raw.githubusercontent.com/folio-org/$MODULE/$BRANCH/ramls/$path"
   HTTP=$(curl -s -w "%{http_code}" -o "$tmp" "$URL2")
 
   if [[ "$HTTP" == "200" ]]; then
@@ -159,21 +158,17 @@ fetch_schema() {
     return
   fi
 
-  # ✅ Try acq-models fallback
-  URL3="https://raw.githubusercontent.com/folio-org/acq-models/master/$MODULE/schemas/$file"
+  # ----------------------------
+  # ✅ 2. Finance / acq-models fallback (THIS IS THE KEY FIX)
+  # ----------------------------
+  BASE_MODULE="${MODULE#mod-}"
+  BASE_MODULE="${BASE_MODULE%-storage}"
+
+  URL3="https://raw.githubusercontent.com/folio-org/acq-models/master/mod-$BASE_MODULE/schemas/$file"
   HTTP=$(curl -s -w "%{http_code}" -o "$tmp" "$URL3")
 
   if [[ "$HTTP" == "200" ]]; then
     echo "$URL3"
-    return
-  fi
-
-  # ✅ Try acq-models storage fallback
-  URL4="https://raw.githubusercontent.com/folio-org/acq-models/master/$STORAGE_MODULE/schemas/$file"
-  HTTP=$(curl -s -w "%{http_code}" -o "$tmp" "$URL4")
-
-  if [[ "$HTTP" == "200" ]]; then
-    echo "$URL4"
     return
   fi
 

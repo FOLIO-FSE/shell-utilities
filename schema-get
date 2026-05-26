@@ -13,7 +13,7 @@ if [[ -z "$QUERY" ]]; then
   echo "  schema-get <module>"
   echo "  schema-get <module> schema <name>"
   echo "  schema-get <module> example <name>"
-  echo "  schema-get <module> example-full <name>"
+  echo "  schema-get <module> example-min <name> (only required fields)"
   exit 1
 fi
 
@@ -247,8 +247,8 @@ fi
 if [[ "$MODE" == example* ]]; then
   [[ -z "$ARG" ]] && { echo "❌ provide schema name"; exit 1; }
 
-  FULL=false
-  [[ "$MODE" == "example-full" ]] && FULL=true
+  FULL=true
+  [[ "$MODE" == "example-min" ]] && FULL=false
 
   IFS="|" read SC_PATH SC_FILE <<< "$(find_schema "$ARG")"
   [[ -z "$SC_FILE" ]] && { echo "❌ schema not found"; exit 1; }

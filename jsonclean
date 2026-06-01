@@ -1,0 +1,19 @@
+#!/usr/bin/bash
+
+infile=${1}
+
+[[ ! -f ${infile} ]] && echo "File not found" && exit
+
+fileroot="${infile%.*}"
+
+pv ${infile} | jq -Rr '
+  try (fromjson | @json | "G\t" + .)
+  catch ("B\t" + .)
+' | awk -F'\t' -v FILEROOT=${fileroot} '
+  $1=="G" {print $2 >> FILEROOT"_clean.json"}
+  $1=="B" {print $2 >> FILEROOT"_bad.json"}
+'
+
+echo "Good records have been output to ${fileroot}_clean.json and any bad records have been output to ${fileroot}_bad.json"
+echo
+

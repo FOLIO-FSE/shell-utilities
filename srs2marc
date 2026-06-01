@@ -4,7 +4,7 @@ infile="${1}"
 fileroot=$(sed 's/\.[^\.]*$//' <<< "${infile}")
 outfile="${fileroot}_marc.json"
 
-if [[ -f ${infile} ]];then echo -e "Infile could not be found";exit;fi
+if [[ ! -f ${infile} ]];then echo -e "Infile could not be found";exit;fi
 
 echo "[" > ${outfile}
 pv ${infile} | jq -c 'select(.state=="ACTUAL") | .parsedRecord.content ' | sed '$!s/$/,/' >> ${outfile}

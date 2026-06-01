@@ -1,14 +1,17 @@
+#!/usr/bin/bash
 infile="${1}"
 
 fileroot=$(sed 's/\.[^\.]*$//' <<< "${infile}")
 outfile="${fileroot}_marc.json"
 
-cat "${infile}" | jq -c '
-	.parsedRecord.content
-	| .leader as $leader
-	| del(.leader)
-	| .leader = $leader
-	|  {leader: $leader} + .
-' | jq -sc '.' |sed 's/{"leader"/\n{"leader"/g' > "${outfile}"
+if [[ -f ${infile} ]];then echo -e "Infile could not be found";exit;fi
 
-echo "MARC JSON has been output to ${outfile}"
+echo "[" > ${outfile}
+pv ${infile} | jq -c 'select(.state=="ACTUAL") | .parsedRecord.content ' | sed '$!s/$/,/' >> ${outfile}
+echo "]" >> ${outfile}
+
+echo "MARC json has been extracted and exported to ${outfile}"
+echo "Converting to MARC"
+
+json2marc "${outfile}"
+

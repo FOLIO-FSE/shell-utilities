@@ -1,4 +1,4 @@
-#mono /home/ssm-user/.local/bin/marcedit/cmarcedit.exe -s "$1" -d "$outfile.mrc" -json2marc
+#!/usr/local/bin/bash
 
 sourcefile="${1}"
 fileroot=$(echo "${sourcefile}" | sed 's/\.....\?$//')
@@ -26,7 +26,7 @@ jsonfile_process() {
 	sed -i '1,1s/^/[/' ${infile}
 
 
-   mono /home/ssm-user/.local/bin/marcedit/cmarcedit.exe -s "$infile" -d "$outfile" -json2marc
+   cmarcedit -s "$infile" -d "$outfile" -json2marc
 }
 
 if [[ $numrecs -gt 5000 ]];then

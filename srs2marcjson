@@ -1,0 +1,14 @@
+#!/usr/bin/bash
+infile="srs.json"
+outfile="marc.json"
+
+if [[ -z ${infile} ]];then echo -e "srs2marcjson expects a file named srs.json";exit;fi
+
+echo "[" > ${outfile}
+pv ${infile} | jq -c 'select(.state=="ACTUAL") | .parsedRecord.content ' | sed '$!s/$/,/' >> ${outfile}
+echo "]" >> ${outfile}
+
+echo "MARC json has been extracted and exported to ${outfile}"
+echo
+
+

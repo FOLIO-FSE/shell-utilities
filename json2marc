@@ -1,4 +1,4 @@
-#!/usr/local/bin/bash
+#!/usr/bin/bash
 
 sourcefile="${1}"
 fileroot=$(echo "${sourcefile}" | sed 's/\.....\?$//')

@@ -624,7 +624,8 @@ build_organization_map() {
 		case ${comp_field} in 
 			accountnum | federaltaxid | taxid )
 				addfield accounts[${account_iter}].accountNo
-				addvalue accounts[${account_iter}].status Active
+				addvalue accounts[${account_iter}].accountStatus Active
+				addvalue accounts[${account_iter}].name ${field}
 				account_iter=$(($account_iter + 1))
 				;;
 			addr1 | address1 | address | address11 | addressline1 )

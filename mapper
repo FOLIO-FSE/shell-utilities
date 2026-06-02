@@ -758,7 +758,7 @@ build_organization_map() {
 	done
 	
 	default_field status code
-	default_value code Active
+	default_value status Active
 
 	[[ -z ${addresscategoryfield} ]] && echo -e "${addressfield}\tfolio_value\n*\tOffice" > address_categories.tsv
 

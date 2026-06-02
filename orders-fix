@@ -105,7 +105,7 @@ echo
 noquantity=$(jq -r '.compositePoLines[]
         | select(
         (.locations[] | .quantityPhysical == null and .quantityElectronic == null)
-        ) | [.instanceId, .titleOrPackage]|@tsv' "${infile}")
+        ) | [.instanceId, .titleOrPackage]|@tsv' "${outfile}")
 
 
 if [[ -n "${noquantity}" ]];then

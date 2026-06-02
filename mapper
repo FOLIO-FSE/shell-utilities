@@ -622,7 +622,7 @@ build_organization_map() {
 		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}")
 	
 		case ${comp_field} in 
-			accountnum federaltaxid taxid )
+			accountnum | federaltaxid | taxid )
 				addfield accounts[${account_iter}].accountNo
 				addvalue accounts[${account_iter}].status Active
 				account_iter=$(($account_iter + 1))

@@ -82,10 +82,11 @@ RESTRICTED	Restricted
 WITHDRAWN	Withdrawn
 EOF
 
-note_iter=0
+account_iter=0
 address_iter=0
 chkinnote_iter=0
 chkoutnote_iter=0
+note_iter=0
 phone_iter=0
 
 ### convert indexed array to associative array
@@ -621,8 +622,10 @@ build_organization_map() {
 		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}")
 	
 		case ${comp_field} in 
-			accountnum )
-				addfield accounts[0].accountNo
+			accountnum federaltaxid taxid )
+				addfield accounts[${account_iter}].accountNo
+				addvalue accounts[${account_iter}].status Active
+				account_iter=$(($account_iter + 1))
 				;;
 			addr1 | address1 | address | address11 | addressline1 )
 				addfield addresses[0].addressLine1

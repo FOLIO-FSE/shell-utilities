@@ -140,6 +140,22 @@ fetch_schema() {
   local file="$2"
   local tmp="$3"
 
+# ----------------------------
+# ✅ KNOWN SPECIAL CASES (FAST PATH)
+# ----------------------------
+case "${MODULE}:${file}" in
+  # ✅ organizations
+  mod-organizations-storage:organization.json | mod-organizations:organization.json)
+    URL="https://raw.githubusercontent.com/folio-org/data-import-processing-core/master/ramls/settings/organization.json"
+    HTTP=$(curl -s -w "%{http_code}" -o "$tmp" "$URL")
+    if [[ "$HTTP" == "200" ]]; then
+      echo "$URL"
+      return 0
+    fi
+    ;;
+
+esac
+
   # ----------------------------
   # ✅ 1. Try module repo paths
   # ----------------------------
@@ -159,19 +175,29 @@ fetch_schema() {
     return
   fi
 
-  # ----------------------------
-  # ✅ 2. Finance / acq-models fallback (THIS IS THE KEY FIX)
-  # ----------------------------
-  BASE_MODULE="${MODULE#mod-}"
-  BASE_MODULE="${BASE_MODULE%-storage}"
+# ----------------------------
+# ✅ 2. acq-models fallback (improved)
+# ----------------------------
+local base_module="${MODULE#mod-}"
+base_module="${base_module%-storage}"
 
-  URL3="https://raw.githubusercontent.com/folio-org/acq-models/master/mod-$BASE_MODULE/schemas/$file"
-  HTTP=$(curl -s -w "%{http_code}" -o "$tmp" "$URL3")
+# ✅ try base module
+URL3="https://raw.githubusercontent.com/folio-org/acq-models/master/mod-${base_module}/schemas/$file"
+HTTP=$(curl -s -w "%{http_code}" -o "$tmp" "$URL3")
 
-  if [[ "$HTTP" == "200" ]]; then
-    echo "$URL3"
-    return
-  fi
+if [[ "$HTTP" == "200" ]]; then
+  echo "$URL3"
+  return 0
+fi
+
+# ✅ ✅ NEW: try storage variant
+URL4="https://raw.githubusercontent.com/folio-org/acq-models/master/mod-${base_module}-storage/schemas/$file"
+HTTP=$(curl -s -w "%{http_code}" -o "$tmp" "$URL4")
+
+if [[ "$HTTP" == "200" ]]; then
+  echo "$URL4"
+  return 0
+fi
 
   echo ""
 }

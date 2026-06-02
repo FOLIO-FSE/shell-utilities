@@ -47,17 +47,19 @@ cat "${infile}" |jq -c '.compositePoLines[] |= if .details==null then .details={
 	else . end) |
 
 	walk(
-	if type == "object" and (.quantity == "0") 
+	if type == "object" and .locationId and (.quantity |type == "string") 
 	then (
-	.quantity = 1 |
-	.quantityPhysical = 1 
+	.quantity = (.quantity |tonumber) |
+	if .quantity == 0 then .quantity = 1 else . end |
+	.quantityPhysical = .quantity 
 	)
 	else . end) |
 
 	walk(
-	if type == "object" and (.quantityPhysical == "0") 
+	if type == "object" and (.quantityPhysical |type == "string") 
 	then (
-	.quantityPhysical = 1 
+	.quantityPhysical = (.quantityPhysical |tonumber) |
+	if .quantityPhysical == 0 then .quantityPhysical = 1 else . end 
 	)
 	else . end) |
 

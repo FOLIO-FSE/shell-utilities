@@ -735,6 +735,9 @@ build_organization_map() {
 				addfield organizationTypes[0]
 				orgtypefield="${field}"
 			;;
+			paymentmethod )
+				addfield paymentMethod
+			;;
 			phone | phone1 | phonenum | phonenumber | preferredphonenumber | tel | telephone )
 				addfield phoneNumbers[${phone_iter}].phoneNumber
 				addvalue phoneNumbers[${phone_iter}].type Work

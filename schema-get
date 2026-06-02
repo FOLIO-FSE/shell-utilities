@@ -11,6 +11,7 @@ ARG="${3:-}"
 if [[ -z "$QUERY" ]]; then
   echo "Usage:"
   echo "  schema-get <module>"
+  echo "  schema-get <module> schema (lists schema)"
   echo "  schema-get <module> schema <name>"
   echo "  schema-get <module> example <name>"
   echo "  schema-get <module> example-min <name> (only required fields)"

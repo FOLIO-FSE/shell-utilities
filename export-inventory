@@ -20,6 +20,7 @@ jq -r '[.id, .name]|@tsv' loantypes.json > loantype.tsv
 
 echo -e "id\thrid\tholdingsId\tlocation\tmattype\tloantype\tbarcode\tcopy\tvolume\tstatus\tcallNumber\tcheckin_notes\tcheckout_notes\tpublic_notes\tstaff_notes\tadministrativeNotes" > items.tsv
 
+delim=$'\t'
 echo
 echo "Extracting item records."
 pv items.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
@@ -42,7 +43,7 @@ pv items.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	"\( .administrativeNotes |join($subdelim))" // "",
 	"\(.discoverySuppress)" // false
 	] |join($delim)
-	' >> items.tsv 
+	' |sed 's/\b[(]*null[)]*\b//ig' >> items.tsv 
 echo
 echo "Converting UUIDs to human readable values"
 echo
@@ -54,13 +55,6 @@ rm location.tsv
 rm mattype.tsv
 rm loantype.tsv
 
-echo "Instance IDs are exported to instanceIds.csv"
-numrecs=$(wc -l instanceIds.csv |cut -d " " -f1)
-
-if [[ $numrecs -gt 500000 ]];then 
-	echo "Large instance file with $numrecs records detected"
-	echo "Splitting into smaller files is recommended"
-fi
 echo "Bib and holdings files are saved as MARC files"
 echo "Item records have been exported to items.tsv"
 echo

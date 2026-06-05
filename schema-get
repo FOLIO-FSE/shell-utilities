@@ -87,7 +87,10 @@ find_schema() {
     CONTENT=$(curl -s \
       "https://raw.githubusercontent.com/folio-org/$MODULE/$BRANCH/$file")
 
-    SCHEMAS=$(echo "$CONTENT" | grep -Eo '(schemas/[A-Za-z0-9_./-]+\.json|[A-Za-z0-9_./-]+\.json)' || true)
+		SCHEMAS=$(echo "$CONTENT" \
+	  | grep -Eo '(schemas/[A-Za-z0-9._-]+\.json|[A-Za-z0-9._-]+\.json)' \
+  	| grep -vE '\.raml|\.md|\.yaml|\.yml' \
+  	| sort -u || true)
 
     for s in $SCHEMAS; do
       fname=$(basename "$s")
@@ -224,6 +227,7 @@ if [[ "${MODE:-}" == "schema" ]]; then
 
       echo "$CONTENT" \
         | grep -Eo '(schemas/[A-Za-z0-9_./-]+\.json|[A-Za-z0-9_./-]+\.json)' \
+				| grep -vE '\.raml|\.md|\.yaml|\.yml' \
         | sed -E 's#.*/##; s#\.json##'
     done | sort -u
 

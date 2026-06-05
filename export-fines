@@ -7,34 +7,23 @@ echo "Retrieving all fine records"
 
 records-get accounts
 
-finethreshold=0
-
 #### generate list of users and fine over threshold
 
+echo -e "userId\tstatus\tpaymentStatus\tfineType\tremaining\ttitle\titem_barcode\tdueDate" > fines.tsv
+
 cat accounts.json \
-	|jq -r 'select(.status.name=="Open" and .remaining>0 )|[.userId, .remaining]|@tsv' \
-	|awk -v THRESHOLD=$finethreshold 'BEGIN{OFS="\t"}{ remaining[$1]+=$2 } 
-		END { for (user in remaining) {
-			if (remaining[user] > THRESHOLD) {
-				print(user, remaining[user]) 
-			}
-		}}' \
-	| sort > users_fines.tmp
+	|jq -r 'select(.status.name=="Open" and .remaining>0 )|[
+	"\(.userId)" // "",
+	"\(.status.name)" // "",
+	"\(.paymentStatus.name)" // "",
+	"\(.feeFineType)" // "",
+	"\(.remaining)" // "",
+	"\(.title)" // "",
+	"\(.barcode)" // "",
+	"\(.dueDate)" // ""
+	]
+|@tsv' |sed 's/\b[(]*null[)]*\b//ig' >> fines.tsv
 
+echo "Output has been sent to fines.tsv"
 
-#### convert user uuids to barcodes and list the fine
-rm -f users_fines.tsv
-
-echo
-
-cut -f1 users_fines.tmp > uuids
-
-echo "Retrieving user barcodes for fines"
-records-getfromfile users
-
-jq -sr '.|sort_by(.id)|.[] |.barcode' users.json > tmp_users
-paste tmp_users users_fines.tmp |cut -f1,3 |sort -k2nr > users_fines.tsv
-
-echo "Output has been sent to users_fines.tsv"
-
-rm users_fines.tmp accounts.json users.json uuids tmp_users
+rm accounts.json 

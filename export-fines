@@ -7,7 +7,7 @@ echo "Retrieving all fine records"
 
 records-get accounts
 
-finethreshold=10
+finethreshold=0
 
 #### generate list of users and fine over threshold
 

@@ -4,6 +4,8 @@ export-all instances
 echo "Exporting holdings"
 export-all holdings
 
+delimited_holdings=="no"
+
 echo "Retrieving items"
 records-get items
 records-get locations
@@ -11,16 +13,23 @@ records-get mattypes
 records-get loantypes
 records-get holdingstypes
 
+if [[ $delimited_holdings=="yes" ]];then
+	echo "Retrieving holdings"
+	records-get holdings
+fi
 
 echo
 echo "Retrieving reference data"
 jq -r '[.id, .code]|@tsv' locations.json > location.tsv
 jq -r '[.id, .name]|@tsv' mattypes.json > mattype.tsv
 jq -r '[.id, .name]|@tsv' loantypes.json > loantype.tsv
+jq -r '[.id, .name]|@tsv' holdingstypes.json > holdingtype.tsv
 
 echo -e "id\thrid\tholdingsId\tlocation\tmattype\tloantype\tbarcode\tcopy\tvolume\tstatus\tcallNumber\tcheckin_notes\tcheckout_notes\tpublic_notes\tstaff_notes\tadministrativeNotes" > items.tsv
 
 delim=$'\t'
+subdelim='; '
+
 echo
 echo "Extracting item records."
 pv items.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
@@ -45,9 +54,40 @@ pv items.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
 	] |join($delim)
 	' |sed 's/\b[(]*null[)]*\b//ig' >> items.tsv 
 echo
+
+
+echo -e "id\thrid\tholdingtype\tinstanceId\tlocation\tcallNumber\tpublic_notes\tstaff_notes\tadministrativeNotes\tholdingsStatements\tholdingsStatementsForIndexes\tholdingsStatementsForSupplements\tdiscoverySuppress" > holdings.tsv
+
+echo "Extracting holdings records."
+
+
+if [[ $delimited_holdings=="yes"]];then
+	pv holdings.json |jq -r --arg delim "${delim}" --arg subdelim "${subdelim}" '
+		[
+		"\(.id)" // "",
+		"\(.hrid)" // "",
+		"\(.holdingsTypeId)" // "",
+		"\(.instanceId)" // "",
+		"\(.effectiveLocationId)" // "",
+		"\(.callNumber)" // "",
+		"\([ .holdingsStatements[] |select(.statement!=null) | .statement ] |join($subdelim))" // "",
+		"\([ .holdingsStatementsForIndexes[] |select(.statement!=null) | .statement ] |join($subdelim))" // "",
+		"\([ .holdingsStatementsForSupplements[] |select(.statement!=null) | .statement ] |join($subdelim))" // "",
+		"\([ .notes[] |select(.staffOnly==false) | .note ] |join($subdelim))" // "",
+		"\([ .notes[] |select(.staffOnly==true) | .note ] |join($subdelim))" // "",
+		"\( .administrativeNotes |join($subdelim))" // "",
+		"\(.discoverySuppress)" // false
+		] |join($delim)
+		' >> holdings.tsv 
+	
+	value-mapper holdings.tsv
+fi
+
+
 echo "Converting UUIDs to human readable values"
 echo
 value-mapper items.tsv
+# value-mapper holdings.tsv
 
 mv items_fixed.tsv items.tsv
 

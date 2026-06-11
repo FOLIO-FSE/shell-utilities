@@ -430,8 +430,8 @@ case $rec_type in
 	endpoint="source-storage/source-records";;
 "srs")
 	rec_type="records"
-	limitbyid="yes"
-	query="recordType=MARC_BIB&state=ACTUAL"
+	query="query=%28recordType%3D%3DMARC_BIB%20AND%20state%3D%3DACTUAL%29"
+	sortby="sortBy%3DupdatedDate"
 	endpoint="source-storage/records";;
 "statcodes")
 	rec_type="statisticalCodes"

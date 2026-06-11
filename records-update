@@ -66,6 +66,7 @@ fixrecord() {
 	#                (.fundDistributions[0].code = "ybpbl" ) 
 	#		(.fund.ledgerId = "bdc5218a-e14c-41ea-8a9f-d7c9980d8b35")
 	#                (.groupIds += [$VALUE] ) 
+	#                (.holdingsStatements |= .+ [{"statement": $VALUE, "note" : "", "staffNote" : ""}])
 	#                (.itemDamagedStatusId = "54d1dd76-ea33-4bcb-955b-6b29df4f7930" ) 
 	#                (.itemIdentifier = $VALUE ) 
 	#                (.materialTypeId = $VALUE ) 

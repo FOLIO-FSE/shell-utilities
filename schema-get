@@ -142,6 +142,9 @@ fetch_schema() {
   local path="$1"
   local file="$2"
   local tmp="$3"
+# normalize file to just filename
+file=$(basename "$file")
+
 
 # ----------------------------
 # ✅ KNOWN SPECIAL CASES (FAST PATH)
@@ -169,6 +172,32 @@ esac
     echo "$URL1"
     return
   fi
+
+	# ----------------------------
+	# ✅ Try schemas/ directory (CRITICAL for inventory)
+	# ----------------------------
+	URL_SCHEMAS="https://raw.githubusercontent.com/folio-org/$MODULE/$BRANCH/ramls/schemas/$file"
+	# ----------------------------
+	# ✅ Try nested schemas subdirs (inventory pattern)
+	# ----------------------------
+	if [[ "$MODULE" == "mod-inventory-storage" ]]; then
+		for subdir in holdings-storage item-storage instance-storage; do
+		  URL_SUB="https://raw.githubusercontent.com/folio-org/$MODULE/$BRANCH/ramls/schemas/$subdir/$file"
+		  HTTP=$(curl -s -w "%{http_code}" -o "$tmp" "$URL_SUB")
+		
+		  if [[ "$HTTP" == "200" ]]; then
+		    echo "$URL_SUB"
+		    return 0
+		  fi
+		done
+	fi
+
+	HTTP=$(curl -s -w "%{http_code}" -o "$tmp" "$URL_SCHEMAS")
+	
+	if [[ "$HTTP" == "200" ]]; then
+	  echo "$URL_SCHEMAS"
+	  return 0
+	fi
 
   URL2="https://raw.githubusercontent.com/folio-org/$MODULE/$BRANCH/ramls/$path"
   HTTP=$(curl -s -w "%{http_code}" -o "$tmp" "$URL2")

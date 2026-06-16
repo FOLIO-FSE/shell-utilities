@@ -129,7 +129,7 @@ if (directory_check == 0) {
 gsub(" *$", "", id_content)
 
 if (seen[id_content] == 1 ) { 
-	found[id_content] = 1
+	seen_marc[id_content] = 1
 	foundrecs++
 	if ( NEGATIVEMATCH == "no" ) { print $0 > OUTFILE }
 	if (SINGLEID == 1) { exit }
@@ -149,7 +149,7 @@ if (NR % 10000 == 0) if (NR % 10000 == 0){ printf "Records searched: %d Matching
 END { 
 	printf "Records searched: %d Matching: %d Not matching: %d \r", recordcounter, foundrecs, notfoundrecs
 	for (k in seen) {
-		if (!(k in found)) { printf k"\\n" > "notfound" }
+		if (!(k in seen_marc)) { printf k"\\n" > "notfound" }
 	}
 }
 ENDOFAWK

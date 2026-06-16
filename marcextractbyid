@@ -149,7 +149,7 @@ if (NR % 10000 == 0) if (NR % 10000 == 0){ printf "Records searched: %d Matching
 END { 
 	printf "Records searched: %d Matching: %d Not matching: %d \r", recordcounter, foundrecs, notfoundrecs
 	for (k in seen) {
-		if (!(k in found)) { printf k"\n" > "notfound" }
+		if (!(k in found)) { printf k"\\n" > "notfound" }
 	}
 }
 ENDOFAWK

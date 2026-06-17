@@ -92,6 +92,13 @@ find_schema() {
   	| grep -vE '\.raml|\.md|\.yaml|\.yml' \
   	| sort -u || true)
 
+		# ✅ Ensure direct name is always a candidate
+		REQUESTED_FILE="${name}.json"
+		
+		if ! echo "$SCHEMAS" | grep -q "$REQUESTED_FILE"; then
+		  SCHEMAS="$SCHEMAS"$'\n'"$REQUESTED_FILE"
+		fi
+
     for s in $SCHEMAS; do
       fname=$(basename "$s")
       base="${fname%.json}"

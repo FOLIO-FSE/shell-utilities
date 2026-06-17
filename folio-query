@@ -1,0 +1,73 @@
+#!/usr/bin/bash
+auth 2>/dev/null || authn 2>/dev/null
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+declare -A entityTypes
+
+num_retrieved=1000
+offset=0
+
+records-get entitytypes
+
+
+while IFS="=" read -r label id; do
+  entityTypes["${label}"]="${id}"
+done < <(jq -r '.label + "=" + .id' entitytypes.json)
+
+# Sunflower entity types
+# Budgets
+# Fund with ledger
+# Holdings
+# Instances
+# Invoice lines
+# Invoices
+# Items
+# Loans
+# Organizations
+# Purchase order lines
+# Purchase order lines with titles
+# Purchase orders
+# Transactions
+# Users
+# Voucher lines with fund
+# Voucher lines with invoice, fund, organization
+# Vouchers
+
+function fetch_batch() {
+	local offset=$1
+	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${folio_query}" "${okapi_url}/fqm-manager/query" |jq -c '.content[]' > "tmp_fqm.${t}"
+}
+
+
+build_query() {
+
+IFS='' read -r -d '' folio_query << EndOfJSON
+{
+  "query": "${query}",
+  "limit": "${num_retrieved}",
+  "offset": "${offset}"
+}
+EndOfJSON
+}
+
+echo "Retrieving results"
+num_records=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/fqm-manager/query?limit=0" |jq -r .totalRecords)
+
+for (( offset=0; offset<=$num_records; ));do
+	for ((t=0; t<=4; t=$(($t + 1)) )); do
+		if [[ $offset -le $num_records ]];then 
+			fetch_batch $offset &
+			offset=$(($offset + $num_retrieved))
+		fi
+	done
+	wait
+		
+	cat tmp_fqm.* >> tmp_fqm
+	rm tmp_fqm.*
+
+	if [[ $offset -ne 0 ]];then printf "%s records retrieved of %s\r" $offset $num_records;fi
+done
+

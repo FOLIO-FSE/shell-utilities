@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+usage() {
+  echo "Usage: $0 [file] <key> <value>" >&2
+  echo "       cat file | $0 <key> <value>" >&2
+  exit 1
+}
+
+if [[ $# -eq 2 ]]; then
+  infile="-"
+  key="${1}"
+  value="${2}"
+elif [[ $# -eq 3 ]]; then
+  infile="${1}"
+  key="${2}"
+  value="${3}"
+else
+  usage
+fi
+
+if jq -e . >/dev/null 2>&1 <<<"$value"; then
+  # JSON value (object, array, number, true, false, null)
+  jq --arg key "${key}" --argjson val "${value}" '
+    (.. | objects | select(has($key)) | .[$key]) |= $val
+  ' "${infile}"
+
+else
+  # Plain string
+  jq --arg key "${key}" --arg val "${value}" '
+    (.. | objects | select(has($key)) | .[$key]) |= $val
+  ' "${infile}"
+fi

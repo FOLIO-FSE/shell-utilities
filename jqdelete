@@ -1,6 +1,5 @@
 #!/usr/bin/bash
 
-
 usage() {
   echo "Usage: $0 [file] <key>" >&2
   echo "       cat file | $0 <key>" >&2

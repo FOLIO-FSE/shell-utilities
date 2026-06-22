@@ -135,6 +135,8 @@ case $recordtype in
 	recordtype="locations";;
 "manualblocks")
 	recordtype="manualblocks";;
+"mappingprofiles")
+	recordtype="data-import-profiles/mappingProfiles";;
 "mattypes")
 	recordtype="material-types";;
 "moveholdings")

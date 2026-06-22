@@ -119,6 +119,8 @@ case $recordtype in
 	recordtype="invoice/invoice-lines";;
 "items")
 	recordtype="item-storage/items";;
+"jobprofiles")
+	recordtype="data-import-profiles/jobProfiles";;
 "libraries")
 	recordtype="location-units/libraries";;
 "licenses")

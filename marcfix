@@ -67,7 +67,7 @@ function check_fields() {
 				override245=found245=1
 				rectype="bib"
 				### adds subfield a if missing
-				if (field_content !~ /subfield_a/) {	
+				if (index(field_content, subfield_a) == 0 ) {	
 					sub(subfield_any, subfield_a, field_content)
 					$0 = substr($0, 1, field_start_address)""field_content""substr($0, field_end_address)
 				}

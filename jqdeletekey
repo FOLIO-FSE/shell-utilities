@@ -1,0 +1,23 @@
+#!/usr/bin/bash
+
+
+usage() {
+  echo "Usage: $0 [file] <key>" >&2
+  echo "       cat file | $0 <key>" >&2
+  exit 1
+}
+
+# Parse arguments
+if [[ $# -eq 1 ]]; then
+  infile="-"
+  key="$1"
+elif [[ $# -eq 2 ]]; then
+  infile="${1}"
+  key="$2"
+else
+  usage
+fi
+
+jq --arg key "$key" '
+  del(.. | objects | .[$key]?)
+' "${infile}"

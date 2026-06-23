@@ -327,7 +327,7 @@ build_order_map() {
 		  requester )
 				addfield compositePoLines[0].requester
 			;;
-		  selector )
+		  polselector | selector )
 				addfield compositePoLines[0].selector
 			;;
 		  title | titleorpackage )

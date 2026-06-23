@@ -19,9 +19,9 @@ pv courses.json |sed 's/\\n//g' |jq -r --arg delim "${delim}" --arg subdelim "${
 	"\(.description)" // "",
 	"\(.departmentObject.name)" // "",
 	"\(.courseListingObject.locationObject.code)" // "",
-	"\(.termObject.name)" // "",
-	"\(.termObject.startDate)" // "",
-	"\(.termObject.endDate)" // "",
+	"\(.courseListingObject.termObject.name)" // "",
+	"\(.courseListingObject.termObject.startDate)" // "",
+	"\(.courseListingObject.termObject.endDate)" // "",
 	"\(.courseListingObject.instructorObjects |map(.name) |join(";"))" // ""
 	] |join($delim)
 	' |sed 's/\bnull\b//g' >> courses.tsv 

@@ -341,7 +341,7 @@ build_order_map() {
 				addvalue notes[${note_iter}] "(${field})"
 				note_iter=$(($note_iter + 1))
 			;;
-		  note | noteorder | ordernote | descriptioninternalnote )
+		  note | noteorder | ordernote | descriptioninternalnote | notesnote1 | notesnote2 )
 				addfield notes[${note_iter}]
 				note_iter=$(($note_iter + 1))
 			;;

@@ -282,7 +282,7 @@ build_order_map() {
 				addregexrules compositePoLines[0].cost.quantityPhysical number
 				default_value compositePoLines[0].cost.quantityPhysical 1
 			;;
-		  descriptionreceivingnote | detailsreceivingnote | receivingnote )
+		  descriptionreceivingnote | detailsreceivingnote | receivingnote | receiving_checkinitems )
 				addfield compositePoLines[0].details.receivingNote
 			;;
 		  url )

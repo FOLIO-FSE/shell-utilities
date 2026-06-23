@@ -336,7 +336,7 @@ build_order_map() {
 		  approvaldate | dateordered | invoicedate | odate | podate )
 			addfield dateOrdered
 			;;
-		  expenseclass | fund | fundcode | vendorinstruction )
+		  expenseclass | expenseclassidcode | fund | fundcode | fundidcode | vendorinstruction )
 				addfield notes[${note_iter}]
 				addvalue notes[${note_iter}] "(${field})"
 				note_iter=$(($note_iter + 1))
@@ -351,7 +351,7 @@ build_order_map() {
 		  ongoingissubscription )
 				addreplacerules ongoing.isSubscription truefalse
 			;;
-		  ongoingmanualrenewal )
+		  manualpo | ongoingmanualrenewal )
 				addreplacerules ongoing.manualRenewal truefalse
 			;;
 		  lineitemtype | ordtype | ordertype )

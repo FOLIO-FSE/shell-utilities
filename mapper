@@ -374,7 +374,7 @@ build_order_map() {
 				addfield poNumberSuffix
 			;;
 		  reencumber | renewaldate )
-				addfield reEncumber
+				addreplacerules reEncumber truefalse
 			;;
 		  totalcost | totalprice )
 				addregexrules totalEstimatedPrice currency

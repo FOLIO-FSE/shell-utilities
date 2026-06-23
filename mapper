@@ -300,7 +300,7 @@ build_order_map() {
 		  bibid | bibno | mmsid | mmsrecordid | recordbiblio | recordbibliographic | recordnumberbibliographic | systemidentifierbibid )
 			addfield compositePoLines[0].instanceId
 			;;
-		  location | locationcode | locationidcode )
+		  location | locationcode | locationid | locationidcode )
 				addfield compositePoLines[0].locations[0].locationId
 				locationfield="${field}"
 			;;

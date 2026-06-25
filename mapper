@@ -169,6 +169,19 @@ default_value() {
   ' <<< "${object_map}")
 }
 
+fallback_value() {
+  local key="$1"
+  local value="$2"
+
+  object_map=$(jq --arg key "$key" --arg value "$value" '
+	.data |= map(
+	  if .folio_field == $key
+	  then . + { fallback_value: $value }
+	  else .
+	  end
+	)
+  ' <<< "${object_map}")
+}
 fallback_field() {
   local key="$1"
   local value="$2"
@@ -239,7 +252,6 @@ build_order_map() {
 		  acquisitionmethod | form )
 				if [[ -z ${acqMethod} ]];then
 					addfield compositePoLines[0].acquisitionMethod
-					default_value compositePoLines[0].acquisitionMethod Other
 					acqMethod="${field}"
 				fi
 			;;
@@ -280,11 +292,10 @@ build_order_map() {
 			;;
 		  costquantityelectronic | quantityelectronic )
 				addregexrules compositePoLines[0].cost.quantityElectronic number
-				default_value compositePoLines[0].cost.quantityElectronic 0
 			;;
 		  costquantityphysical | quantity | quantityphysical )
 				addregexrules compositePoLines[0].cost.quantityPhysical number
-				default_value compositePoLines[0].cost.quantityPhysical 1
+				fallback_value compositePoLines[0].cost.quantityPhysical 1
 			;;
 		  descriptionreceivingnote | detailsreceivingnote | receivingnote | receivingcheckinitems )
 				addfield compositePoLines[0].details.receivingNote
@@ -407,7 +418,6 @@ build_order_map() {
 	if [[ -z ${acqMethod} ]];then
 		acqMethod="${primary_key}"
 		default_field compositePoLines[0].acquisitionMethod poNumber
-		default_value compositePoLines[0].acquisitionMethod Other
 	fi
 
 	if [[ -z ${costField} ]];then

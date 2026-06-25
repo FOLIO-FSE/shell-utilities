@@ -93,6 +93,7 @@ phone_iter=0
 
 IFS=$'\t' read -r -a hdr < <(head -n 1 -- "$infile")
 declare -A header_arr
+declare -A fields_processed_arr
 
 for i in "${!hdr[@]}"; do header_arr["${hdr[$i]}"]="${hdr[$i]}";done
 
@@ -242,6 +243,9 @@ build_order_map() {
 					acqMethod="${field}"
 				fi
 			;;
+		  acquisitionunit | acquisitionunits )
+				addfield acqUnitIds[0]
+			;;
 		  approved )
 					addreplacerules approved truefalse
 			;;
@@ -285,6 +289,9 @@ build_order_map() {
 		  descriptionreceivingnote | detailsreceivingnote | receivingnote | receivingcheckinitems )
 				addfield compositePoLines[0].details.receivingNote
 			;;
+		  detailsisacknowledged | isacknowledged )
+				addreplacerules compositePoLines[0].details.isacknowledged truefalse
+			;;
 		  url )
 					addregexrules compositePoLines[0].details.resourceUrl url
 			;;
@@ -294,8 +301,12 @@ build_order_map() {
 		  expirationdate )
 				addfield compositePoLines[0].details.subscriptionTo
 			;;
-		  polinenote | polnote)
+		  detailslinedescription | polinenote | polnote | polinedescription | productid | productidtype )
 				addfield compositePoLines[0].description
+			;;
+		  userlimit | vendorreferencenumbers | vendorreferencetype )
+				addfield compositePoLines[0].description
+				addvalue compositePoLines[0].description "(${field})"
 			;;
 		  bibid | bibno | mmsid | mmsrecordid | recordbiblio | recordbibliographic | recordnumberbibliographic | systemidentifierbibid )
 			addfield compositePoLines[0].instanceId
@@ -336,7 +347,7 @@ build_order_map() {
 		  approvaldate | dateordered | invoicedate | odate | podate )
 			addfield dateOrdered
 			;;
-		  expenseclass | expenseclassidcode | fund | fundcode | fundidcode | vendorinstruction )
+		  expenseclass | expenseclassidcode | fund | fundcode | fundidcode | ordersubtype | libraryinformationpoordersubtype | vendorinstruction )
 				addfield notes[${note_iter}]
 				addvalue notes[${note_iter}] "(${field})"
 				note_iter=$(($note_iter + 1))

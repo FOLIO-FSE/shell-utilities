@@ -11,52 +11,59 @@ fi
 
 awk -F'\t' '
 NR==FNR {
-    if (FNR==1) {
+    if (FNR == 1) {
         for (i=1; i<=NF; i++) {
-            if (!($i in h)) {
-                h[$i] = ++nh
-                head[nh] = $i
+            if (!($i in col_index)) {
+                col_index[$i] = ++ncols
+                cols[ncols] = $i
             }
+            f1_map[$i] = i
         }
         next
     }
-    f1[NR] = $0
+
+    # store rows
+    for (i=1; i<=NF; i++) {
+        f1[FNR,i] = $i
+    }
+    f1_rows = FNR
     next
 }
 
-FNR==1 {
+FNR == 1 {
     for (i=1; i<=NF; i++) {
-        if (!($i in h)) {
-            h[$i] = ++nh
-            head[nh] = $i
+        if (!($i in col_index)) {
+            col_index[$i] = ++ncols
+            cols[ncols] = $i
         }
+        f2_map[$i] = i
     }
 
-    for (i=1; i<=nh; i++) {
-        printf "%s%s", head[i], (i==nh ? ORS : OFS)
+    for (i=1; i<=ncols; i++) {
+        printf "%s%s", cols[i], (i==ncols ? ORS : OFS)
     }
 
-    split(f1[1], tmp, OFS)
-    for (i=1; i<=length(tmp); i++) m1[tmp[i]] = i
-
-    for (i=1; i<=NF; i++) m2[$i] = i
-
-    for (r in f1) {
-        if (r == 1) continue
-        split(f1[r], row, OFS)
-        for (i=1; i<=nh; i++) {
-            col = head[i]
-            printf "%s%s", (col in m1 ? row[m1[col]] : ""), (i==nh ? ORS : OFS)
+    for (r=2; r<=f1_rows; r++) {
+        for (i=1; i<=ncols; i++) {
+            col = cols[i]
+            if (col in f1_map)
+                val = f1[r, f1_map[col]]
+            else
+                val = ""
+            printf "%s%s", val, (i==ncols ? ORS : OFS)
         }
     }
     next
 }
 
 {
-    split($0, row, OFS)
-    for (i=1; i<=nh; i++) {
-        col = head[i]
-        printf "%s%s", (col in m2 ? row[m2[col]] : ""), (i==nh ? ORS : OFS)
+    for (i=1; i<=ncols; i++) {
+        col = cols[i]
+        if (col in f2_map)
+            val = $f2_map[col]
+        else
+            val = ""
+        printf "%s%s", val, (i==ncols ? ORS : OFS)
     }
 }
 ' OFS='\t' "${file1}" "${file2}" > ${outfile}

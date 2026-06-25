@@ -173,10 +173,17 @@ fallback_value() {
   local key="$1"
   local value="$2"
 
+	def maybe_number:
+		if ($value | test("^-?[0-9]+(\\.[0-9]+)?$")
+		then ($value | tonumber)
+		else
+		$value
+		end;
+
   object_map=$(jq --arg key "$key" --arg value "$value" '
 	.data |= map(
 	  if .folio_field == $key
-	  then . + { fallback_value: $value }
+	  then . + { fallback_value: (maybe_number) }
 	  else .
 	  end
 	)

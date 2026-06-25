@@ -1,0 +1,65 @@
+#!/usr/bin/bash
+
+file1="${1}"
+file2="${2}"
+outfile="merged_file.tsv"
+
+if [[ ! -f "${file1}" ]] || [[  ! -f "${file2}" ]];then
+	echo "You must enter two tab delimited files to be combined"
+	exit
+fi
+
+awk -F'\t' '
+NR==FNR {
+    if (FNR==1) {
+        for (i=1; i<=NF; i++) {
+            if (!($i in h)) {
+                h[$i] = ++nh
+                head[nh] = $i
+            }
+        }
+        next
+    }
+    f1[NR] = $0
+    next
+}
+
+FNR==1 {
+    for (i=1; i<=NF; i++) {
+        if (!($i in h)) {
+            h[$i] = ++nh
+            head[nh] = $i
+        }
+    }
+
+    for (i=1; i<=nh; i++) {
+        printf "%s%s", head[i], (i==nh ? ORS : OFS)
+    }
+
+    split(f1[1], tmp, OFS)
+    for (i=1; i<=length(tmp); i++) m1[tmp[i]] = i
+
+    for (i=1; i<=NF; i++) m2[$i] = i
+
+    for (r in f1) {
+        if (r == 1) continue
+        split(f1[r], row, OFS)
+        for (i=1; i<=nh; i++) {
+            col = head[i]
+            printf "%s%s", (col in m1 ? row[m1[col]] : ""), (i==nh ? ORS : OFS)
+        }
+    }
+    next
+}
+
+{
+    split($0, row, OFS)
+    for (i=1; i<=nh; i++) {
+        col = head[i]
+        printf "%s%s", (col in m2 ? row[m2[col]] : ""), (i==nh ? ORS : OFS)
+    }
+}
+' OFS='\t' "${file1}" "${file2}" > ${outfile}
+
+echo "A file containing the combined headers from ${file1} and ${file2} was output to ${outfile}"
+echo

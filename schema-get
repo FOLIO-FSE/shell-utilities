@@ -350,7 +350,17 @@ if [[ "$MODE" == example* ]]; then
         end
 
     else
-      if ($k|test("id$|Id$")) then uuid else "string" end
+			if (has("$ref") and (.["$ref"] | test("uuid\\.json$"))) then
+				uuid
+      elif ($k|test("id$|Id$")) then
+				uuid
+			elif (.format? == "date-time") then
+				"2026-01-01T12:00:00Z"
+			elif (.type? == "string" and has("pattern")) then
+				.pattern
+			else
+				"string"
+			end
     end;
 
   gen($full; "")

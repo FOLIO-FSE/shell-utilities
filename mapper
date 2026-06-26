@@ -110,7 +110,6 @@ addbackupfield() {
 addvalue() {
 	value="${2}"
 	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"value\":\"${2}\"}"
-	newfield=$(sed 's/"\(true\|false\)"/\1/' <<< "${newfield}")
 	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")
 }
 
@@ -160,12 +159,9 @@ default_value() {
   local value="$2"
 
   object_map=$(jq --arg key "$key" --arg value "$value" '
-  	def maybe_number:
-  		($value | try tonumber catch $value);	
-
 	.data |= map(
 	  if .folio_field == $key
-	  then . + { value: (maybe_number) }
+	  then . + { value: $value }
 	  else .
 	  end
 	)
@@ -176,12 +172,9 @@ fallback_value() {
   local key="$1"
   local value="$2"
   object_map=$(jq --arg key "$key" --arg value "$value" '
-  	def maybe_number:
-  		($value | try tonumber catch $value);	
-
 	.data |= map(
 	  if .folio_field == $key
-	  then . + { fallback_value: (maybe_number) }
+	  then . + { fallback_value: $value }
 	  else .
 	  end
 	)
@@ -309,6 +302,16 @@ build_order_map() {
 				addfield compositePoLines[0].description
 				addvalue compositePoLines[0].description "(${field})"
 			;;
+			expenseclass | expenseclassidcode)
+				addfield compositePoLines[0].fundDistribution[0].expenseClassId
+				expenseclassfield="${field}"
+			;;
+		  fund | fundcode | fundidcode )
+				addfield compositePoLines[0].fundDistribution[0].fundId
+				addfield compositePoLines[0].fundDistribution[0].distributionType = percentage
+				addfield compositePoLines[0].fundDistribution[0].value 100
+				fundfield="${field}"
+			;;
 		  bibid | bibno | mmsid | mmsrecordid | recordbiblio | recordbibliographic | recordnumberbibliographic | systemidentifierbibid )
 			addfield compositePoLines[0].instanceId
 			;;
@@ -348,7 +351,7 @@ build_order_map() {
 		  approvaldate | dateordered | invoicedate | odate | podate )
 			addfield dateOrdered
 			;;
-		  expenseclass | expenseclassidcode | fund | fundcode | fundidcode | ordersubtype | libraryinformationpoordersubtype | vendorinstruction )
+		  ordersubtype | libraryinformationpoordersubtype | vendorinstruction )
 				addfield notes[${note_iter}]
 				addvalue notes[${note_iter}] "(${field})"
 				note_iter=$(($note_iter + 1))
@@ -523,6 +526,8 @@ build_holdings_map() {
 	[[ -n ${callfield} ]] && echo -e "folio_name\t${callfield}\nLibrary of Congress classification\t1Library of Congress classification\t*" > call_number_type_mapping.tsv
 	[[ -n ${typefield} ]] && echo -e "${mattypefield}\tfolio_name\n*\tmigration" > material_types.tsv
 	[[ -n ${locationfield} ]] && echo -e "${locationfield}\tlegacy_code\tfolio_code\n*\t*\tmigration" > locations.tsv
+	[[ -n ${expenseclassfield} ]] && echo -e "${expenseclassfield}\tfolio_code\n*\tnone" > expense_classes.tsv
+	[[ -n ${fundfield} ]] && echo -e "${fundfield}\tfolio_code\n*\tnone" > funds.tsv
 }
 
 build_item_map() {

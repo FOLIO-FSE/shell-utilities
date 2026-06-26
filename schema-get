@@ -356,6 +356,8 @@ if [[ "$MODE" == example* ]]; then
 				uuid
 			elif (.format? == "date-time") then
 				"2026-01-01T12:00:00Z"
+			elif (.type? == "object") then
+				"object"
 			elif (.type? == "string" and has("pattern")) then
 				.pattern
 			else

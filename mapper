@@ -365,6 +365,7 @@ build_order_map() {
 			;;
 		  manualpo | ongoingmanualrenewal )
 				addreplacerules ongoing.manualRenewal truefalse
+				fallback_value ongoing.manualRenewal true
 			;;
 		  lineitemtype | ordtype | ordertype )
 				if [[ -z ${ordType} ]]; then

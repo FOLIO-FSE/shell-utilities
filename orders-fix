@@ -15,10 +15,10 @@ echo
 #cat "${infile}" |jq 'walk(if type == "object" and (.distributionType != null) and (.fundId == null) then del(.) else . end)' > "${tmpfile}1.json"
 
 # add details object if not present
-cat "${infile}" |jq -c '.compositePoLines[] |= if .details==null then .details={} else . end |
+cat "${infile}" |sed 's/"\(true\|false\)"/\1/' | \
+jq -c '.compositePoLines[] |= if .details==null then .details={} else . end |
 
 	walk(
-
 	# delete if not properly mapped Fund UUID
 	if type == "object" and (.distributionType != null) 
 	and (.fundId |test("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")|not ) 
@@ -38,30 +38,34 @@ cat "${infile}" |jq -c '.compositePoLines[] |= if .details==null then .details={
 	.distributionType = "percentage" |
 	.value = 100
 	)
-	else . end) |
+	else . end |
 
 	# and delete fundId mapped to note
-	walk(
 	if type == "string" and (. |test("..[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")) 
 	then del(.)
-	else . end) |
+	else . end |
 
-	walk(
 	if type == "object" and .locationId and (.quantity |type == "string") 
 	then (
 	.quantity = (.quantity |tonumber) |
 	if .quantity == 0 then .quantity = 1 else . end |
 	.quantityPhysical = .quantity 
 	)
-	else . end) |
+	else . end |
 
-	walk(
+	if type == "object" and (.quantityElectronic? != null) then
+		.quantityElectronic |= tonumber?	
+		| if .quantityElectronic == 0
+			then del(.quantityElectronic)
+			else . end
+	else . end |
+
 	if type == "object" and (.quantityPhysical |type == "string") 
 	then (
 	.quantityPhysical = (.quantityPhysical |tonumber) |
 	if .quantityPhysical == 0 then .quantityPhysical = 1 else . end 
 	)
-	else . end) |
+	else . end)  |
 
 	# delete empty arrays
 	(.. | arrays) |= 
@@ -71,28 +75,37 @@ cat "${infile}" |jq -c '.compositePoLines[] |= if .details==null then .details={
 	# coordinate price info
 	walk(
 	if type == "object" and ((.cost.poLineEstimatedPrice == null) and (.cost.currency != null)) then 
-	(.cost.poLineEstimatedPrice, .cost.listUnitPrice) = "0.00" 
-	else .  end) |
+	(.cost.poLineEstimatedPrice, .cost.listUnitPrice) = 0.00 
+	else .  end |
 
 	# fix electronic
-	walk(if type == "object" and .orderFormat == "Electronic Resource" then 
+	if type == "object" and .orderFormat == "Electronic Resource" then 
 	(.cost.listUnitPriceElectronic = .cost.listUnitPrice |del(.cost.listUnitPrice))
 	| (.cost.quantityElectronic = .cost.quantityPhysical |del(.cost.quantityPhysical)) 
 	| (.locations[].quantityElectronic = .cost.quantityElectronic| del(.locations[].quantityPhysical))
-	else . end) |
+	else . end |
 
 	# fix currency if missing
-	walk(
 	if type == "object" and .cost
 	then (
 	if .cost.currency == null then
 	.cost.currency = "USD"
 	else . end)
-	else . end) |
+	else . end |
+
+	# convert all prices to numbers
+	if type == "object" then
+		with_entries(
+			if (.key | test("Price")) then
+				(.value | tonumber?) as $n
+				| if $n != null then .value = $n else . end
+			else .
+		end ) 
+	else . end |	
 
 	# fix p/e mix 
-	walk(if type == "object" and .orderFormat == "P/E Mix" then 
-	(.cost.listUnitPriceElectronic = "0.00")
+	if type == "object" and .orderFormat == "P/E Mix" then 
+	(.cost.listUnitPriceElectronic = 0)
 	| (.cost.quantityElectronic = .cost.quantityPhysical) 
 	| (.locations[].quantityElectronic = .cost.quantityElectronic)
 	| (.locations[].quantity = (.cost.quantityPhysical|tonumber) + (.cost.quantityElectronic|tonumber))

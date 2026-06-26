@@ -357,10 +357,10 @@ if [[ "$MODE" == example* ]]; then
 				uuid
 			elif (.format? == "date-time") then
 				"2026-01-01T12:00:00Z"
-			elif (.type? == "object") then
-				"object"
+			elif (.type? == "object" and has("$ref")) then
+				"<object:" + .["$ref"] + ">"
 			elif (.type? == "string" and has("$ref")) then
-				"<ref:" + .["$ref"] + ">"
+				"<string:" + .["$ref"] + ">"
 			elif (.type? == "string" and has("pattern")) then
 				.pattern
 			else

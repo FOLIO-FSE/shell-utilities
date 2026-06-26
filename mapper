@@ -431,7 +431,7 @@ build_order_map() {
 
 	[[ -n ${vendorfield} ]] && echo -e "${vendorfield}\tfolio_code\n" > organizationCodeMap.tsv
 
-	[[ -n ${acqMethod} ]] && echo -e "${acqMethod}\tfolio_value\nApproval\tApproval Plan\nApproval plan\tApproval Plan\nDemand Driven Acquisitions (DDA)\tDemand Driven Acquisitions (DDA)\nDepository\tDepository\nExchange\tExchange\nFirm Order\tPurchase\nFree\tFree\nGift\tGift\ni\tInternal transfer\nMembership\tMembership\nMembership Title\tMembership\na\tApproval Plan\nc\tPurchase\nm\tMembership\nn\tPurchase\np\tPurchase\nPurchase at vendor system\tPurchase at vendor system\nt\tPurchase\nv\tPurchase At vendor system\n*\tOther" > acquisitionMethodMap.tsv
+	[[ -n ${acqMethod} ]] && echo -e "${acqMethod}\tfolio_value\nApproval\tApproval Plan\nApproval plan\tApproval Plan\nDemand Driven Acquisitions (DDA)\tDemand Driven Acquisitions (DDA)\nDepository\tDepository\nExchange\tExchange\nFirm Order\tPurchase\nFree\tFree\nGift\tGift\ni\tInternal transfer\nMembership\tMembership\nMembership Title\tMembership\na\tApproval Plan\nc\tPurchase\nm\tMembership\nn\tPurchase\np\tPurchase\nPurchase at vendor system\tPurchase At Vendor System\nt\tPurchase\nv\tPurchase At Vendor System\n*\tOther" > acquisitionMethodMap.tsv
 	[[ -n ${locationfield} ]] && echo -e "${locationfield}\tfolio_code\n*\tmigration" > locations_orders.tsv
 }
 

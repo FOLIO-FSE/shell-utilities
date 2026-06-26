@@ -203,20 +203,6 @@ fallback_field() {
   ' <<< "${object_map}")
 }
 
-fallback_value() {
-  local key="$1"
-  local value="$2"
-
-  object_map=$(jq --arg key "$key" --arg value "$value" '
-	.data |= map(
-	  if .folio_field == $key
-	  then . + { fallback_legacy_value: $value }
-	  else .
-	  end
-	)
-  ' <<< "${object_map}")
-}
-
 initialize() {
 	object_map='{"data":[]}'
 	outfile="${filetype}_mapping.json"

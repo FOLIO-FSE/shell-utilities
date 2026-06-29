@@ -76,12 +76,14 @@ jq -c '.compositePoLines[] |= if .details==null then .details={} else . end |
 	else .  end |
 
 	# fix currency if missing
-	if type == "object" and .cost
-	then (
-	if .cost.currency == null then
-	.cost.currency = "USD"
-	else . end)
-	else . end |
+	if type == "object" and .cost then
+	  (
+	    if .cost.currency == null then
+	      .cost.currency = "USD"
+	    else .  end
+	    | .cost.currency |= ascii_upcase
+	  )
+	else .  end |
 
 	# convert all prices to numbers
 	if type == "object" then

@@ -15,12 +15,17 @@ echo
 pv "${infile}" |sed 's/"\(true\|false\)"/\1/' | \
 jq -c '.compositePoLines[] |= if .details==null then .details={} else . end |
 
+	# delete invalid funds and expense classes
 	walk(
-	# delete if not properly mapped Fund UUID
-	if type == "object" and (.distributionType != null) 
-	and (.fundId |test("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")|not ) 
-	then del(.) 
-	else . end) |
+	  if type == "object" then
+	    if (.distributionType != null)
+	       and (.fundId | test("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$") | not)
+	    then del(.) 
+	    elif (has("expenseClassId")
+	          and (.expenseClassId | test("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$") | not))
+	    then
+	      del(.expenseClassId)    
+	    else .  end else .  end) |
 
 	# remove invalid characters from PO number
 	if .poNumber != null then .poNumber = (.poNumber|gsub("[^a-zA-Z0-9]"; "")) else . end |

@@ -12,98 +12,93 @@ echo
 # add details object if not present
 pv "${infile}" |sed 's/"\(true\|false\)"/\1/' | \
 jq -c '.compositePoLines |= map(
-
   if .orderFormat == "Physical Resource" then
-    (
-      (.cost.quantityPhysical // 1 | tonumber) as $qp |
+  (
+    ((.cost.quantityPhysical // 1) | tonumber) as $qp |
 
-      .cost.quantityPhysical = $qp |
-      del(.cost.quantityElectronic) |
+    .cost.quantityPhysical = $qp |
+    del(.cost.quantityElectronic) |
 
-      .locations //= [] |
-      .locations |= map(
-        .quantityPhysical = $qp |
-        del(.quantityElectronic) |
-        .quantity = $qp
-      )
+    .locations //= [] |
+    .locations |= map(
+      .quantityPhysical = $qp |
+      del(.quantityElectronic) |
+      .quantity = $qp
     )
+  )
 
   elif .orderFormat == "Electronic Resource" then
-    (
-      (
-        (.cost.quantityElectronic // .cost.quantityPhysical // 1)
-        | tonumber
-      ) as $qe |
+  (
+    ((.cost.quantityElectronic // .cost.quantityPhysical // 1) | tonumber) as $qe |
 
-      .cost.quantityElectronic = $qe |
-      .cost.listUnitPriceElectronic = ((.cost.listUnitPrice // 0) | tonumber) |
-      del(.cost.listUnitPrice) |
-      del(.cost.quantityPhysical) |
+    .cost.quantityElectronic = $qe |
+    .cost.listUnitPriceElectronic = ((.cost.listUnitPrice // 0) | tonumber) |
+    del(.cost.listUnitPrice) |
+    del(.cost.quantityPhysical) |
 
-      .locations //= [] |
-      .locations |= map(
-        .quantityElectronic = $qe |
-        del(.quantityPhysical) |
-        .quantity = $qe
-      )
+    .locations //= [] |
+    .locations |= map(
+      .quantityElectronic = $qe |
+      del(.quantityPhysical) |
+      .quantity = $qe
     )
+  )
 
   elif .orderFormat == "P/E Mix" then
-    (
-      (
-        (.cost.quantityPhysical // 1) | tonumber
-      ) as $qp |
-      (
-        (.cost.quantityElectronic // 1) | tonumber
-      ) as $qe |
+  (
+    ((.cost.quantityPhysical // 1) | tonumber) as $qp |
+    ((.cost.quantityElectronic // 1) | tonumber) as $qe |
 
-      ($qp | if . < 1 then 1 else . end) as $qp_min |
-      ($qe | if . < 1 then 1 else . end) as $qe_min |
+    ($qp | if . < 1 then 1 else . end) as $qp_min |
+    ($qe | if . < 1 then 1 else . end) as $qe_min |
 
-      .cost.quantityPhysical = $qp_min |
-      .cost.quantityElectronic = $qe_min |
-      .cost.listUnitPriceElectronic = ((.cost.listUnitPriceElectronic // 0) | tonumber) |
+    .cost.quantityPhysical = $qp_min |
+    .cost.quantityElectronic = $qe_min |
 
-      .locations //= [] |
-      .locations |= map(
-        .quantityPhysical = $qp_min |
-        .quantityElectronic = $qe_min |
-        .quantity = ($qp_min + $qe_min)
-      )
+    .locations //= [] |
+    .locations |= map(
+      .quantityPhysical = $qp_min |
+      .quantityElectronic = $qe_min |
+      .quantity = ($qp_min + $qe_min)
     )
+  )
 
   else .
   end
 ) | .compositePoLines[] |= if .details==null then .details={} else . end |
-	# delete invalid funds and expense classes
-	walk(
-	  if type == "object" then
-	    if (.distributionType != null)
-	       and (.fundId | test("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$") | not)
-	    then del(.) 
-	    elif (has("expenseClassId")
-	          and (.expenseClassId | test("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$") | not))
-	    then
-	      del(.expenseClassId)    
-	    else .  end else .  end) |
-
 	# set subscription for ongoing orders
 	if .orderType=="Ongoing" then (.ongoing.isSubscription = true | .ongoing.manualRenewal = false) else . end |
 
-	# populated rest of fund object if fundId is correct
+	# delete bad fund distributions
+	.compositePoLines |= map(
+	  if (
+	    (.fundDistribution? // [])
+	    | all(.fundId? and (.fundId | test("^[0-9a-f-]{36}$")))
+	  )
+	  then
+	    (
+	      .fundDistribution |= (
+	        (. // [])
+	        | map(
+	            .distributionType = "percentage"
+	            | .value = 100
+	            | if (.expenseClassId? and (.expenseClassId | test("^[0-9a-f-]{36}$") | not))
+	              then del(.expenseClassId)
+	              else .
+	              end
+	          )
+	      )
+	    )
+	  else
+	    del(.fundDistribution)
+	  end
+	) |
 	walk(
-	if type == "object" and .fundId 
-	then (
-	.distributionType = "percentage" |
-	.value = 100
-	)
-	else . end |
-
-	# delete empty arrays
-	(.. | arrays) |= 
-	if any(values) then map(values) else [] end | 
-	del(..|select(. == [])) |
-
+	  if type == "object" then
+    	with_entries(select(.value != []))
+  	else .
+  	end
+	) |
 	# coordinate price info
 	walk(
 	# fix currency if missing

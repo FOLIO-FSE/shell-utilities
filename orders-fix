@@ -9,12 +9,72 @@ echo "This utility analyzes composite order object files created by the FOLIO mi
 echo "Usage: orders-fix [objectfile.json]"
 echo
 
-#cat "${infile}" |jq 'walk(if type == "object" and (.distributionType != null) and (.fundId == null) then del(.) else . end)' > "${tmpfile}1.json"
-
 # add details object if not present
 pv "${infile}" |sed 's/"\(true\|false\)"/\1/' | \
-jq -c '.compositePoLines[] |= if .details==null then .details={} else . end |
+jq -c '.compositePoLines |= map(
 
+  if .orderFormat == "Physical Resource" then
+    (
+      (.cost.quantityPhysical // 1 | tonumber) as $qp |
+
+      .cost.quantityPhysical = $qp |
+      del(.cost.quantityElectronic) |
+
+      .locations //= [] |
+      .locations |= map(
+        .quantityPhysical = $qp |
+        del(.quantityElectronic) |
+        .quantity = $qp
+      )
+    )
+
+  elif .orderFormat == "Electronic Resource" then
+    (
+      (
+        (.cost.quantityElectronic // .cost.quantityPhysical // 1)
+        | tonumber
+      ) as $qe |
+
+      .cost.quantityElectronic = $qe |
+      .cost.listUnitPriceElectronic = ((.cost.listUnitPrice // 0) | tonumber) |
+      del(.cost.listUnitPrice) |
+      del(.cost.quantityPhysical) |
+
+      .locations //= [] |
+      .locations |= map(
+        .quantityElectronic = $qe |
+        del(.quantityPhysical) |
+        .quantity = $qe
+      )
+    )
+
+  elif .orderFormat == "P/E Mix" then
+    (
+      (
+        (.cost.quantityPhysical // 1) | tonumber
+      ) as $qp |
+      (
+        (.cost.quantityElectronic // 1) | tonumber
+      ) as $qe |
+
+      ($qp | if . < 1 then 1 else . end) as $qp_min |
+      ($qe | if . < 1 then 1 else . end) as $qe_min |
+
+      .cost.quantityPhysical = $qp_min |
+      .cost.quantityElectronic = $qe_min |
+      .cost.listUnitPriceElectronic = ((.cost.listUnitPriceElectronic // 0) | tonumber) |
+
+      .locations //= [] |
+      .locations |= map(
+        .quantityPhysical = $qp_min |
+        .quantityElectronic = $qe_min |
+        .quantity = ($qp_min + $qe_min)
+      )
+    )
+
+  else .
+  end
+) | .compositePoLines[] |= if .details==null then .details={} else . end |
 	# delete invalid funds and expense classes
 	walk(
 	  if type == "object" then
@@ -26,9 +86,6 @@ jq -c '.compositePoLines[] |= if .details==null then .details={} else . end |
 	    then
 	      del(.expenseClassId)    
 	    else .  end else .  end) |
-
-	# remove invalid characters from PO number
-	if .poNumber != null then .poNumber = (.poNumber|gsub("[^a-zA-Z0-9]"; "")) else . end |
 
 	# set subscription for ongoing orders
 	if .orderType=="Ongoing" then (.ongoing.isSubscription = true | .ongoing.manualRenewal = false) else . end |
@@ -42,33 +99,6 @@ jq -c '.compositePoLines[] |= if .details==null then .details={} else . end |
 	)
 	else . end |
 
-	# and delete fundId mapped to note
-	if type == "string" and (. |test("..[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")) 
-	then del(.)
-	else . end |
-
-	if type == "object" and .locationId and (.quantity |type == "string") 
-	then (
-	.quantity = (.quantity |tonumber) |
-	if .quantity == 0 then .quantity = 1 else . end |
-	.quantityPhysical = .quantity 
-	)
-	else . end |
-
-	if type == "object" and (.quantityElectronic? != null) then
-		.quantityElectronic |= tonumber?	
-		| if .quantityElectronic == 0
-			then del(.quantityElectronic)
-			else . end
-	else . end |
-
-	if type == "object" and (.quantityPhysical |type == "string") 
-	then (
-	.quantityPhysical = (.quantityPhysical |tonumber) |
-	if .quantityPhysical == 0 then .quantityPhysical = 1 else . end 
-	)
-	else . end)  |
-
 	# delete empty arrays
 	(.. | arrays) |= 
 	if any(values) then map(values) else [] end | 
@@ -76,10 +106,6 @@ jq -c '.compositePoLines[] |= if .details==null then .details={} else . end |
 
 	# coordinate price info
 	walk(
-	if type == "object" and ((.cost.poLineEstimatedPrice == null) and (.cost.currency != null)) then 
-	(.cost.poLineEstimatedPrice, .cost.listUnitPrice) = 0.00 
-	else .  end |
-
 	# fix currency if missing
 	if type == "object" and .cost then
 	  (
@@ -89,7 +115,6 @@ jq -c '.compositePoLines[] |= if .details==null then .details={} else . end |
 	    | .cost.currency |= ascii_upcase
 	  )
 	else .  end |
-
 	# convert all prices to numbers
 	if type == "object" then
 	  (
@@ -108,62 +133,8 @@ jq -c '.compositePoLines[] |= if .details==null then .details={} else . end |
 	  )
 	else
 	  .
-	end |
-
-	# fix other
-	if type == "object" and .orderFormat == "Other" then
-	  (
-	    # ensure locations array exists
-	    (.locations //= [])
-	    | del(.cost.quantityElectronic)
-	    | (.locations |= map(
-	        del(.quantityElectronic)
-	        | .quantity = (.quantityPhysical // 1)
-	      ))
-	  )
-	else
-	  .
-	end |
-
-	# fix physical
-	if type == "object" and .orderFormat == "Physical Resource" then
-	  (
-	    # ensure locations array exists
-	    .locations //= [] |
-	    # remove electronic quantity at cost level
-	    del(.cost.quantityElectronic) |
-	    # update each location safely
-	    .locations |= map(
-	      del(.quantityElectronic)
-	      | .quantity = (.quantityPhysical // 1)
-	    )
-	  )
-	else
-	  .
-	end |
-
-	# fix electronic
-	if type == "object" and .orderFormat == "Electronic Resource" then (
-	(.cost.listUnitPriceElectronic = .cost.listUnitPrice |del(.cost.listUnitPrice))
-	| (.cost.quantityElectronic = .cost.quantityPhysical |del(.cost.quantityPhysical)) 
-	| (.locations[].quantityElectronic = .cost.quantityElectronic| del(.locations[].quantityPhysical))
-	| (.locations[].quantity = .locations[].quantityElectronic)
+	end 
 	)
-	else . end |
-
-	# fix p/e mix 
-	if type == "object" and .orderFormat == "P/E Mix" then
-	  (
-	    .quantityPhysical //= 1 | .quantityElectronic //= 1
-	    | .cost.listUnitPriceElectronic = 0
-	    | (.locations[].quantityElectronic = .quantityElectronic)
-	    | (.locations[].quantity =
-	        ((.quantityPhysical | tonumber) + (.quantityElectronic | tonumber))
-	      )
-	  )
-	else
-	  .
-	end)
 ' > "${outfile}"
 
 echo

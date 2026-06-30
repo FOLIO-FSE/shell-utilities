@@ -12,21 +12,27 @@ echo
 # add details object if not present
 pv "${infile}" |sed 's/"\(true\|false\)"/\1/' | \
 jq -c '.compositePoLines |= map(
-  if .orderFormat == "Physical Resource" then
-  (
-    ((.cost.quantityPhysical // 1) | tonumber) as $qp |
-
-    .cost.quantityPhysical = $qp |
-    del(.cost.quantityElectronic) |
-
-    .locations //= [] |
-    .locations |= map(
-      .quantityPhysical = $qp |
-      del(.quantityElectronic) |
-      .quantity = $qp
-    )
-  )
-
+if .orderFormat == "Physical Resource" then
+	(
+	  ((.cost.quantityPhysical // 1) | tonumber) as $qp |
+	
+	  # ensure valid physical price
+	  .cost.listUnitPrice = ((.cost.listUnitPrice // 0) | tonumber) |
+	
+	  # remove electronic-only fields
+	  del(.cost.quantityElectronic) |
+	  del(.cost.listUnitPriceElectronic) |
+	
+	  # quantities
+	  .cost.quantityPhysical = $qp |
+	
+	  .locations //= [] |
+	  .locations |= map(
+	    .quantityPhysical = $qp |
+	    del(.quantityElectronic) |
+	    .quantity = $qp
+	  )
+	)
   elif .orderFormat == "Electronic Resource" then
   (
     ((.cost.quantityElectronic // .cost.quantityPhysical // 1) | tonumber) as $qe |
@@ -48,6 +54,8 @@ jq -c '.compositePoLines |= map(
   (
     ((.cost.quantityPhysical // 1) | tonumber) as $qp |
     ((.cost.quantityElectronic // 1) | tonumber) as $qe |
+    .cost.listUnitPrice = ((.cost.listUnitPrice // 0) | tonumber) |
+    .cost.listUnitPriceElectronic = ((.cost.listUnitPriceElectronic // 0) | tonumber) |
 
     ($qp | if . < 1 then 1 else . end) as $qp_min |
     ($qe | if . < 1 then 1 else . end) as $qe_min |

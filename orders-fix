@@ -73,9 +73,18 @@ if .orderFormat == "Physical Resource" then
 
   else .
   end
-) | .compositePoLines[] |= if .details==null then .details={} else . end |
+) | .compositePoLines[] |= if .details==null then .details={} else . end 
 	# set subscription for ongoing orders
-	if .orderType=="Ongoing" then (.ongoing.isSubscription = true | .ongoing.manualRenewal = false) else . end |
+	| (.orderType //= "Ongoing")
+	| if .orderType == "Ongoing" then
+	  .ongoing |= (
+	    . // {}                      # create if missing
+	    | .isSubscription = true
+	    | .manualRenewal = false
+	  )
+	elif .orderType == "One-Time" then
+	  del(.ongoing)
+	else .  end |
 
 	# delete bad fund distributions
 	.compositePoLines |= map(

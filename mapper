@@ -295,7 +295,7 @@ build_order_map() {
 		  expirationdate )
 				addfield compositePoLines[0].details.subscriptionTo
 			;;
-		  detailslinedescription | polinenote | polnote | polinedescription | productid | productidtype )
+		  detailslinedescription | descriptioninternalnote | intnote | polinenote | polnote | polinedescription | productid | productidtype )
 				addfield compositePoLines[0].description
 			;;
 		  userlimit | vendorreferencenumber | vendorreferencenumbers | vendorreferencetype )
@@ -356,11 +356,11 @@ build_order_map() {
 				addvalue notes[${note_iter}] "(${field})"
 				note_iter=$(($note_iter + 1))
 			;;
-		  note | noteorder | ordernote | descriptioninternalnote | notesnote1 | notesnote2 )
+		  note | noteorder | ordernote | notesnote1 | notesnote2 )
 				addfield notes[${note_iter}]
 				note_iter=$(($note_iter + 1))
 			;;
-		  intnote | ongoingnote )
+		  ongoingnote )
 				addfield ongoing.notes
 			;;
 		  ongoingissubscription )

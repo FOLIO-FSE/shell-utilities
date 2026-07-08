@@ -406,6 +406,9 @@ case $rec_type in
 "preceedingsucceeding")
 	rec_type="precedingSucceedingTitles"
 	endpoint="preceding-succeeding-titles";;
+"protectedfields")
+	rec_type="marcFieldProtectionSettings"
+	endpoint="field-protection-settings/marc";;
 "proxies")
 	rec_type="proxiesFor"
 	endpoint="proxiesfor";;
@@ -463,7 +466,7 @@ case $rec_type in
 "vouchers")
 	endpoint="voucher/vouchers";;
 *)
-	echo "Record type '${recordtype}' not found. Supported types are accounts, acqmethods, acqunits, actionprofiles, actualcostrecords, addresstypes, agreements, agreements-picklists, agreements-suppl, authorities, authorities-source, authorities-srs, automaticblocks, batch-groups, boundwiths, budgets, campuses, categories, circ-loans, circlog, composite-orders, contacts, coursedepartments, courselistings, courses, coursetypes, departments, eholdings-packages, eholdings-titles, entitlements, entitytypes, expenseclasses, feefines, feefineactions, fiscalyears, fixedduedateschedules, fund-expense, fund-groups, funds, fundtypes, groups, holdings, holdingstypes, holdings-srs, identifiertypes, importjobs, inhouse,  interfaces, instance-relationships, instancerelationshiptypes, instances, institutions, itemdamagedstatuses, items, inventory, inventory-items, invoices, invoice-lines, exportjobs, ledgers, libraries, licenses, licenses-picklists, licenses-terms, locations, loanpolicies, loantypes, loan-history, loans, lostitempolicies, manualblocks, mappingprofiles, marcspecs, matchprofiles, mattypes, mtypes, notes, notices, noticepolicies, orderprefixes, orderlines, orders, organizations, overduefinepolicies, patronblockconditions, patronblocklimits, permissions, permissionusers, policies, polines, preceedingsucceeding, proxies, receivinghistory, requestpolicies, requestprefs, requests, roles, schedulednotices, servicepoints, servicepointsusers, sourcerecords, srs, statcodes, tags, tasks, templates, transactions, usergroups, users, vouchers."
+	echo "Record type '${recordtype}' not found. Supported types are accounts, acqmethods, acqunits, actionprofiles, actualcostrecords, addresstypes, agreements, agreements-picklists, agreements-suppl, authorities, authorities-source, authorities-srs, automaticblocks, batch-groups, boundwiths, budgets, campuses, categories, circ-loans, circlog, composite-orders, contacts, coursedepartments, courselistings, courses, coursetypes, departments, eholdings-packages, eholdings-titles, entitlements, entitytypes, expenseclasses, feefines, feefineactions, fiscalyears, fixedduedateschedules, fund-expense, fund-groups, funds, fundtypes, groups, holdings, holdingstypes, holdings-srs, identifiertypes, importjobs, inhouse,  interfaces, instance-relationships, instancerelationshiptypes, instances, institutions, itemdamagedstatuses, items, inventory, inventory-items, invoices, invoice-lines, exportjobs, ledgers, libraries, licenses, licenses-picklists, licenses-terms, locations, loanpolicies, loantypes, loan-history, loans, lostitempolicies, manualblocks, mappingprofiles, marcspecs, matchprofiles, mattypes, mtypes, notes, notices, noticepolicies, orderprefixes, orderlines, orders, organizations, overduefinepolicies, patronblockconditions, patronblocklimits, permissions, permissionusers, policies, polines, preceedingsucceeding, protectedfields, proxies, receivinghistory, requestpolicies, requestprefs, requests, roles, schedulednotices, servicepoints, servicepointsusers, sourcerecords, srs, statcodes, tags, tasks, templates, transactions, usergroups, users, vouchers."
 	exit;;
 esac
 

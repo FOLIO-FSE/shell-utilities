@@ -316,7 +316,7 @@ build_order_map() {
 		  bibid | bibno | mmsid | mmsrecordid | recordbiblio | recordbibliographic | recordnumberbibliographic | systemidentifierbibid )
 			addfield compositePoLines[0].instanceId
 			;;
-		  location | locationcode | locationid | locationidcode )
+		  location | locationcode | locationid | locationidcode | locationname )
 				addfield compositePoLines[0].locations[0].locationId
 				locationfield="${field}"
 			;;
@@ -452,6 +452,7 @@ build_holdings_map() {
 				;;
 			id | itemid | itempid | physicalitemid | recorditem | z30reckey)
 				addfield legacyIdentifier
+				addfield formerIds[0]
 				itemfield="${field}"
 				;;
 			callitem | permanentcallnumber | shelfmark )
@@ -492,9 +493,10 @@ build_holdings_map() {
 				if [[ -z ${bibfield} ]];then
 					bibfield=${field}
 					addfield instanceId
+					addfield formerIds[1]
 				fi	
 			;;
-			loc | location )
+			loc | location | locationname )
 				if [[ -z ${locationfield} ]];then
 					addfield permanentLocationId
 					locationfield=${field}

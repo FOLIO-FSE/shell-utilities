@@ -483,10 +483,10 @@ build_holdings_map() {
 					addfield callNumber
 				fi	
 			;;
-			callprefix | callnumberprefix )
+			callprefix | callnumberprefix | prefix)
 				addfield callNumberPrefix
 			;;
-			callsuffix | callnumbersuffix )
+			callsuffix | callnumbersuffix | suffix )
 				addfield callNumberPrefix
 			;;
 			oclc | oclcnumber )

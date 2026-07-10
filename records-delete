@@ -172,7 +172,7 @@ case $deletetype in
 	batchsize=5
 	recordtype="bl-users/by-id";;
 *)
-	echo "Record type '${deletetype}' not found. Supported types are accounts, actionprofiles, boundwiths, campuses, contacts, coursedepartments, courselistings, coursetypes, departments, expenseclasses, feefineactions, funds, groups, holdings, instances, instance-types, institutions, itemdamagedstatuses, items, libraries, licenses, licenses-terms, loan history, loans, loantypes, locations, mattypes, notes, notices, organizations, proxies, requests, schedulednotices, servicepoints, srs, tags, tasks, templates, transactions, usergroups, users, users-safe. Objects with attached records will need specialized delete routines"
+	echo "Record type '${deletetype}' not found. Supported types are accounts, actionprofiles, authorities, boundwiths, campuses, contacts, coursedepartments, courselistings, coursetypes, departments, expenseclasses, feefineactions, funds, groups, holdings, instances, instance-types, institutions, itemdamagedstatuses, items, libraries, licenses, licenses-terms, loan history, loans, loantypes, locations, mattypes, notes, notices, organizations, proxies, requests, schedulednotices, servicepoints, srs, tags, tasks, templates, transactions, usergroups, users, users-safe. Objects with attached records will need specialized delete routines"
 	exit;;
 esac
 

@@ -448,6 +448,7 @@ build_holdings_map() {
 				;;
 			bibid | bibno | mmsid | mmsrecordid | recordbiblio | recordbibliographic | recordnumberbibliographic | systemidentifierbibid )
 				addfield instanceId
+				addfield formerIds[1]
 				bibfield="${field}"
 				;;
 			id | itemid | itempid | physicalitemid | recorditem | z30reckey)
@@ -455,7 +456,7 @@ build_holdings_map() {
 				addfield formerIds[0]
 				itemfield="${field}"
 				;;
-			callitem | permanentcallnumber | shelfmark )
+			callitem | itemcallnumber | itemclassnumber | permanentcallnumber | shelfmark )
 				addfield callNumber 
 				callfield="${field}"
 				;;
@@ -487,7 +488,7 @@ build_holdings_map() {
 				addfield callNumberPrefix
 			;;
 			callsuffix | callnumbersuffix | suffix )
-				addfield callNumberPrefix
+				addfield callNumberSuffix
 			;;
 			oclc | oclcnumber )
 				if [[ -z ${bibfield} ]];then
@@ -522,7 +523,7 @@ build_holdings_map() {
 
 	if [[ -z ${holdidfield} ]];then
 		field=${itemfield}
-		addfield formerIds[0]
+		[[ -z ${itemfield} ]] && addfield formerIds[0]
 	fi
 
 	[[ -n ${callfield} ]] && echo -e "folio_name\t${callfield}\nLibrary of Congress classification\t1Library of Congress classification\t*" > call_number_type_mapping.tsv

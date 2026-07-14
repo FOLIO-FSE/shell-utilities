@@ -1,0 +1,7 @@
+#!/usr/bin/bash
+
+path="${1}"
+
+[[ ! -d "${path}" ]] && echo "You must enter a path" && exit
+
+find "${path}" -type f -printf '%T@ %p\n' | sort -nr | head -10

@@ -103,6 +103,8 @@ case $recordtype in
 	recordtype="holdings-storage/holdings";;
 "identifiertypes")
 	recordtype="identifier-types";;
+"importprofiles")
+	recordtype="data-import-profiles/profileSnapshots";;
 "instances")
 	recordtype="instance-storage/instances";;
 "instance-formats")
@@ -192,7 +194,7 @@ case $recordtype in
 "users")
 	recordtype="users";;
 *)
-	echo "Record type '${recordtype}' not found. Supported types are accounts, actionprofiles, agreements, agreements-picklists, authorities, authorities-source, boundwiths, campuses, composite-orders, groups, feefineactions, fiscalyears, funds, holdings, identifiertypes, instances, instance-formats, instance-note-types, instance-types, interfaces, invoices, invoice-lines, items, jobprofiles, libraries, licenses, licenses-picklists, licenses-terms, loans, locations, manualblocks, matchprofiles, mattypes, nature-of-content, notices, orderlines, organizations, parsedrecords, permissions, polines, precedingsucceeding, requests, servicepoints, sharinginstances, srs, tags, templates, users."
+	echo "Record type '${recordtype}' not found. Supported types are accounts, actionprofiles, agreements, agreements-picklists, authorities, authorities-source, boundwiths, campuses, composite-orders, groups, feefineactions, fiscalyears, funds, holdings, identifiertypes, importprofiles, instances, instance-formats, instance-note-types, instance-types, interfaces, invoices, invoice-lines, items, jobprofiles, libraries, licenses, licenses-picklists, licenses-terms, loans, locations, manualblocks, matchprofiles, mattypes, nature-of-content, notices, orderlines, organizations, parsedrecords, permissions, polines, precedingsucceeding, requests, servicepoints, sharinginstances, srs, tags, templates, users."
 	exit;;
 esac
 

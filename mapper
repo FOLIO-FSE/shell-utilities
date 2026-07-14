@@ -373,7 +373,7 @@ build_order_map() {
 			;;
 		  lineitemtype | ordtype | ordertype )
 				if [[ -z ${ordType} ]]; then
-					addreplacerules orderType '"Approval Plan":"One-Time","Continuation":"Ongoing","Depository":"One-Time","Firm Order":"One-Time","Gift":"One-Time","m":"One-Time","one-time":"One-Time","One-time":"One-Time","ongoing":"Ongoing","r":"Ongoing","Single-part":"One-Time","Standing order":"Ongoing","Subscription":"Ongoing"'
+					addreplacerules orderType '"Approval Plan":"One-Time","Continuation":"Ongoing","Depository":"One-Time","Firm Order":"One-Time","Gift":"One-Time","One-time":"One-Time","Single-part":"One-Time","Standing order":"Ongoing","Subscription":"Ongoing","m":"One-Time","n":"One-Time","one-time":"One-Time","ongoing":"Ongoing","p":"Ongoing","r":"Ongoing","s":"One-Time"'
 					ordType=${field}
 				fi
 			;;

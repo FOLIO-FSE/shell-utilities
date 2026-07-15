@@ -1,0 +1,41 @@
+#!/usr/bin/bash
+auth 2>/dev/null || authn 2>/dev/null
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+serials_file="serials.tsv"
+logfile="serials.log"
+rm -f ${logfile}
+
+create_serial() {
+	title=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${instance_uuid}" |jq -r .title)
+	titleId=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/orders-storage/titles?query=poLineId==${pol_uuid}" |jq -r .title)
+
+IFS='' read -r -d '' serial << EndOfJSON
+{
+  "serialStatus": "active",
+  "description": "${description}",
+  "orderLine": {
+		"remoteId": "${pol_uuid}",
+		"title": "${title}",
+		"titleId": "${titleId}"
+	}
+}
+EndOfJSON
+}
+
+numserials=$(cat ${serials_file} |wc -l)
+
+while IFS=$'\t' read -r instance_uuid pol_uuid description; do
+	echo -en "Processing record $counter of ${numserials}.\r"
+
+	create_serial
+
+	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${serial}" "${okapi_url}/serials-management/serials")
+	echo -e "${apicall//$'\n'/ }" >> ${logfile}
+
+done < ${serials_file}
+echo 
+echo "Processing completed. Server responses are output to ${logfile}"

@@ -435,6 +435,8 @@ case $rec_type in
 	endpoint="roles";;
 "rulesets")
 	rec_type=""
+	num_retrieved=100
+	limitOrPerPage="perPage"
 	no_total="yes"
 	jqexpr="jq -c '.[]'"
 	endpoint="serials-management/modelRulesets";;
@@ -503,7 +505,7 @@ fi
 if [[ $limitOrPerPage == "limit" ]];then
 	num_records=$(curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&${limitOrPerPage}=${startlimit}" |jq -r ".${totalRecords}? // 0")
 else
-	num_records=$(curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&${limitOrPerPage}=${num_retrieved}" |jq -r .${totalRecords})
+	num_records=$(curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${query}&${limitOrPerPage}=${num_retrieved}" |jq -r ".${totalRecords}? // 0")
 fi
 
 for (( offset=0; offset<=$num_records; ));do

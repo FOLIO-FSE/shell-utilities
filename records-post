@@ -14,6 +14,7 @@ recordtype=$1
 operation=${2^^}
 batchsize=10
 accept="text/plain"
+sleep="no"
 
 outfile="${recordtype}_posting.log"
 rm -f "${outfile}"
@@ -172,6 +173,9 @@ case $recordtype in
 "requests")
 	recordtype="circulation/requests";;
 "rulesets")
+	batchsize=1
+	operation="POST"
+	sleep="yes"
 	recordtype="serials-management/modelRulesets";;
 "servicepoints")
 	recordtype="service-points";;
@@ -212,6 +216,7 @@ while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
 
 		counter=$(($counter + 1))
 		seq=$(($seq + 1))
+		[[ ${sleep} == "yes" ]] && sleep 1
 	done
 	wait
 

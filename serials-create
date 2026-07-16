@@ -10,8 +10,23 @@ logfile="serials.log"
 rm -f ${logfile}
 
 create_serial() {
-	title=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/instance-storage/instances/${instance_uuid}" |jq -r .title)
-	titleId=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/orders-storage/titles?query=poLineId==${pol_uuid}" |jq -r .title)
+	title=$(
+	  curl -s -X GET \
+	    -H "Accept: application/json" \
+	    -H "X-Okapi-Tenant: ${tenant}" \
+	    -H "x-okapi-token: ${okapi_token}" \
+	    "${okapi_url}/orders-storage/po-lines/${pol_uuid}" |
+	  jq -r '.titleOrPackage // empty' 2>/dev/null
+	)
+	
+	titleId=$(
+	  curl -s -X GET \
+	    -H "Accept: application/json" \
+	    -H "X-Okapi-Tenant: ${tenant}" \
+	    -H "x-okapi-token: ${okapi_token}" \
+	    "${okapi_url}/orders-storage/titles?query=poLineId==${pol_uuid}" |
+	  jq -r '.title // empty' 2>/dev/null
+	)
 
 IFS='' read -r -d '' serial << EndOfJSON
 {

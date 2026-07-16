@@ -175,7 +175,6 @@ case $recordtype in
 "rulesets")
 	batchsize=1
 	operation="POST"
-	sleep="yes"
 	recordtype="serials-management/modelRulesets";;
 "servicepoints")
 	recordtype="service-points";;
@@ -216,7 +215,6 @@ while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
 
 		counter=$(($counter + 1))
 		seq=$(($seq + 1))
-		[[ ${sleep} == "yes" ]] && sleep 1
 	done
 	wait
 

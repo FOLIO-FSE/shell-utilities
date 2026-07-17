@@ -8,7 +8,7 @@ declare -A category_dict
 counter=1
 
 infile="org_contact.tsv"
-dos2unix infile
+dos2unix ${infile}
 
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
@@ -50,7 +50,7 @@ parse_contact() {
 
 while IFS=$'\n' read -r line;do
 	line=$(echo "${line}" |tr "\t" "^" | tr -d '"')
-	IFS='^' read -r code lname fname title note email description category1 category2 <<< ${line}
+	IFS='^' read -r code lname fname email phone notes category1 category2 <<< ${line}
 	#IFS='^' read -r code contact <<< ${line}
 
 	notes=$(echo -n "${note}" |jq . -aRs)
@@ -89,12 +89,12 @@ while IFS=$'\n' read -r line;do
 	categories="[]"
 
 	if [[ ${category1} != "" ]];then
-		cat="${cat,,}"
+		cat="${category1,,}"
 		cat="${category_dict[${cat}]}"
 		if [[ "$cat" =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f] ]];then categories=$(echo "${categories}" |jq -rc --arg CAT "${cat}" ' . += [ $CAT ]');fi
 	fi
 	if [[ ${category2} != "" ]];then
-		cat="${cat,,}"
+		cat="${category2,,}"
 		cat="${category_dict[${cat}]}"
 		if [[ "$cat" =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f] ]];then categories=$(echo "${categories}" |jq -rc --arg CAT "${cat}" ' . += [ $CAT ]');fi
 	fi

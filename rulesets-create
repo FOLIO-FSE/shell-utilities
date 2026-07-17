@@ -27,5 +27,5 @@ EOF
 numrulesets=${#ruleset[@]}
 
 for (( which_ruleset=0; which_ruleset<${numrulesets}; which_ruleset++));do
-	(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${ruleset[which_ruleset]}" "${okapi_url}/serials-management/modelRulesets"
+	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${ruleset[which_ruleset]}" "${okapi_url}/serials-management/modelRulesets"
 done

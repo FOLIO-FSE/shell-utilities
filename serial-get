@@ -1,0 +1,13 @@
+#!/usr/bin/bash
+auth 2>/dev/null || authn 2>/dev/null
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+serial_uuid="${1}"
+
+if [[ ${serial_uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
+	curl -s -w '\n' -X GET -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/serials-management/serials/${serial_uuid}"
+else
+	echo "You must enter a valid uuid"
+fi

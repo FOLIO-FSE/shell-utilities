@@ -121,6 +121,8 @@ case $deletetype in
 	recordtype="locations";;
 "mattypes")
 	recordtype="material-types";;
+"modelrulesets")
+	recordtype="serials-management/modelRulesets";;
 "notes")
 	recordtype="notes";;
 "notices")
@@ -144,7 +146,7 @@ case $deletetype in
 "requests")
 	recordtype="circulation/requests";;
 "rulesets")
-	recordtype="serials-management/modelRulesets";;
+	recordtype="serials-management/rulesets";;
 "schedulednotices")
 	singlerecord="yes"
 	recordtype="scheduled-notice-storage/scheduled-notices";;
@@ -174,7 +176,7 @@ case $deletetype in
 	batchsize=5
 	recordtype="bl-users/by-id";;
 *)
-	echo "Record type '${deletetype}' not found. Supported types are accounts, actionprofiles, authorities, boundwiths, campuses, contacts, coursedepartments, courselistings, coursetypes, departments, expenseclasses, feefineactions, funds, groups, holdings, instances, instance-types, institutions, itemdamagedstatuses, items, libraries, licenses, licenses-terms, loan history, loans, loantypes, locations, mattypes, notes, notices, organizations, proxies, requests, rulesets, schedulednotices, servicepoints, srs, tags, tasks, templates, transactions, usergroups, users, users-safe. Objects with attached records will need specialized delete routines"
+	echo "Record type '${deletetype}' not found. Supported types are accounts, actionprofiles, authorities, boundwiths, campuses, contacts, coursedepartments, courselistings, coursetypes, departments, expenseclasses, feefineactions, funds, groups, holdings, instances, instance-types, institutions, itemdamagedstatuses, items, libraries, licenses, licenses-terms, loan history, loans, loantypes, locations, mattypes, modelrulesets, notes, notices, organizations, proxies, requests, rulesets, schedulednotices, servicepoints, srs, tags, tasks, templates, transactions, usergroups, users, users-safe. Objects with attached records will need specialized delete routines"
 	exit;;
 esac
 

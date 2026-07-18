@@ -54,11 +54,11 @@ postrecord() {
 	local apicall
 
 	if [[ ${operation} == "POST" ]];then
-		apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/${recordtype}")
+		apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" --data-binary @- "${okapi_url}/${recordtype}" <<< "${record}")
 	else
 		id=$(echo "${record}" |jq -r .id)
 
-		apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${record}" "${okapi_url}/${recordtype}/${id}")
+		apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}"  --data-binary @- "${okapi_url}/${recordtype}/${id}" <<< "${record}")
 	fi
 	
 	echo "${apicall}" | tr -d '\n' |sed 's/$/\n/' > "tmp_records.${seq}"

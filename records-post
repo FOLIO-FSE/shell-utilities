@@ -146,6 +146,10 @@ case $recordtype in
 	recordtype="data-import-profiles/matchProfiles";;
 "mattypes")
 	recordtype="material-types";;
+"modelrulesets")
+	batchsize=1
+	operation="POST"
+	recordtype="serials-management/modelRulesets";;
 "moveholdings")
 	batchsize=6
 	recordtype="inventory/holdings/move";;
@@ -175,7 +179,7 @@ case $recordtype in
 "rulesets")
 	batchsize=1
 	operation="POST"
-	recordtype="serials-management/modelRulesets";;
+	recordtype="serials-management/rulesets";;
 "servicepoints")
 	recordtype="service-points";;
 "sharinginstances")

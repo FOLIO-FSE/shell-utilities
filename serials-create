@@ -55,9 +55,11 @@ EndOfJSON
 }
 
 numserials=$(cat ${serials_file} |wc -l)
+counter=0
 
 #while IFS=$'\t' read -r instance_uuid pol_uuid template_uuid description; do
 while IFS=$'\t' read -r instance_uuid pol_uuid frequency description; do
+	counter=$((counter + 1))
 	echo -en "Processing record $counter of ${numserials}.\r"
 
 	create_serial

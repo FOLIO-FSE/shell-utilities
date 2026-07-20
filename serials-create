@@ -9,6 +9,19 @@ serials_file="serials.tsv"
 logfile="serials.log"
 rm -f ${logfile}
 
+triennial='{"patternType":"year_date","templateConfig":{"enumerationRules":[],"chronologyRules":[{"ruleFormat":{"yearFormat":{"value":"full"}},"templateMetadataRuleFormat":"chronology_year","ruleLocale":"en","index":0}],"templateString":"{{chronology1.year}}"},"rulesetStatus":{"value":"active"},"recurrence":{"issues":1,"period":3,"timeUnit":{"value":"year"},"rules":[{"pattern":{"day":1,"month":{"value":"january"}},"patternType":"year_date","ordinal":1}]},"owner":{"id":"4d851483-6864-477e-8a34-da2d8a953baf"},"description":"Triennial"}'
+biennial='{"patternType":"year_date","templateConfig":{"enumerationRules":[],"chronologyRules":[{"ruleFormat":{"yearFormat":{"value":"full"}},"templateMetadataRuleFormat":"chronology_year","ruleLocale":"en","index":0}],"templateString":"{{chronology1.year}}"},"rulesetStatus":{"value":"active"},"recurrence":{"issues":1,"period":2,"timeUnit":{"value":"year"},"rules":[{"pattern":{"day":1,"month":{"value":"january"}},"patternType":"year_date","ordinal":1}]},"owner":{"id":"e8079127-4269-48d9-988b-5eee8e4d61af"},"description":"Biennial"}'
+annual='{"patternType":"year_date","templateConfig":{"enumerationRules":[],"chronologyRules":[{"ruleFormat":{"yearFormat":{"value":"full"}},"templateMetadataRuleFormat":"chronology_year","ruleLocale":"en","index":0}],"templateString":"{{chronology1.year}}"},"rulesetStatus":{"value":"active"},"recurrence":{"issues":1,"period":1,"timeUnit":{"value":"year"},"rules":[{"pattern":{"day":1,"month":{"value":"january"}},"patternType":"year_date","ordinal":1}]},"owner":{"id":"e8079127-4269-48d9-988b-5eee8e4d61af"},"description":"Annual"}'
+semiannual='{"patternType":"year_date","templateConfig":{"enumerationRules":[{"ruleFormat":{"levels":[{"format":{"value":"number"},"sequence":{"value":"continuous"},"units":1,"index":0}]},"templateMetadataRuleFormat":"enumeration_numeric","index":0}],"chronologyRules":[{"ruleFormat":{"yearFormat":{"value":"full"}},"templateMetadataRuleFormat":"chronology_year","ruleLocale":"en","index":0}],"templateString":"{{chronology1.year}}/{{enumeration1.level1}}"},"rulesetStatus":{"value":"active"},"recurrence":{"issues":2,"period":1,"timeUnit":{"value":"year"},"rules":[{"pattern":{"day":1,"month":{"value":"january"}},"patternType":"year_date","ordinal":1},{"pattern":{"day":1,"month":{"value":"july"}},"patternType":"year_date","ordinal":1}]},"owner":{"id":"e8079127-4269-48d9-988b-5eee8e4d61af"},"description":"Semiannual"}'
+triannual='{"patternType":"year_date","templateConfig":{"enumerationRules":[{"ruleFormat":{"levels":[{"format":{"value":"number"},"sequence":{"value":"continuous"},"units":1,"index":0},{"format":{"value":"number"},"sequence":{"value":"reset"},"units":3,"index":1}]},"templateMetadataRuleFormat":"enumeration_numeric","index":0}],"chronologyRules":[{"ruleFormat":{"yearFormat":{"value":"full"}},"templateMetadataRuleFormat":"chronology_year","ruleLocale":"en","index":0}],"templateString":"{{chronology1.year}}/{{enumeration1.level1}}/{{enumeration1.level2}}"},"rulesetStatus":{"value":"active"},"recurrence":{"issues":3,"period":1,"timeUnit":{"value":"year"},"rules":[{"pattern":{"day":1,"month":{"value":"april"}},"patternType":"year_date","ordinal":1},{"pattern":{"day":1,"month":{"value":"july"}},"patternType":"year_date","ordinal":1},{"pattern":{"day":1,"month":{"value":"november"}},"patternType":"year_date","ordinal":1}]},"owner":{"id":"e8079127-4269-48d9-988b-5eee8e4d61af"},"description":"Triannual"}'
+quarterly='{"patternType":"month_date","templateConfig":{"enumerationRules":[{"ruleFormat":{"levels":[{"format":{"value":"number"},"sequence":{"value":"continuous"},"units":1,"index":0}]},"templateMetadataRuleFormat":"enumeration_numeric","index":0}],"chronologyRules":[{"ruleFormat":{"yearFormat":{"value":"full"}},"templateMetadataRuleFormat":"chronology_year","ruleLocale":"en","index":0}],"templateString":"{{chronology1.year}}/{{enumeration1.level1}}"},"rulesetStatus":{"value":"active"},"recurrence":{"issues":1,"period":3,"timeUnit":{"value":"month"},"rules":[{"pattern":{"day":1},"patternType":"month_date","ordinal":1}]},"owner":{"id":"e8079127-4269-48d9-988b-5eee8e4d61af"},"description":"Quarterly"}'
+bimonthly='{"patternType":"month_date","templateConfig":{"enumerationRules":[{"ruleFormat":{"levels":[{"format":{"value":"number"},"sequence":{"value":"continuous"},"units":1,"index":0}]},"templateMetadataRuleFormat":"enumeration_numeric","index":0}],"chronologyRules":[{"ruleFormat":{"yearFormat":{"value":"full"}},"templateMetadataRuleFormat":"chronology_year","ruleLocale":"en","index":0}],"templateString":"{{chronology1.year}}/{{enumeration1.level1}}"},"rulesetStatus":{"value":"active"},"recurrence":{"issues":1,"period":2,"timeUnit":{"value":"month"},"rules":[{"pattern":{"day":1},"patternType":"month_date","ordinal":1}]},"owner":{"id":"e8079127-4269-48d9-988b-5eee8e4d61af"},"description":"Bimonthly"}'
+monthly='{"patternType":"month_date","templateConfig":{"enumerationRules":[{"ruleFormat":{"levels":[{"format":{"value":"number"},"sequence":{"value":"continuous"},"units":1,"index":0}]},"templateMetadataRuleFormat":"enumeration_numeric","index":0}],"chronologyRules":[{"ruleFormat":{"yearFormat":{"value":"full"}},"templateMetadataRuleFormat":"chronology_year","ruleLocale":"en","index":0}],"templateString":"{{chronology1.year}}/{{enumeration1.level1}}"},"rulesetStatus":{"value":"active"},"recurrence":{"issues":1,"period":1,"timeUnit":{"value":"month"},"rules":[{"pattern":{"day":1},"patternType":"month_date","ordinal":1}]},"owner":{"id":"e8079127-4269-48d9-988b-5eee8e4d61af"},"description":"Monthly"}'
+semimonthly='{"patternType":"month_date","templateConfig":{"enumerationRules":[{"ruleFormat":{"levels":[{"format":{"value":"number"},"sequence":{"value":"continuous"},"units":1,"index":0}]},"templateMetadataRuleFormat":"enumeration_numeric","index":0}],"chronologyRules":[{"ruleFormat":{"yearFormat":{"value":"full"}},"templateMetadataRuleFormat":"chronology_year","ruleLocale":"en","index":0}],"templateString":"{{chronology1.year}}/{{enumeration1.level1}}"},"rulesetStatus":{"value":"active"},"recurrence":{"issues":2,"period":1,"timeUnit":{"value":"month"},"rules":[{"pattern":{"day":1},"patternType":"month_date","ordinal":1},{"pattern":{"day":15},"patternType":"month_date","ordinal":1}]},"owner":{"id":"e8079127-4269-48d9-988b-5eee8e4d61af"},"description":"Semimonthly"}'
+weekly='{"patternType":"week","templateConfig":{"enumerationRules":[{"ruleFormat":{"levels":[{"format":{"value":"number"},"sequence":{"value":"continuous"},"units":1,"index":0}]},"templateMetadataRuleFormat":"enumeration_numeric","index":0}],"chronologyRules":[{"ruleLocale":"en","templateMetadataRuleFormat":"chronology_year","ruleFormat":{"yearFormat":{"value":"full"}},"index":0}],"templateString":"{{chronology1.year}}/{{enumeration1.level1}}"},"rulesetStatus":{"value":"active"},"recurrence":{"issues":1,"period":1,"timeUnit":{"value":"week"},"rules":[{"pattern":{"weekday":{"value":"monday"}},"patternType":"week","ordinal":1}]},"owner":{"id":"e8079127-4269-48d9-988b-5eee8e4d61af"},"description":"Weekly"}'
+biweekly='{"patternType":"week","templateConfig":{"enumerationRules":[{"ruleFormat":{"levels":[{"format":{"value":"number"},"sequence":{"value":"continuous"},"units":1,"index":0}]},"templateMetadataRuleFormat":"enumeration_numeric","index":0}],"chronologyRules":[{"ruleFormat":{"yearFormat":{"value":"full"}},"templateMetadataRuleFormat":"chronology_year","ruleLocale":"en","index":0}],"templateString":"{{chronology1.year}}/{{enumeration1.level1}}"},"rulesetStatus":{"value":"active"},"recurrence":{"issues":1,"period":2,"timeUnit":{"value":"week"},"rules":[{"pattern":{"weekday":{"value":"monday"}},"patternType":"week","ordinal":1}]},"owner":{"id":"e8079127-4269-48d9-988b-5eee8e4d61af"},"description":"Biweekly"}'
+daily='{"patternType":"day","templateConfig":{"enumerationRules":[{"ruleFormat":{"levels":[{"format":{"value":"number"},"sequence":{"value":"continuous"},"units":1,"index":0}]},"templateMetadataRuleFormat":"enumeration_numeric","index":0}],"chronologyRules":[{"ruleFormat":{"yearFormat":{"value":"full"}},"templateMetadataRuleFormat":"chronology_year","ruleLocale":"en","index":0}],"templateString":"{{chronology1.year}}/{{enumeration1.level1}}"},"rulesetStatus":{"value":"active"},"recurrence":{"issues":1,"period":1,"timeUnit":{"value":"day"},"rules":[{"pattern":{},"patternType":"day","ordinal":1}]},"owner":{"id":"e8079127-4269-48d9-988b-5eee8e4d61af"},"description":"Daily"}'
+
 create_serial() {
 	title=$(
 	  curl -s -X GET \
@@ -43,13 +56,39 @@ EndOfJSON
 
 numserials=$(cat ${serials_file} |wc -l)
 
-while IFS=$'\t' read -r instance_uuid pol_uuid description; do
+#while IFS=$'\t' read -r instance_uuid pol_uuid template_uuid description; do
+while IFS=$'\t' read -r instance_uuid pol_uuid frequency description; do
 	echo -en "Processing record $counter of ${numserials}.\r"
 
 	create_serial
 
-	apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${serial}" "${okapi_url}/serials-management/serials")
-	echo -e "${apicall//$'\n'/ }" >> ${logfile}
+	serial_response=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${serial}" "${okapi_url}/serials-management/serials")
+	echo -e "${serial_response//$'\n'/ }" >> ${logfile}
+
+	serial_uuid=$(jq -r .id <<< "${serial_response}")
+
+	
+	case "${frequency}" in
+	daily)     ruleset="${daily_ruleset}" ;;
+  weekly)    ruleset="${weekly_ruleset}" ;;
+  monthly)   ruleset="${monthly_ruleset}" ;;
+  quarterly) ruleset="${quarterly_ruleset}" ;;
+  yearly)    ruleset="${annual_ruleset}" ;;
+	esac
+
+
+	pub_pattern=$(curl --http1.1 -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${ruleset[which_ruleset]}" "${okapi_url}/serials-management/rulesets/${ruleset}")
+
+	pub_pattern_for_serial=$(echo "${pub_pattern}" | jq \
+  --arg serialId "${serial_uuid}" '
+	.serialRuleset
+	| del(.id, .dateCreated, .lastUpdated, .rulesetNumber)
+	| .owner.id = $serialId
+')
+	
+	pub_pattern_response=$(curl -i --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${pub_pattern_for_serial}" "${okapi_url}/serials-management/rulesets")
+	echo -e "${pub_pattern_for_serial//$'\n'/ }" >> ${logfile}
+	echo -e "${pub_pattern_response//$'\n'/ }" >> ${logfile}
 
 done < ${serials_file}
 echo 

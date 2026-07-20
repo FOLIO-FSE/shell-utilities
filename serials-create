@@ -67,17 +67,27 @@ while IFS=$'\t' read -r instance_uuid pol_uuid frequency description; do
 
 	serial_uuid=$(jq -r .id <<< "${serial_response}")
 
-	
+	frequency="${frequency,,}"	
+	frequency="${frequency//[^a-z0-9]/}"	
+
 	case "${frequency}" in
-	daily)     ruleset="${daily_ruleset}" ;;
-  weekly)    ruleset="${weekly_ruleset}" ;;
-  monthly)   ruleset="${monthly_ruleset}" ;;
-  quarterly) ruleset="${quarterly_ruleset}" ;;
-  yearly)    ruleset="${annual_ruleset}" ;;
+		triennial)    ruleset="${triennial}" ;;
+		biennial)    ruleset="${biennial}" ;;
+		annual|yearly)    ruleset="${annual}" ;;
+		semiannual)    ruleset="${semiannual}" ;;
+		triannual)    ruleset="${triannual}" ;;
+		quarterly) ruleset="${quarterly}" ;;
+		bimonthly)   ruleset="${bimonthly}" ;;
+		monthly)   ruleset="${monthly}" ;;
+		semimonthly)   ruleset="${semimonthly}" ;;
+		weekly)    ruleset="${weekly}" ;;
+		biweekly)    ruleset="${biweekly}" ;;
+		daily)     ruleset="${daily}" ;;
 	esac
 
+	ruleset=$(jq -c --arg serial_uuid ${serial_uuid} '.owner.id = $serial_uuid' <<< "${ruleset}")
 
-	pub_pattern=$(curl --http1.1 -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${ruleset[which_ruleset]}" "${okapi_url}/serials-management/rulesets/${ruleset}")
+	pub_pattern=$(curl --http1.1 -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${ruleset}" "${okapi_url}/serials-management/rulesets")
 
 	pub_pattern_for_serial=$(echo "${pub_pattern}" | jq \
   --arg serialId "${serial_uuid}" '

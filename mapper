@@ -535,7 +535,7 @@ build_holdings_map() {
 
 build_item_map() {
 	for field in "${header_arr[@]}"; do
-		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}")
+		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}" |sed 's/note$/notes/')
 	
 		case ${comp_field} in 
 			id | itemid | itempid | physicalitemid | recorditem | recordnumberitem | z30reckey)
@@ -585,7 +585,7 @@ build_item_map() {
 			enum | enumeration | itemenum )
 				addfield enumeration
 			;;
-			vol | volume )
+			vol | volume | volumes )
 				addfield volume
 			;;
 			year )

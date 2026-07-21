@@ -573,7 +573,7 @@ build_item_map() {
 				addvalue notes[${note_iter}].staffOnly true
 				note_iter=$(($note_iter + 1))
 			;;
-			descnote | gennote | note | notegeneral | opacmsg | publicnote | z30noteopac )
+			caption | descnote | freetext | gennote | itemnote | note | notegeneral | opacmsg | publicnote | z30noteopac )
 				addfield notes[${note_iter}].note
 				addvalue notes[${note_iter}].itemNoteTypeId xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 				addvalue notes[${note_iter}].staffOnly false
@@ -617,7 +617,7 @@ build_item_map() {
 			barcode | itembarcode | z30barcode )
 				[[ -z ${itemfield} ]] && addfield legacyIdentifier
 			;;
-			itype | itemtypeid | itemtypecode | itemtypename | itypelabel | itypecode )
+			itype | itemtypeid | itemtypecode | itemtypename | itypelabel | itypecode | permitemtype )
 				if [[ -z ${mattypefield} ]];then
 					addfield materialTypeId
 					mattypefield="${field}"

@@ -446,7 +446,7 @@ build_holdings_map() {
 			accession | accessionnumber)
 				addfield accessionNumber 
 				;;
-			bibid | bibno | mmsid | mmsrecordid | recordbiblio | recordbibliographic | recordnumberbibliographic | systemidentifierbibid )
+			bibid | bibids | bibno | mmsid | mmsrecordid | recordbiblio | recordbibliographic | recordnumberbibliographic | systemidentifierbibid )
 				addfield instanceId
 				addfield formerIds[1]
 				bibfield="${field}"

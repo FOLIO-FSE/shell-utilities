@@ -131,6 +131,7 @@ addregexrules() {
 	[[ "${2}" == "email" ]] && regex_rule='(^[a-zA-Z0-9_\\-\\.]+@[a-zA-Z0-9_\\-\\.]+)'
 	[[ "${2}" == "number" ]] && regex_rule='([0-9]+)'
 	[[ "${2}" == "url" ]] && regex_rule='(^http.*)'
+	[[ "${2}" == "2ormore" ]] && regex_rule='^[^01]$'
 
 	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"value\":\"\",\"rules\":{\"regexGetFirstMatchOrEmpty\":\"${regex_rule}\"}}"
 	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")

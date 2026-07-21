@@ -597,7 +597,7 @@ build_item_map() {
 			pieces)
 				addfield numberOfPieces 
 			;;
-			itemstatus | itemstatusdesc | itemstatusname | itemstatuscurrentstatus | status | statusmappingkey | statusname )
+			itemstatus | itemstatusdesc | itemstatusname | itemstatuscurrentstatus | status | statusdisplay | statusmappingkey | statusname )
 				addfield status.name
 				statusfield="${field}"
 			;;

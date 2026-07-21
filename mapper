@@ -526,7 +526,7 @@ build_holdings_map() {
 		[[ -z ${itemfield} ]] && addfield formerIds[0]
 	fi
 
-	[[ -n ${callfield} ]] && echo -e "folio_name\t${callfield}\nLibrary of Congress classification\t1Library of Congress classification\t*" > call_number_type_mapping.tsv
+	[[ -n ${callfield} ]] && echo -e "folio_name\t${callfield}\nLibrary of Congress classification\tLibrary of Congress classification\t*" > call_number_type_mapping.tsv
 	[[ -n ${typefield} ]] && echo -e "${mattypefield}\tfolio_name\n*\tmigration" > material_types.tsv
 	[[ -n ${locationfield} ]] && echo -e "${locationfield}\tlegacy_code\tfolio_code\n*\t*\tmigration" > locations.tsv
 	[[ -n ${expenseclassfield} ]] && echo -e "${expenseclassfield}\tfolio_code\n*\tnone" > expense_classes.tsv

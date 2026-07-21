@@ -57,6 +57,7 @@ z	Claimed returned
 n	Aged to lost
 b	In process
 At Bindery	In process (non-requestable)
+Bindery Prep	In process (non-requestable)
 Claimed Returned	Claimed returned
 In Process	In process
 In process (non-requestable)	In process (non-requestable)
@@ -68,6 +69,7 @@ Withdrawn	Withdrawn
 BINDERY	In process (non-requestable)
 CATALOGING	In process
 CLAIMED_RETURNED	Claimed returned
+CLMS RETD	Claimed returned
 DAMAGED	In process (non-requestable)
 DISCARD	Withdrawn
 DISPATCHED	In transit
@@ -77,6 +79,7 @@ LOST	Missing
 LOST-ASSUM	Missing
 LOST-CLAIM	Declared lost
 LOST-PAID	Lost and paid
+Lost/Paid	Lost and paid
 NON-CIRC	Restricted
 RESTRICTED	Restricted
 WITH	Withdrawn

@@ -468,6 +468,12 @@ build_holdings_map() {
 				addfield holdingsRecordId 
 				holdidfield="${field}"
 			;;
+			notecheckin )
+				addfield notes[${holdnote_iter}].note
+				addvalue notes[${holdnote_iter}].holdingsNoteTypeId xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+				addvalue notes[${holdnote_iter}].staffOnly true
+				note_iter=$(($holdnote_iter + 1))
+			;;
 			holdings | libhas | libhascheckin | summaryholding | summaryholdings )
 				addfield holdingsStatements[0].statement
 			;;
@@ -562,11 +568,17 @@ build_item_map() {
 				addfield permanentLoanTypeId 
 				loantypefield="${field}"
 			;;
-			fulfillmentnote | imessage | imsg | message | checkinnote | notecheckin )
-				addfield circulationNotes[${chkinnote_iter}].note
-				addvalue circulationNotes[${chkinnote_iter}].noteType "Check in"
-				addvalue circulationNotes[${chkinnote_iter}].staffOnly true
-				chkinnote_iter=$(($chkinnote_iter + 1))
+			fulfillmentnote | imessage | imsg | message | checkinnote )
+				addfield circulationNotes[${fulfilmentnote_iter}].note
+				addvalue circulationNotes[${fulfilmentnote_iter}].noteType "Check in"
+				addvalue circulationNotes[${fulfilmentnote_iter}].staffOnly true
+				fulfilmentnote_iter=$(($fulfilmentnote_iter + 1))
+			;;
+			checkoutnote )
+				addfield circulationNotes[${fulfilmentnote_iter}].note
+				addvalue circulationNotes[${fulfilmentnote_iter}].noteType "Check out"
+				addvalue circulationNotes[${fulfilmentnote_iter}].staffOnly true
+				fulfilmentnote_iter=$(($fulfilmentnote_iter + 1))
 			;;
 			internalnote | intnote | price | staffnote )
 				addfield notes[${note_iter}].note

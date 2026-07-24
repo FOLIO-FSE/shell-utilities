@@ -1,3 +1,4 @@
+-i used with no filenames on the command line, reading from STDIN.
 infile="${1}"
 
 fileroot=$(echo "${infile}" | sed 's/\.....\?$//')
@@ -147,28 +148,28 @@ if .orderFormat == "Physical Resource" then
 	  .
 	end 
 	) | 
-  # move createInventory into correct sub-object (physical or eresource)
-  .compositePoLines |= map(
-  (.createInventory // .physical.createInventory // .eresource.createInventory // null) as $ci |
-  if $ci != null then
-    del(.createInventory) |
-    if .physical then (.physical |= del(.createInventory)) else . end |
-    if .eresource then (.eresource |= del(.createInventory)) else . end |
-    # clean up sub-objects left empty after removal
-    if (.physical // null) == {} then del(.physical) else . end |
-    if (.eresource // null) == {} then del(.eresource) else . end |
-    # place in correct sub-object based on quantity
-    if (.cost.quantityElectronic != null) then
-      .eresource = ((.eresource // {}) + {createInventory: $ci})
-    else
-      .physical = ((.physical // {}) + {createInventory: $ci}) |
-      .physical.volumes //= []
-    end
-  else
-    if .physical and (.physical.volumes == null) then
-      .physical.volumes = []
-    else . end
-  end)
+  # move createInventory into correct sub-object (physical or eresource)
+  .compositePoLines |= map(
+  (.createInventory // .physical.createInventory // .eresource.createInventory // null) as $ci |
+  if $ci != null then
+    del(.createInventory) |
+    if .physical then (.physical |= del(.createInventory)) else . end |
+    if .eresource then (.eresource |= del(.createInventory)) else . end |
+    # clean up sub-objects left empty after removal
+    if (.physical // null) == {} then del(.physical) else . end |
+    if (.eresource // null) == {} then del(.eresource) else . end |
+    # place in correct sub-object based on quantity
+    if (.cost.quantityElectronic != null) then
+      .eresource = ((.eresource // {}) + {createInventory: $ci})
+    else
+      .physical = ((.physical // {}) + {createInventory: $ci}) |
+      .physical.volumes //= []
+    end
+  else
+    if .physical and (.physical.volumes == null) then
+      .physical.volumes = []
+    else . end
+  end)
 ' > "${outfile}"
 
 echo

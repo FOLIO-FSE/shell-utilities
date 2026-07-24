@@ -408,6 +408,9 @@ case $rec_type in
 "permissionusers")
 	rec_type="permissionUsers"
 	endpoint="perms/users";;
+"orderlines")
+	rec_type="orderLines"
+	endpoint="orders/order-lines";;
 "polines")
 	rec_type="poLines"
 	endpoint="orders-storage/po-lines";;

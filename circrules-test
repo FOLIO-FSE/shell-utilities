@@ -6,7 +6,7 @@ okapi_token=$(cat okapi.token)
 testKey="."
 
 if [[ -z ${2} ]];then
-	echo "Usage: circrule-get [user_barcode] [item_barcode] "
+	echo "Usage: circrules-test [user_barcode] [item_barcode] "
 	echo
 	exit
 fi

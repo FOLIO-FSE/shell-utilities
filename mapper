@@ -819,6 +819,9 @@ build_user_map() {
 				addfield patronGroup
 				groupfield="${field}"
 			;;
+			cardexpiration | cardexpirationdate | dateexpiry | expdate | expirationdate | expiredate | patronexpirationdate | userprivexpires )
+				addfield expirationDate
+			;;
 			note | notes | note_content | notepatron | patronnote | patronnotes | borrowernote |userxinfonote | comment )
 				addfield notes[${note_iter}].note
 				addvalue notes[${note_iter}].noteTypeId xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx

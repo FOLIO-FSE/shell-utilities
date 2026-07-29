@@ -470,7 +470,7 @@ build_holdings_map() {
 			;;
 			notecheckin )
 				addfield notes[${holdnote_iter}].note
-				addvalue notes[${holdnote_iter}].holdingsNoteTypeId xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+				addvalue notes[${holdnote_iter}].holdingsNoteTypeId Note
 				addvalue notes[${holdnote_iter}].staffOnly true
 				note_iter=$(($holdnote_iter + 1))
 			;;
@@ -582,13 +582,13 @@ build_item_map() {
 			;;
 			internalnote | intnote | price | staffnote )
 				addfield notes[${note_iter}].note
-				addvalue notes[${note_iter}].itemNoteTypeId xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+				addvalue notes[${note_iter}].itemNoteTypeId General
 				addvalue notes[${note_iter}].staffOnly true
 				note_iter=$(($note_iter + 1))
 			;;
 			caption | descnote | freetext | gennote | itemnote | note | notegeneral | opacmsg | publicnote | z30noteopac )
 				addfield notes[${note_iter}].note
-				addvalue notes[${note_iter}].itemNoteTypeId xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+				addvalue notes[${note_iter}].itemNoteTypeId General
 				addvalue notes[${note_iter}].staffOnly false
 				note_iter=$(($note_iter + 1))
 			;;
@@ -759,13 +759,13 @@ build_organization_map() {
 			note | note1 | notes | notecontent | orgnote | special | vendornote | vennote )
 				addfield notes[${note_iter}].content
 				addvalue notes[${note_iter}].content organizations
-				addvalue notes[${note_iter}].noteTypeId xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+				addvalue notes[${note_iter}].noteTypeId General
 				note_iter=$(($note_iter + 1))
 			;;
 			note2 | notes2 | notecontent2 | orgnote2 | vendornote2 | vennote2 )
 				addfield notes[${note_iter}].content
 				addvalue notes[${note_iter}].content organizations
-				addvalue notes[${note_iter}].noteTypeId xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+				addvalue notes[${note_iter}].noteTypeId General
 				note_iter=$(($note_iter + 1))
 			;;
 			orgtype | vendortype )
@@ -824,7 +824,7 @@ build_user_map() {
 			;;
 			note | notes | note_content | notepatron | patronnote | patronnotes | borrowernote |userxinfonote | comment )
 				addfield notes[${note_iter}].note
-				addvalue notes[${note_iter}].noteTypeId xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+				addvalue notes[${note_iter}].noteTypeId General
 				note_iter=$(($note_iter + 1))
 			;;
 			firstname | fname | givenname | patrongivenname )

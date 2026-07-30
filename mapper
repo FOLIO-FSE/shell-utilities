@@ -249,6 +249,11 @@ build_order_map() {
 		  approved )
 					addreplacerules approved truefalse
 			;;
+		  checkinitems | receivingcheckinitems )
+					if [[ ${field,,} ~= ^independent ]];then
+						addfield compositePoLines[0].checkinItems true
+					fi
+			;;
 		  currency )
 				currencyFile="${field}"
 				addfield compositePoLines[0].cost.currency

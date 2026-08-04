@@ -1,5 +1,24 @@
 #!/usr/bin/bash
 
+nomsg="no"
+reader="pv"
+
+while getopts "n" opt; do
+  case $opt in
+    n)
+      nomsg="yes"
+			reader="cat"
+      ;;
+    \?)
+      echo "Error: Invalid option -$OPTARG" >&2
+      echo "Usage: $0 [-n]" >&2
+      exit 1
+      ;;
+  esac
+done
+
+shift $((OPTIND - 1))
+
 packages=(
 	"pv"
 	"dos2unix"
@@ -110,7 +129,7 @@ filecontent=""
 [[ "${filedetect}" =~ loan ]] && filecontent="loan"
 
 if [[ "${infile: -4}" == "xlsx" ]];then
-	echo "Excel file detected -- converting"
+	[[ ${nomsg} == "no" ]] && echo "Excel file detected -- converting"
 	excel2tsv "${infile}"
 
 	if [[ $(head -1 "${outfile}.tsv") =~ ^$'\t' ]];then
@@ -134,20 +153,20 @@ if head -c 10000 "${infile}" | grep -qP '\n';then
 fi
 dosfile=0
 
-echo "Correcting encoding"
+[[ ${nomsg} == "no" ]] && echo "Correcting encoding"
 
 encodingtype=$(file -i "${infile}" |sed 's/.*charset=//')
 encodingtype=${encodingtype,,}
 
 case ${encodingtype} in
 	utf-16le)
-		pv "${infile}" | iconv -f utf-16le -t utf-8 -c > tmpfile;;
+		$reader "${infile}" | iconv -f utf-16le -t utf-8 -c > tmpfile;;
 	latin1|iso-8859-1)
-		pv "${infile}" | iconv -f latin1 -t utf-8 -c > tmpfile;;
+		$reader "${infile}" | iconv -f latin1 -t utf-8 -c > tmpfile;;
 	iso-8859-15)
-		pv "${infile}" | iconv -f iso-8859-15 -t utf-8 -c > tmpfile;;
+		$reader "${infile}" | iconv -f iso-8859-15 -t utf-8 -c > tmpfile;;
 	*)	
-		pv "${infile}" | iconv -f utf-8 -t utf-8 -c > tmpfile;;
+		$reader "${infile}" | iconv -f utf-8 -t utf-8 -c > tmpfile;;
 esac
 
 head -1 tmpfile | grep -q $'\r' && dosfile=1
@@ -174,7 +193,7 @@ if [[ ! $filetype ]];then
 	exit
 fi
 
-echo "Normalizing format"
+[[ ${nomsg} == "no" ]] && echo "Normalizing format"
 
 for splitfile in ${splitlist[@]};do 
 	to_tsv ${splitfile} &
@@ -196,8 +215,10 @@ numrecs=$(wc -l "${infile}" |cut -d " " -f1)
 numfields=$(awk 'BEGIN{FS="\t"}{print NF;exit}' filefixaa)
 num_labeled_fields=$(head -1 filefixaa |tr '\t' '\n' |grep -i [a-z0-9] |wc -l)
 
-echo "The following $numfields fields in $numrecs lines were detected:"
-echo
+if [[ ${nomsg} == "no" ]];then
+	echo "The following $numfields fields in $numrecs lines were detected:"
+	echo
+fi
 
 if [[ $numfields != $num_labeled_fields ]];then
 	echo
@@ -237,7 +258,7 @@ sed -i '
 s/ [0-9]*:[0-9]*\($\|[\t]\)/\1/g
 ' filefixaa 
 
-echo "Loan file detected. Attempting to standardize headers"
+[[ ${nomsg} == "no" ]] && echo "Loan file detected. Attempting to standardize headers"
 
 else
 	sed -i '1 s/[^0-9A-Za-z_#=\)\(\.\t\-]//g;s/=[^\t]*//g' filefixaa
@@ -246,13 +267,16 @@ fi
 read -r fieldnames < filefixaa
 
 fieldnames=$(tr -dc "[[A-Za-z0-9]]_	\-#." <<< "${fieldnames}")
-echo "The following fields were detected in ${infile}"
-echo "${fieldnames}" |tr "\t" "\n" |grep -n . |column 
-echo
-echo "The following date containing fields were detected in ${infile}"
-echo "${fieldnames}" |tr "\t" "\n" |grep -ni "[^p]date" |sed '/[Yy][Ee][Aa][Rr]\|[Mm][Oo][Nn][Tt][Hh]\|[Dd][Aa][Yy]\|[Nn][Oo][Tt][Ee]/d'
-echo
-echo "${fieldnames}" |tr "\t" "\n" |grep -ni "[^p]date\|^date\|^fecha\|nacimiento$" |sed '/[Yy][Ee][Aa][Rr]\|[Mm][Oo][Nn][Tt][Hh]\|[Dd][Aa][Yy]\|[Nn][Oo][Tt][Ee]/d'
+
+if [[ ${nomsg} == "no" ]];then
+	echo "The following fields were detected in ${infile}"
+	echo "${fieldnames}" |tr "\t" "\n" |grep -n . |column 
+	echo
+	echo "The following date containing fields were detected in ${infile}"
+	echo "${fieldnames}" |tr "\t" "\n" |grep -ni "[^p]date" |sed '/[Yy][Ee][Aa][Rr]\|[Mm][Oo][Nn][Tt][Hh]\|[Dd][Aa][Yy]\|[Nn][Oo][Tt][Ee]/d'
+	echo
+	echo "${fieldnames}" |tr "\t" "\n" |grep -ni "[^p]date\|^date\|^fecha\|nacimiento$" |sed '/[Yy][Ee][Aa][Rr]\|[Mm][Oo][Nn][Tt][Hh]\|[Dd][Aa][Yy]\|[Nn][Oo][Tt][Ee]/d'
+fi
 
 datefields=$(echo "${fieldnames}" |tr "\t" "\n" |grep -ni date |tr [A-Z] [a-z] | sed '/year\|month\|day\|note/d; s/:.*//' |tr '\n' ' ')
 cutfields=$(echo "${datefields// /,}" | sed 's/^/-f/;s/,$//' |grep [0-9])
@@ -270,7 +294,7 @@ if [[ ${#cutfields} -gt 0 ]];then
 	cat tmp_datecheck |grep -Pqoi "\b(apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t]* [0-9][0-9]* [0-9][0-9]*\b" && words=3
 	cat tmp_datecheck |grep -Pqoi "[0-9\[0-9]* (apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t]* [0-9][0-9]*\b" && words=4
 	
-	if [[ $words -gt 0 ]];then
+	if [[ $words -gt 0 ]] && [[ ${nomsg} == "no" ]];then
 		echo
 		echo "Dates containing words detected"
 		echo 
@@ -288,12 +312,14 @@ if [[ ${#cutfields} -gt 0 ]];then
 		cat tmp_datecheck |grep -o "\b[12][01239][0-9][0-9]\/[0-9][0-9]\/[0-9][0-9]\b" > /dev/null && dateformat="slashes"
 		cat tmp_datecheck |grep -o "\b[12][01239][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*\b" > /dev/null && dateformat="numbers"
 	fi
-	
-	if [[ ${dateformat} == "uk" ]];then echo "UK dates detected. DD-MM-YYYY dates will be converted to YYYY-MM-DD";fi
-	if [[ ${dateformat} == "uk-single" ]];then echo "UK dates with single digits detected. D-M-YYYY dates will be converted to YYYY-MM-DD";fi
-	if [[ ${dateformat} == "us" ]];then echo "US dates detected. MM-DD-YYYY dates will be converted to YYYY-MM-DD";fi
-	if [[ ${dateformat} == "us-single" ]];then echo "US dates with single digits detected. M-D-YYYY dates will be converted to YYYY-MM-DD";fi
-	if [[ ${dateformat} == "numbers" ]];then echo "Numeric string detected -- will be converted to YYYY-MM-DD";fi
+
+	if if [[ $words -gt 0 ]];then	
+		if [[ ${dateformat} == "uk" ]];then echo "UK dates detected. DD-MM-YYYY dates will be converted to YYYY-MM-DD";fi
+		if [[ ${dateformat} == "uk-single" ]];then echo "UK dates with single digits detected. D-M-YYYY dates will be converted to YYYY-MM-DD";fi
+		if [[ ${dateformat} == "us" ]];then echo "US dates detected. MM-DD-YYYY dates will be converted to YYYY-MM-DD";fi
+		if [[ ${dateformat} == "us-single" ]];then echo "US dates with single digits detected. M-D-YYYY dates will be converted to YYYY-MM-DD";fi
+		if [[ ${dateformat} == "numbers" ]];then echo "Numeric string detected -- will be converted to YYYY-MM-DD";fi
+	fi
 
 	rm tmp_datecheck
 	rm tmp_datecheck1
@@ -304,10 +330,10 @@ DOUBLE=$(echo -ne '\u201C\u201D')
 NBSP=$(echo -ne '\uc2a0\u00a0\ufeff')
 CONTROL=$(echo -ne '\u001b\u0007\u0001')
 
-echo -en "Analyzing ${infile}. Please be patient"
+[[ ${nomsg} == "no" ]] && echo -en "Analyzing ${infile}. Please be patient"
 
 while [ true ];do
-	echo -en "."
+	[[ ${nomsg} == "no" ]] && echo -en "."
 	sleep 1
 done & 
 background_pid=$!
@@ -323,30 +349,32 @@ done
 
 disown $background_pid
 kill $background_pid 
+
+if [[ ${nomsg} == "no" ]];then
 echo
-
-case $dateformat in
-	us)
-		echo "No UK formatted dates detected in first 50 lines"
-		echo "Converting MM-DD-YYYY dates to YYYY-MM-DD and stripping blank dates"
-		;;
-	us-single)
-		echo "Converting US dates with single digits to to YYYY-MM-DD and stripping blank dates"
-		;;
-
-	uk)
-		echo "Converting DD-MM-YYYY dates to YYYY-MM-DD and stripping blank dates"
-		;;
-	uk-single)
-		echo "Converting UK dates with single digits to YYYY-MM-DD and stripping blank dates"
-		;;
-	slashes)
-		echo "Reformatting dates to YYYY-MM-DD"
-		;;
-	numbers)
-		echo "Reformatting numeric dates to YYYY-MM-DD"
-		;;
-esac
+	case $dateformat in
+		us)
+			echo "No UK formatted dates detected in first 50 lines"
+			echo "Converting MM-DD-YYYY dates to YYYY-MM-DD and stripping blank dates"
+			;;
+		us-single)
+			echo "Converting US dates with single digits to to YYYY-MM-DD and stripping blank dates"
+			;;
+	
+		uk)
+			echo "Converting DD-MM-YYYY dates to YYYY-MM-DD and stripping blank dates"
+			;;
+		uk-single)
+			echo "Converting UK dates with single digits to YYYY-MM-DD and stripping blank dates"
+			;;
+		slashes)
+			echo "Reformatting dates to YYYY-MM-DD"
+			;;
+		numbers)
+			echo "Reformatting numeric dates to YYYY-MM-DD"
+			;;
+	esac
+fi
 
 if [[ $words -gt 2 ]];then dateformat="us-single";fi
 
@@ -465,17 +493,17 @@ if ($fixdate == ""){print "blanked date" > "bad_dates"}
 			print $0 > badfile
 		}
 	}
-	if (NR % 2000 == 0 && FILENAME == "filefixad") {printf "Records processed: %s\r", NR*5}
+	if (NR % 2000 == 0 && NOMSG == "no" && FILENAME == "filefixad") {printf "Records processed: %s\r", NR*5}
 }
 ENDOFAWK
 
 echo -e "${awkscript}" > tmp_filefixawk
 chmod 700 tmp_filefixawk
 
-echo "Performing corrections"
+[[ ${nomsg} == "no" ]] && echo "Performing corrections"
 
 for splitfile in ${splitlist[@]};do 
-	awk -v numfields=$numfields -v outfile="${splitfile}_out" -v badfile="${splitfile}_bad" -v DATEFORMAT="${dateformat}" -v WORDS="${words}" -v DATEFIELDS="${datefields}" -f tmp_filefixawk ${splitfile} &
+	awk -v numfields=$numfields -v outfile="${splitfile}_out" -v badfile="${splitfile}_bad" -v DATEFORMAT="${dateformat}" -v WORDS="${words}" -v DATEFIELDS="${datefields}" -v NOMSG=${nomsg} -f tmp_filefixawk ${splitfile} &
 done
 wait
 
@@ -488,15 +516,15 @@ rm tmp_filefixawk
 numclean=$(wc -l "${finalfile}" |cut -d " " -f1)
 
 if [[ -f bad_dates ]];then
-	echo "Blank dates have been identified. Examining date fields for anomalies recommended"
+	[[ ${nomsg} == "no" ]] && echo "Blank dates have been identified. Examining date fields for anomalies recommended"
 	rm bad_dates
 fi
 
-echo "$numclean records have been output to ${finalfile}"
+[[ ${nomsg} == "no" ]] && echo "$numclean records have been output to ${finalfile}"
 
 if [[ -f ${errorfile} ]];then
 	numbad=$(wc -l "${errorfile}" |cut -d " " -f1)
-	echo "$numbad bad records were output to ${errorfile}"
+	[[ ${nomsg} == "no" ]] && echo "$numbad bad records were output to ${errorfile}"
 fi
 echo
 

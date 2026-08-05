@@ -566,7 +566,7 @@ for file in "${filelist[@]}";do
 		finalfile="${file}_fixed.tsv"
 		logfile="${file}.log"
 	fi
-	logfile="${logpath}/${logfile}"
+	logfile="${logpath}/filefix_${logfile}"
 
 	errorfile="${file}_error"
 	rm -f "${finalfile}" "${logfile}"

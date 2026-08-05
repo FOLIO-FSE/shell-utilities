@@ -2,12 +2,16 @@
 
 nomsg="no"
 reader="pv"
+logpath="./"
 
-while getopts "n" opt; do
+while getopts "np:" opt; do
   case $opt in
     n)
       nomsg="yes"
 			reader="cat"
+      ;;
+    p)
+      logpath="$OPTARG"
       ;;
     \?)
       echo "Error: Invalid option -$OPTARG" >&2
@@ -19,27 +23,25 @@ done
 
 shift $((OPTIND - 1))
 
+logpath="${logpath%/}"
+
 packages=(
 	"pv"
 	"dos2unix"
 )
 
 for package in "${packages[@]}";do
-	which ${package} >/dev/null 2>&1 || echo "Package ${package} not installed. Please install before continuing"
-	missing=1
+	which ${package} >/dev/null 2>&1 || (logmsg="Package ${package} not installed. Please install before continuing" && log_msg && missing=1)
 done
+
+[[ ${missing} -eq 1 ]] && exit
 
 csvkitmissing=1
 if command -v csvcut >/dev/null;then csvkitmissing=0;fi
 if pip show csvkit >/dev/null 2>&1; then csvkitmissing=0;fi
 if uv pip show csvkit >/dev/null 2>&1; then csvkitmissing=0;fi
 
-if [[ csvkitmissing -eq 1 ]];then echo "Package csvkit not installed. Please install before continuing";exit;fi
-
-if [[ ${missing} -eq 1 ]];then
-	echo "Please install above packages before continuing"
-fi
-
+[[ $csvkitmissing -eq 1 ]] && logmsg="Package csvkit not installed. Please install before continuing" && log_msg && exit
 
 filelist=("$@")
 infile="${filelist[0]}"
@@ -63,11 +65,18 @@ if [[ -z $1 ]];then
 	echo "It detects date formats and converts MM-DD-YYYY and DD-MM-YYYY dates to YYYY-MM-DD. "
 	echo 
 	echo "Usage: filefix [filename]"
+	echo "Options:"
+	echo "-n no messages (suppress interactive output)"
+	echo "-p path to log file"
 	echo
 	exit
 else
 	infile=${1}
 fi
+
+log_msg() {
+	[[ ${nomsg} == "no" ]] && echo "${logmsg}" || echo "${logmsg}" >> "${logfile}"
+}
 
 fix_characters(){
 	local file=${1}
@@ -141,14 +150,14 @@ if [[ "${infile: -4}" == "xlsx" ]];then
 	foundExcel=1
 fi
 
-echo
-echo "################ Processing ${infile} #####################"
-
+logmsg="################ Processing ${infile} #####################"
+log_msg
 
 if [[ ! -f "${infile}" ]];then echo "The input file ${infile} could not be found";exit;fi
 
 if head -c 10000 "${infile}" | grep -qP '\n';then
-	echo "No newlines could be detected in the first 10,000 characters. Please verify file"
+	logmsg="No newlines could be detected in the first 10,000 characters. Please verify file"
+	log_msg	
 	exit
 fi
 dosfile=0
@@ -187,9 +196,10 @@ echo "${firstline}" | grep -qP "\t" && filetype="tab"
 echo "${firstline}" | grep -qP ";" && filetype="semicolon"
 
 if [[ ! $filetype ]];then
-	echo "${infile} doesn't appear to be comma or tab delimited."
-	echo "Please supply a different file or correct the first line."
-	echo
+	logmsg="${infile} doesn't appear to be comma or tab delimited.
+Please supply a different file or correct the first line.
+"
+	log_msg
 	exit
 fi
 
@@ -200,7 +210,8 @@ for splitfile in ${splitlist[@]};do
 done
 wait
 
-head -1000 filefixaa | awk -F'\t' '{ for(i=1;i<=NF;i++){ if($i ~ /^[[:space:]]+/ || $i ~ /[[:space:]]+$/){ print "Leading/trailing spaces detected"; exit 1 } } }' |grep detected && echo leading_trail="yes"
+head -1000 filefixaa | awk -F'\t' '{ for(i=1;i<=NF;i++){ if($i ~ /^[[:space:]]+/ || $i ~ /[[:space:]]+$/){ print "detected";exit 1 } } }' |grep -q detected && leading_trail="yes"
+[[ ${leading_trail} == "yes" ]] && logmsg="Leading/trailing spaces detected" && log_msg
 
 if [[ $dosfile -eq 1 ]];then
 	for splitfile in ${splitlist[@]};do 
@@ -215,20 +226,24 @@ numrecs=$(wc -l "${infile}" |cut -d " " -f1)
 numfields=$(awk 'BEGIN{FS="\t"}{print NF;exit}' filefixaa)
 num_labeled_fields=$(head -1 filefixaa |tr '\t' '\n' |grep -i [a-z0-9] |wc -l)
 
-if [[ ${nomsg} == "no" ]];then
-	echo "The following $numfields fields in $numrecs lines were detected:"
-	echo
-fi
+logmsg="The following $numfields fields in $numrecs lines were detected:
+"
+log_msg
 
-if [[ $numfields != $num_labeled_fields ]];then
-	echo
-	echo "$numfields fields detected but $num_labeled_fields fields with labels were detected."
-	echo
-	echo "WARNING: DISPARITY BETWEEN NUMBER OF FIELDS AND NUMBER OF LABELS USUALLY INDICATES DATA PROBLEMS -- INSPECT FILE."
-	echo
-fi
+logmsg="
+$numfields fields detected but $num_labeled_fields fields with labels were detected.
 
-head -50 filefixaa |grep -o "\b[1-9]\.[0-9]\+E+[0-9]\+\b" > /dev/null && echo "WARNING: POSSIBLE EXCEL CORRUPTION -- INSPECT FILE"
+WARNING: DISPARITY BETWEEN NUMBER OF FIELDS AND NUMBER OF LABELS USUALLY INDICATES DATA PROBLEMS -- INSPECT FILE.
+
+"
+
+[[ $numfields != $num_labeled_fields ]] && log_msg
+
+logmsg=""
+
+head -50 filefixaa |grep -o "\b[1-9]\.[0-9]\+E+[0-9]\+\b" > /dev/null && logmsg="WARNING: POSSIBLE EXCEL CORRUPTION -- INSPECT FILE"
+
+[[ -n "$logmsg" ]] && log_msg
 
 # normalize fieldnames in file
 if [[ ${filecontent} == "loan" ]];then
@@ -258,7 +273,7 @@ sed -i '
 s/ [0-9]*:[0-9]*\($\|[\t]\)/\1/g
 ' filefixaa 
 
-[[ ${nomsg} == "no" ]] && echo "Loan file detected. Attempting to standardize headers"
+logmsg="Loan file detected. Attempting to standardize headers" && log_msg
 
 else
 	sed -i '1 s/[^0-9A-Za-z_#=\)\(\.\t\-]//g;s/=[^\t]*//g' filefixaa
@@ -268,7 +283,7 @@ read -r fieldnames < filefixaa
 
 fieldnames=$(tr -dc "[[A-Za-z0-9]]_	\-#." <<< "${fieldnames}")
 
-if [[ ${nomsg} == "no" ]];then
+logmsg=$(
 	echo "The following fields were detected in ${infile}"
 	echo "${fieldnames}" |tr "\t" "\n" |grep -n . |column 
 	echo
@@ -276,7 +291,10 @@ if [[ ${nomsg} == "no" ]];then
 	echo "${fieldnames}" |tr "\t" "\n" |grep -ni "[^p]date" |sed '/[Yy][Ee][Aa][Rr]\|[Mm][Oo][Nn][Tt][Hh]\|[Dd][Aa][Yy]\|[Nn][Oo][Tt][Ee]/d'
 	echo
 	echo "${fieldnames}" |tr "\t" "\n" |grep -ni "[^p]date\|^date\|^fecha\|nacimiento$" |sed '/[Yy][Ee][Aa][Rr]\|[Mm][Oo][Nn][Tt][Hh]\|[Dd][Aa][Yy]\|[Nn][Oo][Tt][Ee]/d'
-fi
+)
+
+log_msg
+logmsg=""
 
 datefields=$(echo "${fieldnames}" |tr "\t" "\n" |grep -ni date |tr [A-Z] [a-z] | sed '/year\|month\|day\|note/d; s/:.*//' |tr '\n' ' ')
 cutfields=$(echo "${datefields// /,}" | sed 's/^/-f/;s/,$//' |grep [0-9])
@@ -295,9 +313,10 @@ if [[ ${#cutfields} -gt 0 ]];then
 	cat tmp_datecheck |grep -Pqoi "[0-9\[0-9]* (apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t]* [0-9][0-9]*\b" && words=4
 	
 	if [[ $words -gt 0 ]] && [[ ${nomsg} == "no" ]];then
-		echo
-		echo "Dates containing words detected"
-		echo 
+		logmsg="	
+Dates containing words detected
+"
+		log_msg
 	fi
 	
 	if [[ -z $dateformat ]]; then
@@ -313,12 +332,13 @@ if [[ ${#cutfields} -gt 0 ]];then
 		cat tmp_datecheck |grep -o "\b[12][01239][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*\b" > /dev/null && dateformat="numbers"
 	fi
 
-	if if [[ $words -gt 0 ]];then	
-		if [[ ${dateformat} == "uk" ]];then echo "UK dates detected. DD-MM-YYYY dates will be converted to YYYY-MM-DD";fi
-		if [[ ${dateformat} == "uk-single" ]];then echo "UK dates with single digits detected. D-M-YYYY dates will be converted to YYYY-MM-DD";fi
-		if [[ ${dateformat} == "us" ]];then echo "US dates detected. MM-DD-YYYY dates will be converted to YYYY-MM-DD";fi
-		if [[ ${dateformat} == "us-single" ]];then echo "US dates with single digits detected. M-D-YYYY dates will be converted to YYYY-MM-DD";fi
-		if [[ ${dateformat} == "numbers" ]];then echo "Numeric string detected -- will be converted to YYYY-MM-DD";fi
+	if [[ $words -gt 0 ]];then	
+		[[ ${dateformat} == "uk" ]] && logmsg="UK dates detected. DD-MM-YYYY dates will be converted to YYYY-MM-DD"
+		[[ ${dateformat} == "uk-single" ]] && logmsg="UK dates with single digits detected. D-M-YYYY dates will be converted to YYYY-MM-DD"
+		[[ ${dateformat} == "us" ]] && logmsg="US dates detected. MM-DD-YYYY dates will be converted to YYYY-MM-DD"
+		[[ ${dateformat} == "us-single" ]] && logmsg="US dates with single digits detected. M-D-YYYY dates will be converted to YYYY-MM-DD"
+		[[ ${dateformat} == "numbers" ]] && logmsg="Numeric string detected -- will be converted to YYYY-MM-DD"
+		log_msg
 	fi
 
 	rm tmp_datecheck
@@ -350,31 +370,30 @@ done
 disown $background_pid
 kill $background_pid 
 
-if [[ ${nomsg} == "no" ]];then
-echo
-	case $dateformat in
-		us)
-			echo "No UK formatted dates detected in first 50 lines"
-			echo "Converting MM-DD-YYYY dates to YYYY-MM-DD and stripping blank dates"
-			;;
-		us-single)
-			echo "Converting US dates with single digits to to YYYY-MM-DD and stripping blank dates"
-			;;
-	
-		uk)
-			echo "Converting DD-MM-YYYY dates to YYYY-MM-DD and stripping blank dates"
-			;;
-		uk-single)
-			echo "Converting UK dates with single digits to YYYY-MM-DD and stripping blank dates"
-			;;
-		slashes)
-			echo "Reformatting dates to YYYY-MM-DD"
-			;;
-		numbers)
-			echo "Reformatting numeric dates to YYYY-MM-DD"
-			;;
-	esac
-fi
+case $dateformat in
+	us)
+		logmsg="No UK formatted dates detected in first 50 lines"
+		logmsg="Converting MM-DD-YYYY dates to YYYY-MM-DD and stripping blank dates"
+		;;
+	us-single)
+		logmsg="Converting US dates with single digits to to YYYY-MM-DD and stripping blank dates"
+		;;
+
+	uk)
+		logmsg="Converting DD-MM-YYYY dates to YYYY-MM-DD and stripping blank dates"
+		;;
+	uk-single)
+		logmsg="Converting UK dates with single digits to YYYY-MM-DD and stripping blank dates"
+		;;
+	slashes)
+		logmsg="Reformatting dates to YYYY-MM-DD"
+		;;
+	numbers)
+		logmsg="Reformatting numeric dates to YYYY-MM-DD"
+		;;
+esac
+
+log_msg
 
 if [[ $words -gt 2 ]];then dateformat="us-single";fi
 
@@ -516,17 +535,17 @@ rm tmp_filefixawk
 numclean=$(wc -l "${finalfile}" |cut -d " " -f1)
 
 if [[ -f bad_dates ]];then
-	[[ ${nomsg} == "no" ]] && echo "Blank dates have been identified. Examining date fields for anomalies recommended"
+	logmsg="Blank dates have been identified. Examining date fields for anomalies recommended" && log_msg
 	rm bad_dates
 fi
 
-[[ ${nomsg} == "no" ]] && echo "$numclean records have been output to ${finalfile}"
+logmsg="$numclean records have been output to ${finalfile}"
+log_msg
 
 if [[ -f ${errorfile} ]];then
 	numbad=$(wc -l "${errorfile}" |cut -d " " -f1)
-	[[ ${nomsg} == "no" ]] && echo "$numbad bad records were output to ${errorfile}"
+	logmsg="$numbad bad records were output to ${errorfile}" && log_msg
 fi
-echo
 
 if [[ foundExcel -eq 1 ]];then
 	rm -f "${infile}"
@@ -536,18 +555,21 @@ foundExcel=0
 
 for file in "${filelist[@]}";do
 	if [[ $(head -n 1 "${file}") =~ ^[[:space:]]*$ ]]; then
-		echo "First line contains only whitespace, deleting all leading blank lines"
+		logmsg="First line contains only whitespace, deleting all leading blank lines" && log_msg
 		sed -i '1,/^[[:alnum:]]/ { /^[[:space:]]*$/d }' "${file}"
 	fi
 
 	if [[ "${file}" =~ \....$ ]];then
 		finalfile=$(echo "${file}" |sed 's/\(.*\)\(\....$\)/\1_fixed.tsv/')
+		logfile=$(echo "${file}" |sed 's/\(.*\)\(\....$\)/\1.log/')
 	else
 		finalfile="${file}_fixed.tsv"
+		logfile="${file}.log"
 	fi
+	logfile="${logpath}/${logfile}"
 
 	errorfile="${file}_error"
-	rm -f "${finalfile}"
+	rm -f "${finalfile}" "${logfile}"
 
 	fix_file "${file}" "${finalfile}"
 done

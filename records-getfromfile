@@ -122,6 +122,9 @@ case $rec_type in
 	endpoint="inventory-view/instances"
 	jq_replace=".instances[]"
 	accept="text/plain";;
+"inventory-items")
+	jq_replace=".items[]"
+  endpoint="inventory/items";;
 "items")
 	endpoint="item-storage/items";;
 "licenses")

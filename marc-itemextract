@@ -1,6 +1,18 @@
-# sirsi was inadvertantly modified to accommodate NALIS -- must be modified
+#!/usr/bin/bash
 
 knownsystems=("absysnet" "aleph" "destiny" "eos" "hylib" "janium" "koha" "lc2" "opals" "sierra" "sirsi" "softlink" "tlc" "tinycat" "virtua" "wms")
+
+while getopts "o:" opt; do
+	case $opt in
+		o)
+			outfile="$OPTARG"
+		/?)
+			echo "Error: Invalid option -$OPTARG" >&2
+			echo "Usage: $0 [-n]" >&2
+			exit 1
+			;;
+	esac
+done
 
 if [[ -z $2 ]];then
 	echo "Usage: marc-itemextract [filename] [systemtype] "
@@ -18,7 +30,7 @@ else
 	labels=()
 
 	fileroot=$(echo "${infile}" | sed 's/\.....\?$//')
-	outfile="${fileroot}.tsv"
+	[[ -z ${outfile} ]] && outfile="${fileroot}.tsv"
 	rm -f ${outfile}
 fi
 

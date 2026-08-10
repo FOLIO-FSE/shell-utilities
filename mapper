@@ -411,6 +411,10 @@ build_order_map() {
 		  vennote )
 				addfield vendorDetail.noteFromVendor 
 			;;
+		  vendorreferencenumber | vendorreferencenumbers | vendorreferencetype )
+				addfield vendorDetail.referenceNumbers[0].refNumber "${field}"
+				addfield vendorDetail.referenceNumbers[0].refNumberType "Vendor order reference number"
+			;;
 		  workflowstatus )
 				addvalue workflowStatus Pending
 				workflowStatus="${field}"

@@ -308,7 +308,7 @@ build_order_map() {
 		  detailslinedescription | descriptioninternalnote | intnote | polinenote | polnote | polinedescription | productid | productidtype )
 				addfield compositePoLines[0].description
 			;;
-		  userlimit | vendorreferencenumber | vendorreferencenumbers | vendorreferencetype )
+		  userlimit )
 				addfield compositePoLines[0].description
 				addvalue compositePoLines[0].description "(${field})"
 			;;

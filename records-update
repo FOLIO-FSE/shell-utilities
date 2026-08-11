@@ -79,10 +79,13 @@ fixrecord() {
 	#                (.statusId = $VALUE)
 	#                (.temporaryLoanType = {"id": $VALUE} ) # UUID, must use items-inventory
 	#                (.temporaryLocation = {"id": $VALUE} ) # UUID, must use items-inventory
+	                (.vendorDetail.referenceNumbers |= .+ [{"refNumber": $VALUE,"refNumberType":"Vendor order reference number"}]) 
 	#				 (.workflowStatus = "Open")
 	#				 (.reEncumber = "true")
 			|del(.metadata)
 	')
+#jq . <<< ${updated_record}
+#exit
 		#updated_record=${apicall//$pattern/$replace}
 		apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_record}" "${okapi_url}/${recordtype}/${uuid}")
 	echo "${apicall}" |grep -i [a-z] >> "tmp_records.${baserecordtype}.${seq}"
@@ -147,7 +150,7 @@ case $recordtype in
 "parsedrecords")
 	recordtype="change-manager/parsedRecords";;
 "polines")
-	recordtype="orders-storage/po-lines";;
+	recordtype="orders/order-lines";;
 "requests")
 	recordtype="circulation/requests";;
 "servicepoints")

@@ -211,7 +211,7 @@ for splitfile in ${splitlist[@]};do
 done
 wait
 
-head -1000 filefixaa | awk -F'\t' '{ for(i=1;i<=NF;i++){ if($i ~ /^[[:space:]]+/ || $i ~ /[[:space:]]+$/){ print "detected";exit 1 } } }' |grep -q detected && leading_trail="yes"
+head -1000 ${prefix}aa | awk -F'\t' '{ for(i=1;i<=NF;i++){ if($i ~ /^[[:space:]]+/ || $i ~ /[[:space:]]+$/){ print "detected";exit 1 } } }' |grep -q detected && leading_trail="yes"
 [[ ${leading_trail} == "yes" ]] && logmsg="Leading/trailing spaces detected" && log_msg
 
 if [[ $dosfile -eq 1 ]];then
@@ -224,7 +224,7 @@ fi
 # detect file characteristics. First line is assumed to contain either tabs or commas
 
 numrecs=$(wc -l "${infile}" |cut -d " " -f1)
-numfields=$(awk 'BEGIN{FS="\t"}{print NF;exit}' filefixaa)
+numfields=$(awk 'BEGIN{FS="\t"}{print NF;exit}' ${prefix}aa)
 num_labeled_fields=$(head -1 filefixaa |tr '\t' '\n' |grep -i [a-z0-9] |wc -l)
 
 logmsg="The following $numfields fields in $numrecs lines were detected:
@@ -242,7 +242,7 @@ WARNING: DISPARITY BETWEEN NUMBER OF FIELDS AND NUMBER OF LABELS USUALLY INDICAT
 
 logmsg=""
 
-head -50 filefixaa |grep -o "\b[1-9]\.[0-9]\+E+[0-9]\+\b" > /dev/null && logmsg="WARNING: POSSIBLE EXCEL CORRUPTION -- INSPECT FILE"
+head -50 ${prefix}aa |grep -o "\b[1-9]\.[0-9]\+E+[0-9]\+\b" > /dev/null && logmsg="WARNING: POSSIBLE EXCEL CORRUPTION -- INSPECT FILE"
 
 [[ -n "$logmsg" ]] && log_msg
 
@@ -272,15 +272,15 @@ sed -i '
 1 s/\b[^\tp]*tatus\b/next_item_status/i
 1 s/\b[^p\t][^\t]*arcode/item_barcode/i
 s/ [0-9]*:[0-9]*\($\|[\t]\)/\1/g
-' filefixaa 
+' ${prefix}aa 
 
 logmsg="Loan file detected. Attempting to standardize headers" && log_msg
 
 else
-	sed -i '1 s/[^0-9A-Za-z_#=\)\(\.\t\-]//g;s/=[^\t]*//g' filefixaa
+	sed -i '1 s/[^0-9A-Za-z_#=\)\(\.\t\-]//g;s/=[^\t]*//g' ${prefix}aa
 fi
 
-read -r fieldnames < filefixaa
+read -r fieldnames < ${prefix}aa
 
 fieldnames=$(tr -dc "[[A-Za-z0-9]]_	\-#." <<< "${fieldnames}")
 
@@ -493,7 +493,7 @@ function fix_dates() {
 			if ($fixdate ~ /^[\- ]*$/) { $fixdate = "" }
 			
 		} else {
-			if (NR != 1 || FILENAME != "filefixaa") { $fixdate = "" }
+			if (NR != 1 || FILENAME != PREFIX"aa") { $fixdate = "" }
 		}
 	}
 if ($fixdate == ""){print "blanked date" > "bad_dates"}
@@ -501,7 +501,7 @@ if ($fixdate == ""){print "blanked date" > "bad_dates"}
 
 {
 	if (NF == numfields) { 
-		if (NR != 1 || FILENAME != "filefixaa"){ fix_dates() }
+		if (NR != 1 || FILENAME != PREFIX"aa"){ fix_dates() }
 		print $0 > outfile	
 	} else {
 		if ((NF == numfields + 1) && (substr($0, length($0), 1) == "\t")) {
@@ -523,7 +523,7 @@ chmod 700 tmp${prefix}_filefixawk
 [[ ${nomsg} == "no" ]] && echo "Performing corrections"
 
 for splitfile in ${splitlist[@]};do 
-	awk -v numfields=$numfields -v outfile="${splitfile}_out" -v badfile="${splitfile}_bad" -v DATEFORMAT="${dateformat}" -v WORDS="${words}" -v DATEFIELDS="${datefields}" -v NOMSG=${nomsg} -f tmp_filefixawk ${splitfile} &
+	awk -v numfields=$numfields -v outfile="${splitfile}_out" -v badfile="${splitfile}_bad" -v DATEFORMAT="${dateformat}" -v WORDS="${words}" -v DATEFIELDS="${datefields}" -v PREFIX=${prefix} -v NOMSG=${nomsg} -f tmp_filefixawk ${splitfile} &
 done
 wait
 

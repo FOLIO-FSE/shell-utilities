@@ -184,10 +184,11 @@ numrecs=$(wc -l tmpfile |cut -d " " -f1)
 num_per_file=$(($numrecs / 5 + 1))
 
 split -l $num_per_file tmpfile filefix
-splitlist=(filefixaa filefixab filefixac filefixad filefixae)
+prefix="filefix$(date +%s)"
+splitlist=(${prefix}aa ${prefix}ab ${prefix}ac ${prefix}ad ${prefix}ae)
 rm -f tmpfile
 
-firstline="$(head -1 filefixaa)"
+firstline="$(head -1 ${prefix}aa)"
 
 echo "${firstline}" | grep -q "|" && filetype="pipe"
 echo "${firstline}" | fgrep -q "^" && filetype="carrot"
@@ -300,17 +301,17 @@ datefields=$(echo "${fieldnames}" |tr "\t" "\n" |grep -ni date |tr [A-Z] [a-z] |
 cutfields=$(echo "${datefields// /,}" | sed 's/^/-f/;s/,$//' |grep [0-9])
 
 if [[ ${#cutfields} -gt 0 ]];then
-	head -50 filefixaa > tmp_datecheck1
-	cut ${cutfields} tmp_datecheck1 > tmp_datecheck 
-	sed -i 's/,//g' tmp_datecheck
+	head -50 ${prefix}aa > tmp${prefix}_datecheck1
+	cut ${cutfields} tmp${prefix}_datecheck1 > tmp${prefix}_datecheck 
+	sed -i 's/,//g' tmp${prefix}_datecheck
 	 
 	words=0
 	
-	cat tmp_datecheck |grep -Pqoi "\b(apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t\/-]*[\/-][0-9][0-9]*[\/-][0-9][0-9]*\b" && words=1
-	cat tmp_datecheck |grep -Pqoi "\b[0-9\[0-9]*[\/-](apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t\/-]*[\/-][0-9][0-9]*\b" && words=2
+	cat tmp${prefix}_datecheck |grep -Pqoi "\b(apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t\/-]*[\/-][0-9][0-9]*[\/-][0-9][0-9]*\b" && words=1
+	cat tmp${prefix}_datecheck |grep -Pqoi "\b[0-9\[0-9]*[\/-](apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t\/-]*[\/-][0-9][0-9]*\b" && words=2
 
-	cat tmp_datecheck |grep -Pqoi "\b(apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t]* [0-9][0-9]* [0-9][0-9]*\b" && words=3
-	cat tmp_datecheck |grep -Pqoi "[0-9\[0-9]* (apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t]* [0-9][0-9]*\b" && words=4
+	cat tmp${prefix}_datecheck |grep -Pqoi "\b(apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t]* [0-9][0-9]* [0-9][0-9]*\b" && words=3
+	cat tmp${prefix}_datecheck |grep -Pqoi "[0-9\[0-9]* (apr|aug|dec|feb|jan|jul|jun|mar|may|nov|oct|sep)[^\t]* [0-9][0-9]*\b" && words=4
 	
 	if [[ $words -gt 0 ]] && [[ ${nomsg} == "no" ]];then
 		logmsg="	
@@ -320,16 +321,16 @@ Dates containing words detected
 	fi
 	
 	if [[ -z $dateformat ]]; then
-		cat tmp_datecheck |grep -o "\b[0|1]\?[0-9][/\-][0-3]\?[0-9][/\-][27-9][0-9]\b" > /dev/null && echo "Six digit date with trailing year detected." && dateformat="us-single"
-		cat tmp_datecheck |grep -o "\b[0-3]\?[0-9][/\-][0|1]\?[0-9][/\-][27-9][0-9]\b" > /dev/null && echo "Six digit UK date with trailing year detected." && dateformat="6digit-trailing-uk"
-		cat tmp_datecheck |grep -o "\b[78-9][0-9][/\-][0|1]\?[0-9][/\-][0-3]\?[0-9]\b" > /dev/null && echo "Six digit date with leading year detected." && dateformat="6digit-leading"
+		cat tmp${prefix}_datecheck |grep -o "\b[0|1]\?[0-9][/\-][0-3]\?[0-9][/\-][27-9][0-9]\b" > /dev/null && echo "Six digit date with trailing year detected." && dateformat="us-single"
+		cat tmp${prefix}_datecheck |grep -o "\b[0-3]\?[0-9][/\-][0|1]\?[0-9][/\-][27-9][0-9]\b" > /dev/null && echo "Six digit UK date with trailing year detected." && dateformat="6digit-trailing-uk"
+		cat tmp${prefix}_datecheck |grep -o "\b[78-9][0-9][/\-][0|1]\?[0-9][/\-][0-3]\?[0-9]\b" > /dev/null && echo "Six digit date with leading year detected." && dateformat="6digit-leading"
 	
-		cat tmp_datecheck |grep -o "\b[0-2][0-9][/\-][0-9][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null &&  dateformat="us"
-		cat tmp_datecheck |grep -o "\b[0-9][/\-][23][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null &&  dateformat="us-single"
-		cat tmp_datecheck |grep -o "\b[23][0-9][/\-][0-9][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null && dateformat="uk"
-		cat tmp_datecheck |grep -o "\b[23][0-9][/\-][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null && dateformat="uk-single"
-		cat tmp_datecheck |grep -o "\b[12][01239][0-9][0-9]\/[0-9][0-9]\/[0-9][0-9]\b" > /dev/null && dateformat="slashes"
-		cat tmp_datecheck |grep -o "\b[12][01239][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*\b" > /dev/null && dateformat="numbers"
+		cat tmp${prefix}_datecheck |grep -o "\b[0-2][0-9][/\-][0-9][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null &&  dateformat="us"
+		cat tmp${prefix}_datecheck |grep -o "\b[0-9][/\-][23][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null &&  dateformat="us-single"
+		cat tmp${prefix}_datecheck |grep -o "\b[23][0-9][/\-][0-9][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null && dateformat="uk"
+		cat tmp${prefix}_datecheck |grep -o "\b[23][0-9][/\-][0-9][/\-][12][09][0-9][0-9]\b" > /dev/null && dateformat="uk-single"
+		cat tmp${prefix}_datecheck |grep -o "\b[12][01239][0-9][0-9]\/[0-9][0-9]\/[0-9][0-9]\b" > /dev/null && dateformat="slashes"
+		cat tmp${prefix}_datecheck |grep -o "\b[12][01239][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*\b" > /dev/null && dateformat="numbers"
 	fi
 
 	if [[ $words -gt 0 ]];then	
@@ -341,8 +342,8 @@ Dates containing words detected
 		log_msg
 	fi
 
-	rm tmp_datecheck
-	rm tmp_datecheck1
+	rm tmp${prefix}_datecheck
+	rm tmp${prefix}_datecheck1
 fi
 
 SINGLE=$(echo -ne '\u00B4\u2018\u2019')
@@ -516,8 +517,8 @@ if ($fixdate == ""){print "blanked date" > "bad_dates"}
 }
 ENDOFAWK
 
-echo -e "${awkscript}" > tmp_filefixawk
-chmod 700 tmp_filefixawk
+echo -e "${awkscript}" > tmp${prefix}_filefixawk
+chmod 700 tmp${prefix}_filefixawk
 
 [[ ${nomsg} == "no" ]] && echo "Performing corrections"
 
@@ -526,11 +527,11 @@ for splitfile in ${splitlist[@]};do
 done
 wait
 
-cat filefixa*_out >> "${finalfile}"
-cat filefixa*_bad > "${errorfile}" 2>/dev/null
+cat ${prefix}a*_out >> "${finalfile}"
+cat ${prefix}a*_bad > "${errorfile}" 2>/dev/null
 
-rm -f filefixa* 
-rm tmp_filefixawk
+rm -f ${prefix}* 
+rm tmp${prefix}_filefixawk
 
 numclean=$(wc -l "${finalfile}" |cut -d " " -f1)
 

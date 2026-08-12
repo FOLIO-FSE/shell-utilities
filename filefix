@@ -183,8 +183,8 @@ head -1 tmpfile | grep -q $'\r' && dosfile=1
 numrecs=$(wc -l tmpfile |cut -d " " -f1)
 num_per_file=$(($numrecs / 5 + 1))
 
-split -l $num_per_file tmpfile filefix
 prefix="filefix$(date +%s)"
+split -l $num_per_file tmpfile ${prefix}
 splitlist=(${prefix}aa ${prefix}ab ${prefix}ac ${prefix}ad ${prefix}ae)
 rm -f tmpfile
 

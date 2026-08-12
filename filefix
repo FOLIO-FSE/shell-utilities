@@ -523,7 +523,7 @@ chmod 700 tmp${prefix}_filefixawk
 [[ ${nomsg} == "no" ]] && echo "Performing corrections"
 
 for splitfile in ${splitlist[@]};do 
-	awk -v numfields=$numfields -v outfile="${splitfile}_out" -v badfile="${splitfile}_bad" -v DATEFORMAT="${dateformat}" -v WORDS="${words}" -v DATEFIELDS="${datefields}" -v PREFIX=${prefix} -v NOMSG=${nomsg} -f tmp_filefixawk ${splitfile} &
+	awk -v numfields=$numfields -v outfile="${splitfile}_out" -v badfile="${splitfile}_bad" -v DATEFORMAT="${dateformat}" -v WORDS="${words}" -v DATEFIELDS="${datefields}" -v PREFIX=${prefix} -v NOMSG=${nomsg} -f tmp${prefix}_filefixawk ${splitfile} &
 done
 wait
 

@@ -1,6 +1,10 @@
+#!/usr/bin/bash
+
 sourcefile="${1}"
 fileroot=$(echo "${sourcefile}" | sed 's/\.....\?$//')
 outputfile="${fileroot}.mrc"
+
+prefix="filefix$(date +%s)"
 
 if [[ -z ${sourcefile} ]];then echo -e "marc2text converts binary MARC files to text\n\nYou must specify a text file to process";exit;fi
 
@@ -32,26 +36,22 @@ if [[ $numrecs -gt 5000 ]];then
 	awk -v NUM=$num_per_file 'BEGIN{RS=ORS="\n\n";count=0}{if (NR % NUM == 1) {
 	      close(out)
 	      count++
-	      out = "tmp_mrc_"count".mrk"
+	      out = "${prefix}tmp_mrc_"count".mrk"
 	}{print $0 > out }}' "${sourcefile}"
 
 	for seq in {1..5}
 	do
 	echo $fileroot
-		marcfile_process "tmp_mrc_${seq}" &
+		marcfile_process "${prefix}tmp_mrc_${seq}" &
 	done
 	wait
 	
-	cat tmp_mrc_*.mrc > "${outputfile}"
-	rm -f tmp_mrc_*.mrc
+	cat ${prefix}tmp_mrc_*.mrc > "${outputfile}"
+	rm -f ${prefix}tmp_mrc_*.mrc
 else
 	marcfile_process "${fileroot}"
 	outputfile="${fileroot}.mrc"
 fi
 echo
 echo "Text file output can be found in ${outputfile}"
-rm -f tmp*.mrk
-
-
-
-
+rm -f ${prefix}tmp*.mrk

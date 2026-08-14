@@ -29,10 +29,10 @@ if [[ $numrecs -gt 5000 ]];then
 	echo "Splitting text file into 5 files in batches of $num_per_file to speed processing. "
 	echo "Estimated time to completion is $time_to_complete seconds"
 
-	awk -v NUM=$num_per_file -v RS=$'\x1d' -v ORS=$'\x1d' 'BEGIN{count=0}{if (NR % NUM == 1) {
+	awk -v NUM=$num_per_file -v PREFIX=${prefix} -v RS=$'\x1d' -v ORS=$'\x1d' 'BEGIN{count=0}{if (NR % NUM == 1) {
 	      close(out)
 	      count++
-	      out = "${prefix}tmp_mrc_"count".mrc"
+	      out = PREFIX"tmp_mrc_"count".mrc"
 	}{print $0 > out }}' "${sourcefile}"
 
 	for seq in {1..5}

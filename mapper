@@ -250,7 +250,7 @@ build_order_map() {
 					addreplacerules approved truefalse
 			;;
 		  checkinitems | receivingcheckinitems )
-					if [[ ${field,,} ~= ^independent ]];then
+					if [[ ${field,,} =~ ^independent ]];then
 						addfield compositePoLines[0].checkinItems true
 					fi
 			;;

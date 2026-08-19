@@ -874,13 +874,13 @@ build_user_map() {
 			 addr2city | address2city | city2 )
 				addfield personal.addresses[1].city
 				;;
-			 addr1zip | address1zip | homezip | patronpostalcode | permzip | postalcode | zip )
+			 addr1zip | address1zip | homezip | patronpostalcode | permzip | postalcode | zip | zippostalcode )
 				addfield personal.addresses[0].postalCode
 				;;
 			 addr2zip | address2zip | postalcode2 | zip2 )
 				addfield personal.addresses[1].postalCode
 				;;
-			 addr1state | address1state | homestate | patronprovince | permstate | region | state )
+			 addr1state | address1state | homestate | patronprovince | permstate | province | region | state | stateprovince )
 				addfield personal.addresses[0].region
 				;;
 			 addr2state | address2state | region2 | state2 )

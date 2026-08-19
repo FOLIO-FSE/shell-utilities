@@ -839,8 +839,8 @@ build_user_map() {
 			firstname | forename | fname | givenname | patrongivenname )
 				addfield personal.firstName 
 				;;
-			 middle | middlename | mname )
-				addfield personal.lastName 
+			 middle | mi | middlename | mname )
+				addfield personal.middleName 
 				;;
 			 familyname | lastname | lname | patronfamilyname | surname )
 				addfield personal.lastName 

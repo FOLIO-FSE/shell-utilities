@@ -826,7 +826,7 @@ build_user_map() {
 				addfield legacyIdentifier
 				idfield="${field}"
 				;;
-			categorycode | group | mappedpatrongroup | patronborrowercategory | patrongroup | patrongroupcode | patrontype | ptype | ptypecode | type | usergroup | usergroupcode | userprofile )
+			borrowercategory | categorycode | group | mappedpatrongroup | patronborrowercategory | patrongroup | patrongroupcode | patrontype | ptype | ptypecode | type | usergroup | usergroupcode | userprofile )
 				addfield patronGroup
 				groupfield="${field}"
 			;;
@@ -862,30 +862,36 @@ build_user_map() {
 				addfield username
 				userfield="${field}"
 				;;
-			 addr1 | addr1line1 | address | address1 | address1line1 | addrline1 | homeadddress1 | permaddressline1 | primaryaddress )
+			 addr1 | addr1line1 | address | address1 | address1line1 | addrline1 | homeadddress1 | permaddressline1 | primaryaddress | primaryaddressline1 )
 				addfield personal.addresses[0].addressLine1
 				addvalue personal.addresses[0].addressTypeId primary
 				;;
-			 addr2 | addr2line1 | address2 | address2 | address2line1 | addr2line1 )
+			 addr2 | address2 | primaryaddressline2  )
+				addfield personal.addresses[0].addressLine2
+				;;
+			 addr2line1 | address2 | address2line1 | secondarystreetaddressline1   )
 				addfield personal.addresses[1].addressLine1
 				addvalue personal.addresses[1].addressTypeId work
 				;;
-			 addr1city | address1city | city | homecity | permcity )
+			 addr2line2 | address2line2 | secondarystreetaddressline2   )
+				addfield personal.addresses[1].addressLine2
+				;;
+			 addr1city | address1city | city | homecity | permcity | primarycityorlocality )
 				addfield personal.addresses[0].city
 				;;
-			 addr2city | address2city | city2 )
+			 addr2city | address2city | city2 | secondarycityorlocality )
 				addfield personal.addresses[1].city
 				;;
-			 addr1zip | address1zip | homezip | patronpostalcode | permzip | postalcode | zip | zippostalcode )
+			 addr1zip | address1zip | homezip | patronpostalcode | permzip | postalcode | primarypostalcode | zip | zippostalcode )
 				addfield personal.addresses[0].postalCode
 				;;
-			 addr2zip | address2zip | postalcode2 | zip2 )
+			 addr2zip | address2zip | postalcode2 | secondarypostalcode | zip2 )
 				addfield personal.addresses[1].postalCode
 				;;
 			 addr1state | address1state | homestate | patronprovince | permstate | province | region | state | stateprovince )
 				addfield personal.addresses[0].region
 				;;
-			 addr2state | address2state | region2 | state2 )
+			 addr2state | address2state | region2 | secondarystateorprovince | state2 )
 				addfield personal.addresses[1].region
 				;;
 		esac

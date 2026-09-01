@@ -863,7 +863,7 @@ build_user_map() {
 				addfield personal.addresses[0].addressLine1
 				addvalue personal.addresses[0].addressTypeId primary
 				;;
-			 addr2 | address2 | primaryaddressline2 | primarystreetaddressline2 )
+			 addr1line2 | addr2 | address2 | primaryaddressline2 | primarystreetaddressline2 )
 				addfield personal.addresses[0].addressLine2
 				;;
 			 addr2line1 | address2 | address2line1 | secondarystreetaddressline1   )
@@ -879,16 +879,16 @@ build_user_map() {
 			 addr2city | address2city | city2 | secondarycityorlocality )
 				addfield personal.addresses[1].city
 				;;
-			 addr1zip | address1zip | homezip | patronpostalcode | permzip | postalcode | primarypostalcode | zip | zippostalcode )
+			 addr1postalcode | addr1zip | address1zip | homezip | patronpostalcode | permzip | postalcode | primarypostalcode | zip | zippostalcode )
 				addfield personal.addresses[0].postalCode
 				;;
-			 addr2zip | address2zip | postalcode2 | secondarypostalcode | zip2 )
+			 addr2postalcode | addr2zip | address2zip | postalcode2 | secondarypostalcode | zip2 )
 				addfield personal.addresses[1].postalCode
 				;;
-			 addr1state | address1state | homestate | patronprovince | permstate | primarystateorprovince | province | region | state | stateprovince )
+			 addr1region | addr1state | address1state | homestate | patronprovince | permstate | primarystateorprovince | province | region | state | stateprovince )
 				addfield personal.addresses[0].region
 				;;
-			 addr2state | address2state | region2 | secondarystateorprovince | state2 )
+			 addr2region | addr2state | address2state | region2 | secondarystateorprovince | state2 )
 				addfield personal.addresses[1].region
 				;;
 		esac

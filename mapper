@@ -544,7 +544,7 @@ build_holdings_map() {
 
 	if [[ -z ${holdidfield} ]];then
 		field=${itemfield}
-		[[ -z ${itemfield} ]] && addfield formerIds[0]
+		[[ -z ${itemfield} ]] && addfield formerIds[0] && addfield legacyIdentifier
 	fi
 
 	[[ -n ${callfield} ]] && echo -e "folio_name\t${callfield}\nLibrary of Congress classification\t*" > call_number_type_mapping.tsv

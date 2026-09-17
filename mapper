@@ -823,11 +823,11 @@ build_user_map() {
 				addfield legacyIdentifier
 				idfield="${field}"
 				;;
-			borrowercategory | categorycode | group | mappedpatrongroup | patronborrowercategory | patrongroup | patrongroupcode | patrontype | ptype | ptypecode | type | usergroup | usergroupcode | userprofile )
+			borrowercategory | category | categorycode | group | mappedpatrongroup | patronborrowercategory | patrongroup | patrongroupcode | patrontype | ptype | ptypecode | type | usergroup | usergroupcode | userprofile )
 				addfield patronGroup
 				groupfield="${field}"
 			;;
-			cardexpiration | cardexpirationdate | dateexpiry | expdate | expirationdate | expiredate | patronexpirationdate | userprivexpires )
+			cardexpiration | cardexpirationdate | dateexpiry | expdate | expirationdate | expiredate | expireson | patronexpirationdate | userprivexpires )
 				addfield expirationDate
 			;;
 			note | notes | note_content | notepatron | patronnote | patronnotes | borrowernote |userxinfonote | comment )
@@ -898,7 +898,7 @@ build_user_map() {
 		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}")
 
 		case ${comp_field} in 
-			barcode | pbarcode | patronbarcode | cardnumber | borrowerid )
+			barcode | pbarcode | patronbarcode | card | cardnumber | borrowerid )
 				if [[ -z ${idfield} ]];then
 					addfield legacyIdentifier
 					addfield barcode

@@ -852,7 +852,6 @@ build_user_map() {
 				addfield personal.mobilePhone 
 				;;
 			 email | emailaddr | emailaddress | emailaddress1 | patronemail  | patronemailaddress | primaryemail )
-				addfield personal.email
 				addregexrules personal.email email
 				;;
 			loginid | username )

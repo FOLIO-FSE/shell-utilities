@@ -693,10 +693,10 @@ build_organization_map() {
 			addresscountry | addr1country | country )
 				addfield addresses[0].country
 				;;
-			addresszip | addr1postalcode | postalcode | zip | zip1 )
+			addresspostalcode | addresszip | addr1postalcode | postalcode | zip | zip1 )
 				addfield addresses[0].postalCode
 				;;
-			addressstate | region | state | state1 )
+			addressstate | addressstateprovince | region | state | state1 )
 				addfield addresses[0].region
 				;;
 			addr21 | address21 | address2line1 )
@@ -922,7 +922,7 @@ build_user_map() {
 		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}")
 	
 		case ${comp_field} in 
-			univid | uniid | externalsystemid | studentid )
+			univid | uniid | externalid | externalsystemid | studentid )
 				if [[ -z ${barcode} ]];then
 					addbackupfield barcode "${idfield}"
 					field=${barcodefield}

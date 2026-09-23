@@ -321,7 +321,6 @@ Dates containing words detected
 	fi
 	
 	if [[ -z $dateformat ]]; then
-		cat tmp${prefix}_datecheck |grep -o "\b[1-9][/\-][1-9]/\-][12][09][0-9][0-9]\b" > /dev/null && echo "Six digit date with trailing year detected." && dateformat="us-single"
 		cat tmp${prefix}_datecheck |grep -o "\b[0|1]\?[0-9][/\-][0-3]\?[0-9][/\-][27-9][0-9]\b" > /dev/null && echo "Six digit date with trailing year detected." && dateformat="us-single"
 		cat tmp${prefix}_datecheck |grep -o "\b[0-3]\?[0-9][/\-][0|1]\?[0-9][/\-][27-9][0-9]\b" > /dev/null && echo "Six digit UK date with trailing year detected." && dateformat="6digit-trailing-uk"
 		cat tmp${prefix}_datecheck |grep -o "\b[78-9][0-9][/\-][0|1]\?[0-9][/\-][0-3]\?[0-9]\b" > /dev/null && echo "Six digit date with leading year detected." && dateformat="6digit-leading"

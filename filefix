@@ -225,7 +225,7 @@ fi
 
 numrecs=$(wc -l "${infile}" |cut -d " " -f1)
 numfields=$(awk 'BEGIN{FS="\t"}{print NF;exit}' ${prefix}aa)
-num_labeled_fields=$(head -1 filefixaa |tr '\t' '\n' |grep -i [a-z0-9] |wc -l)
+num_labeled_fields=$(head -1 ${prefix}aa |tr '\t' '\n' |grep -i [a-z0-9] |wc -l)
 
 logmsg="The following $numfields fields in $numrecs lines were detected:
 "

@@ -842,6 +842,7 @@ build_user_map() {
 				addfield personal.middleName 
 				;;
 			 familyname | lastname | lname | patronfamilyname | surname )
+				addfield type patron
 				addfield personal.lastName 
 				lnamefield="${field}"
 				;;

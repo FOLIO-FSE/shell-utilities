@@ -36,7 +36,7 @@ packages=(
 )
 
 for package in "${packages[@]}";do
-	which ${package} >/dev/null 2>&1 || (logmsg="Package ${package} not installed. Please install before continuing" && log_msg && missing=1)
+	which ${package} >/dev/null 2>&1 || (logmsg="Package ${package} not installed. Some functionality may not work correctly until this is installed" && log_msg && missing=1)
 done
 
 [[ ${missing} -eq 1 ]] && exit

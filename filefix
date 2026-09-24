@@ -25,6 +25,11 @@ shift $((OPTIND - 1))
 
 logpath="${logpath%/}"
 
+log_msg() {
+	[[ ${nomsg} == "no" ]] && echo "${logmsg}" || echo "${logmsg}" >> "${logfile}"
+}
+
+
 packages=(
 	"pv"
 	"dos2unix"
@@ -73,10 +78,6 @@ if [[ -z $1 ]];then
 else
 	infile=${1}
 fi
-
-log_msg() {
-	[[ ${nomsg} == "no" ]] && echo "${logmsg}" || echo "${logmsg}" >> "${logfile}"
-}
 
 fix_characters(){
 	local file=${1}

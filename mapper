@@ -579,7 +579,7 @@ build_item_map() {
 				addfield permanentLoanTypeId 
 				loantypefield="${field}"
 			;;
-			fulfillmentnote | imessage | imsg | message | checkinnote )
+			fulfillmentnote | imessage | imsg | message | msg | checkinnote )
 				addfield circulationNotes[${fulfilmentnote_iter}].note
 				addvalue circulationNotes[${fulfilmentnote_iter}].noteType "Check in"
 				addvalue circulationNotes[${fulfilmentnote_iter}].staffOnly true

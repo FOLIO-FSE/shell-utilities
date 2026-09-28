@@ -823,7 +823,7 @@ build_user_map() {
 				addfield legacyIdentifier
 				idfield="${field}"
 				;;
-			borrowercategory | category | categorycode | group | mappedpatrongroup | patronborrowercategory | patrongroup | patrongroupcode | patrontype | ptype | ptypecode | type | usergroup | usergroupcode | userprofile )
+			borrowercategory | category | categorycode | group | mappedpatrongroup | patronborrowercategory | patrongroup | patrongroupcode | patrontype | ptype | ptypecode | type | usergroup | usergroupcode | userprofile | usertype )
 				addfield patronGroup
 				groupfield="${field}"
 			;;

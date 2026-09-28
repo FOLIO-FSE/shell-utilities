@@ -567,15 +567,15 @@ build_item_map() {
 				addfield legacyIdentifier
 				itemfield="${field}"
 				;;
-			barcode | itembarcode | z30barcode )
+			barcode | itembarcode | lhritembarcode | z30barcode )
 				addfield barcode
 				barcodefield="${field}"
 			;;
-			holdid | holrecordid | holdingsid | mfhdid | z30holdocunumber )
+			holdid | holrecordid | holdingsid | lhrcontrolnumber | mfhdid | z30holdocunumber )
 				addfield holdingsRecordId 
 				holdidfield="${field}"
 			;;
-			materialformat | materialtype | mattype | mtype | mediaitm | z30material )
+			materialformat | materialsubformat | materialtype | mattype | mtype | mediaitm | z30material )
 				addfield materialTypeId 
 				mattypefield="${field}"
 			;;
@@ -595,13 +595,13 @@ build_item_map() {
 				addvalue circulationNotes[${fulfilmentnote_iter}].staffOnly true
 				fulfilmentnote_iter=$(($fulfilmentnote_iter + 1))
 			;;
-			internalnote | intnote | price | staffnote )
+			internalnote | intnote | lhrcopynonpublicnote | lhritemnonpublicnote | price | staffnote )
 				addfield notes[${note_iter}].note
 				addvalue notes[${note_iter}].itemNoteTypeId General
 				addvalue notes[${note_iter}].staffOnly true
 				note_iter=$(($note_iter + 1))
 			;;
-			caption | descnote | freetext | gennote | itemnote | note | notegeneral | opacmsg | publicnote | z30noteopac )
+			caption | descnote | freetext | gennote | itemnote | lhrcopypublicnote | lhritempublicnote | note | notegeneral | opacmsg | publicnote | z30noteopac )
 				addfield notes[${note_iter}].note
 				addvalue notes[${note_iter}].itemNoteTypeId General
 				addvalue notes[${note_iter}].staffOnly false

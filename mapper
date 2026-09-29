@@ -494,6 +494,7 @@ build_holdings_map() {
 			;;
 			itempermanentlocation | itemshelvinglocation | permlocation | permanentlocation | permanentphysicallocation )
 				addfield permanentLocationId
+				fallback_value permanentLocationId "migration"
 				locationfield="${field}"
 			;;
 		esac
@@ -525,6 +526,7 @@ build_holdings_map() {
 			loc | location | locationname )
 				if [[ -z ${locationfield} ]];then
 					addfield permanentLocationId
+					fallback_value permanentLocationId "migration"
 					locationfield=${field}
 				fi	
 			;;
@@ -577,10 +579,12 @@ build_item_map() {
 			;;
 			materialformat | materialsubformat | materialtype | mattype | mtype | mediaitm | z30material )
 				addfield materialTypeId 
+				fallback_value materialTypeId "migration"
 				mattypefield="${field}"
 			;;
 			loantype | itempolicy | icode2 )
 				addfield permanentLoanTypeId 
+				fallback_value permanentLoanTypeId "Can circulate"
 				loantypefield="${field}"
 			;;
 			fulfillmentnote | imessage | imsg | message | msg | checkinnote )

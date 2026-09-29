@@ -135,7 +135,7 @@ addregexrules() {
 	[[ "${2}" == "url" ]] && regex_rule='(^http.*)'
 	[[ "${2}" == "2ormore" ]] && regex_rule='^[^01]$'
 	[[ "${2}" == "semicolon_delimited" ]] && regex_rule='(^[^,;]*)'
-	[[ "${2}" == "lastname" ]] && regex_rule='(.*),.*'
+	[[ "${2}" == "lastname" ]] && regex_rule='^([^,]*)'
 	[[ "${2}" == "firstname" ]] && regex_rule='.*, ([^ ]*)'
 	[[ "${2}" == "middlename" ]] && regex_rule='.*, .* (.*)'
 

@@ -913,7 +913,8 @@ build_user_map() {
 					idfield=${field}
 					barcodefield=${field}
 				else
-					addbackupfield barcode "${idfield}"
+					addregexrules barcode semicolon_delimited
+					fallback_field barcode "${idfield}"
 				fi
 			;;
 			patrnname | name )

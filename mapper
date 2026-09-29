@@ -658,10 +658,10 @@ build_item_map() {
 		esac
 	done
 
-	if [[ -z ${holdidfield} ]];then
-		field=${itemfield}
-		addfield holdingsRecordId
-	fi
+	[[ -z ${barcode} ]] && default_field legacyIdentifier barcode
+	[[ -z ${holdidfield} ]] && default_field holdingsRecordId legacyIdentifier
+	[[ -z ${mattypefield} ]] && default_field materialTypeId legacyIdentifier
+	[[ -z ${loantypefield} ]] && default_field permanentLoanTypeId legacyIdentifier
 
 	[[ -n ${mattypefield} ]] && echo -e "${mattypefield}\tfolio_name\n*\tmigration" > material_types.tsv
 	[[ -n ${loantypefield} ]] && echo -e "${loantypefield}\tfolio_name\n*\tmigration" > loan_types.tsv

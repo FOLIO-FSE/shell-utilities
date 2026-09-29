@@ -95,7 +95,7 @@ fix_characters(){
 	s/ *\t */\t/g
 	s/ +$//
 	s/\b[(]*null[)]*\b//ig
-	s/\bn\/a\b//ig
+	s#\bn/a\b##ig
 	s/()//g
 	s/\r/ /g
 	s/\"\?\t\"\?/\t/g

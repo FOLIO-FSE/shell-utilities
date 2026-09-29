@@ -941,6 +941,9 @@ build_user_map() {
 			;;
 		esac
 	done
+
+	[[ -z ${userfield} ]] && default_field username legacyIdentifier
+
 	if [[ -z ${lastname} ]];then
 		[[ -n ${firstname} ]] && lastname="${firstname}"
 	fi

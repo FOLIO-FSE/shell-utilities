@@ -943,6 +943,8 @@ build_user_map() {
 	done
 
 	[[ -z ${userfield} ]] && default_field username legacyIdentifier
+	default_field type legacyIdentifier
+	default_value type patron
 
 	if [[ -z ${lastname} ]];then
 		[[ -n ${firstname} ]] && lastname="${firstname}"

@@ -458,6 +458,9 @@ build_order_map() {
 }
 
 build_holdings_map() {
+
+	echo "${header_arr[@]}" |grep -i checkin && ischeckinrecord=="yes"
+
 	for field in "${header_arr[@]}"; do
 		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}")
 	
@@ -482,6 +485,14 @@ build_holdings_map() {
 			holdid | holrecordid | holdingsid | mfhdid | z30holdocunumber )
 				addfield holdingsRecordId 
 				holdidfield="${field}"
+			;;
+			intnote | vennote )
+				if [[ -n ${ischeckinrecord} ]];then
+					addfield notes[${holdnote_iter}].note
+					addvalue notes[${holdnote_iter}].holdingsNoteTypeId Note
+					addvalue notes[${holdnote_iter}].staffOnly true
+					note_iter=$(($holdnote_iter + 1))
+				fi
 			;;
 			notecheckin )
 				addfield notes[${holdnote_iter}].note

@@ -470,12 +470,12 @@ build_holdings_map() {
 				addfield formerIds[1]
 				bibfield="${field}"
 				;;
-			id | itemid | itempid | physicalitemid | recorditem | z30reckey)
+			id | itemid | itempid | physicalitemid | recordcheckin | recorditem | z30reckey)
 				addfield legacyIdentifier
 				addfield formerIds[0]
 				itemfield="${field}"
 				;;
-			callitem | itemcallnumber | itemclassnumber | permanentcallnumber | shelfmark )
+			callcheckin | callitem | itemcallnumber | itemclassnumber | permanentcallnumber | shelfmark )
 				addfield callNumber 
 				callfield="${field}"
 				;;
@@ -523,7 +523,7 @@ build_holdings_map() {
 					addfield formerIds[1]
 				fi	
 			;;
-			loc | location | locationname )
+			loc | location | locationscheckin | loclocationname )
 				if [[ -z ${locationfield} ]];then
 					addfield permanentLocationId
 					fallback_value permanentLocationId "migration"

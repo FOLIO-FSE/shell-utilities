@@ -534,7 +534,7 @@ build_holdings_map() {
 					addfield formerIds[1]
 				fi	
 			;;
-			loc | location | locationscheckin | loclocationname )
+			loc | location | loclocationname )
 				if [[ -z ${locationfield} ]];then
 					addfield permanentLocationId
 					fallback_value permanentLocationId "migration"

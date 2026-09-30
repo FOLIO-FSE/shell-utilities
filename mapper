@@ -491,14 +491,14 @@ build_holdings_map() {
 					addfield notes[${holdnote_iter}].note
 					addvalue notes[${holdnote_iter}].holdingsNoteTypeId Note
 					addvalue notes[${holdnote_iter}].staffOnly true
-					note_iter=$(($holdnote_iter + 1))
+					holdnote_iter=$(($holdnote_iter + 1))
 				fi
 			;;
 			notecheckin )
 				addfield notes[${holdnote_iter}].note
 				addvalue notes[${holdnote_iter}].holdingsNoteTypeId Note
 				addvalue notes[${holdnote_iter}].staffOnly true
-				note_iter=$(($holdnote_iter + 1))
+				holdnote_iter=$(($holdnote_iter + 1))
 			;;
 			holdings | libhas | libhascheckin | summaryholding | summaryholdings )
 				addfield holdingsStatements[0].statement

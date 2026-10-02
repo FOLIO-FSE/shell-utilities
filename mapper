@@ -588,7 +588,7 @@ build_item_map() {
 				addfield holdingsRecordId 
 				holdidfield="${field}"
 			;;
-			itemmaterialtype materialformat | materialsubformat | materialtype | mattype | mtype | mediaitm | z30material )
+			itemmaterialtype | materialformat | materialsubformat | materialtype | mattype | mtype | mediaitm | z30material )
 				addfield materialTypeId 
 				fallback_value materialTypeId "migration"
 				mattypefield="${field}"

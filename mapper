@@ -134,6 +134,10 @@ addregexrules() {
 	[[ "${2}" == "number" ]] && regex_rule='([0-9]+)'
 	[[ "${2}" == "url" ]] && regex_rule='(^http.*)'
 	[[ "${2}" == "2ormore" ]] && regex_rule='^[^01]$'
+	[[ "${2}" == "semicolon_delimited" ]] && regex_rule='(^[^,;]*)'
+	[[ "${2}" == "lastname" ]] && regex_rule='^([^,]*)'
+	[[ "${2}" == "firstname" ]] && regex_rule='.*, ([^ ]*)'
+	[[ "${2}" == "middlename" ]] && regex_rule='.*, .* (.*)'
 
 	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"value\":\"\",\"rules\":{\"regexGetFirstMatchOrEmpty\":\"${regex_rule}\"}}"
 	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")
@@ -454,6 +458,9 @@ build_order_map() {
 }
 
 build_holdings_map() {
+
+	echo "${header_arr[@]}" |grep -i checkin && ischeckinrecord=="yes"
+
 	for field in "${header_arr[@]}"; do
 		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}")
 	
@@ -466,12 +473,12 @@ build_holdings_map() {
 				addfield formerIds[1]
 				bibfield="${field}"
 				;;
-			id | itemid | itempid | physicalitemid | recorditem | z30reckey)
+			id | itemid | itempid | physicalitemid | recordcheckin | recorditem | z30reckey)
 				addfield legacyIdentifier
 				addfield formerIds[0]
 				itemfield="${field}"
 				;;
-			callitem | itemcallnumber | itemclassnumber | permanentcallnumber | shelfmark )
+			callcheckin | callitem | itemcallnumber | itemclassnumber | permanentcallnumber | shelfmark )
 				addfield callNumber 
 				callfield="${field}"
 				;;
@@ -479,17 +486,26 @@ build_holdings_map() {
 				addfield holdingsRecordId 
 				holdidfield="${field}"
 			;;
+			intnote | vennote )
+				if [[ -n ${ischeckinrecord} ]];then
+					addfield notes[${holdnote_iter}].note
+					addvalue notes[${holdnote_iter}].holdingsNoteTypeId Note
+					addvalue notes[${holdnote_iter}].staffOnly true
+					holdnote_iter=$(($holdnote_iter + 1))
+				fi
+			;;
 			notecheckin )
 				addfield notes[${holdnote_iter}].note
 				addvalue notes[${holdnote_iter}].holdingsNoteTypeId Note
 				addvalue notes[${holdnote_iter}].staffOnly true
-				note_iter=$(($holdnote_iter + 1))
+				holdnote_iter=$(($holdnote_iter + 1))
 			;;
 			holdings | libhas | libhascheckin | summaryholding | summaryholdings )
 				addfield holdingsStatements[0].statement
 			;;
 			itempermanentlocation | itemshelvinglocation | permlocation | permanentlocation | permanentphysicallocation )
 				addfield permanentLocationId
+				fallback_value permanentLocationId "migration"
 				locationfield="${field}"
 			;;
 		esac
@@ -518,9 +534,10 @@ build_holdings_map() {
 					addfield formerIds[1]
 				fi	
 			;;
-			loc | location | locationname )
+			loc | location | loclocationname )
 				if [[ -z ${locationfield} ]];then
 					addfield permanentLocationId
+					fallback_value permanentLocationId "migration"
 					locationfield=${field}
 				fi	
 			;;
@@ -544,7 +561,7 @@ build_holdings_map() {
 
 	if [[ -z ${holdidfield} ]];then
 		field=${itemfield}
-		[[ -z ${itemfield} ]] && addfield formerIds[0]
+		[[ -z ${itemfield} ]] && addfield formerIds[0] && addfield legacyIdentifier
 	fi
 
 	[[ -n ${callfield} ]] && echo -e "folio_name\t${callfield}\nLibrary of Congress classification\t*" > call_number_type_mapping.tsv
@@ -563,23 +580,25 @@ build_item_map() {
 				addfield legacyIdentifier
 				itemfield="${field}"
 				;;
-			barcode | itembarcode | z30barcode )
+			barcode | itembarcode | lhritembarcode | z30barcode )
 				addfield barcode
 				barcodefield="${field}"
 			;;
-			holdid | holrecordid | holdingsid | mfhdid | z30holdocunumber )
+			holdid | holrecordid | holdingsid | lhrcontrolnumber | mfhdid | z30holdocunumber )
 				addfield holdingsRecordId 
 				holdidfield="${field}"
 			;;
-			materialformat | materialtype | mattype | mtype | mediaitm | z30material )
+			itemmaterialtype materialformat | materialsubformat | materialtype | mattype | mtype | mediaitm | z30material )
 				addfield materialTypeId 
+				fallback_value materialTypeId "migration"
 				mattypefield="${field}"
 			;;
 			loantype | itempolicy | icode2 )
 				addfield permanentLoanTypeId 
+				fallback_value permanentLoanTypeId "Can circulate"
 				loantypefield="${field}"
 			;;
-			fulfillmentnote | imessage | imsg | message | checkinnote )
+			fulfillmentnote | imessage | imsg | message | msg | checkinnote )
 				addfield circulationNotes[${fulfilmentnote_iter}].note
 				addvalue circulationNotes[${fulfilmentnote_iter}].noteType "Check in"
 				addvalue circulationNotes[${fulfilmentnote_iter}].staffOnly true
@@ -591,13 +610,13 @@ build_item_map() {
 				addvalue circulationNotes[${fulfilmentnote_iter}].staffOnly true
 				fulfilmentnote_iter=$(($fulfilmentnote_iter + 1))
 			;;
-			internalnote | intnote | price | staffnote )
+			internalnote | internalnote1 | internalnote2 | internalnote3 | intnote | lhrcopynonpublicnote | lhritemnonpublicnote | price | staffnote )
 				addfield notes[${note_iter}].note
 				addvalue notes[${note_iter}].itemNoteTypeId General
 				addvalue notes[${note_iter}].staffOnly true
 				note_iter=$(($note_iter + 1))
 			;;
-			caption | descnote | freetext | gennote | itemnote | note | notegeneral | opacmsg | publicnote | z30noteopac )
+			caption | descnote | freetext | gennote | itemnote | lhrcopypublicnote | lhritempublicnote | note | notegeneral | opacmsg | publicnote | z30noteopac )
 				addfield notes[${note_iter}].note
 				addvalue notes[${note_iter}].itemNoteTypeId General
 				addvalue notes[${note_iter}].staffOnly false
@@ -615,7 +634,7 @@ build_item_map() {
 			vol | volume | volumes )
 				addfield volume
 			;;
-			year )
+			issueyear | year )
 				addfield yearCaption[0]
 			;;
 			pieces)
@@ -654,10 +673,10 @@ build_item_map() {
 		esac
 	done
 
-	if [[ -z ${holdidfield} ]];then
-		field=${itemfield}
-		addfield holdingsRecordId
-	fi
+	[[ -z ${barcode} ]] && default_field legacyIdentifier barcode
+	[[ -z ${holdidfield} ]] && default_field holdingsRecordId legacyIdentifier
+	[[ -z ${mattypefield} ]] && default_field materialTypeId legacyIdentifier
+	[[ -z ${loantypefield} ]] && default_field permanentLoanTypeId legacyIdentifier
 
 	[[ -n ${mattypefield} ]] && echo -e "${mattypefield}\tfolio_name\n*\tmigration" > material_types.tsv
 	[[ -n ${loantypefield} ]] && echo -e "${loantypefield}\tfolio_name\n*\tmigration" > loan_types.tsv
@@ -680,23 +699,23 @@ build_organization_map() {
 				addvalue addresses[0].isPrimary true
 				addressfield="${field}"
 				;;
-			addr2 | address2 | address12 | addressline2 )
+			addr2 | address2 | address12 | addr1line2 | addressline2 )
 				addfield addresses[0].addressLine2
 				;;
 			addresscategory | category )
 				addfield addresses[0].categories[0]
 				addresscategoryfield=${field}
 				;;
-			addresscity | city | city1 )
+			addresscity | addr1city | city | city1 )
 				addfield addresses[0].city
 				;;
-			addresscountry | country )
+			addresscountry | addr1country | country )
 				addfield addresses[0].country
 				;;
-			addresszip | postalcode | zip | zip1 )
+			addresspostalcode | addresszip | addr1postalcode | postalcode | zip | zip1 )
 				addfield addresses[0].postalCode
 				;;
-			addressstate | region | state | state1 )
+			addressstate | addressstateprovince | region | state | state1 )
 				addfield addresses[0].region
 				;;
 			addr21 | address21 | address2line1 )
@@ -709,16 +728,13 @@ build_organization_map() {
 			address2category | category2 )
 				addfield addresses[1].categories[0]
 				;;
-			address2city | city2 )
-				addfield addresses[1].city
-				;;
 			address2country | country2 )
 				addfield addresses[1].country
 				;;
-			address2zip | postalcode2 | zip2 )
+			addr2postalcode | address2zip | postalcode2 | zip2 )
 				addfield addresses[1].postalCode
 				;;
-			address2state | region2 | state2 )
+			addr2region | address2region | address2state | region2 | state2 )
 				addfield addresses[1].region
 				;;
 			altname | alternativenames )
@@ -822,15 +838,15 @@ build_user_map() {
 		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}")
 	
 		case ${comp_field} in 
-			id | idnumber | patronuniqueid | primaryidentifier | record | recordnumberpatron | uniqueid | userid | useruserid )
+			id | idnumber | patronuniqueid | primaryidentifier | record | recordnumberpatron | recordpatron | uniqueid | userid | useruserid )
 				addfield legacyIdentifier
 				idfield="${field}"
 				;;
-			borrowercategory | categorycode | group | mappedpatrongroup | patronborrowercategory | patrongroup | patrongroupcode | patrontype | ptype | ptypecode | type | usergroup | usergroupcode | userprofile )
+			borrowercategory | category | categorycode | group | mappedpatrongroup | patronborrowercategory | patrongroup | patrongroupcode | patrontype | ptype | ptypecode | type | usergroup | usergroupcode | userprofile | usertype )
 				addfield patronGroup
 				groupfield="${field}"
 			;;
-			cardexpiration | cardexpirationdate | dateexpiry | expdate | expirationdate | expiredate | patronexpirationdate | userprivexpires )
+			cardexpiration | cardexpirationdate | dateexpiry | expdate | expirationdate | expiredate | expirydate | expireson | patronexpirationdate | userprivexpires )
 				addfield expirationDate
 			;;
 			note | notes | note_content | notepatron | patronnote | patronnotes | borrowernote |userxinfonote | comment )
@@ -845,6 +861,7 @@ build_user_map() {
 				addfield personal.middleName 
 				;;
 			 familyname | lastname | lname | patronfamilyname | surname )
+				addfield type patron
 				addfield personal.lastName 
 				lnamefield="${field}"
 				;;
@@ -855,18 +872,17 @@ build_user_map() {
 				addfield personal.mobilePhone 
 				;;
 			 email | emailaddr | emailaddress | emailaddress1 | patronemail  | patronemailaddress | primaryemail )
-				addfield personal.email
 				addregexrules personal.email email
 				;;
 			loginid | username )
 				addfield username
 				userfield="${field}"
 				;;
-			 addr1 | addr1line1 | address | address1 | address1line1 | addrline1 | homeadddress1 | permaddressline1 | primaryaddress | primaryaddressline1 | primarystreetaddressline1 )
+			 addr1 | addr1line1 | address | addressline1 | address1 | address1line1 | addrline1 | homeadddress1 | permaddressline1 | primaryaddress | primaryaddressline1 | primarystreetaddressline1 )
 				addfield personal.addresses[0].addressLine1
 				addvalue personal.addresses[0].addressTypeId primary
 				;;
-			 addr2 | address2 | primaryaddressline2 | primarystreetaddressline2 )
+			 addressline2 | addr1line2 | addr2 | address2 | primaryaddressline2 | primarystreetaddressline2 )
 				addfield personal.addresses[0].addressLine2
 				;;
 			 addr2line1 | address2 | address2line1 | secondarystreetaddressline1   )
@@ -876,22 +892,22 @@ build_user_map() {
 			 addr2line2 | address2line2 | secondarystreetaddressline2   )
 				addfield personal.addresses[1].addressLine2
 				;;
-			 addr1city | address1city | city | homecity | permcity | primarycityorlocality )
+			 addresscity | addr1city | address1city | city | homecity | permcity | primarycityorlocality )
 				addfield personal.addresses[0].city
 				;;
 			 addr2city | address2city | city2 | secondarycityorlocality )
 				addfield personal.addresses[1].city
 				;;
-			 addr1zip | address1zip | homezip | patronpostalcode | permzip | postalcode | primarypostalcode | zip | zippostalcode )
+			 addresspostalcode | addr1postalcode | addr1zip | address1zip | homezip | patronpostalcode | permzip | postalcode | primarypostalcode | zip | zippostalcode )
 				addfield personal.addresses[0].postalCode
 				;;
-			 addr2zip | address2zip | postalcode2 | secondarypostalcode | zip2 )
+			 addr2postalcode | addr2zip | address2zip | postalcode2 | secondarypostalcode | zip2 )
 				addfield personal.addresses[1].postalCode
 				;;
-			 addr1state | address1state | homestate | patronprovince | permstate | primarystateorprovince | province | region | state | stateprovince )
+			 addressstateprovince | addr1region | addr1state | address1state | homestate | patronprovince | permstate | primarystateorprovince | province | region | state | stateprovince )
 				addfield personal.addresses[0].region
 				;;
-			 addr2state | address2state | region2 | secondarystateorprovince | state2 )
+			 addr2region | addr2state | address2state | region2 | secondarystateorprovince | state2 )
 				addfield personal.addresses[1].region
 				;;
 		esac
@@ -901,20 +917,22 @@ build_user_map() {
 		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}")
 
 		case ${comp_field} in 
-			barcode | pbarcode | patronbarcode | cardnumber | borrowerid )
+			barcode | pbarcode | patronbarcode | card | cardnumber | borrowerid )
 				if [[ -z ${idfield} ]];then
-					addfield legacyIdentifier
-					addfield barcode
+					addregexrules barcode semicolon_delimited
+					addregexrules legacyIdentifier semicolon_delimited
 					idfield=${field}
 					barcodefield=${field}
 				else
-					addbackupfield barcode "${idfield}"
+					addregexrules barcode semicolon_delimited
+					fallback_field barcode "${idfield}"
 				fi
 			;;
 			patrnname | name )
 				if [[ -z ${lastname} ]];then
-					addfield personal.lastName
-					addfield personal.firstName
+					addregexrules personal.lastName lastname
+					addregexrules personal.firstName firstname
+					addregexrules personal.middleName middlename
 				else
 					addfield personal.firstName
 				fi
@@ -926,7 +944,7 @@ build_user_map() {
 		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}")
 	
 		case ${comp_field} in 
-			univid | uniid | externalsystemid | studentid )
+			univid | uniid | externalid | externalsystemid | studentid )
 				if [[ -z ${barcode} ]];then
 					addbackupfield barcode "${idfield}"
 					field=${barcodefield}
@@ -934,6 +952,11 @@ build_user_map() {
 			;;
 		esac
 	done
+
+	[[ -z ${userfield} ]] && default_field username legacyIdentifier
+	default_field type legacyIdentifier
+	default_value type patron
+
 	if [[ -z ${lastname} ]];then
 		[[ -n ${firstname} ]] && lastname="${firstname}"
 	fi

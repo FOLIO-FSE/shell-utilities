@@ -182,6 +182,8 @@ case $recordtype in
 	recordtype="serials-management/rulesets";;
 "servicepoints")
 	recordtype="service-points";;
+"servicepointsusers")
+	recordtype="service-points-users";;
 "sharinginstances")
 	accept="application/json"
 	batchsize=3
@@ -203,7 +205,7 @@ case $recordtype in
 "users")
 	recordtype="users";;
 *)
-	echo "Record type '${recordtype}' not found. Supported types are accounts, actionprofiles, agreements, agreements-picklists, authorities, authorities-source, boundwiths, callnumbertypes, campuses, composite-orders, groups, feefineactions, fiscalyears, funds, holdings, identifiertypes, importprofiles, instances, instance-formats, instance-note-types, instance-types, interfaces, invoices, invoice-lines, items, jobprofiles, libraries, licenses, licenses-picklists, licenses-terms, loans, locations, manualblocks, matchprofiles, mattypes, nature-of-content, notices, organizations, parsedrecords, permissions, polines, precedingsucceeding, requests, rulesets, servicepoints, sharinginstances, srs, tags, templates, users."
+	echo "Record type '${recordtype}' not found. Supported types are accounts, actionprofiles, agreements, agreements-picklists, authorities, authorities-source, boundwiths, callnumbertypes, campuses, composite-orders, groups, feefineactions, fiscalyears, funds, holdings, identifiertypes, importprofiles, instances, instance-formats, instance-note-types, instance-types, interfaces, invoices, invoice-lines, items, jobprofiles, libraries, licenses, licenses-picklists, licenses-terms, loans, locations, manualblocks, matchprofiles, mattypes, nature-of-content, notices, organizations, parsedrecords, permissions, polines, precedingsucceeding, requests, rulesets, servicepoints, servicepointsusers, sharinginstances, srs, tags, templates, users."
 	exit;;
 esac
 

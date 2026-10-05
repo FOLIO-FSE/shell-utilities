@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-knownsystems=("absysnet" "aleph" "alma_holdings" "destiny" "eos" "hylib" "evergreen" "janium" "koha" "lc2" "opals" "sierra" "sirsi" "softlink" "tlc" "tinycat" "virtua" "wms")
+knownsystems=("absysnet" "aleph" "destiny" "eos" "hylib" "evergreen" "janium" "koha" "lc2" "opals" "sierra" "sirsi" "softlink" "tlc" "tinycat" "virtua" "wms")
 
 while getopts "o:" opt; do
 	case $opt in
@@ -72,15 +72,6 @@ if [[ ${system} == "aleph" ]];then
 	item_field="9016"
 	location_subfield="3"
 	taglabelmap="l:sublibrary L:admin_library m:material_type 1:collection_code A:library_location_name 2:collection_code_location B:collection_description 3:specific_location 9:call_number 6:barcode 5:item_status f:loan_status_code F:loan_status_description n:creation_date 8:last_update"
-fi
-
-if [[ ${system} == "alma_holdings" ]];then
-	identifier="8528"
-	item_field="8528"
-	holdid_field="8528"
-	item_call_subfield="h"
-	location_subfield="c"
-	taglabelmap="8:holdid c:location h:call_number i:cutter x:staff_note"
 fi
 
 if [[ ${system} == "destiny" ]];then

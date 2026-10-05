@@ -482,7 +482,7 @@ build_holdings_map() {
 				addfield callNumber 
 				callfield="${field}"
 				;;
-			holdid | holrecordid | holdingsid | mfhdid | z30holdocunumber )
+			holdid | holdingsid | mfhdid | z30holdocunumber )
 				addfield holdingsRecordId 
 				holdidfield="${field}"
 			;;

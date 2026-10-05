@@ -584,7 +584,7 @@ build_item_map() {
 				addfield barcode
 				barcodefield="${field}"
 			;;
-			holdid | holrecordid | holdingsid | lhrcontrolnumber | mfhdid | z30holdocunumber )
+			holdid | holdingsid | lhrcontrolnumber | mfhdid | z30holdocunumber )
 				addfield holdingsRecordId 
 				holdidfield="${field}"
 			;;

@@ -159,7 +159,8 @@ default_field() {
 			| select(.folio_field == $source)
 			| .legacy_field
 		  )
-		)
+		),
+		value: ""
 	  }]
 	end
   ' <<< "${object_map}")

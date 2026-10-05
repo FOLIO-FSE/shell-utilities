@@ -593,7 +593,7 @@ build_item_map() {
 				fallback_value materialTypeId "migration"
 				mattypefield="${field}"
 			;;
-			loantype | itempolicy | icode2 )
+			loantype | itempolicy | icode2 | policy )
 				addfield permanentLoanTypeId 
 				fallback_value permanentLoanTypeId "Can circulate"
 				loantypefield="${field}"

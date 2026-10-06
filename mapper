@@ -645,7 +645,7 @@ build_item_map() {
 				addfield status.name
 				statusfield="${field}"
 			;;
-			templocation | itemtemporaryshelvinglocation)
+			temploc | templocation | itemtemporaryshelvinglocation)
 				addfield temporaryLocationId
 			;;
 			tempitemtype | temporaryitemtype | temploantype | temporaryloantype)

@@ -624,26 +624,10 @@ build_item_map() {
 				note_iter=$(($note_iter + 1))
 			;;
 			copy | copynumber | copyno | copyid | z30copyid | itemcopyid )
-				addreplacerules copyNumber twoplus
+				addregexrules "${field}" 2ormore
 			;;
-			chron | chronology )
-				addfield volume
-			;;
-			enum | enumeration | itemenum )
-				addfield enumeration
-			;;
-			vol | volume | volumes )
-				addfield volume
-			;;
-			issueyear | year )
-				addfield yearCaption[0]
-			;;
-			pieces)
-				addfield numberOfPieces 
-			;;
-			itemstatus | itemstatusdesc | itemstatusname | itemstatuscurrentstatus | status | statusdisplay | statusmappingkey | statusname )
-				addfield status.name
-				statusfield="${field}"
+			pieces )
+				addregexrules "${field}" 2ormore
 			;;
 			temploc | templocation | itemtemporaryshelvinglocation)
 				addfield temporaryLocationId

@@ -121,8 +121,6 @@ addreplacerules() {
 	replace_rule="${2}"
 	[[ "${2}" == "truefalse" ]] && replace_rule='"Yes":"true","YES":"true","Y":"true","y":"true","n":"false","N":"false","TRUE":"true","No":"false","NO":"false","FALSE":"false"'
 
-	[[ "${2}" == "twoplus" ]] && replace_rule='"0":"","1":""'
-
 	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"value\":\"\",\"rules\":{\"replaceValues\":{${replace_rule}}}}"
 	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")
 }
@@ -133,7 +131,7 @@ addregexrules() {
 	[[ "${2}" == "email" ]] && regex_rule='(^[a-zA-Z0-9_\\-\\.]+@[a-zA-Z0-9_\\-\\.]+)'
 	[[ "${2}" == "number" ]] && regex_rule='([0-9]+)'
 	[[ "${2}" == "url" ]] && regex_rule='(^http.*)'
-	[[ "${2}" == "2ormore" ]] && regex_rule='^[^01]$'
+	[[ "${2}" == "2ormore" ]] && regex_rule='(^[^01]$)'
 	[[ "${2}" == "semicolon_delimited" ]] && regex_rule='(^[^,;]*)'
 	[[ "${2}" == "lastname" ]] && regex_rule='^([^,]*)'
 	[[ "${2}" == "firstname" ]] && regex_rule='.*, ([^ ]*)'

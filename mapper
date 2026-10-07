@@ -622,10 +622,22 @@ build_item_map() {
 				note_iter=$(($note_iter + 1))
 			;;
 			copy | copynumber | copyno | copyid | z30copyid | itemcopyid )
-				addregexrules "${field}" 2ormore
+				addregexrules copy 2ormore
+			;;
+			vol | volume | volumes )
+				addfield volume 
+			;;
+			chron | chronology )
+				addfield chronology
+			;;
+			enumeration | itemenum )
+				addfield enumeration
 			;;
 			pieces )
-				addregexrules "${field}" 2ormore
+				addregexrules numberOfPieces 2ormore
+			;;
+			issueyear | year )
+				addfield yearCaption[0]
 			;;
 			temploc | templocation | itemtemporaryshelvinglocation)
 				addfield temporaryLocationId

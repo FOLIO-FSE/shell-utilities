@@ -327,7 +327,7 @@ build_order_map() {
 				addfield compositePoLines[0].fundDistribution[0].value 100
 				fundfield="${field}"
 			;;
-		  bibid | bibno | mmsid | mmsrecordid | recordbiblio | recordbibliographic | recordnumberbibliographic | systemidentifierbibid )
+		  bibid | bibno | mmsid | mmsrecordid | recordbiblio | recordnumbiblio | recordbibliographic | recordnumberbibliographic | systemidentifierbibid )
 			addfield compositePoLines[0].instanceId
 			;;
 		  location | locationcode | locationid | locationidcode | locationname )
@@ -472,12 +472,12 @@ build_holdings_map() {
 				addfield formerIds[1]
 				bibfield="${field}"
 				;;
-			id | itemid | itempid | physicalitemid | recordcheckin | recorditem | z30reckey)
+			id | itemid | itempid | physicalitemid | recordcheckin | recorditem | recordnumitem | z30reckey)
 				addfield legacyIdentifier
 				addfield formerIds[0]
 				itemfield="${field}"
 				;;
-			callcheckin | callitem | itemcallnumber | itemclassnumber | permanentcallnumber | shelfmark )
+			callcheckin | callitem | callnumitem | itemcallnumber | itemclassnumber | permanentcallnumber | shelfmark )
 				addfield callNumber 
 				callfield="${field}"
 				;;
@@ -514,7 +514,7 @@ build_holdings_map() {
 		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}")
 	
 		case ${comp_field} in 
-			call | callmarc | callno | callnumber )
+			call | callmarc | callno | callnumber | callnumbiblio | callbiblio )
 				if [[ -z ${callfield} ]];then
 					callfield=${field}
 					addfield callNumber
@@ -621,7 +621,7 @@ build_item_map() {
 				addvalue notes[${note_iter}].staffOnly false
 				note_iter=$(($note_iter + 1))
 			;;
-			copy | copynumber | copyno | copyid | z30copyid | itemcopyid )
+			copy | copynumber | copyno | copynum | copyid | z30copyid | itemcopyid )
 				addregexrules copy 2ormore
 			;;
 			vol | volume | volumes )
@@ -833,7 +833,7 @@ build_user_map() {
 		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}")
 	
 		case ${comp_field} in 
-			id | idnumber | patronuniqueid | primaryidentifier | record | recordnumberpatron | recordpatron | uniqueid | userid | useruserid )
+			id | idnumber | patronnum | patronuniqueid | primaryidentifier | record | recordnumberpatron | recordpatron | uniqueid | userid | useruserid )
 				addfield legacyIdentifier
 				idfield="${field}"
 				;;

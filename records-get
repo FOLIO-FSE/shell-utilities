@@ -260,7 +260,7 @@ case $rec_type in
 	endpoint="metadata-provider/jobExecutions"
 	startlimit=1
 	num_retrieved=100
-	sortby="&sortBy=completed_date,desc"
+	sortby="&sortBy=started_date,asc"
 	;;
 "importprofiles")
 	rec_type="jobProfiles"

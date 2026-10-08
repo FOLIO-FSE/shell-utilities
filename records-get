@@ -258,7 +258,9 @@ case $rec_type in
 "importjobs")
 	rec_type="jobExecutions"
 	endpoint="metadata-provider/jobExecutions"
-	num_retrieved=1
+	startlimit=1
+	num_retrieved=100
+	sortby="&sortBy=completed_date,desc"
 	;;
 "importprofiles")
 	rec_type="jobProfiles"

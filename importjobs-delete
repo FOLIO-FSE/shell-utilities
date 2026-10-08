@@ -1,0 +1,66 @@
+#!/usr/bin/bash
+auth 2>/dev/null || authn 2>/dev/null
+SECONDS=1 
+
+tenant=$(cat tenant)
+okapi_url=$(cat okapi.url)
+okapi_token=$(cat okapi.token)
+
+deletefile="delete"
+batchSize=100
+logfile="delete.log"
+
+ids=""
+uuidPattern='^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+
+build_ids() {
+	totalRecords=0
+	ids=""
+
+	for input_record in "${job_ids[@]}";do
+		if [[ ! ${input_record} =~ ${uuidPattern} ]];then
+			echo "Skipping invalid id: ${input_record}" | tee -a "${logfile}" >&2
+			continue
+		fi
+
+		if (( totalRecords==0 ));then
+			ids="\"${input_record}\""
+		else
+			ids="${ids}, \"${input_record}\""
+		fi
+
+		totalRecords=$(($totalRecords + 1))
+	done
+}
+
+batchNumber=0
+totalSent=0
+totalFailed=0
+
+while mapfile -t -n ${batchSize} job_ids && ((${#job_ids[@]})); do
+	if [[ $SECONDS -gt 500 ]]; then
+		auth 2>/dev/null || authn 2>/dev/null
+		okapi_token=$(cat okapi.token)
+	fi
+
+	batchNumber=$(($batchNumber + 1))
+	build_ids
+
+	if (( totalRecords==0 ));then continue;fi
+
+	payload="{\"ids\": [${ids}]}"
+
+	response=$(curl --http1.1 -s -w '\n' -X DELETE -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${payload}" "${okapi_url}/change-manager/jobExecutions")
+
+	echo "Batch ${batchNumber}: ${response}" >> "${logfile}"
+
+	### the response reports per-id results, so count any that were not deleted
+	failed=$(grep -o '"isDeleted" *: *false' <<< "${response}" | wc -l)
+	totalSent=$(($totalSent + $totalRecords))
+	totalFailed=$(($totalFailed + $failed))
+
+	echo "Batch ${batchNumber}: sent ${totalRecords}, not deleted ${failed}"
+
+done < ${deletefile}
+
+echo "Done. Sent ${totalSent} ids, ${totalFailed} reported as not deleted. Details in ${logfile}"

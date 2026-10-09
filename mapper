@@ -467,7 +467,7 @@ build_holdings_map() {
 			accession | accessionnumber)
 				addfield accessionNumber 
 				;;
-			bibid | bibids | bibno | mmsid | mmsrecordid | recordbiblio | recordbibliographic | recordnumberbibliographic | systemidentifierbibid )
+			bibid | bibids | bibno | mmsid | mmsrecordid | recordnumbiblio | recordbiblio | recordbibliographic | recordnumberbibliographic | systemidentifierbibid )
 				addfield instanceId
 				addfield formerIds[1]
 				bibfield="${field}"
@@ -575,12 +575,12 @@ build_item_map() {
 		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}" |sed 's/notes$/note/')
 	
 		case ${comp_field} in 
-			id | itemid | itempid | physicalitemid | recorditem | recordnumberitem | z30reckey)
+			id | itemid | itempid | physicalitemid | recorditem | recordnumitem | recordnumberitem | z30reckey)
 				addfield legacyIdentifier
 				itemfield="${field}"
 				;;
 			barcode | itembarcode | lhritembarcode | z30barcode )
-				addfield barcode
+				addregexrules barcode semicolon_delimited
 				barcodefield="${field}"
 			;;
 			holdid | holdingsid | lhrcontrolnumber | mfhdid | z30holdocunumber )
@@ -653,7 +653,7 @@ build_item_map() {
 	
 		case ${comp_field} in 
 			barcode | itembarcode | z30barcode )
-				[[ -z ${itemfield} ]] && addfield legacyIdentifier
+				[[ -z ${itemfield} ]] && addregexrules legacyIdentifier semicolon_delimited
 			;;
 			itype | itemtype | itemtypeid | itemtypecode | itemtypename | itypelabel | itypecode | permitemtype )
 				if [[ -z ${mattypefield} ]];then

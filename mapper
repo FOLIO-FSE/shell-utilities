@@ -231,8 +231,11 @@ print_results() {
 	  echo "UNMAPPED legacy fields"
 	  cat tmpunmapped1
 	} > tmpunmapped2
+
+	n1=$(wc -l < tmpmap)
+	n2=$(wc -l < tmpunmapped2)
 	
-	paste -d $'\t' tmpunmapped2 tmpmap | column -t -s $'\t'
+	{ cat tmpmap; [ "$n2" -gt "$n1" ] && yes $'\t' | head -n $((n2 - n1)); } | paste - tmpunmapped2
 	
 	rm -f tmp1 tmp2 tmpunmapped1 tmpunmapped2 tmpmap
 }

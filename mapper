@@ -597,7 +597,7 @@ build_item_map() {
 				fallback_value permanentLoanTypeId "Can circulate"
 				loantypefield="${field}"
 			;;
-			fulfillmentnote | imessage | imsg | message | msg | checkinnote )
+			fulfillmentnote | imessage | imsg | message | messageitem | msg | checkinnote )
 				addfield circulationNotes[${fulfilmentnote_iter}].note
 				addvalue circulationNotes[${fulfilmentnote_iter}].noteType "Check in"
 				addvalue circulationNotes[${fulfilmentnote_iter}].staffOnly true
@@ -615,7 +615,7 @@ build_item_map() {
 				addvalue notes[${note_iter}].staffOnly true
 				note_iter=$(($note_iter + 1))
 			;;
-			caption | descnote | freetext | gennote | itemnote | lhrcopypublicnote | lhritempublicnote | note | notegeneral | opacmsg | publicnote | z30noteopac )
+			caption | descnote | freetext | gennote | itemnote | lhrcopypublicnote | lhritempublicnote | note | noteitem | notegeneral | opacmsg | publicnote | z30noteopac )
 				addfield notes[${note_iter}].note
 				addvalue notes[${note_iter}].itemNoteTypeId General
 				addvalue notes[${note_iter}].staffOnly false

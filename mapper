@@ -639,6 +639,10 @@ build_item_map() {
 			issueyear | year )
 				addfield yearCaption[0]
 			;;
+			itemstatus | itemstatusdesc | itemstatusname | itemstatuscurrentstatus | status | statusdisplay | statusmappingkey | statusname )
+				addfield status.name
+				statusfield="${field}"
+			;;
 			temploc | templocation | itemtemporaryshelvinglocation)
 				addfield temporaryLocationId
 			;;

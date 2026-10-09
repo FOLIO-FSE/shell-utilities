@@ -235,7 +235,7 @@ print_results() {
 	n1=$(wc -l < tmpmap)
 	n2=$(wc -l < tmpunmapped2)
 	
-	{ cat tmpmap; [ "$n2" -gt "$n1" ] && yes $'\t' | head -n $((n2 - n1)); } | paste - tmpunmapped2
+	{ cat tmpunmapped2; [ "$n2" -gt "$n1" ] && yes $'\t' | head -n $((n2 - n1)); } | paste - tmpmap
 	
 	rm -f tmp1 tmp2 tmpunmapped1 tmpunmapped2 tmpmap
 }

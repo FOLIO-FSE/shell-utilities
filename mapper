@@ -228,11 +228,11 @@ print_results() {
 	' tmp1 tmp2 > tmpunmapped1
 	
 	{
-	  echo "UNMAPPED legacy fields found in ${infile}"
+	  echo "UNMAPPED legacy fields"
 	  cat tmpunmapped1
 	} > tmpunmapped2
 	
-	paste -d $'\t' tmpmap tmpunmapped2 | column -t -s $'\t'
+	paste -d $'\t' tmpunmapped2 tmpmap | column -t -s $'\t'
 	
 	rm -f tmp1 tmp2 tmpunmapped1 tmpunmapped2 tmpmap
 }

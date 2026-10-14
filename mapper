@@ -777,7 +777,8 @@ build_organization_map() {
 				addfield erpCode
 			;;
 			interfaceuri | url )
-				addfield interfaces[0].uri
+				addfield interfaces[0].name "${codefield} main"
+				addfield interfaces[0].uri 
 			;;
 			isvendor | vendoryesno )
 				addreplacerules isVendor truefalse

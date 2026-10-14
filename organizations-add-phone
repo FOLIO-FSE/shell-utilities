@@ -7,8 +7,8 @@ SECONDS=0
 
 declare -A category_dict
 
-use_deterministic_uuids="yes"
-#use_deterministic_uuids="no"
+#use_deterministic_uuids="yes"
+use_deterministic_uuids="no"
 
 filename="org_phone.tsv"
 dos2unix ${filename}
@@ -29,7 +29,15 @@ while IFS=$'\n' read line;do
 	fi
 
 	line=$(echo "${line}" | tr -d '"' | tr "\t" "^")
-	IFS='^' read -r code phone <<< ${line}
+	IFS='^' read -r code phone category1 <<< ${line}
+	categories="[]"
+
+	if [[ ${category1} != "" ]];then
+		cat="${category1,,}"
+		cat="${cat//[^a-z0-9]/}"
+		cat="${category_dict[${cat}]}"
+		if [[ "$cat" =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f] ]];then categories=$(echo "${categories}" |jq -rc --arg CAT "${cat}" ' . += [ $CAT ]');fi
+	fi
 
 	if [[ ${lastcode} == ${code} ]];then sleep 1;fi
 
@@ -37,7 +45,7 @@ while IFS=$'\n' read line;do
        		uuid=$(uuid -v 5  8405ae4d-b315-42e1-918a-d1919900cf3f "${okapi_url}:organizations:${code}")
        		organization=$(curl -G -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/organizations/organizations/${uuid}")
 	else
-		organization=$(curl -G -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" --data-urlencode "query=code=${code}" "${okapi_url}/organizations/organizations" | .organizations[] )
+		organization=$(curl -G -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" --data-urlencode "query=code=${code}" "${okapi_url}/organizations/organizations" | jq '.organizations[]' )
 		uuid=$(echo "${organization}" |jq -r .id)
 	fi
 
@@ -46,9 +54,9 @@ while IFS=$'\n' read line;do
 
 	if [[ "${uuid}" =~ [0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]* ]];then
 		if [[ -z ${type} ]];then
-			phone="{ \"phoneNumber\" : \"${phone}\", \"isPrimary\" : ${primary}, \"categories\" : [${categories}] }"	
+			phone="{ \"phoneNumber\" : \"${phone}\", \"isPrimary\" : ${primary}, \"categories\" : ${categories} }"	
 		else
-			phone="{ \"phoneNumber\" : \"${phone}\", \"type\": \"${type}\", \"isPrimary\" : ${primary}, \"categories\" : [${categories}] }"	
+			phone="{ \"phoneNumber\" : \"${phone}\", \"type\": \"${type}\", \"isPrimary\" : ${primary}, \"categories\" : ${categories} }"	
 		fi
 
 		updated_org=$(echo "${organization}" |jq --argjson PHONE "${phone}" 'del(.metadata) | .phoneNumbers += [ $PHONE ]')
@@ -60,5 +68,6 @@ while IFS=$'\n' read line;do
 	echo "Processing $code -- record $counter of $numrecs"
 	lastcode=${code}
 	echo "${apicall}"
+
 done < ${filename}
 

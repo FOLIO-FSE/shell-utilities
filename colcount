@@ -47,4 +47,4 @@ if [[ ! $searchcol =~ ^[0-9]*$ ]];then
 	fi
 fi
 
-cut -f${searchcol} "${infile}" |sort |uniq -c |sort -k1nr
+cut -f${searchcol} "${infile}" |sort |uniq -c |sort -k1nr | sed 's/^ *\([0-9]*\) /\1\t/'

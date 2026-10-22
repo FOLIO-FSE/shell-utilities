@@ -522,7 +522,7 @@ build_holdings_map() {
 					callfield=${field}
 					addfield callNumber
 				else
-					fallback_field callNumber "${comp_field}"
+					fallback_field callNumber "${field}"
 				fi	
 			;;
 			callprefix | callnumberprefix | prefix)

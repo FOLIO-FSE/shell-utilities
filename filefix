@@ -255,6 +255,7 @@ sed -i '
 1 s/[^0-9A-Za-z_#)(\.\t\-]//g
 1 s/\b[up][^\t]*barcode\b/patron_barcode/i
 1 s/\bpatronno[^\t]*\b/patron_barcode/i
+1 s/\bcardnumber\b/patron_barcode/i
 1 s/\bbarcode[^\t]*p[^\t]*\b/patron_barcode/i
 1 s/\bi[^\t]*barcode\b/item_barcode/i
 1 s/\bbarcode[^\t]*i[^\t]*\b/item_barcode/i
@@ -267,7 +268,9 @@ sed -i '
 1 s/\bdatecheck.?.?out\b/out_date/i
 1 s/\bdatecheckout\b/out_date/i
 1 s/\bloandate\b/out_date/i
+1 s/\bissuedate\b/out_date/i
 1 s/\bdue[^\t]*date\b/due_date/i
+1 s/\bonloan\b/due_date/i
 1 s/\bcurrent[^\t]*due[^\t]*date\b/due_date/i
 1 s/\bdate[^\t]*due\b/due_date/i
 1 s/\btot[^\t]*renew[^\t]*\b/renewal_count/i

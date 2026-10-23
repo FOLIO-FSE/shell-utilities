@@ -10,6 +10,7 @@ okapi_token=$(cat okapi.token)
 
 # batchsize is ignored for users and set to 1 to prevent failure
 batchsize=6
+recsperconn=10
 
 baserecordtype=$1
 recordtype=$1
@@ -32,22 +33,56 @@ if [[ $# -eq 0 ]]; then echo "You must enter a record type";exit;fi
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
 fixrecord() {
-	local uuid=${1}
-	local seq=${2}
-	local value="${3}"
+	local seq=${1}
+	shift
+	local line
+	local uuid
+	local value
+	local uuids=()
+	local values=()
 	local updated_record
 	local apicall
 	local copyvalue="no" # set to yes only when copying where target uuid is field1 and source uuid is field2 (to/from)
+	local getargs=()
+	local putargs=()
+	local i
+
+	for line in "$@";do
+		IFS=$'\t' read -r uuid value <<< "${line}"
+		uuids+=("${uuid}")
+		values+=("${value}")
+	done
+
+	# retrieve all records in the group over one connection, each into its own file
+	for ((i=0; i<${#uuids[@]}; i++));do
+		if [[ ${#getargs[@]} -gt 0 ]];then getargs+=(--next);fi
+
+		if [[ ${recordtype} == "source-storage/records" ]];then 
+			getargs+=(-s -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -o "tmp_get.${baserecordtype}.${seq}.${i}" "${okapi_url}/source-storage/records/${uuids[i]}/formatted?idType=INSTANCE")
+		else
+			getargs+=(-s -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -o "tmp_get.${baserecordtype}.${seq}.${i}" "${okapi_url}/${recordtype}/${uuids[i]}") # get target record
+
+			if [[ ${copyvalue} == "yes" ]];then 
+				getargs+=(--next -s -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -o "tmp_src.${baserecordtype}.${seq}.${i}" "${okapi_url}/${recordtype}/${values[i]}") # get source record
+			fi
+		fi
+	done
+
+	curl "${getargs[@]}"
+
+	for ((i=0; i<${#uuids[@]}; i++));do
+	uuid=${uuids[i]}
+	value=${values[i]}
 
 	if [[ ${recordtype} == "source-storage/records" ]];then 
-		apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/source-storage/records/${uuid}/formatted?idType=INSTANCE" |jq .)
+		apicall=$(jq . < "tmp_get.${baserecordtype}.${seq}.${i}" 2>/dev/null)
 		uuid=$(echo ${apicall} |jq -r .id)
 		
 	else
-		apicall=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}") # get target record
+		apicall=$(cat "tmp_get.${baserecordtype}.${seq}.${i}" 2>/dev/null)
 
 		if [[ ${copyvalue} == "yes" ]];then 
-			value=$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${value}" | jq -r .permanentLocationId ) # extract value from source record
+			value=$(jq -r .permanentLocationId < "tmp_src.${baserecordtype}.${seq}.${i}" 2>/dev/null) # extract value from source record
 		fi
 	fi
 	
@@ -79,7 +114,7 @@ fixrecord() {
 	#                (.statusId = $VALUE)
 	#                (.temporaryLoanType = {"id": $VALUE} ) # UUID, must use items-inventory
 	#                (.temporaryLocation = {"id": $VALUE} ) # UUID, must use items-inventory
-	                (.vendorDetail.referenceNumbers |= .+ [{"refNumber": $VALUE,"refNumberType":"Vendor order reference number"}]) 
+	#                (.vendorDetail.referenceNumbers |= .+ [{"refNumber": $VALUE,"refNumberType":"Vendor order reference number"}]) 
 	#				 (.workflowStatus = "Open")
 	#				 (.reEncumber = "true")
 			|del(.metadata)
@@ -87,8 +122,16 @@ fixrecord() {
 #jq . <<< ${updated_record}
 #exit
 		#updated_record=${apicall//$pattern/$replace}
-		apicall=$(curl --http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${updated_record}" "${okapi_url}/${recordtype}/${uuid}")
-	echo "${apicall}" |grep -i [a-z] >> "tmp_records.${baserecordtype}.${seq}"
+		printf '%s' "${updated_record}" > "tmp_put.${baserecordtype}.${seq}.${i}"
+
+		if [[ ${#putargs[@]} -gt 0 ]];then putargs+=(--next);fi
+		putargs+=(--http1.1 -s -w '\n' -X PUT -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" --data-binary "@tmp_put.${baserecordtype}.${seq}.${i}" "${okapi_url}/${recordtype}/${uuid}")
+	done
+
+	# send all updated records in the group over one connection
+	curl "${putargs[@]}" |grep -i [a-z] >> "tmp_records.${baserecordtype}.${seq}"
+
+	rm -f tmp_get.${baserecordtype}.${seq}.* tmp_src.${baserecordtype}.${seq}.* tmp_put.${baserecordtype}.${seq}.*
 }
 
 
@@ -171,7 +214,7 @@ esac
 counter=0
 SECONDS=1
 
-while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
+while mapfile -t -n $((${batchsize} * ${recsperconn})) lines && ((${#lines[@]})); do
 
         if [[ $SECONDS -gt 500 ]]; then
                 auth 2>/dev/null || authn 2>/dev/null
@@ -183,12 +226,12 @@ while mapfile -t -n ${batchsize} lines && ((${#lines[@]})); do
 	TIMER=$(($OFFSET * 500 + $SECONDS))
 
 	seq=0
-	for line in "${lines[@]}";do
-		IFS=$'\t' read -r uuid value <<< "${line}"
+	for ((start=0; start<${#lines[@]}; start+=recsperconn));do
+		group=("${lines[@]:start:recsperconn}")
 		
-		fixrecord "${uuid}" "${seq}" "${value}" &
+		fixrecord "${seq}" "${group[@]}" &
 
-		counter=$(($counter + 1))
+		counter=$(($counter + ${#group[@]}))
 		seq=$(($seq + 1))
 	done
 	wait

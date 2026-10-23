@@ -12,6 +12,7 @@ uuid=$(echo "$2" |tr -dc [a-f0-9\-])
 singlerecord=yes
 deletefile="delete"
 batchsize=10
+recsperconn=10
 outfile=delete_${deletetype}.log
 errorfile=error_${deletetype}.log
 rm -f ${outfile}
@@ -32,12 +33,27 @@ SECONDS=1
 
 delete_record() {
 
-	local uuid=${1//[^0-9a-z\-]/}
-	local seq=$2
-	local apicall=$(curl -sI -w '%{http_code}' -X DELETE -D -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}")
-	apicall=${apicall:(-3)}
+	local seq=$1
+	shift
+	local uuid
+	local uuids=()
+	local args=()
+	local codes=()
+	local i
 
-	echo "${apicall} ${uuid}" >> "tmp_log.${seq}"
+	for uuid in "$@";do
+		uuid=${uuid//[^0-9a-z\-]/}
+		uuids+=("${uuid}")
+
+		if [[ ${#args[@]} -gt 0 ]];then args+=(--next);fi
+		args+=(-s -o /dev/null -w '%{http_code}\n' -X DELETE -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${recordtype}/${uuid}")
+	done
+
+	mapfile -t codes < <(curl "${args[@]}")
+
+	for ((i=0; i<${#uuids[@]}; i++));do
+		echo "${codes[i]:-000} ${uuids[i]}" >> "tmp_log.${seq}"
+	done
 }
 
 case $deletetype in
@@ -189,7 +205,7 @@ if [[ ${uuid} =~ ^[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*$ ]];then
 fi
 
 if [[ ${singlerecord} == "yes" ]];then
-	while mapfile -t -n ${batchsize} uuids && ((${#uuids[@]})); do
+	while mapfile -t -n $((${batchsize} * ${recsperconn})) uuids && ((${#uuids[@]})); do
 
 	        if [[ $SECONDS -gt 500 ]]; then
 	                auth 2>/dev/null || authn 2>/dev/null
@@ -202,10 +218,12 @@ if [[ ${singlerecord} == "yes" ]];then
 	        fi
 
 		seq=0
-		for uuid in ${uuids[@]};do
-			delete_record ${uuid} ${seq} &
+		ids=(${uuids[@]})
+		for ((start=0; start<${#ids[@]}; start+=recsperconn));do
+			group=("${ids[@]:start:recsperconn}")
+			delete_record ${seq} "${group[@]}" &
 			seq=$(($seq + 1))
-			counter=$(($counter + 1))
+			counter=$(($counter + ${#group[@]}))
 		done
 
 		wait

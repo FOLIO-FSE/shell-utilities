@@ -275,7 +275,7 @@ while mapfile -t -n $((${batchsize} * ${recsperconn})) ids && ((${#ids[@]})); do
     echo -en "Processing record $counter of $numrecs in $msg in $(($counter/$TIMER)) recs/sec          \r"
 
 done < ${infile}
-
+wait
 printrecords
 
 echo "$numrecs records have been exported to \"${rec_type}.json\"                      "

@@ -36,6 +36,7 @@ shift $((OPTIND - 1))
 rec_type=$1
 infile="uuids"
 batchsize=50
+recsperconn=10
 accept="application/json"
 sed -i 's/[^a-f0-9\-]//g' ${infile}
 
@@ -64,16 +65,31 @@ printrecords(){
 }
 
 getbatch() {
-	local querystring="${1}"
-	local seq=${2}
+	local seq=${1}
+	shift
+	local querystring
+	local args=()
 
-	curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${querystring}&limit=${batchsize}" > tmp_records.${rec_type}.${seq}
+	for querystring in "$@";do
+		if [[ ${#args[@]} -gt 0 ]];then args+=(--next);fi
+		args+=(-s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}?${querystring}&limit=${batchsize}")
+	done
+
+	curl "${args[@]}" > tmp_records.${rec_type}.${seq}
 }
 
 getrecord() {
-	local uuid=${1}
-	local seq=${2}
-	curl -s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}${queryseparator}${querystring}${uuid}${poststring}" > tmp_records.${rec_type}.${seq}
+	local seq=${1}
+	shift
+	local uuid
+	local args=()
+
+	for uuid in "$@";do
+		if [[ ${#args[@]} -gt 0 ]];then args+=(--next);fi
+		args+=(-s -w '\n' -X GET -H "Accept: ${accept}" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${endpoint}${queryseparator}${querystring}${uuid}${poststring}")
+	done
+
+	curl "${args[@]}" > tmp_records.${rec_type}.${seq}
 }
 
 case $rec_type in
@@ -212,15 +228,18 @@ lastset=0
 
 if [[ $indivrecord -eq 1 ]];then batchsize=10;fi
 
-while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
+while mapfile -t -n $((${batchsize} * ${recsperconn})) ids && ((${#ids[@]})); do
 	counter=$(($counter + ${#ids[@]}))
-	idstring="${ids[@]}"
 
-	[[ ${#ids[@]} -lt $((${batchsize} - 1)) ]] && lastset=1
+	[[ ${#ids[@]} -lt $((${batchsize} * ${recsperconn} - 1)) ]] && lastset=1
 	
 	if [[ $indivrecord -ne 1 ]];then
-		querystring="query=id=${idstring// /${querydelim}}"
-		getbatch "${querystring}" ${t} &
+		querystrings=()
+		for ((start=0; start<${#ids[@]}; start+=batchsize));do
+			idstring="${ids[@]:start:batchsize}"
+			querystrings+=("query=id=${idstring// /${querydelim}}")
+		done
+		getbatch ${t} "${querystrings[@]}" &
 		t=$(($t + 1))
 
 		if [[ $t -eq 4 || $lastset -eq 1 ]];then
@@ -230,8 +249,8 @@ while mapfile -t -n ${batchsize} ids && ((${#ids[@]})); do
 		fi
 	else
 		seq=0
-		for uuid in "${ids[@]}";do
-			getrecord "${uuid}" "${seq}" &
+		for ((start=0; start<${#ids[@]}; start+=recsperconn));do
+			getrecord "${seq}" "${ids[@]:start:recsperconn}" &
 			seq=$(($seq + 1))
 		done
 		wait

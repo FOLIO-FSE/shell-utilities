@@ -36,8 +36,14 @@ rm -f ${failfile}
 #
 # unrem jq expression in code below if using a jq manipulation 
 
+if [[ $# -eq 0 ]]; then
+	echo "Usage: records-update <recordtype> ['jq expression']"
+	echo "Input file <recordtype>.tsv has a uuid per line, optionally followed by a tab and a value"
+	echo "The value is available in the jq expression as \$VALUE, e.g. records-update items '.permanentLoanTypeId = \$VALUE'"
+	exit
+fi
+
 if [[ ! -f ${infile} ]]; then echo "This script cannot find input file ${infile}";exit;fi
-if [[ $# -eq 0 ]]; then echo "You must enter a record type";exit;fi
 
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 

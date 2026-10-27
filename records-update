@@ -73,9 +73,10 @@ jq_expr='
 	#                (.vendorDetail.referenceNumbers |= .+ [{"refNumber": $VALUE,"refNumberType":"Vendor order reference number"}]) 
 	#				 (.workflowStatus = "Open")
 	#				 (.reEncumber = "true")
-	.barcode |= sub("^z"; "")
 			|del(.metadata)
 	'
+
+[[ -n ${2} ]] && jq_expr="(${2}) |del(.metadata)"
 
 fixrecord() {
 	local seq=${1}

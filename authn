@@ -48,11 +48,29 @@ else
         okapi_login=$(cat okapi-login.json)
 fi
 
-okapi_token=$(curl -c - -s -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -d "${okapi_login}" "${okapi_url}/authn/login-with-expiry" |grep folioAccessToken| cut -f7)
-	
-if [[ ! ${okapi_token} =~ [a-z] ]];then
-	echo "okapi token not acquired"
-	exit
-else
-	echo -n ${okapi_token} >  okapi.token
+response=$(curl -c - -s -X POST \
+  -H "Content-type: application/json" \
+  -H "X-Okapi-Tenant: ${tenant}" \
+  -d "${okapi_login}" \
+  -w '\nCURL_HTTP_CODE:%{http_code}\n' \
+  "${!libraryokapi}/authn/login-with-expiry")
+curl_rc=$?
+
+case $curl_rc in
+  0) ;;
+  6)  echo "Error: could not resolve host for ${!libraryokapi}" >&2; exit 1 ;;
+  7)  echo "Error: could not connect to ${!libraryokapi} (connection refused / no route)" >&2; exit 1 ;;
+  28) echo "Error: connection to ${!libraryokapi} timed out" >&2; exit 1 ;;
+  35) echo "Error: SSL/TLS handshake failed with ${!libraryokapi}" >&2; exit 1 ;;
+  *)  echo "Error: curl failed with exit code $curl_rc" >&2; exit 1 ;;
+esac
+
+http_code=$(grep CURL_HTTP_CODE: <<< "$response" | cut -d: -f2)
+okapi_token=$(grep folioAccessToken <<< "$response" | cut -f7)
+
+if [[ -z $okapi_token ]]; then
+  echo "Error: login failed (HTTP ${http_code})" >&2
+  exit 1
 fi
+
+echo -n ${okapi_token} >  okapi.token

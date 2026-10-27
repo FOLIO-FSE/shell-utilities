@@ -12,13 +12,22 @@ okapi_token=$(cat okapi.token)
 batchsize=6
 recsperconn=10
 
+# instances, holdings and items are sent to the batch-sync endpoints in batches of syncbatchsize
+# set usesync to "no" to update them one record at a time like other record types
+usesync="yes"
+syncbatchsize=100
+
+copyvalue="no" # set to yes only when copying where target uuid is field1 and source uuid is field2 (to/from)
+
 baserecordtype=$1
 recordtype=$1
 infile="${recordtype}.tsv"
 dos2unix "${infile}"
 outfile="${recordtype}_update_log.json"
+failfile="${recordtype}_failed.tsv"
 
 rm -f ${outfile}
+rm -f ${failfile}
 
 #pattern='"source":{}'
 #replace='"source":{"id":"9bed0d46-35d1-45f6-801c-dc54d911fe12","personal":{"lastName":"Data","firstName":"Migration"}}'
@@ -32,6 +41,42 @@ if [[ $# -eq 0 ]]; then echo "You must enter a record type";exit;fi
 
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
 
+# Unrem the appropriate updated_record expression for your task
+# (used for both individual updates and batch-sync updates)
+jq_expr='
+	#		(if .volume != null then .volume = (.volume |sub(" *Acc.*"; "")) else . end)
+	#		 ((.parsedRecord.content.fields[] | select(."008" != null) |."008") = "780615s19uu    xx a                eng d")               
+	#		 ((.parsedRecord.content.fields[] | select(."008" != null) |."008") = $VALUE)               
+	#                (.name as $name | .accounts += [{"name": $name,"accountNo": $VALUE,"paymentMethod":"Other","accountStatus":"Active","libraryCode":"-","libraryEdiCode":"-"}] ) 
+	#                (.active = true ) 
+	#                (.administrativeNotes += [$VALUE] ) 
+	#                (.agreementContentTypes = [{"_delete": true, "contentType": {"value": $VALUE}}] ) 
+	#                (.callNumberTypeId = "95467209-6d7b-468b-94df-0f5d7ad2747d" ) 
+	#                (.customFields.academicStatus = $VALUE) # single dropdown or text
+	#                (.erpCode = $VALUE ) 
+	#                (.fundDistributions[0].code = "ybpbl" ) 
+	#		(.fund.ledgerId = "bdc5218a-e14c-41ea-8a9f-d7c9980d8b35")
+	#                (.groupIds += [$VALUE] ) 
+	#                (.holdingsStatements |= .+ [{"statement": $VALUE, "note" : "", "staffNote" : ""}])
+	#                (.itemDamagedStatusId = "54d1dd76-ea33-4bcb-955b-6b29df4f7930" ) 
+	#                (.itemIdentifier = $VALUE ) 
+	#                (.materialTypeId = $VALUE ) 
+	#                (.notes |= .+ [{"holdingsNoteTypeId": "b160f13a-ddba-4053-b9c4-60ec5ea45d56", "staffOnly": false, "note": $VALUE}]) 
+	#                (.permanentLoanTypeId = $VALUE)
+	#                (.permanentLocationId = $VALUE) 
+	#                (.servicePointIds += [ $VALUE ] ) 
+	#                (.statisticalCodeIds += [ $VALUE ] ) 
+	#		 (.electronicAccess = ($VALUE|fromjson))                
+	#                (.statusId = $VALUE)
+	#                (.temporaryLoanType = {"id": $VALUE} ) # UUID, must use items-inventory
+	#                (.temporaryLocation = {"id": $VALUE} ) # UUID, must use items-inventory
+	#                (.vendorDetail.referenceNumbers |= .+ [{"refNumber": $VALUE,"refNumberType":"Vendor order reference number"}]) 
+	#				 (.workflowStatus = "Open")
+	#				 (.reEncumber = "true")
+	.barcode |= sub("^z"; "")
+			|del(.metadata)
+	'
+
 fixrecord() {
 	local seq=${1}
 	shift
@@ -42,7 +87,6 @@ fixrecord() {
 	local values=()
 	local updated_record
 	local apicall
-	local copyvalue="no" # set to yes only when copying where target uuid is field1 and source uuid is field2 (to/from)
 	local getargs=()
 	local putargs=()
 	local i
@@ -86,39 +130,7 @@ fixrecord() {
 		fi
 	fi
 	
-	# Unrem the appropriate updated_record expression for your task
-	updated_record=$(echo "${apicall}"  |jq -r --arg VALUE "${value}" '
-	#		(if .volume != null then .volume = (.volume |sub(" *Acc.*"; "")) else . end)
-	#		 ((.parsedRecord.content.fields[] | select(."008" != null) |."008") = "780615s19uu    xx a                eng d")               
-	#		 ((.parsedRecord.content.fields[] | select(."008" != null) |."008") = $VALUE)               
-	#                (.name as $name | .accounts += [{"name": $name,"accountNo": $VALUE,"paymentMethod":"Other","accountStatus":"Active","libraryCode":"-","libraryEdiCode":"-"}] ) 
-	#                (.active = true ) 
-	#                (.administrativeNotes += [$VALUE] ) 
-	#                (.agreementContentTypes = [{"_delete": true, "contentType": {"value": $VALUE}}] ) 
-	#                (.callNumberTypeId = "95467209-6d7b-468b-94df-0f5d7ad2747d" ) 
-	#                (.customFields.academicStatus = $VALUE) # single dropdown or text
-	#                (.erpCode = $VALUE ) 
-	#                (.fundDistributions[0].code = "ybpbl" ) 
-	#		(.fund.ledgerId = "bdc5218a-e14c-41ea-8a9f-d7c9980d8b35")
-	#                (.groupIds += [$VALUE] ) 
-	#                (.holdingsStatements |= .+ [{"statement": $VALUE, "note" : "", "staffNote" : ""}])
-	#                (.itemDamagedStatusId = "54d1dd76-ea33-4bcb-955b-6b29df4f7930" ) 
-	#                (.itemIdentifier = $VALUE ) 
-	#                (.materialTypeId = $VALUE ) 
-	#                (.notes |= .+ [{"holdingsNoteTypeId": "b160f13a-ddba-4053-b9c4-60ec5ea45d56", "staffOnly": false, "note": $VALUE}]) 
-	#                (.permanentLoanTypeId = $VALUE)
-	#                (.permanentLocationId = $VALUE) 
-	#                (.servicePointIds += [ $VALUE ] ) 
-	#                (.statisticalCodeIds += [ $VALUE ] ) 
-	#		 (.electronicAccess = ($VALUE|fromjson))                
-	#                (.statusId = $VALUE)
-	#                (.temporaryLoanType = {"id": $VALUE} ) # UUID, must use items-inventory
-	#                (.temporaryLocation = {"id": $VALUE} ) # UUID, must use items-inventory
-	#                (.vendorDetail.referenceNumbers |= .+ [{"refNumber": $VALUE,"refNumberType":"Vendor order reference number"}]) 
-	#				 (.workflowStatus = "Open")
-	#				 (.reEncumber = "true")
-			|del(.metadata)
-	')
+	updated_record=$(echo "${apicall}"  |jq -r --arg VALUE "${value}" "${jq_expr}")
 #jq . <<< ${updated_record}
 #exit
 		#updated_record=${apicall//$pattern/$replace}
@@ -132,6 +144,99 @@ fixrecord() {
 	curl "${putargs[@]}" |grep -i [a-z] >> "tmp_records.${baserecordtype}.${seq}"
 
 	rm -f tmp_get.${baserecordtype}.${seq}.* tmp_src.${baserecordtype}.${seq}.* tmp_put.${baserecordtype}.${seq}.*
+}
+
+# retrieves records by id in chunks of 50 over one connection
+# each response is saved to ${prefix}.<n>; returns failure if any request did not return 200
+syncfetch() {
+	local prefix=${1}
+	shift
+	local ids=("$@")
+	local getargs=()
+	local idstring
+	local codes
+	local start
+	local n=0
+
+	if [[ ${#ids[@]} -eq 0 ]];then return 0;fi
+
+	for ((start=0; start<${#ids[@]}; start+=50));do
+		idstring="${ids[@]:start:50}"
+		if [[ ${#getargs[@]} -gt 0 ]];then getargs+=(--next);fi
+		getargs+=(-s -w '%{http_code}\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -o "${prefix}.${n}" "${okapi_url}/${recordtype}?limit=50&query=id==(${idstring// /%20or%20})")
+		n=$(($n + 1))
+	done
+
+	codes=$(curl "${getargs[@]}")
+	! grep -qv '^200$' <<< "${codes}"
+}
+
+# updates one batch of records through the batch-sync endpoint
+syncbatch() {
+	local firstrec=${1}
+	shift
+	local line
+	local uuid
+	local value
+	local ids=()
+	local srcids=()
+	local httpcode
+	local logfile="tmp_records.${baserecordtype}.0"
+	local batchlabel="Records ${firstrec}-$((${firstrec} + $# - 1))"
+	local prog
+
+	rm -f tmp_sync.*
+	: >> "${logfile}"
+
+	for line in "$@";do
+		IFS=$'\t' read -r uuid value <<< "${line}"
+		if [[ -z ${uuid} ]];then continue;fi
+		ids+=("${uuid}")
+		srcids+=("${value}")
+		printf '%s\t%s\n' "${uuid}" "${value}" >> tmp_sync.values.tsv
+	done
+
+	if [[ ${#ids[@]} -eq 0 ]];then return;fi
+
+	jq -Rn '[inputs | split("\t") | {(.[0]): (.[1:] | join("\t"))}] | add // {}' tmp_sync.values.tsv > tmp_sync.values.json
+
+	if ! syncfetch tmp_sync.get "${ids[@]}";then
+		echo "${batchlabel} failed: could not retrieve records" >> "${logfile}"
+		printf '%s\n' "$@" >> "${failfile}"
+		return
+	fi
+	cat tmp_sync.get.* | jq -n --arg LABEL "${synclabel}" '[inputs | .[$LABEL][]]' > tmp_sync.recs.json
+
+	if [[ ${copyvalue} == "yes" ]];then
+		if ! syncfetch tmp_sync.src $(printf '%s\n' "${srcids[@]}" |sort -u);then
+			echo "${batchlabel} failed: could not retrieve source records" >> "${logfile}"
+			printf '%s\n' "$@" >> "${failfile}"
+			return
+		fi
+		cat tmp_sync.src.* 2>/dev/null | jq -n --arg LABEL "${synclabel}" '[inputs | .[$LABEL][] | {(.id): (.permanentLocationId // "null")}] | add // {}' > tmp_sync.srcmap.json
+		jq --slurpfile m tmp_sync.srcmap.json 'map_values($m[0][.] // "")' tmp_sync.values.json > tmp_sync.values.tmp && mv tmp_sync.values.tmp tmp_sync.values.json
+	fi
+
+	jq -rn --slurpfile v tmp_sync.values.json --slurpfile r tmp_sync.recs.json '($v[0] | keys) - ($r[0] | map(.id)) | .[]' < /dev/null | while read -r uuid;do
+		echo "Record not found: ${uuid}" >> "${logfile}"
+	done
+
+	prog='{($LABEL): [$syncrecs[0][] | $syncvals[0][.id] as $VALUE | ('$'\n'"${jq_expr}"$'\n'') | del(.metadata) | del(.holdingsItems) | del(.bareHoldingsItems)]}'
+
+	if ! jq -cn --arg LABEL "${synclabel}" --slurpfile syncvals tmp_sync.values.json --slurpfile syncrecs tmp_sync.recs.json "${prog}" < /dev/null > tmp_sync.batch.json;then
+		echo "${batchlabel} failed: jq expression error" >> "${logfile}"
+		printf '%s\n' "$@" >> "${failfile}"
+		return
+	fi
+
+	httpcode=$(curl --http1.1 -s -o tmp_sync.response -w '%{http_code}' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" --data-binary @tmp_sync.batch.json "${okapi_url}/${syncendpoint}")
+
+	if [[ ${httpcode} != 2* ]];then
+		echo "${batchlabel} failed (HTTP ${httpcode}): $(tr -d '\n' < tmp_sync.response 2>/dev/null)" >> "${logfile}"
+		printf '%s\n' "$@" >> "${failfile}"
+	fi
+
+	rm -f tmp_sync.*
 }
 
 
@@ -211,10 +316,28 @@ case $recordtype in
 	exit;;
 esac
 
+syncendpoint=""
+if [[ ${usesync} == "yes" ]];then
+	case $baserecordtype in
+	"instances")
+		synclabel="instances"
+		syncendpoint="instance-storage/batch/synchronous?upsert=true";;
+	"holdings")
+		synclabel="holdingsRecords"
+		syncendpoint="holdings-storage/batch/synchronous?upsert=true";;
+	"items")
+		synclabel="items"
+		syncendpoint="item-storage/batch/synchronous?upsert=true";;
+	esac
+fi
+
+readsize=$((${batchsize} * ${recsperconn}))
+if [[ -n ${syncendpoint} ]];then readsize=${syncbatchsize};fi
+
 counter=0
 SECONDS=1
 
-while mapfile -t -n $((${batchsize} * ${recsperconn})) lines && ((${#lines[@]})); do
+while mapfile -t -n ${readsize} lines && ((${#lines[@]})); do
 
         if [[ $SECONDS -gt 500 ]]; then
                 auth 2>/dev/null || authn 2>/dev/null
@@ -225,16 +348,21 @@ while mapfile -t -n $((${batchsize} * ${recsperconn})) lines && ((${#lines[@]}))
 
 	TIMER=$(($OFFSET * 500 + $SECONDS))
 
-	seq=0
-	for ((start=0; start<${#lines[@]}; start+=recsperconn));do
-		group=("${lines[@]:start:recsperconn}")
-		
-		fixrecord "${seq}" "${group[@]}" &
+	if [[ -n ${syncendpoint} ]];then
+		syncbatch $(($counter + 1)) "${lines[@]}"
+		counter=$(($counter + ${#lines[@]}))
+	else
+		seq=0
+		for ((start=0; start<${#lines[@]}; start+=recsperconn));do
+			group=("${lines[@]:start:recsperconn}")
+			
+			fixrecord "${seq}" "${group[@]}" &
 
-		counter=$(($counter + ${#group[@]}))
-		seq=$(($seq + 1))
-	done
-	wait
+			counter=$(($counter + ${#group[@]}))
+			seq=$(($seq + 1))
+		done
+		wait
+	fi
 	
         TIME=$TIMER;msg="$SECONDS seconds"
         if [[ $TIMER -gt 60 ]];then TIME=$(bc <<< "scale=1;$TIMER/60");msg="$TIME minutes";fi
@@ -249,4 +377,5 @@ done < ${infile}
 
 echo "Finished processing $numrecs ${recordtype} records in $msg"
 echo "Output was sent to ${outfile}"
+if [[ -s ${failfile} ]];then echo "Lines from failed batches were written to ${failfile}";fi
 

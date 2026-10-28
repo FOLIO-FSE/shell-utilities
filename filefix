@@ -176,6 +176,10 @@ case ${encodingtype} in
 		$reader "${infile}" | iconv -f latin1 -t utf-8 -c > tmpfile;;
 	iso-8859-15)
 		$reader "${infile}" | iconv -f iso-8859-15 -t utf-8 -c > tmpfile;;
+	big5)
+		$reader "${infile}" | iconv -f big5 -t utf-8 -c > tmpfile;;
+	gb2312|gbk|gb1830)
+		$reader "${infile}" | iconv -f gb1830 -t utf-8 -c > tmpfile;;
 	*)	
 		$reader "${infile}" | iconv -f utf-8 -t utf-8 -c > tmpfile;;
 esac

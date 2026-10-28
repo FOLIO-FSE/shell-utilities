@@ -11,14 +11,17 @@ rec_type="${1}"
 case $rec_type in
 	instances)
 		endpoint="${okapi_url}/instance-storage/batch/synchronous?upsert=true"
+		storage="instance-storage/instances"
 		label="instances"
 		;;
 	holdings)
 		endpoint="${okapi_url}/holdings-storage/batch/synchronous?upsert=true"
+		storage="holdings-storage/holdings"
 		label="holdingsRecords"
 		;;
 	items)
 		endpoint="${okapi_url}/item-storage/batch/synchronous?upsert=true"
+		storage="item-storage/items"
 		label="items"
 		;;
 	*)
@@ -29,7 +32,19 @@ esac
 
 batchsize=500
 
+# records from failed batches are retried individually: retrybatchsize connections at a time, recsperconn records per connection
+retrybatchsize=6
+recsperconn=10
+
+# fields copied from the stored record when retrying: _version always, and status for items
+keepcurrent='._version = $current[0]._version'
+if [[ ${rec_type} == "items" ]];then
+	keepcurrent='._version = $current[0]._version | .status = $current[0].status'
+fi
+
 outfile="${rec_type}_update.log"
+errfile="${rec_type}_errors.json"   # all records from batches that failed to POST
+failfile="${rec_type}_failed.json"  # records that still failed after the individual retry
 infile=${1}.json
 
 if [[ ! -f "${infile}" ]]; then
@@ -37,7 +52,83 @@ if [[ ! -f "${infile}" ]]; then
 	exit
 fi
 
-rm -f ${outfile}
+rm -f ${outfile} ${errfile} ${failfile}
+
+# retrieves each record's current _version and PUTs the record back (POSTs it if it doesn't exist)
+retryrecord() {
+	local seq=${1}
+	shift
+	local records=("$@")
+	local ids=()
+	local getargs=()
+	local putargs=()
+	local getcodes=()
+	local putcodes=()
+	local sent=()
+	local id
+	local i
+	local k
+	local code
+	local method
+	local url
+
+	for ((i=0; i<${#records[@]}; i++));do
+		id=$(jq -r .id <<< "${records[i]}" 2>/dev/null)
+		ids+=("${id}")
+
+		if [[ ${#getargs[@]} -gt 0 ]];then getargs+=(--next);fi
+		getargs+=(-s -o "tmp_retry_get.${seq}.${i}" -w '%{http_code}\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/${storage}/${id}")
+	done
+
+	mapfile -t getcodes < <(curl "${getargs[@]}")
+
+	for ((i=0; i<${#records[@]}; i++));do
+		id=${ids[i]}
+		code=${getcodes[i]:-000}
+
+		if [[ -z ${id} || ${id} == "null" ]];then
+			echo "Record has no id: $(head -c 200 <<< "${records[i]}")" >> "tmp_retry_log.${seq}"
+			printf '%s\n' "${records[i]}" >> "tmp_retry_failed.${seq}"
+			continue
+		fi
+
+		if [[ ${code} == "200" ]];then
+			# existing record: take its current _version (and for items, its current status so circulation isn't disrupted)
+			jq -c --slurpfile current "tmp_retry_get.${seq}.${i}" "${keepcurrent}"' | del(.metadata) |del(.holdingsItems) |del(.bareHoldingsItems)' <<< "${records[i]}" > "tmp_retry_put.${seq}.${i}"
+			method="PUT"
+			url="${okapi_url}/${storage}/${id}"
+		elif [[ ${code} == "404" ]];then
+			# record doesn't exist yet: create it, as the upsert would have
+			jq -c 'del(._version) | del(.metadata) |del(.holdingsItems) |del(.bareHoldingsItems)' <<< "${records[i]}" > "tmp_retry_put.${seq}.${i}"
+			method="POST"
+			url="${okapi_url}/${storage}"
+		else
+			echo "${id} could not be retrieved (HTTP ${code}): $(tr -d '\n' < "tmp_retry_get.${seq}.${i}" 2>/dev/null)" >> "tmp_retry_log.${seq}"
+			printf '%s\n' "${records[i]}" >> "tmp_retry_failed.${seq}"
+			continue
+		fi
+
+		if [[ ${#putargs[@]} -gt 0 ]];then putargs+=(--next);fi
+		putargs+=(--http1.1 -s -o "tmp_retry_resp.${seq}.${i}" -w '%{http_code}\n' -X ${method} -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" --data-binary "@tmp_retry_put.${seq}.${i}" "${url}")
+		sent+=("${i}")
+	done
+
+	if [[ ${#putargs[@]} -gt 0 ]];then
+		mapfile -t putcodes < <(curl "${putargs[@]}")
+	fi
+
+	for ((k=0; k<${#sent[@]}; k++));do
+		i=${sent[k]}
+		code=${putcodes[k]:-000}
+
+		if [[ ${code} != 2* ]];then
+			echo "${ids[i]} failed (HTTP ${code}): $(tr -d '\n' < "tmp_retry_resp.${seq}.${i}" 2>/dev/null)" >> "tmp_retry_log.${seq}"
+			printf '%s\n' "${records[i]}" >> "tmp_retry_failed.${seq}"
+		fi
+	done
+
+	rm -f tmp_retry_get.${seq}.* tmp_retry_put.${seq}.* tmp_retry_resp.${seq}.*
+}
 
 counter=0
 numrecs=$(wc -l ${infile} |cut -d " " -f1)
@@ -54,13 +145,55 @@ while mapfile -t -n ${batchsize} folio_recs && ((${#folio_recs[@]})); do
 
 	echo "${folio_recs[@]}" | jq -nc  --arg LABEL "${label}" '[inputs] | del(.[].metadata) |del(.[].holdingsItems) |del(.[].bareHoldingsItems) | { ($LABEL) : . } ' > tmp_batch
 
-	curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d @tmp_batch "${endpoint}" >> ${outfile}
+	httpcode=$(curl --http1.1 -s -o tmp_response -w '%{http_code}' -X POST -H "Content-type: application/json" -H "Accept: text/plain" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d @tmp_batch "${endpoint}")
+
+	{ cat tmp_response 2>/dev/null; echo; } >> ${outfile}
+
+	if [[ ${httpcode} != 2* ]];then
+		printf '%s\n' "${folio_recs[@]}" >> ${errfile}
+	fi
 
 	printf "Processing record %s of %s\r" $counter $numrecs
 
 done < ${infile}
 
+rm -f tmp_batch tmp_response
+
 echo "Processed ${numrecs} records. Output was written to ${outfile}"
 
+if [[ -s ${errfile} ]];then
+	numerrs=$(wc -l < ${errfile})
+	echo "${numerrs} records from failed batches were copied to ${errfile}. Retrying them individually"
 
+	counter=0
+	while mapfile -t -n $((${retrybatchsize} * ${recsperconn})) folio_recs && ((${#folio_recs[@]})); do
 
+		if [[ $SECONDS -gt 500 ]]; then
+			auth 2>/dev/null || authn 2>/dev/null
+			okapi_token=$(cat okapi.token)
+			SECONDS=1
+		fi
+
+		seq=0
+		for ((start=0; start<${#folio_recs[@]}; start+=recsperconn));do
+			group=("${folio_recs[@]:start:recsperconn}")
+			retryrecord "${seq}" "${group[@]}" &
+			counter=$(($counter + ${#group[@]}))
+			seq=$(($seq + 1))
+		done
+		wait
+
+		cat tmp_retry_log.* >> ${outfile} 2>/dev/null
+		cat tmp_retry_failed.* >> ${failfile} 2>/dev/null
+		rm -f tmp_retry_log.* tmp_retry_failed.*
+
+		printf "Retrying record %s of %s\r" $counter $numerrs
+	done < ${errfile}
+
+	echo
+	if [[ -s ${failfile} ]];then
+		echo "$(wc -l < ${failfile}) records still failed and were written to ${failfile}. See ${outfile} for details"
+	else
+		echo "All retried records were saved successfully"
+	fi
+fi

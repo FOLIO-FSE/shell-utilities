@@ -422,7 +422,7 @@ function fix_dates() {
 		# slashes to hyphens
 		gsub(/\//, "-", $fixdate)
 		# remove timestamps
-		if (DATEFORMAT == "numbers" && NR > 1) { $fixdate = substr($fixdate,1,4)"-"substr($fixdate,5,2)"-"substr($fixdate,7,2) }
+		if (DATEFORMAT == "numbers" && NR > 1 || FILENAME != PREFIX"aa") { $fixdate = substr($fixdate,1,4)"-"substr($fixdate,5,2)"-"substr($fixdate,7,2) }
 
 		if (WORDS == 3){split($fixdate, tempdate, " ");$fixdate = tempdate[1]"-"tempdate[2]"-"tempdate[3];gsub(/,/, "", $fixdate)}
 		if (WORDS == 4){split($fixdate, tempdate, " ");$fixdate = tempdate[2]"-"tempdate[1]"-"tempdate[3];gsub(/,/, "", $fixdate)}

@@ -157,7 +157,7 @@ log_msg
 
 if [[ ! -f "${infile}" ]];then echo "The input file ${infile} could not be found";exit;fi
 
-if head -c 10000 "${infile}" | grep -qP '\n';then
+if [[ $(head -c 10000 "${infile}" | wc -l) -eq 0 ]];then
 	logmsg="No newlines could be detected in the first 10,000 characters. Please verify file"
 	log_msg	
 	exit
@@ -355,7 +355,7 @@ fi
 
 SINGLE=$(echo -ne '\u00B4\u2018\u2019')
 DOUBLE=$(echo -ne '\u201C\u201D')
-NBSP=$(echo -ne '\uc2a0\u00a0\ufeff')
+NBSP=$(echo -ne '\u00a0\ufeff')
 CONTROL=$(echo -ne '\u001b\u0007\u0001')
 
 [[ ${nomsg} == "no" ]] && echo -en "Analyzing ${infile}. Please be patient"

@@ -5,7 +5,13 @@ infile="${1}"
 outfile="${infile%.*}"
 
 awk -F'\t' -v SUBDELIM=";" '
-BEGIN { OFS="" }
+BEGIN { OFS=""; SEP="\034"; SF="\037"
+  # ISBD punctuation table. punct[tag,code] = text appended to the PREVIOUS
+  # subfield when subfield <code> follows it; endp[tag] = closing punctuation
+  # for the last subfield. Add rows for other tags as needed.
+  punct["264","b"] = " :"; punct["264","c"] = ","
+  endp["264"] = "."
+}
 
 # -------------------------------------------------
 # HEADER NORMALIZATION
@@ -37,10 +43,46 @@ function norm_ind(ind,   i) {
 # -------------------------------------------------
 # MARC OUTPUT HELPERS
 # -------------------------------------------------
-function marc(tag, ind, val) {
+# If val comes from vall(), it contains SEP-separated values: the text before
+# the first SEP is the prefix (e.g. "a"), and one field is printed per value.
+function marc(tag, ind, val,   p, n, a, i, prefix) {
   if (val == "") return
   ind = norm_ind(ind)
-  print "=", tag, "  ", ind, val
+  p = index(val, SEP)
+  if (p == 0) {
+    print "=", tag, "  ", ind, val
+    return
+  }
+  prefix = substr(val, 1, p-1)
+  n = split(substr(val, p+1), a, SEP)
+  for (i = 1; i <= n; i++)
+    print "=", tag, "  ", ind, prefix a[i]
+}
+
+# sf("a", value) returns the subfield (delimiter + code + value), or "" when
+# the value is empty, so blank subfields are dropped and a field whose
+# subfields are all blank is not printed at all. Combine several in one call:
+#   marc("541", "__", sf("a", v("f1")) sf("b", v("f2")) sf("c", v("f3")))
+function sf(code, val) {
+  return (val == "") ? "" : SF code val
+}
+
+# marc_isbd() works like marc() for a value built with sf(), but adds ISBD
+# punctuation from the table in BEGIN. Punctuation is only added between
+# subfields that are actually present, and never doubled if the value already
+# ends with that character.
+function marc_isbd(tag, ind, val,   n, a, i, t, nxt, p, out) {
+  if (val == "") return
+  n = split(val, a, SF)              # a[1] is empty (text before first SF)
+  for (i = 2; i <= n; i++) {
+    t = a[i]
+    if (i < n) p = punct[tag, substr(a[i+1], 1, 1)]
+    else       p = endp[tag]
+    if (p != "" && substr(t, length(t)) != substr(p, length(p)))
+      t = t p
+    out = out SF t
+  }
+  marc(tag, ind, out)
 }
 
 function ctrl(tag, val) {
@@ -84,6 +126,7 @@ function lang_code(v) {
   v = normalize(v)
   if (v ~ /^fr/) return "fre"
   if (v ~ /^en/) return "eng"
+  if (v ~ /^ch/) return "chi"
   return "|||"
 }
 
@@ -107,7 +150,34 @@ NR == 1 {
   next
 }
 
-function v(k) { return (k in h) ? $(h[k]) : "" }
+# v("a|b|c") returns the value of the first listed column that exists in
+# the header AND is non-empty. Each alternative is normalized, so
+# v("Titre périodique|Serial title") works as well as v("titreperiodique").
+function v(k,   parts, n, i, key) {
+  n = split(k, parts, "[|]")
+  for (i = 1; i <= n; i++) {
+    key = normalize(parts[i])
+    if ((key in h) && $(h[key]) != "")
+      return $(h[key])
+  }
+  return ""
+}
+
+# vall("a|b|c") returns ALL non-empty, distinct values from the listed columns.
+# Use it with marc() to emit one repeated field per value:
+#   marc("650", " 4", "a" vall("subj1|subj2"))
+function vall(k,   parts, n, i, key, val, out, seen) {
+  n = split(k, parts, "[|]")
+  for (i = 1; i <= n; i++) {
+    key = normalize(parts[i])
+    if (!(key in h)) continue
+    val = $(h[key])
+    if (val == "" || (val in seen)) continue
+    seen[val] = 1
+    out = out SEP val
+  }
+  return (out == "") ? SEP : out
+}
 
 # -------------------------------------------------
 # RECORD
@@ -118,13 +188,18 @@ function v(k) { return (k in h) ? $(h[k]) : "" }
   ctrl("LDR", leader_from(has_serial))
   ctrl("001", v("ftcid"))
   ctrl("006", "m        d")
-  ctrl("008", field_008(v("dateparution"), "", v("langue")))
+  ctrl("008", field_008(v("date"), "", v("lang|language")))
+  marc("020", " ", "^_a" v("isbn"))
+  marc("050", " ", "^_a" v("callnumber|call"))
 
-  marc("245", "10", "a" v("titre"))
-  marc("100", "1 ", "a" v("auteurprincipal"))
+  marc("100", "1 ", "^_a" v("author"))
+  marc("245", "10", "^_a" v("title|maintitle|nameofthebook"))
+  marc_isbd("264", " 1", sf("a", v("cityofpublication")) sf("b", v("publisher")) sf("c", v("date|yearofpublication")))
+  marc("300", "  ", "^_a" v("pages"))
+  marc("520", "  ", "^_a" v("abstract|aboutthebook"))
 
-  repeat_marc("650", " 7", v("descripteur"))
-  repeat_marc_subdelim("650", " 7", v("doccentreindex"), ",")
+  repeat_marc("650", " 4", v("subject"))
+  repeat_marc_subdelim("650", " 4", v("subject"), ";")
 
   print ""
 }

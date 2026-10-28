@@ -4,8 +4,29 @@ export LC_ALL=C.UTF-8
 infile="${1}"
 outfile="${infile%.*}"
 
+# -------------------------------------------------
+# INPUT ENCODING: convert whatever we were given to clean UTF-8
+# (handles UTF-16 "Unicode Text" exports from Excel, GBK/GB18030, a UTF-8
+# BOM and Windows line endings). The original file is left untouched.
+# -------------------------------------------------
+tmpin="$(mktemp)"
+trap 'rm -f "${tmpin}"' EXIT
+case "$(head -c2 "${infile}" | od -An -tx1 | tr -d ' \n')" in
+  fffe) iconv -f UTF-16LE -t UTF-8 "${infile}" ;;
+  feff) iconv -f UTF-16BE -t UTF-8 "${infile}" ;;
+  *)    if iconv -f UTF-8 -t UTF-8 "${infile}" >/dev/null 2>&1; then
+          cat "${infile}"
+        else
+          iconv -f GB18030 -t UTF-8 "${infile}"
+        fi ;;
+esac | sed -e '1s/^\xEF\xBB\xBF//' -e 's/\r$//' > "${tmpin}"
+
 awk -F'\t' -v SUBDELIM=";" '
-BEGIN { OFS=""; SEP="\034"; SF="\037"
+BEGIN { OFS=""; SEP="\034"; SF="\035"
+  # SF is an internal marker used by sf(); it is replaced by OUTSF on output.
+  # OUTSF must match the delimiter used in your own mappings ("^_a" etc.).
+  # Use "\037" instead if text2marc expects the real 0x1f character.
+  OUTSF="^_"
   # ISBD punctuation table. punct[tag,code] = text appended to the PREVIOUS
   # subfield when subfield <code> follows it; endp[tag] = closing punctuation
   # for the last subfield. Add rows for other tags as needed.
@@ -45,18 +66,24 @@ function norm_ind(ind,   i) {
 # -------------------------------------------------
 # If val comes from vall(), it contains SEP-separated values: the text before
 # the first SEP is the prefix (e.g. "a"), and one field is printed per value.
+function emit(tag, ind, s) {
+  gsub(SF, OUTSF, s)
+  print "=", tag, "  ", ind, s
+}
+
 function marc(tag, ind, val,   p, n, a, i, prefix) {
-  if (val == "") return
+  # skip empty values, and a bare prefix such as "^_a" with nothing after it
+  if (val == "" || val ~ /^\^_[a-z0-9]$/) return
   ind = norm_ind(ind)
   p = index(val, SEP)
   if (p == 0) {
-    print "=", tag, "  ", ind, val
+    emit(tag, ind, val)
     return
   }
   prefix = substr(val, 1, p-1)
   n = split(substr(val, p+1), a, SEP)
   for (i = 1; i <= n; i++)
-    print "=", tag, "  ", ind, prefix a[i]
+    emit(tag, ind, prefix a[i])
 }
 
 # sf("a", value) returns the subfield (delimiter + code + value), or "" when
@@ -198,11 +225,10 @@ function vall(k,   parts, n, i, key, val, out, seen) {
   marc("300", "  ", "^_a" v("pages"))
   marc("520", "  ", "^_a" v("abstract|aboutthebook"))
 
-  repeat_marc("650", " 4", v("subject"))
   repeat_marc_subdelim("650", " 4", v("subject"), ";")
 
   print ""
 }
-' "${infile}" > "${outfile}"
+' "${tmpin}" > "${outfile}"
 text2marc "${outfile}"
 rm -f "${outfile}"

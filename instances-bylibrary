@@ -1,0 +1,23 @@
+#!/usr/bin/bash
+records-get libraries
+records-get locations
+records-get holdings
+
+pv holdings.json | jq -r '[.permanentLocationId, .instanceId]|@tsv' | sort -u > locationId_instanceId.tsv
+jq -r '[.id, .libraryId]|@tsv' locations.json |sort -u > locationId_libraryId.tsv
+jq -r '[.id, .code]|@tsv' libraries.json | tr -d ' '> libraryId_libraryCode.tsv
+
+awk -F'\t' '
+  FILENAME==ARGV[1] {code[$1]=$2; next}      # libraryId -> libraryCode
+  FILENAME==ARGV[2] {lib[$1]=code[$2]; next} # locationId -> libraryCode
+  {
+    f = lib[$1]
+    if (!(f in seen)) {
+      seen[f] = 1
+      print "Creating " f > "/dev/stderr"
+    }
+    print $2 > f
+  }
+' libraryId_libraryCode.tsv locationId_libraryId.tsv locationId_instanceId.tsv
+
+rm holdings.json libraries.json holdings.json libraries.tsv libraryId_libraryCode.tsv locationId_instanceId.tsv locationId_libraryCode.tsv

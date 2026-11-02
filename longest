@@ -1,0 +1,2 @@
+#!/usr/bin/bash
+awk 'length > max {max = length; line = $0} END {print line}' "${1:-/dev/stdin}"

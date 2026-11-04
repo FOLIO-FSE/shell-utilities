@@ -173,6 +173,8 @@ case $deletetype in
 	recordtype="source-storage/records";;
 "statcodes")
 	recordtype="statistical-codes";;
+"statcodetypes")
+	recordtype="statistical-code-types";;
 "tags")
 	recordtype="tags";;
 "tasks")

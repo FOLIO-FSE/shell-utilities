@@ -38,8 +38,10 @@ A few scripts (currently *create-legacy-inventory-id-maps-from-folio*) are writt
   | `--tenant-id` | `FOLIO_TENANT_ID` |
   | `--username` | `FOLIO_USERNAME` |
   | `--password` | `FOLIO_PASSWORD` |
+  | `--ecs-tenant-id` (optional) | `FOLIO_ECS_TENANT_ID` |
 
-  Anything not supplied either way is prompted for interactively. Setting the password in the environment keeps it out of your shell history and the process list.
+  Anything else not supplied either way is prompted for interactively. Setting the password in the environment keeps it out of your shell history and the process list.
+- **ECS**: to authenticate through one tenant but work in another, set `--tenant-id` to the tenant you log in to (normally the central tenant) and `--ecs-tenant-id` to the member tenant to read from. The script logs in, then switches the active tenant before making requests. It stops with an error if the login tenant isn't an ECS central tenant or the target isn't a member of that consortium. Omit `--ecs-tenant-id` to work in the tenant you logged in to. The bash scripts have no equivalent; they use whatever tenant is in the *tenant* file.
 - **Arguments and help**: they take named options and support `--help`, instead of the positional, guess-what-I-mean arguments the bash scripts favor. Read the docstring at the top of each script for its usage and assumptions.
 - **Working directory**: since they don't read the credential files, they can be run from any directory; output locations are given as options (for example `--results-folder`).
 

@@ -49,6 +49,12 @@ Usage
     --tenant-id ID          or env FOLIO_TENANT_ID
     --username NAME         or env FOLIO_USERNAME
     --password PASSWORD     or env FOLIO_PASSWORD
+    --ecs-tenant-id ID      or env FOLIO_ECS_TENANT_ID (optional, ECS only)
+
+ECS: --tenant-id is the tenant you log in to (normally the central tenant). Give
+--ecs-tenant-id to read inventory from a different member tenant of the same
+consortium; the script switches to it after logging in. Without it, records are read
+from the tenant you authenticated to.
 
 Any connection parameter not given on the command line or in the environment is
 prompted for interactively. Run with --help for the full option list.
@@ -264,6 +270,7 @@ async def build_id_maps(
     folio_client: folioclient.FolioClient,
     results_folder: Path,
     include_items: bool = False,
+    ecs_tenant_id: str | None = None,
 ) -> None:
     """
     Build the instances and holdings id maps (and optionally items) concurrently.
@@ -277,11 +284,27 @@ async def build_id_maps(
         results_folder (Path): Folder in which `instances_id_map.json` and
             `holdings_id_map.json` (and `items_id_map.json`) are written.
         include_items (bool): Also build `items_id_map.json`.
+        ecs_tenant_id (str): For ECS, the tenant to read from after authenticating
+            through the client's own tenant. None reads from the authenticating tenant.
     """
     instances_id_map = results_folder.joinpath("instances_id_map.json")
     holdings_id_map = results_folder.joinpath("holdings_id_map.json")
     items_id_map = results_folder.joinpath("items_id_map.json")
     async with folio_client:
+        if ecs_tenant_id and ecs_tenant_id != folio_client.tenant_id:
+            if not folio_client.is_ecs:
+                raise SystemExit(
+                    "--ecs-tenant-id was given, but the authenticating tenant "
+                    f"{folio_client.tenant_id} is not an ECS central tenant."
+                )
+            member_ids = {t["id"] for t in folio_client.ecs_members}
+            if ecs_tenant_id not in member_ids:
+                raise SystemExit(
+                    f"Tenant {ecs_tenant_id} is not a member of this ECS consortium "
+                    f"(members: {', '.join(sorted(member_ids))})."
+                )
+            folio_client.tenant_id = ecs_tenant_id
+        logger.info("Reading from tenant %s", folio_client.tenant_id)
         with Progress(
             TextColumn("{task.description}"),
             BarColumn(),
@@ -336,6 +359,15 @@ def main(
             group="FOLIO Connection Parameters",
         ),
     ] = None,
+    ecs_tenant_id: Annotated[
+        str | None,
+        cyclopts.Parameter(
+            env_var="FOLIO_ECS_TENANT_ID",
+            show_env_var=True,
+            group="FOLIO Connection Parameters",
+            help="ECS only: read from this tenant after authenticating through --tenant-id",
+        ),
+    ] = None,
     *,
     results_folder: Annotated[
         Path,
@@ -367,6 +399,8 @@ def main(
         tenant_id (str): The FOLIO Tenant ID.
         username (str): The FOLIO username.
         password (str): The FOLIO password.
+        ecs_tenant_id (str): ECS only. Tenant to read from; `tenant_id` is still the
+            tenant used to log in (normally the central tenant).
         results_folder (Path): Path to the folio-migration-tools iteration results folder.
         include_items (bool): Also write `items_id_map.json`, built from each item's
             first `formerIds` entry (assumes the standard item mapping, which puts
@@ -383,6 +417,7 @@ def main(
             folioclient.FolioClient(gateway_url, tenant_id, username, password),
             results_folder,
             include_items,
+            ecs_tenant_id,
         )
     )
 

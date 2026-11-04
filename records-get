@@ -468,6 +468,9 @@ case $rec_type in
 "statcodes")
 	rec_type="statisticalCodes"
 	endpoint="statistical-codes";;
+"statcodetypes")
+	rec_type="statisticalCodeTypes"
+	endpoint="statistical-code-types";;
 "tasks")
 	query="sort=name%3Border=ascending"
 	num_retrieved="100"

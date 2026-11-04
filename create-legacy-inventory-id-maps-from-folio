@@ -1,0 +1,391 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.14"
+# dependencies = [
+#   "folioclient",
+#   "cyclopts",
+#   "questionary"
+# ]
+# ///
+"""
+build-inventory-id-maps-from-folio
+==================================
+
+Rebuild the legacy instance and holdings ID maps from a FOLIO system that was
+populated with folio-migration-tools.
+
+What it does
+------------
+Reads every instance and holdings record from FOLIO and writes two JSON Lines
+files (one JSON array per line, matching folio-migration-tools' own format) to the
+iteration results folder:
+
+    instances_id_map.json   [legacy_id, instance_uuid]
+    holdings_id_map.json    [legacy_id, holdings_uuid]
+
+With --include-items, a third file is also written (folio-migration-tools does not
+generate one itself):
+
+    items_id_map.json       [legacy_id, item_uuid]
+
+Legacy IDs are taken from "Identifier(s) from previous system" administrative
+notes. Holdings with no administrative notes at all fall back to their first
+`formerIds` entry. Items always use their first `formerIds` entry, since the item
+transformer does not populate administrative notes. All record types are fetched
+concurrently (asyncio), with a progress bar for each.
+
+Assumption: the item mapping file follows the convention of mapping the
+item's legacy identifier to `formerIds[0]`. Items without `formerIds` are skipped,
+so a mapping that puts the legacy ID elsewhere will yield an empty (or partial)
+items map.
+
+Usage
+-----
+    ./build-inventory-id-maps-from-folio.py --results-folder PATH [options]
+
+    --results-folder PATH   folio-migration-tools iteration results folder (required)
+    --include-items         also build items_id_map.json (off by default)
+    --gateway-url URL       or env FOLIO_GATEWAY_URL
+    --tenant-id ID          or env FOLIO_TENANT_ID
+    --username NAME         or env FOLIO_USERNAME
+    --password PASSWORD     or env FOLIO_PASSWORD
+
+Any connection parameter not given on the command line or in the environment is
+prompted for interactively. Run with --help for the full option list.
+
+Requirements
+------------
+Python 3.14+ and uv; dependencies are declared inline above and installed
+automatically when the script is run via `uv run --script` (or executed directly).
+
+Notes
+-----
+Existing map files in the results folder are overwritten.
+"""
+
+import asyncio
+import json
+import logging
+from pathlib import Path
+from typing import Annotated
+
+import cyclopts
+import folioclient
+import questionary
+from rich.console import Console
+from rich.logging import RichHandler
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    TaskID,
+    TextColumn,
+    TimeElapsedColumn,
+)
+
+console = Console()
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(message)s",
+    handlers=[
+        RichHandler(
+            console=console,
+            show_time=False,
+            show_path=False,
+        )
+    ],
+)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+logger = logging.getLogger("get-id-maps")
+
+LEGACY_ID_NOTE = "Identifier(s) from previous system"
+
+app = cyclopts.App()
+
+
+def get_folio_connection_parameters(
+    gateway_url: str | None,
+    tenant_id: str | None,
+    username: str | None,
+    password: str | None,
+) -> tuple[str, str, str, str]:
+    """
+    Prompt for missing FOLIO connection parameters using interactive input.
+
+    Parameters:
+        gateway_url (str): The FOLIO Gateway URL, or None to prompt for input.
+        tenant_id (str): The FOLIO Tenant ID, or None to prompt for input.
+        username (str): The FOLIO Username, or None to prompt for input.
+        password (str): The FOLIO password, or None to prompt for input.
+
+    Returns:
+        tuple: A tuple containing (gateway_url, tenant_id, username, password).
+    """
+    if not gateway_url:
+        gateway_url = questionary.text("Enter FOLIO Gateway URL:").ask()
+    if not tenant_id:
+        tenant_id = questionary.text("Enter FOLIO Tenant ID:").ask()
+    if not username:
+        username = questionary.text("Enter FOLIO Username:").ask()
+    if not password:
+        password = questionary.password("Enter FOLIO password:").ask()
+    return gateway_url, tenant_id, username, password
+
+
+async def map_instances(
+    folio_client: folioclient.FolioClient,
+    out_path: Path,
+    progress: Progress,
+) -> int:
+    """
+    Write a legacy-id -> FOLIO instance UUID map as JSON Lines.
+
+    Reads every instance and emits one `[legacy_id, instance_uuid]` array per line
+    for each "Identifier(s) from previous system" administrative note found.
+
+    Parameters:
+        folio_client (FolioClient): An open FolioClient (inside its async context).
+        out_path (Path): Destination file for the map.
+        progress (Progress): Rich progress display to which an "Instances" task is added.
+
+    Returns:
+        int: The number of mappings written.
+    """
+    total = int(
+        await folio_client.folio_get_async(
+            "/instance-storage/instances", "totalRecords", query_params={"limit": 0}
+        )
+    )
+    task: TaskID = progress.add_task("Instances", total=total)
+    count = 0
+    with open(out_path, "w") as out:
+        async for instance in folio_client.folio_get_all_async(
+            "/instance-storage/instances", "instances", limit=1000
+        ):
+            for note in instance.get("administrativeNotes", []):
+                if LEGACY_ID_NOTE in note:
+                    out.write(
+                        json.dumps([note.split(":")[-1].strip(), instance["id"]]) + "\n"
+                    )
+                    count += 1
+            progress.advance(task)
+    return count
+
+
+async def map_holdings(
+    folio_client: folioclient.FolioClient,
+    out_path: Path,
+    progress: Progress,
+) -> int:
+    """
+    Write a legacy-id -> FOLIO holdings UUID map as JSON Lines.
+
+    Emits one `[legacy_id, holdings_uuid]` array per line. The legacy ID comes from
+    "Identifier(s) from previous system" administrative notes; a holdings record
+    with no administrative notes at all falls back to its first `formerIds` entry.
+
+    Parameters:
+        folio_client (FolioClient): An open FolioClient (inside its async context).
+        out_path (Path): Destination file for the map.
+        progress (Progress): Rich progress display to which a "Holdings" task is added.
+
+    Returns:
+        int: The number of mappings written.
+    """
+    total = int(
+        await folio_client.folio_get_async(
+            "/holdings-storage/holdings", "totalRecords", query_params={"limit": 0}
+        )
+    )
+    task: TaskID = progress.add_task("Holdings", total=total)
+    count = 0
+    with open(out_path, "w") as out:
+        async for holdings in folio_client.folio_get_all_async(
+            "/holdings-storage/holdings", "holdingsRecords", limit=1000
+        ):
+            if admin_notes := holdings.get("administrativeNotes", []):
+                for note in admin_notes:
+                    if LEGACY_ID_NOTE in note:
+                        out.write(
+                            json.dumps([note.split(":")[-1].strip(), holdings["id"]])
+                            + "\n"
+                        )
+                        count += 1
+            elif former_ids := holdings.get("formerIds", []):
+                out.write(json.dumps([former_ids[0], holdings["id"]]) + "\n")
+                count += 1
+            progress.advance(task)
+    return count
+
+
+async def map_items(
+    folio_client: folioclient.FolioClient,
+    out_path: Path,
+    progress: Progress,
+) -> int:
+    """
+    Write a legacy-id -> FOLIO item UUID map as JSON Lines.
+
+    Emits one `[legacy_id, item_uuid]` array per line, using each item's first
+    `formerIds` entry. Administrative notes are not consulted, as the
+    folio-migration-tools item transformer does not populate them.
+
+    Assumes the item mapping file follows the convention of mapping the legacy
+    identifier to `formerIds[0]`. Items with no `formerIds` are skipped.
+
+    Parameters:
+        folio_client (FolioClient): An open FolioClient (inside its async context).
+        out_path (Path): Destination file for the map.
+        progress (Progress): Rich progress display to which an "Items" task is added.
+
+    Returns:
+        int: The number of mappings written.
+    """
+    total = int(
+        await folio_client.folio_get_async(
+            "/item-storage/items", "totalRecords", query_params={"limit": 0}
+        )
+    )
+    task: TaskID = progress.add_task("Items", total=total)
+    count = 0
+    with open(out_path, "w") as out:
+        async for item in folio_client.folio_get_all_async(
+            "/item-storage/items", "items", limit=1000
+        ):
+            if former_ids := item.get("formerIds", []):
+                out.write(json.dumps([former_ids[0], item["id"]]) + "\n")
+                count += 1
+            progress.advance(task)
+    return count
+
+
+async def build_id_maps(
+    folio_client: folioclient.FolioClient,
+    results_folder: Path,
+    include_items: bool = False,
+) -> None:
+    """
+    Build the instances and holdings id maps (and optionally items) concurrently.
+
+    Opens the client as an async context manager (so HTTP clients are reused rather
+    than created per request) and runs `map_instances`, `map_holdings` and, if
+    requested, `map_items` together under a single Rich progress display.
+
+    Parameters:
+        folio_client (FolioClient): The FolioClient to use; entered here as a context.
+        results_folder (Path): Folder in which `instances_id_map.json` and
+            `holdings_id_map.json` (and `items_id_map.json`) are written.
+        include_items (bool): Also build `items_id_map.json`.
+    """
+    instances_id_map = results_folder.joinpath("instances_id_map.json")
+    holdings_id_map = results_folder.joinpath("holdings_id_map.json")
+    items_id_map = results_folder.joinpath("items_id_map.json")
+    async with folio_client:
+        with Progress(
+            TextColumn("{task.description}"),
+            BarColumn(),
+            MofNCompleteColumn(),
+            TimeElapsedColumn(),
+            console=console,
+        ) as progress:
+            jobs = [
+                map_instances(folio_client, instances_id_map, progress),
+                map_holdings(folio_client, holdings_id_map, progress),
+            ]
+            if include_items:
+                jobs.append(map_items(folio_client, items_id_map, progress))
+            counts = await asyncio.gather(*jobs)
+    logger.info("Wrote %d instance mappings to %s", counts[0], instances_id_map)
+    logger.info("Wrote %d holdings mappings to %s", counts[1], holdings_id_map)
+    if include_items:
+        logger.info("Wrote %d item mappings to %s", counts[2], items_id_map)
+
+
+@app.default
+def main(
+    gateway_url: Annotated[
+        str | None,
+        cyclopts.Parameter(
+            env_var="FOLIO_GATEWAY_URL",
+            show_env_var=True,
+            group="FOLIO Connection Parameters",
+        ),
+    ] = None,
+    tenant_id: Annotated[
+        str | None,
+        cyclopts.Parameter(
+            env_var="FOLIO_TENANT_ID",
+            show_env_var=True,
+            group="FOLIO Connection Parameters",
+        ),
+    ] = None,
+    username: Annotated[
+        str | None,
+        cyclopts.Parameter(
+            env_var="FOLIO_USERNAME",
+            show_env_var=True,
+            group="FOLIO Connection Parameters",
+        ),
+    ] = None,
+    password: Annotated[
+        str | None,
+        cyclopts.Parameter(
+            env_var="FOLIO_PASSWORD",
+            show_env_var=True,
+            group="FOLIO Connection Parameters",
+        ),
+    ] = None,
+    *,
+    results_folder: Annotated[
+        Path,
+        cyclopts.Parameter(
+            help="Path to folio-migration-tools iteration results folder",
+            show_default=False,
+            group="Command Parameters",
+        ),
+    ],
+    include_items: Annotated[
+        bool,
+        cyclopts.Parameter(
+            help="Also build items_id_map.json from item formerIds",
+            negative="",
+            group="Command Parameters",
+        ),
+    ] = False,
+):
+    """
+    Pull legacy inventory record ID maps out of a FOLIO system.
+
+    Reads the "Identifier(s) from previous system" administrative notes (or holdings and item
+    `formerIds`) from a system migrated with folio-migration-tools and writes
+    `instances_id_map.json`, `holdings_id_map.json`, and (optionally) `items_id_map.json`
+    (JSON Lines) to the results folder. Missing connection parameters are prompted for interactively.
+
+    Parameters:
+        gateway_url (str): The FOLIO Gateway URL.
+        tenant_id (str): The FOLIO Tenant ID.
+        username (str): The FOLIO username.
+        password (str): The FOLIO password.
+        results_folder (Path): Path to the folio-migration-tools iteration results folder.
+        include_items (bool): Also write `items_id_map.json`, built from each item's
+            first `formerIds` entry (assumes the standard item mapping, which puts
+            the legacy identifier in `formerIds[0]`).
+    """
+    gateway_url, tenant_id, username, password = get_folio_connection_parameters(
+        gateway_url, tenant_id, username, password
+    )
+    if not all([gateway_url, tenant_id, username, password]):
+        console.print("[red]Missing FOLIO connection parameters; aborting.[/red]")
+        raise SystemExit(1)
+    asyncio.run(
+        build_id_maps(
+            folioclient.FolioClient(gateway_url, tenant_id, username, password),
+            results_folder,
+            include_items,
+        )
+    )
+
+
+if __name__ == "__main__":
+    app()

@@ -24,5 +24,24 @@ In general, scripts should accept logical inputs for worflows that would call fo
 
 It's assumed the scripts will be your path so they can simply be called, though some require modification for specifics at hand. In scripts that use threads, it is recommended that you don't increase the number of threads unless your institution has its own cluster -- the values you see were determined experimentally to be the maximum safely useable on most shared tenants and need to account for regular use. The safe level may change in different environments and as FOLIO evolves.
 
+# Python scripts
+
+A few scripts (currently *create-legacy-inventory-id-maps-from-folio*) are written in Python rather than bash. They differ from the bash-based scripts in several ways:
+
+- **Running them**: they use a `uv run --script` shebang with inline dependency metadata, so there is nothing to install by hand. You need [uv](https://docs.astral.sh/uv/) (which fetches the required Python version and dependencies on first run) and then can execute the script directly, or with `uv run --script <name>`. They don't require jq or curl.
+- **Authentication**: they do *not* use the *tenant*, *okapi.url* and *okapi.token* files, and you don't run *authn* first. They log in themselves with a username and password through the Python `folioclient` library, using the FOLIO gateway URL rather than the okapi URL.
+- **Connection settings**: each setting can be given as a command line option or as an environment variable, with the option taking precedence:
+
+  | Option | Environment variable |
+  | --- | --- |
+  | `--gateway-url` | `FOLIO_GATEWAY_URL` |
+  | `--tenant-id` | `FOLIO_TENANT_ID` |
+  | `--username` | `FOLIO_USERNAME` |
+  | `--password` | `FOLIO_PASSWORD` |
+
+  Anything not supplied either way is prompted for interactively. Setting the password in the environment keeps it out of your shell history and the process list.
+- **Arguments and help**: they take named options and support `--help`, instead of the positional, guess-what-I-mean arguments the bash scripts favor. Read the docstring at the top of each script for its usage and assumptions.
+- **Working directory**: since they don't read the credential files, they can be run from any directory; output locations are given as options (for example `--results-folder`).
+
 
 

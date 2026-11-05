@@ -4,9 +4,15 @@ tenant=$(cat tenant)
 okapi_url=$(cat okapi.url)
 okapi_token=$(cat okapi.token)
 
-statisticalCodeTypeId='db734d16-b6e1-4151-a01e-488a6d14f5bd'
 
+declare -A statcodetype_dict
 
+defaultStatisticalCodeType='First summary'
+defaultStatisticalCodeType=$(tr -dc [a-z0-9] <<< "${defaultStatisticalCodeType,,}")
+
+eval "$(curl -s -w '\n' -X GET -H "Accept: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" "${okapi_url}/statistical-code-types?limit=100" |jq -r '.statisticalCodeTypes[] | @sh "statcodetype_dict[\(.name|tostring|ascii_downcase |gsub("[^0-9a-z]"; ""))]=\(.id|tostring)"')"
+
+statisticalCodeTypeId="${statcodetype_dict[${defaultStatisticalCodeType}]}"
 
 while IFS=$'\t' read -r code name;do
 
@@ -23,9 +29,8 @@ IFS='' read -r -d '' statcode << EndOfStatCode
 }
 EndOfStatCode
 
-apicall=$(curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${statcode}" "${okapi_url}/statistical-codes")
 
-echo "${apicall}"
+curl --http1.1 -s -w '\n' -X POST -H "Content-type: application/json" -H "X-Okapi-Tenant: ${tenant}" -H "x-okapi-token: ${okapi_token}" -d "${statcode}" "${okapi_url}/statistical-codes"
 
 done < statcodes.tsv
 

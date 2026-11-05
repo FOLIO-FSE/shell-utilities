@@ -391,11 +391,11 @@ function build_mfhd() {
 				case "libhas":
 				case "libhascheckin":
 				case "holdings":
-				case "summaryholding":
-				case "summaryholdings":
 					libHas=i
 					printf ("Lib has was found in "$i"\\n")
 					break
+				case "summaryholding":
+				case "summaryholdings":
 				case "summaryholdingspublicnote":
 					publicSummaryHoldings=i
 					printf ("Public summary holdings notewas found in "$i"\\n")
@@ -477,18 +477,6 @@ function build_mfhd() {
 					if (itemfile == 0) {
 						publicNote=i
 						printf ("Public note was found in "$i"\\n")
-					}
-					break
-				case "summaryholdingspublicnote":
-					if (itemfile == 0) {
-						summaryHoldingsPublicNote=i
-						printf ("Summary holdings public note was found in "$i"\\n")
-					}
-					break
-				case "summaryholdingsnonpublicnote":
-					if (itemfile == 0) {
-						summaryHoldingsNonpublicNote=i
-						printf ("Summary holdings non public note was found in "$i"\\n")
 					}
 					break
 				case "holdingstype":

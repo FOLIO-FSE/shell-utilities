@@ -80,6 +80,8 @@ END {
 	print NR" records were searched"
 	n = asorti(tagcount, sorted_bytag)
 
+	print "field\\tcount" > OUTFILE
+
 	for (tag=1; tag<=n; tag++) {
 		key = sorted_bytag[tag]
 

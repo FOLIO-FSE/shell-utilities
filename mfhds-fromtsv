@@ -202,11 +202,11 @@ function build_mfhd() {
 	}
 	if (publicNote > 0 && $publicNote ~ /[a-zA-Z0-9]/) {
 		split($publicNote, statements, ";")
-		for (statement in statements) { text_mfhd = text_mfhd""OFS"=866    "SFS"z"statements[statement] }
+		for (statement in statements) { text_mfhd = text_mfhd""OFS"=583  1 "SFS"z"statements[statement] }
 	}
 	if (nonpublicNote > 0 && $nonpublicNote ~ /[a-zA-Z0-9]/) {
 		split($nonpublicNote, statements, ";")
-		for (statement in statements) { text_mfhd = text_mfhd""OFS"=866    "SFS"x"statements[statement] }
+		for (statement in statements) { text_mfhd = text_mfhd""OFS"=583  0 "SFS"x"statements[statement] }
 	}
 	if (ownershipNote > 0 && $ownershipNote ~ /[a-zA-Z0-9]/) {
 		split($ownershipNote, statements, ";")
@@ -391,11 +391,11 @@ function build_mfhd() {
 				case "libhas":
 				case "libhascheckin":
 				case "holdings":
+				case "summaryholding":
+				case "summaryholdings":
 					libHas=i
 					printf ("Lib has was found in "$i"\\n")
 					break
-				case "summaryholding":
-				case "summaryholdings":
 				case "summaryholdingspublicnote":
 					publicSummaryHoldings=i
 					printf ("Public summary holdings notewas found in "$i"\\n")

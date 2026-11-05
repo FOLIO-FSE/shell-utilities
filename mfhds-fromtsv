@@ -245,8 +245,11 @@ function build_mfhd() {
 	if (libHas > 0 && $libHas ~ /[a-zA-Z0-9]/) {
 		sub(/^1\.[1-9]?[0-9] /, "", $libHas)
 		gsub(/;1\.[1-9]?[0-9] /, "", $libHas)
-		split($libHas, statements, ";") 
-		for (statement in statements) { text_mfhd = text_mfhd""OFS"=866    "SFS"a"statements[statement]
+		split($libHas, statements, ";")
+		for (statement in statements) {
+			text_mfhd = text_mfhd""OFS"=866    "SFS"a"statements[statement] \
+			((publicSummaryHoldings > 0 && length($publicSummaryHoldings) > 0) ? SFS"z"$publicSummaryHoldings : "") \
+			((nonpublicSummaryHoldings > 0 && length($nonpublicSummaryHoldings) > 0) ? SFS"x"$nonpublicSummaryHoldings : "")
 		}
 	}
 
@@ -393,6 +396,14 @@ function build_mfhd() {
 					libHas=i
 					printf ("Lib has was found in "$i"\\n")
 					break
+				case "summaryholdingspublicnote":
+					publicSummaryHoldings=i
+					printf ("Public summary holdings notewas found in "$i"\\n")
+					break
+				case "summaryholdingsnonpublicnote":
+					nonpublicSummaryHoldings=i
+					printf ("Nonpublic summary holdings note was found in "$i"\\n")
+					break
 				case "holdid":
 				case "holdingid":
 				case "holdingsid":
@@ -463,16 +474,21 @@ function build_mfhd() {
 					break
 				case "note":
 				case "publicnote":
-				case "summaryholdingspublicnote":
 					if (itemfile == 0) {
 						publicNote=i
 						printf ("Public note was found in "$i"\\n")
 					}
 					break
+				case "summaryholdingspublicnote":
+					if (itemfile == 0) {
+						summaryHoldingsPublicNote=i
+						printf ("Summary holdings public note was found in "$i"\\n")
+					}
+					break
 				case "summaryholdingsnonpublicnote":
 					if (itemfile == 0) {
-						nonpublicNote=i
-						printf ("Non public note was found in "$i"\\n")
+						summaryHoldingsNonpublicNote=i
+						printf ("Summary holdings non public note was found in "$i"\\n")
 					}
 					break
 				case "holdingstype":

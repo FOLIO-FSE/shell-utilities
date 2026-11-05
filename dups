@@ -1,0 +1,21 @@
+#!/usr/bin/bash
+# dups [COLUMN]
+# Reads tab-delimited input from stdin and prints every line whose value
+# in COLUMN (1-based, default 1) appears more than once in the input.
+
+col=${1:-1}
+
+case $col in
+    ''|*[!0-9]*|0*)
+        echo "usage: dups [COLUMN]   (COLUMN must be a positive integer)" >&2
+        exit 1
+        ;;
+esac
+
+exec awk -F'\t' -v col="$col" '
+    { line[NR] = $0; key[NR] = $col; count[$col]++ }
+    END {
+        for (i = 1; i <= NR; i++)
+            if (count[key[i]] > 1) print line[i]
+    }
+'

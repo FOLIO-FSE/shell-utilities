@@ -117,6 +117,14 @@ addvalue() {
 	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")
 }
 
+addgsubrule() {
+	pattern="${2}"
+	replacement="${3}"
+
+	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"value\":\"\",\"rules\":{\"regexGsub\": {\"pattern\": \"${pattern}\", \"replacement\": \"${replacement}\" }"
+	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")
+}
+
 addreplacerules() {
 	replace_rule="${2}"
 	[[ "${2}" == "truefalse" ]] && replace_rule='"Yes":"true","YES":"true","Y":"true","y":"true","n":"false","N":"false","TRUE":"true","No":"false","NO":"false","FALSE":"false"'
@@ -646,7 +654,9 @@ build_item_map() {
 			;;
 			itemstatus | itemstatusdesc | itemstatusname | itemstatuscurrentstatus | status | statusdisplay | statusmappingkey | statusname )
 				addfield status.name
+				addfield itemDamagedStatusId
 				statusfield="${field}"
+				addgsubrule itemDamagedStatusId ".*amaged.*" 00000000-0000-0000-0000-000000000000
 			;;
 			temploc | templocation | itemtemporaryshelvinglocation)
 				addfield temporaryLocationId

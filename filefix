@@ -271,7 +271,7 @@ sed -i '
 1 s/\b\(fulfillmentnote\|imessage\|imsg\|message\|messageitem\|msg\|checkinnote\|notecheckin\)\b/checkin_note/i
 1 s/\b\(holdings\|libhas[^\t]*\|summaryhold[^\t]*\)\b/libhas/i
 1 s/\b\(int[^\t]*note\|[^\t]*copynonp[^\t]*note\|staffnote\)\b/staff_note/i
-1 s/\b\(descnote\|gennote\|item.\?note\|[^\t]*[^n]publicnote\|note\|noteitem\|notegeneral\|opacmsg\|public.\?note\|z30noteopac\)\b/public_note/i
+1 s/\b\(descnote\|gennote\|item.\?note\|[^\t]*[^n]publicnote\|note\|note.\?item\|note.\?desc[^\t]*\|notegeneral\|opacmsg\|public.\?note\|z30noteopac\)\b/public_note/i
 1 s/\b\(copy\|copy.\?n[uo][^\t]*\|[^\t]*copyid\)\b/copy/i
 1 s/\bvol[^\t]*\b/volume/i
 1 s/\bchron[^\t]*\b/chronology/i

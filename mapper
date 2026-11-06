@@ -676,7 +676,7 @@ build_item_map() {
 			barcode | itembarcode | z30barcode )
 				[[ -z ${itemfield} ]] && addregexrules legacyIdentifier semicolon_delimited
 			;;
-			itype | itemtype | itemtypeid | itemtypecode | itemtypename | itypelabel | itypecode | permitemtype )
+			itype | itemtype | itemtypeid | itemtypecode | itemtypename | itypelabel | itypecode | permitemtype | permitemtypecode )
 				if [[ -z ${mattypefield} ]];then
 					addfield materialTypeId
 					mattypefield="${field}"

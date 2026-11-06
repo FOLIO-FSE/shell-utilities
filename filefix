@@ -4,8 +4,15 @@ nomsg="no"
 reader="pv"
 logpath="./"
 
-while getopts "np:" opt; do
+while getopts "h:np:" opt; do
   case $opt in
+    h)
+      filecontent="$OPTARG"
+			if [[ $filecontent == !(loan|item) ]];then
+				echo "Only loan and item header normalization is supported"
+				exit
+			fi
+      ;;
     n)
       nomsg="yes"
 			reader="cat"
@@ -134,10 +141,6 @@ function fix_file() {
 local infile="${1}"
 local finalfile="${2}"
 local outfile="$(sed 's/\.....\?$//' <<< "${infile}")"
-filedetect="${infile,,}"
-filecontent=""
-
-[[ "${filedetect}" =~ loan ]] && filecontent="loan"
 
 if [[ "${infile: -4}" == "xlsx" ]];then
 	[[ ${nomsg} == "no" ]] && echo "Excel file detected -- converting"
@@ -253,6 +256,38 @@ head -50 ${prefix}aa |grep -o "\b[1-9]\.[0-9]\+E+[0-9]\+\b" > /dev/null && logms
 [[ -n "$logmsg" ]] && log_msg
 
 # normalize fieldnames in file
+if [[ ${filecontent} == "item" ]];then
+echo "XXXX performing header normalization"
+sed -i '
+1 s/ //g
+1 s/[^0-9A-Za-z_#)(\.\t\-]//g
+1 s/\b\([^\t]*item[^\t]*id\|record[^\t]*item\|z30reckey\)\b/id/i
+1 s/\b\(lhrcontrolnumber\|mfhd[^\t]*id\|z30hol[^\t]*\)\b/hold_id/i
+1 s/\b\(\[^\t]*bib[^\t]*id[^\t]*]\|mms[^\t]*id\|record[^\t]*bib[^\t]*\)\b/bib_id/i
+1 s/\b\([^\t]*mat[^\t]*type\|[^\t]*mat[^\t]*format\|zm[^\t]*type\|mediaitm\|z30material\)\b/material_type/i
+1 s/\b[^\tp]*tatus.\?.\?\b/status/i
+1 s/\b\(itype[^\t]*\|itemt[^\t]*\|per[^\t]i[^\t]*type\|per[^\t]*i[^\t]*type.\?code\)\b/itype/i
+1 s/\b\(loantype\|itempolicy\|policy\)\b/loan_type/i
+1 s/\b\(fulfillmentnote\|imessage\|imsg\|message\|messageitem\|msg\|checkinnote\|notecheckin\)\b/checkin_note/i
+1 s/\b\(holdings\|libhas[^\t]*\|summaryhold[^\t]*\)\b/libhas/i
+1 s/\b\(int[^\t]*note\|[^\t]*copynonp[^\t]*note\|staffnote\)\b/staff_note/i
+1 s/\b\(descnote\|gennote\|item.\?note\|[^\t]*[^n]publicnote\|note\|noteitem\|notegeneral\|opacmsg\|public.\?note\|z30noteopac\)\b/public_note/i
+1 s/\b\(copy\|copy.\?n[uo][^\t]*\|[^\t]*copyid\)\b/copy/i
+1 s/\bvol[^\t]*\b/volume/i
+1 s/\bchron[^\t]*\b/chronology/i
+1 s/\b[^\t]*enum[^\t]*\b/enumeration/i
+1 s/\b[^\t]*caption[^\t]*\b/caption/i
+1 s/\b[^\t]*freetext[^\t]*\b/freetext/i
+1 s/\b[^\t]*pieces[^\t]*\b/pieces/i
+1 s/\btemp[^\t]*loc[^\t]*\b/temp_location/i
+1 s/\b\(location\|[^\t]*perm[^\t]*loc[^\t]*code\|[^\t]*perm[^\t]*location\|[^\t]*shel[^\t]*location\)\b/location/i
+1 s/\b\(callcheckin\|callitem\|callnumitem\|display.\?call.\?n[^\t]*\|itemcallnumber\|itemclassnumber\|permanentcallnumber\|shelfmark\)\b/call_number/i
+1 s/\b[^\t]*year\b/year/i
+1 s/\b[^p\t][^\t]*arcode/barcode/i
+s/ [0-9]*:[0-9]*\($\|[\t]\)/\1/g
+' ${prefix}aa 
+fi
+
 if [[ ${filecontent} == "loan" ]];then
 sed -i '
 1 s/ //g

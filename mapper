@@ -120,8 +120,11 @@ addvalue() {
 addgsubrule() {
 	pattern="${2}"
 	replacement="${3}"
+	regexgetfirstmatch="${4}"
 
 	newfield="{\"folio_field\":\"${1}\",\"legacy_field\":\"${field}\",\"value\":\"\",\"rules\":{\"regexGsub\": {\"pattern\": \"${pattern}\", \"replacement\": \"${replacement}\" }"
+
+	[[ -n "${regexgetfirstmatch}" ]] && newfield="${newfield}, \"regexGetFirstMatchOrEmpty\": \"(${regexgetfirstmatch})\" }}"
 	object_map=$(jq --argjson NEWFIELD "${newfield}" '.data += [ $NEWFIELD ]' <<< "${object_map}")
 }
 
@@ -656,7 +659,7 @@ build_item_map() {
 				addfield status.name
 				addfield itemDamagedStatusId
 				statusfield="${field}"
-				addgsubrule itemDamagedStatusId ".*amaged.*" 00000000-0000-0000-0000-000000000000
+				addgsubrule itemDamagedStatusId ".*amaged.*" 00000000-0000-0000-0000-000000000000 00000000-0000-0000-0000-000000000000
 			;;
 			temploc | templocation | itemtemporaryshelvinglocation)
 				addfield temporaryLocationId

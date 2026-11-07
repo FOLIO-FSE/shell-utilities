@@ -8,8 +8,8 @@ while getopts "h:np:" opt; do
   case $opt in
     h)
       filecontent="$OPTARG"
-			if [[ $filecontent == !(loan|item) ]];then
-				echo "Only loan and item header normalization is supported"
+			if [[ $filecontent == !(loan|item|user) ]];then
+				echo "Only loan, item, and user header normalization is supported"
 				exit
 			fi
       ;;
@@ -290,6 +290,7 @@ s/ [0-9]*:[0-9]*\($\|[\t]\)/\1/g
 fi
 
 if [[ ${filecontent} == "loan" ]];then
+echo "Performing loan header normalization"
 sed -i '
 1 s/ //g
 1 s/[^0-9A-Za-z_#)(\.\t\-]//g
@@ -319,10 +320,35 @@ sed -i '
 1 s/\b[^p\t][^\t]*arcode/item_barcode/i
 s/ [0-9]*:[0-9]*\($\|[\t]\)/\1/g
 ' ${prefix}aa 
+fi
 
-logmsg="Loan file detected. Attempting to standardize headers" && log_msg
+if [[ ${filecontent} == "user" ]];then
+echo "Performing user header normalization"
+sed -i '
+1 s/ //g
+1 s/[^0-9A-Za-z_#)(\.\t\-]//g
+1 s/\b\(id[^\t]*\|record[^\t]*patron\|record\|[pu][^\t]*id\|patronn[^\t]*\)\b/id/i
+1 s/\b\([^\t]*expir[^\t]*\|exp[^\t]*\)\b/expiry_date/i
+1 s/\b\([^\t]*category\|category[^\t]*\|[^\t]*group\|p[^\t]*type\|p[^\t]*code\|group\|[^\t]*group\)\b/patron_group/i
+1 s/\b\(f[i][^\t]*name\|[^\t]*give[^\t]*nam[^\t]*\)\b/first_name/i
+1 s/\b\(m[^\t]*name\|mi\)\b/middle_name/i
+1 s/\b\(pat[^\t]*name\)\b/name/i
+1 s/\b\([^\t]*[fls][^\t]*name\)\b/last_name/i
+1 s/\b\([pt][^\t]*phone\|phone[^\t]*\|[pt][^\t]*phonen[^\t]*\)\b/phone/i
+1 s/\b\([^\t]*cell[^\t]*\|[^\t]*mobile[^\t]*\)\b/cell_phone/i
+1 s/\b\([^\t]*addr1\?\|[^\t]*address1\?\|[^\t]*[^2-4]line1\)\b/addr_line1/i
+1 s/\b\([^\t]*addr2\|[^\t]*address2\|[^\t]*line2\)\b/addr_line2/i
+1 s/\b\([^\t]*email[^\t]*\)\b/email/i
+1 s/\b\([^\t]*city\)\b/city/i
+1 s/\b\([^\t]*zip\|[^\t]*pos[^\t]*code\)\b/postal_code/i
+1 s/\b\([^\t]*state\|[^\t]*province\|[^\t]*region\)\b/region/i
+1 s/\b\([^\t]*note[^\t]*\|comment\)\b/note/i
+1 s/\b[^i\t][^\t]*arcode/barcode/i
+s/ [0-9]*:[0-9]*\($\|[\t]\)/\1/g
+' ${prefix}aa 
+fi
 
-else
+if [[ $filecontent == !(loan|item|user) ]];then
 	sed -i '1 s/[^0-9A-Za-z_#=\)\(\.\t\-]//g;s/=[^\t]*//g' ${prefix}aa
 fi
 

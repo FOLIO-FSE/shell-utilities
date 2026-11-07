@@ -257,7 +257,7 @@ head -50 ${prefix}aa |grep -o "\b[1-9]\.[0-9]\+E+[0-9]\+\b" > /dev/null && logms
 
 # normalize fieldnames in file
 if [[ ${filecontent} == "item" ]];then
-echo "XXXX performing header normalization"
+echo "Performing item header normalization"
 sed -i '
 1 s/ //g
 1 s/[^0-9A-Za-z_#)(\.\t\-]//g
@@ -271,7 +271,8 @@ sed -i '
 1 s/\b\(fulfillmentnote\|imessage\|imsg\|message\|messageitem\|msg\|checkinnote\|notecheckin\)\b/checkin_note/i
 1 s/\b\(holdings\|libhas[^\t]*\|summaryhold[^\t]*\)\b/libhas/i
 1 s/\b\(int[^\t]*note\|[^\t]*copynonp[^\t]*note\|staffnote\)\b/staff_note/i
-1 s/\b\(descnote\|gennote\|item.\?note\|[^\t]*[^n]publicnote\|note\|note.\?item\|note.\?desc[^\t]*\|notegeneral\|opacmsg\|public.\?note\|z30noteopac\)\b/public_note/i
+1 s/\b\(descnote\|note.\?desc[^\t]*\)\b/description/i
+1 s/\b\(gennote\|item.\?note\|[^\t]*[^n]publicnote\|note\|note.\?item\|notegeneral\|opacmsg\|public.\?note\|z30noteopac\)\b/public_note/i
 1 s/\b\(copy\|copy.\?n[uo][^\t]*\|[^\t]*copyid\)\b/copy/i
 1 s/\bvol[^\t]*\b/volume/i
 1 s/\bchron[^\t]*\b/chronology/i

@@ -55,7 +55,8 @@ BEGIN { goodrecs=badrecs=deletedrecs=bad001=badleader=baddirectory=bibcount=hold
 	invalid_subfield_a = SFS"a"not_subfield
 
 	mandatory_numbers = " 100 110 111 130 245 600 610 611 650 651 700 710 711"
-	BAD_INDICATOR_REGEX=FS".?"SFS
+	#BAD_INDICATOR_REGEX=FS".?"SFS
+	BAD_INDICATOR_REGEX=FS"(.{0,1}|.{3})"SFS
 }
 function check_fields() {
 	## get rid of bad subfield zeros that break links

@@ -107,6 +107,8 @@ case $rec_type in
 	jq_replace="."
 	endpoint="source-storage/records";;
 "boundwiths")
+	querystring="itemId="
+	querydelim="%20or%20itemId=="
 	jq_replace=".boundWithParts[]"
 	endpoint="inventory-storage/bound-with-parts";;
 "circlog")

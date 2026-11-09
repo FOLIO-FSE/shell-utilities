@@ -167,6 +167,7 @@ case $deletetype in
 	singlerecord="yes"
 	recordtype="scheduled-notice-storage/scheduled-notices";;
 "serials")
+	batchsize=5
 	recordtype="serials-management/serials";;
 "servicepoints")
 	recordtype="service-points";;

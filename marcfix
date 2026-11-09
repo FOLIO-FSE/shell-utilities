@@ -303,7 +303,7 @@ if [[ $processType == "file" ]];then
 		temproot="tmp_bib_badindicators"
 		if [[ -f ${temproot}.mrc ]];then
 			marc2text -n ${temproot}.mrc 
-			awk '{if($0~/^=([1-9]|0[1-9])/){if(substr($0,7,1)=="\037")$0=substr($0,1,6)"  "substr($0,7);else if(substr($0,8,1)=="\037")$0=substr($0,1,7)" "substr($0,8)};print $0}' ${temproot}.txt > ${temproot}1.txt
+			awk '{if($0~/^=([1-9]|0[1-9])/){if(substr($0,7,1)=="\037")$0=substr($0,1,6)"  "substr($0,7);else if(substr($0,8,1)=="\037")$0=substr($0,1,7)" "substr($0,8);else if(substr($0,10,1)=="\037")$0=substr($0,1,8)substr($0,10)};print $0}' ${temproot}.txt > ${temproot}1.txt
 			mv ${temproot}1.txt ${temproot}.txt
 			text2marc -n ${temproot}.txt
 			cat ${temproot}.mrc  >> "${fileroot}_bib_fixed.mrc"

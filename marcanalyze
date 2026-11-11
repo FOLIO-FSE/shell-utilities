@@ -215,8 +215,9 @@ function extract_tags() {
 				tag245n = extract_subfield("n")
 				sub(/^([Aa] |[Aa]n |[Tt]he )/, "", tag245a)
 	
-				if (index(245h, "electronic")){ format="e"}
-				if (index(245h, "micro")){ format="m"}
+				if (index(tag245, "[electronic")){ format="e"}
+				if (index(tag245, "[computer")){ format="e"}
+				if (index(tag245, "[micro")){ format="m"}
 			
 				tag245 = tag245a""tag245b
 				tag245p = substr(tag245p, 1, 10)""substr(tag245n, 1, 10)

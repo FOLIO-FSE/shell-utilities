@@ -591,7 +591,7 @@ build_item_map() {
 		comp_field=$(tr -dc [a-z0-9] <<< "${field,,}" |sed 's/notes$/note/')
 	
 		case ${comp_field} in 
-			id | itemid | itempid | physicalitemid | recorditem | recordnumitem | recordnumberitem | z30reckey)
+			id | itemid | itempid | physicalitemid | recorditem | recordnumitem | recordnumberitem | z30reckey )
 				addfield legacyIdentifier
 				itemfield="${field}"
 				;;
@@ -638,7 +638,7 @@ build_item_map() {
 				note_iter=$(($note_iter + 1))
 			;;
 			copy | copynumber | copyno | copynum | copyid | z30copyid | itemcopyid )
-				addregexrules copy 2ormore
+				addregexrules copyNumber 2ormore
 			;;
 			vol | volume | volumes )
 				addfield volume 

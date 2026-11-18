@@ -434,7 +434,7 @@ build_order_map() {
 				addfield vendorDetail.referenceNumbers[0].refNumber "${field}"
 				addfield vendorDetail.referenceNumbers[0].refNumberType "Vendor order reference number"
 			;;
-		  workflowstatus )
+		  status | workflowstatus )
 				addvalue workflowStatus Pending
 				workflowStatus="${field}"
 			;;

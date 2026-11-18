@@ -256,7 +256,7 @@ build_order_map() {
 		comp_field=$(echo "${field,,}" | tr -dc [a-z0-9] |sed 's/folio//' )
 	
 		case ${comp_field} in
-		  acquisitionmethod | form )
+		  acqtype | acquisitionmethod | form )
 				if [[ -z ${acqMethod} ]];then
 					addfield compositePoLines[0].acquisitionMethod
 					acqMethod="${field}"

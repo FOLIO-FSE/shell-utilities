@@ -284,6 +284,9 @@ case $rec_type in
 "instances")
 	limitbyid="yes"
 	endpoint="instance-storage/instances";;
+"instancetypes")
+	rec_type="instanceTypes"
+	endpoint="instance-types";;
 "institutions")
 	rec_type="locinsts"
 	endpoint="location-units/institutions";;
@@ -499,7 +502,7 @@ case $rec_type in
 "vouchers")
 	endpoint="voucher/vouchers";;
 *)
-	echo "Record type '${recordtype}' not found. Supported types are accounts, acqmethods, acqunits, actionprofiles, actualcostrecords, addresstypes, agreements, agreements-picklists, agreements-suppl, authorities, authorities-source, authorities-srs, automaticblocks, batch-groups, boundwiths, budgets, callnumbertypes, campuses, categories, circ-loans, circlog, composite-orders, contacts, coursedepartments, courselistings, courses, coursetypes, departments, eholdings-packages, eholdings-titles, entitlements, entitytypes, expenseclasses, feefines, feefineactions, fieldmappingprofiles, fieldprotection, fiscalyears, fixedduedateschedules, fund-expense, fund-groups, funds, fundtypes, groups, holdings, holdingstypes, holdings-srs, identifiertypes, importjobs, importprofiles, inhouse,  interfaces, instance-relationships, instancerelationshiptypes, instances, institutions, itemdamagedstatuses, items, inventory, inventory-items, invoices, invoice-lines, exportjobs, ledgers, libraries, licenses, licenses-picklists, licenses-terms, locations, loanpolicies, loantypes, loan-history, loans, lostitempolicies, manualblocks, mappingprofiles, marcspecs, matchprofiles, mattypes, modelrulesets, mtypes, notes, notices, noticepolicies, orderprefixes, orders, organizations, overduefinepolicies, patronblockconditions, patronblocklimits, permissions, permissionusers, policies, polines, preceedingsucceeding, protectedfields, proxies, receivinghistory, requestpolicies, requestprefs, requests, roles, rulesets, schedulednotices, serials, servicepoints, servicepointsusers, sourcerecords, srs, statcodes, statcodetypes, tags, tasks, templates, transactions, usergroups, users, vouchers."
+	echo "Record type '${recordtype}' not found. Supported types are accounts, acqmethods, acqunits, actionprofiles, actualcostrecords, addresstypes, agreements, agreements-picklists, agreements-suppl, authorities, authorities-source, authorities-srs, automaticblocks, batch-groups, boundwiths, budgets, callnumbertypes, campuses, categories, circ-loans, circlog, composite-orders, contacts, coursedepartments, courselistings, courses, coursetypes, departments, eholdings-packages, eholdings-titles, entitlements, entitytypes, expenseclasses, feefines, feefineactions, fieldmappingprofiles, fieldprotection, fiscalyears, fixedduedateschedules, fund-expense, fund-groups, funds, fundtypes, groups, holdings, holdingstypes, holdings-srs, identifiertypes, importjobs, importprofiles, inhouse,  interfaces, instance-relationships, instancerelationshiptypes, instances, instanceformats, instancetypes, institutions, itemdamagedstatuses, items, inventory, inventory-items, invoices, invoice-lines, exportjobs, ledgers, libraries, licenses, licenses-picklists, licenses-terms, locations, loanpolicies, loantypes, loan-history, loans, lostitempolicies, manualblocks, mappingprofiles, marcspecs, matchprofiles, mattypes, modelrulesets, mtypes, notes, notices, noticepolicies, orderprefixes, orders, organizations, overduefinepolicies, patronblockconditions, patronblocklimits, permissions, permissionusers, policies, polines, preceedingsucceeding, protectedfields, proxies, receivinghistory, requestpolicies, requestprefs, requests, roles, rulesets, schedulednotices, serials, servicepoints, servicepointsusers, sourcerecords, srs, statcodes, statcodetypes, tags, tasks, templates, transactions, usergroups, users, vouchers."
 	exit;;
 esac
 

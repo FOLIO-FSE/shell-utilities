@@ -82,6 +82,7 @@ function showmatches() {
 	"instanceStatuses")
 		endpoint="instance-statuses";;
 	"instanceTypes")
+		jq="code_name"
 		endpoint="instance-types";;
 	"holdingsNoteTypes")
 		endpoint="holdings-note-types";;

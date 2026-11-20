@@ -199,7 +199,7 @@ if ( good_tag == 0 && goodrec == 1) { badtagtext = "(Nonnumeric tags: "bad_tag")
 
 if ( goodrec == 1 && badsubfields == 1){ badsubfieldtotal++;badsubfieldstext = " (Bad subfields: "badsubfieldtotal")";foundbad = 1; print $0 > "tmp_"rectype"_badsubfields.mrc" }
 
-if ( goodrec == 1 && badmandatoryfield == 1){ badmandatorytotal++;badmandatorytext = " (Bad mandatory field: "badmandatorytotal")";foundbad = 1; print $0 > "bad_bib_mandatoryfields"FILEROOT }
+if ( goodrec == 1 && badmandatoryfield == 1 && badsubfields == 0){ badmandatorytotal++;badmandatorytext = " (Bad mandatory field: "badmandatorytotal")";foundbad = 1; print $0 > "tmp_"rectype"_badsubfields.mrc"}
 
 
 if ( goodrec == 1 && badindicators == 1){ badindicatortotal++;badindicatorstext = " (Bad indicators: "badindicatortotal")";foundbad = 1; print $0 > "tmp_"rectype"_badindicators.mrc" }

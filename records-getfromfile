@@ -93,28 +93,28 @@ getrecord() {
 }
 
 case $rec_type in
-"auditorder")
+"auditorders")
 	indivrecord=1
 	querystring=""
 	queryseparator="/"
 	poststring="?limit=1000"
 	jq_replace=".orderAuditEvents[]"
 	endpoint="audit-data/acquisition/order";;
-"auditpoline")
+"auditpolines")
 	indivrecord=1
 	querystring=""
 	queryseparator="/"
 	poststring="?limit=1000"
 	jq_replace=".poLineAuditEvents[]"
 	endpoint="audit-data/acquisition/order-line";;
-"auditinvoice")
+"auditinvoices")
 	indivrecord=1
 	querystring=""
 	queryseparator="/"
 	poststring="?limit=1000"
 	jq_replace=".invoiceAuditEvents[]"
 	endpoint="audit-data/acquisition/invoice";;
-"auditinvoicelin")
+"auditinvoicelines")
 	indivrecord=1
 	querystring=""
 	queryseparator="/"

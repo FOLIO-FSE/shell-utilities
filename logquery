@@ -25,7 +25,7 @@ start="1 day ago"
 end="now"
 filters=()
 
-while getopts ":c:r:deqn:s:t:h" opt; do
+while getopts ":c:r:den:q:s:t:h" opt; do
   case $opt in
     c) cluster=${OPTARG}-folio-eis ;;
     r) region=$OPTARG ;;

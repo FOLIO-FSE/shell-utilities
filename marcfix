@@ -1,3 +1,4 @@
+#!/usr/bin/bash
 nomsg="no"
 reader="pv"
 logpath="./"
@@ -349,7 +350,6 @@ if [[ $processType == "file" ]];then
 			[[ ${nomsg} == "no" ]] && echo "Oversized records were appended to ${fileroot}_bib_fixed.mrc"
 		fi
 	done
-	rm -f tmp_checkmarc
 fi
 
 if [[ $processType == "directory" ]]; then
@@ -357,8 +357,8 @@ if [[ $processType == "directory" ]]; then
 	ls |sed 's/^/echo;marcfix /' > tmp_process
 	chmod 700 ./tmp_process
 	./tmp_process
-	rm -f tmp_process
-	rm -f tmp_checkmarc
 	cd ..
 fi
+rm -f tmp_process
+rm -f tmp_checkmarc
 

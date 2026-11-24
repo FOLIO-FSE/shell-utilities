@@ -10,6 +10,7 @@ Options:
   -d          Filter @message like /DELETE/
   -e          Filter @message like /ERROR/
   -q PATTERN  Filter @message like /PATTERN/ (may be repeated)
+  -n PATTERN  Filter @message not like /PATTERN/ (may be repeated)
   -s START    Start time, anything GNU date understands (default: "1 day ago")
   -t END      End time, anything GNU date understands (default: "now")
   -h          Show this help
@@ -24,13 +25,14 @@ start="1 day ago"
 end="now"
 filters=()
 
-while getopts ":c:r:deq:s:t:h" opt; do
+while getopts ":c:r:deqn:s:t:h" opt; do
   case $opt in
     c) cluster=${OPTARG}-folio-eis ;;
     r) region=$OPTARG ;;
     d) filters+=("| filter @message like /DELETE/") ;;
     e) filters+=("| filter @message like /ERROR/") ;;
     q) filters+=("| filter @message like /${OPTARG//\//\\/}/") ;;
+    n) filters+=("| filter @message not like /${OPTARG//\//\\/}/") ;;
     s) start=$OPTARG ;;
     t) end=$OPTARG ;;
     h) usage; exit 0 ;;

@@ -1,0 +1,77 @@
+#!/usr/bin/bash
+
+usage() {
+  cat >&2 <<EOF
+Usage: ${0##*/} -c CLUSTER [options]
+
+Options:
+  -c CLUSTER    Cluster (required)
+  -r REGION   AWS region (default: us-east-1)
+  -d          Filter @message like /DELETE/
+  -e          Filter @message like /ERROR/
+  -q PATTERN  Filter @message like /PATTERN/ (may be repeated)
+  -s START    Start time, anything GNU date understands (default: "1 day ago")
+  -t END      End time, anything GNU date understands (default: "now")
+  -h          Show this help
+
+All filters are ANDed. Use -q 'A|B' for OR.
+EOF
+}
+
+region=us-east-1
+group=""
+start="1 day ago"
+end="now"
+filters=()
+
+while getopts ":c:r:deq:s:t:h" opt; do
+  case $opt in
+    c) cluster=${OPTARG}-folio-eis ;;
+    r) region=$OPTARG ;;
+    d) filters+=("| filter @message like /DELETE/") ;;
+    e) filters+=("| filter @message like /ERROR/") ;;
+    q) filters+=("| filter @message like /${OPTARG//\//\\/}/") ;;
+    s) start=$OPTARG ;;
+    t) end=$OPTARG ;;
+    h) usage; exit 0 ;;
+    :)  echo "Option -$OPTARG requires an argument" >&2; usage; exit 1 ;;
+    \?) echo "Unknown option -$OPTARG" >&2; usage; exit 1 ;;
+  esac
+done
+
+if [[ -z $cluster ]]; then
+  usage
+  exit 1
+fi
+
+start_epoch=$(date -d "$start" +%s) || { echo "Bad start time: $start" >&2; exit 1; }
+end_epoch=$(date -d "$end" +%s)     || { echo "Bad end time: $end" >&2; exit 1; }
+
+query="fields @timestamp, @logStream, @message ${filters[*]:-} | sort @timestamp asc | limit 10000"
+
+qid=$(aws logs start-query \
+        --region "$region" \
+        --log-group-name "$cluster" \
+        --start-time "$start_epoch" \
+        --end-time "$end_epoch" \
+        --query-string "$query" \
+        --query queryId --output text) || exit 1
+
+while :; do
+  result=$(aws logs get-query-results --region "$region" --query-id "$qid" --output json) || exit 1
+  status=$(jq -r .status <<<"$result")
+  case $status in
+    Complete) break ;;
+    Failed|Cancelled|Timeout) echo "Query ended with status: $status" >&2; exit 1 ;;
+  esac
+  sleep 2
+done
+
+jq -r '.results[]
+       | map({(.field): .value}) | add
+       | [.["@timestamp"], .["@logStream"], .["@message"]]
+       | @tsv' <<<"$result"
+
+if (( $(jq '.results | length' <<<"$result") >= 10000 )); then
+  echo "Results truncated to first 10000 rows." >&2
+fi

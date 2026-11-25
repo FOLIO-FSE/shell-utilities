@@ -46,6 +46,8 @@ if [[ -z $cluster ]]; then
   exit 1
 fi
 
+echo "Executing search. Please be patient"
+
 start_epoch=$(date -d "$start" +%s) || { echo "Bad start time: $start" >&2; exit 1; }
 end_epoch=$(date -d "$end" +%s)     || { echo "Bad end time: $end" >&2; exit 1; }
 
@@ -72,8 +74,107 @@ done
 jq -r '.results[]
        | map({(.field): .value}) | add
        | [.["@timestamp"], .["@logStream"], .["@message"]]
-       | @tsv' <<<"$result"
+       | @tsv' <<<"$result" > raw.log
 
 if (( $(jq '.results | length' <<<"$result") >= 10000 )); then
   echo "Results truncated to first 10000 rows." >&2
 fi
+
+echo
+
+rm -f {access,app,sidecar,edge,errors,stacktraces,noise}.log
+
+awk -F'\t' '
+BEGIN {
+  # ---- embedded timestamps at the start of a message (first match wins) ----
+  nts = 0
+  TS[++nts] = "^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9:.]+(\\+0000|\\+00:00|Z)[ \t]*"  # 2026-11-24T19:59:01.004+0000
+  TS[++nts] = "^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9:]+[,.][0-9]+[ \t]*"           # 2026-11-24 19:59:01,002
+  TS[++nts] = "^[0-9][0-9]:[0-9][0-9]:[0-9][0-9]\\.[0-9]+[ \t]*"                              # 19:59:01.000
+  TS[++nts] = "^[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9] [0-9:]+[ \t]*"                     # kong/nginx error log
+  ACCESS_TS = "[ \t]*\\[[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]:[0-9:]+ [A-Z]+\\]"          # [24/11/2026:19:59:01 UTC]
+  UA_TAIL   = "urt=(\"[^\"]*\"|[^ \t]*)[ \t]"                                                  # user agent etc. after urt=
+  THREAD    = "[ \t]*\\((vert\\.x|http-nio|executor)[^)]*\\)"
+  HTTP_NIO  = "\\[http-nio-[0-9]+-exec-[0-9]+\\][ \t]*"
+  CHAIN     = "[ \t]*\\[[A-Za-z0-9;/._-]*[0-9]+/[A-Za-z0-9;/._-]+\\]"                          # [694296/mod-x;123/mod-y]
+  MODNAME   = "[ \t]*\\[mod[_-][A-Za-z0-9_-]+\\]"                                              # [mod_inventory_storage]
+  EMPTY_BR  = "^(\\[-?\\][ \t]*)+"                                                             # leading [] [-] placeholders
+  STACK     = "^(\\\\t|\t)+at |^Caused by|^[ \t]+\\.\\.\\. [0-9]+ more"
+  ACCESS    = "\"?(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS) [^ \t]+ HTTP[/_]"
+  LEVEL     = "(^|[^A-Za-z])(WARN|ERROR|FATAL|SEVERE)([^A-Za-z]|$)"
+
+  # ---- lines matching any of these (after cleaning) go to noise.log; add your own ----
+  nn = 0
+  NOISE[++nn] = "/admin/health"
+  NOISE[++nn] = "Using cached token"
+  NOISE[++nn] = "FolioExecutionScope is not set up"
+  NOISE[++nn] = "\\[kong\\].*response-transformer"
+  NOISE[++nn] = "GET /version([^A-Za-z0-9_]|$)"
+  NOISE[++nn] = "Authorizing request to:"
+  NOISE[++nn] = "Forwarding (ingress|egress) request"
+}
+
+# sesm/sidecar-mod-x/<32 hex>  ->  sidecar-mod-x
+function short_stream(s,    p, n, i, out) {
+  n = split(s, p, "/")
+  if (n == 3 || p[1] == "sesm") { for (i = 1; i < n; i++) p[i] = p[i+1]; n-- }
+  if (p[n] ~ /^[0-9a-f]+$/ && length(p[n]) == 32) n--
+  out = p[1]
+  for (i = 2; i <= n; i++) out = out "/" p[i]
+  return out
+}
+
+function write_out(kind, ts, stream, msg) {
+  print ts "\t" stream "\t" msg >> (kind ".log")
+  count[kind]++
+}
+
+{
+  # continuation lines have no timestamp column; reuse the previous one
+  if ($1 !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] /) {
+    msg = $0; ts = prev_ts; stream = ""
+  } else {
+    ts = prev_ts = $1; stream = short_stream($2)
+    msg = $3; for (i = 4; i <= NF; i++) msg = msg "\t" $i
+  }
+
+  while (msg ~ /\\n$/) sub(/\\n$/, "", msg)        # literal trailing \n
+  sub(/[ \t\r]+$/, "", msg)
+
+  if (msg ~ STACK) {
+    sub(/^[ \t]+/, "", msg)
+    write_out("stacktraces", ts, "", msg); next
+  }
+
+  if (msg ~ ACCESS) {
+    kind = "access"
+    sub(TS[1], "", msg)
+    sub(ACCESS_TS, "", msg)
+    if (match(msg, UA_TAIL)) msg = substr(msg, 1, RSTART + RLENGTH - 2)   # keep urt=..., drop the rest
+    sub(EMPTY_BR, "", msg)
+    while (index(msg, " - - ")) sub(/ - - /, " - ", msg)
+  } else {
+    kind = (stream ~ /^edge-/) ? "edge" : (stream ~ /^sidecar-/) ? "sidecar" : "app"
+    for (i = 1; i <= nts; i++) if (sub(TS[i], "", msg)) break
+    gsub(HTTP_NIO, "", msg)
+    gsub(THREAD, "", msg)
+    gsub(CHAIN, "", msg)
+    sub(MODNAME, "", msg)
+    sub(EMPTY_BR, "", msg)
+  }
+  while (msg ~ / \[-?\] /) { gsub(/ \[-\] /, " ", msg); gsub(/ \[\] /, " ", msg) }   # leftover placeholders
+  gsub(/  +/, " ", msg)
+  sub(/^ +/, "", msg)
+
+  if (msg == "") kind = "noise"
+  else {
+    for (i = 1; i <= nn; i++) if (msg ~ NOISE[i]) { kind = "noise"; break }
+    if (kind != "noise" && kind != "access" && substr(msg, 1, 80) ~ LEVEL) kind = "errors"
+  }
+  write_out(kind, ts, stream, msg)
+}
+
+END { for (k in count) printf "%-16s%7d\n", k ".log", count[k] | "sort >&2" }
+' raw.log
+wc -l raw.log |awk '{printf "%-16s%7d\n", k "raw.log", $1}'
+echo

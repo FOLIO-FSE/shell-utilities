@@ -10,12 +10,12 @@ Options:
   -d          Filter @message like /DELETE/
   -e          Filter @message like /ERROR/
   -q PATTERN  Filter @message like /PATTERN/ (may be repeated)
-  -n PATTERN  Filter @message not like /PATTERN/ (may be repeated)
+  -n NEGATIVE_PATTERN  Filter @message not like /NEGATIVE_PATTERN/ (may be repeated)
   -s START    Start time, anything GNU date understands (default: "1 day ago")
   -t END      End time, anything GNU date understands (default: "now")
   -h          Show this help
 
-All filters are ANDed. Use -q 'A|B' for OR.
+All filters are ANDed. Use -q 'A|B' for OR. Use regular -q for tenant.
 EOF
 }
 

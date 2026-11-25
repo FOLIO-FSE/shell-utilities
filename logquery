@@ -99,6 +99,9 @@ BEGIN {
   CHAIN     = "[ \t]*\\[[A-Za-z0-9;/._-]*[0-9]+/[A-Za-z0-9;/._-]+\\]"                          # [694296/mod-x;123/mod-y]
   MODNAME   = "[ \t]*\\[mod[_-][A-Za-z0-9_-]+\\]"                                              # [mod_inventory_storage]
   EMPTY_BR  = "^(\\[-?\\][ \t]*)+"                                                             # leading [] [-] placeholders
+  HTTP_VER = "^[ \t]HTTP[/_][0-9_.]+\"?[ \t]+"
+  HTTP_TO_CODE = "[ \t]HTTP[/_][0-9_.]+\"?[ \t]+[0-9]+([ \t]+[0-9-]+)?"                                  # " HTTP/1.1" 200 [size]
+  URT_VALUE = "urt=(\"[^\"]*\"|[^ \t]*)"
   STACK     = "^(\\\\t|\t)+at |^Caused by|^[ \t]+\\.\\.\\. [0-9]+ more"
   ACCESS    = "\"?(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS) [^ \t]+ HTTP[/_]"
   LEVEL     = "(^|[^A-Za-z])(WARN|ERROR|FATAL|SEVERE)([^A-Za-z]|$)"
@@ -158,7 +161,16 @@ function write_out(kind, ts, stream, msg) {
       sub(/^[ \t]+/, "", rest)
       if (substr(rest, 1, 1) == "\"" && split(rest, q, "\"") >= 6)
         head = head " \"" q[4] "\" \"" q[6] "\""
-      msg = "\""q[4] "\" \"" q[6] "\""
+      msg = head
+    }
+    # drop everything from HTTP/x.x through the urt value, keeping only the response code
+    if (match(msg, HTTP_TO_CODE)) {
+      seg = substr(msg, RSTART, RLENGTH); hstart = RSTART; hlen = RLENGTH
+      code = seg; sub(HTTP_VER, "", code)       # status code plus size, if present
+      endq = (seg ~ /"/) ? "\"" : ""
+      after = substr(msg, hstart + hlen)
+      if (match(after, URT_VALUE)) after = substr(after, RSTART + RLENGTH)
+      msg = substr(msg, 1, hstart - 1) endq " " code after
     }
     sub(EMPTY_BR, "", msg)
     while (index(msg, " - - ")) sub(/ - - /, " - ", msg)

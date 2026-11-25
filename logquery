@@ -150,7 +150,16 @@ function write_out(kind, ts, stream, msg) {
     kind = "access"
     sub(TS[1], "", msg)
     sub(ACCESS_TS, "", msg)
-    if (match(msg, UA_TAIL)) msg = substr(msg, 1, RSTART + RLENGTH - 2)   # keep urt=..., drop the rest
+    if (match(msg, UA_TAIL)) {
+      # after urt=... comes: "user-agent" "tenantId" "userId" "request-chain"
+      # drop the user agent and request chain, keep tenantId and userId
+      head = substr(msg, 1, RSTART + RLENGTH - 2)
+      rest = substr(msg, RSTART + RLENGTH)
+      sub(/^[ \t]+/, "", rest)
+      if (substr(rest, 1, 1) == "\"" && split(rest, q, "\"") >= 6)
+        head = head " \"" q[4] "\" \"" q[6] "\""
+      msg = "\""q[4] "\" \"" q[6] "\""
+    }
     sub(EMPTY_BR, "", msg)
     while (index(msg, " - - ")) sub(/ - - /, " - ", msg)
   } else {
@@ -176,5 +185,6 @@ function write_out(kind, ts, stream, msg) {
 
 END { for (k in count) printf "%-16s%7d\n", k ".log", count[k] | "sort >&2" }
 ' raw.log
+
 wc -l raw.log |awk '{printf "%-16s%7d\n", k "raw.log", $1}'
 echo
